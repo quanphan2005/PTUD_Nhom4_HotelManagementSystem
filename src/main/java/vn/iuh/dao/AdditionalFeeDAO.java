@@ -46,9 +46,9 @@
             String query = "INSERT INTO AdditionalFee (id, fee_name, create_at) VALUES (?, ?, ?)";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
-                ps.setString(1, phuPhi.getMa_phu_phi());
-                ps.setString(2, phuPhi.getTen_phu_phi());
-                ps.setDate(3, new java.sql.Date(phuPhi.getThoi_gian_tao().getTime()));
+                ps.setString(1, phuPhi.getMaPhuPhi());
+                ps.setString(2, phuPhi.getTenPhuPhi());
+                ps.setDate(3, new java.sql.Date(phuPhi.getThoiGianTao().getTime()));
 
                 ps.executeUpdate();
                 return phuPhi;
@@ -63,14 +63,14 @@
             String query = "UPDATE AdditionalFee SET fee_name = ? WHERE id = ?";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
-                ps.setDate(1, new java.sql.Date(phuPhi.getThoi_gian_tao().getTime()));
-                ps.setString(2, phuPhi.getMa_phu_phi());
+                ps.setDate(1, new java.sql.Date(phuPhi.getThoiGianTao().getTime()));
+                ps.setString(2, phuPhi.getMaPhuPhi());
 
                 int rowsAffected = ps.executeUpdate();
                 if (rowsAffected > 0) {
-                    return getAdditionalFeeByID(phuPhi.getMa_phu_phi());
+                    return getAdditionalFeeByID(phuPhi.getMaPhuPhi());
                 } else {
-                    System.out.println("No AdditionalFee found with ID: " + phuPhi.getMa_phu_phi());
+                    System.out.println("No AdditionalFee found with ID: " + phuPhi.getMaPhuPhi());
                     return null;
                 }
 
@@ -108,9 +108,9 @@
         private PhuPhi mapResultSetToAdditionalFee(ResultSet rs) {
             PhuPhi phuPhi = new PhuPhi();
             try {
-                phuPhi.setMa_phu_phi(rs.getString("id"));
-                phuPhi.setTen_phu_phi(rs.getString("fee_name"));
-                phuPhi.setThoi_gian_tao(rs.getDate("create_at"));
+                phuPhi.setMaPhuPhi(rs.getString("id"));
+                phuPhi.setTenPhuPhi(rs.getString("fee_name"));
+                phuPhi.setThoiGianTao(rs.getDate("create_at"));
                 return phuPhi;
             } catch (SQLException e) {
                 throw new TableEntityMismatch("Can't map ResultSet to AdditionalFee: " + e.getMessage());

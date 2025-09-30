@@ -1,43 +1,43 @@
 package vn.iuh.entity;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 
 public class PhuPhi {
-    private String ma_phu_phi;
-    private String ten_phu_phi;
-    private Date thoi_gian_tao;
+    private String maPhuPhi;
+    private String tenPhuPhi;
+    private Timestamp thoiGianTao;
 
     public PhuPhi() {
     }
 
-    public PhuPhi(String ma_phu_phi, String ten_phu_phi, Date thoi_gian_tao) {
-        this.ma_phu_phi = ma_phu_phi;
-        this.ten_phu_phi = ten_phu_phi;
-        this.thoi_gian_tao = thoi_gian_tao;
+    public PhuPhi(String maPhuPhi, String tenPhuPhi, Timestamp thoiGianTao) {
+        this.maPhuPhi = maPhuPhi;
+        this.tenPhuPhi = tenPhuPhi;
+        this.thoiGianTao = thoiGianTao;
     }
 
-    // Getters and Setters
-    public String getMa_phu_phi() {
-        return ma_phu_phi;
+    public String getMaPhuPhi() {
+        return maPhuPhi;
     }
 
-    public void setMa_phu_phi(String ma_phu_phi) {
-        this.ma_phu_phi = ma_phu_phi;
+    public void setMaPhuPhi(String maPhuPhi) {
+        this.maPhuPhi = maPhuPhi;
     }
 
-    public String getTen_phu_phi() {
-        return ten_phu_phi;
+    public String getTenPhuPhi() {
+        return tenPhuPhi;
     }
 
-    public void setTen_phu_phi(String ten_phu_phi) {
-        this.ten_phu_phi = ten_phu_phi;
+    public void setTenPhuPhi(String tenPhuPhi) {
+        this.tenPhuPhi = tenPhuPhi;
     }
 
-    public Date getThoi_gian_tao() {
-        return thoi_gian_tao;
+    public Timestamp getThoiGianTao() {
+        return thoiGianTao;
     }
 
-    public void setThoi_gian_tao(Date thoi_gian_tao) {
-        this.thoi_gian_tao = thoi_gian_tao;
+    public void setThoiGianTao(Timestamp thoiGianTao) {
+        this.thoiGianTao = thoiGianTao;
     }
 }

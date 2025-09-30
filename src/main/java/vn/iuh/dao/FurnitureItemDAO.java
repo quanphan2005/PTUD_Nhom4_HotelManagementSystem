@@ -25,9 +25,9 @@ public class FurnitureItemDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, noiThat.getMa_noi_that());
-            ps.setString(2, noiThat.getTen_noi_that());
-            ps.setString(3, noiThat.getMo_ta());
+            ps.setString(1, noiThat.getMaNoiThat());
+            ps.setString(2, noiThat.getTenNoiThat());
+            ps.setString(3, noiThat.getMoTa());
 
             ps.executeUpdate();
             return noiThat;
@@ -43,15 +43,15 @@ public class FurnitureItemDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, noiThat.getTen_noi_that());
-            ps.setString(2, noiThat.getMo_ta());
-            ps.setString(3, noiThat.getMa_noi_that());
+            ps.setString(1, noiThat.getTenNoiThat());
+            ps.setString(2, noiThat.getMoTa());
+            ps.setString(3, noiThat.getMaNoiThat());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getFurnitureItemByID(noiThat.getMa_noi_that());
+                return getFurnitureItemByID(noiThat.getMaNoiThat());
             } else {
-                System.out.println("No FurnitureItem found with ID (or it is deleted): " + noiThat.getMa_noi_that());
+                System.out.println("No FurnitureItem found with ID (or it is deleted): " + noiThat.getMaNoiThat());
                 return null;
             }
 
@@ -109,9 +109,9 @@ public class FurnitureItemDAO {
     public NoiThat mapResultSetToFurnitureItem(ResultSet rs) throws SQLException {
         NoiThat item = new NoiThat();
         try {
-            item.setMa_noi_that(rs.getString("id"));
-            item.setTen_noi_that(rs.getString("item_name"));
-            item.setMo_ta(rs.getString("item_description"));
+            item.setMaNoiThat(rs.getString("id"));
+            item.setTenNoiThat(rs.getString("item_name"));
+            item.setMoTa(rs.getString("item_description"));
             return item;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to FurnitureItem " + e);

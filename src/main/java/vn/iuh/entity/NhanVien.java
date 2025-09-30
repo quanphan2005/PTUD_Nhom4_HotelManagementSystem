@@ -4,39 +4,40 @@ import java.sql.Date;
 import java.sql.Timestamp;
 
 public class NhanVien {
-    private String ma_nhan_vien;
-    private String ten_nhan_vien;
+    private String maNhanVien;
+    private String tenNhanVien;
     private String CCCD;
-    private Date ngay_sinh;
-    private String so_dien_thoai;
-    private Timestamp thoi_gian_tao;
+    private Timestamp ngaySinh;
+    private String soDienThoai;
+    private Timestamp thoiGianTao;
 
     public NhanVien() {
     }
 
-    public NhanVien(String ma_nhan_vien, String ten_nhan_vien, String CCCD, Date ngay_sinh, String so_dien_thoai, Timestamp thoi_gian_tao) {
-        this.ma_nhan_vien = ma_nhan_vien;
-        this.ten_nhan_vien = ten_nhan_vien;
+    public NhanVien(String maNhanVien, String tenNhanVien, String CCCD, Timestamp ngaySinh, String soDienThoai,
+                    Timestamp thoiGianTao) {
+        this.maNhanVien = maNhanVien;
+        this.tenNhanVien = tenNhanVien;
         this.CCCD = CCCD;
-        this.ngay_sinh = ngay_sinh;
-        this.so_dien_thoai = so_dien_thoai;
-        this.thoi_gian_tao = thoi_gian_tao;
+        this.ngaySinh = ngaySinh;
+        this.soDienThoai = soDienThoai;
+        this.thoiGianTao = thoiGianTao;
     }
 
-    public String getMa_nhan_vien() {
-        return ma_nhan_vien;
+    public String getMaNhanVien() {
+        return maNhanVien;
     }
 
-    public void setMa_nhan_vien(String ma_nhan_vien) {
-        this.ma_nhan_vien = ma_nhan_vien;
+    public void setMaNhanVien(String maNhanVien) {
+        this.maNhanVien = maNhanVien;
     }
 
-    public String getTen_nhan_vien() {
-        return ten_nhan_vien;
+    public String getTenNhanVien() {
+        return tenNhanVien;
     }
 
-    public void setTen_nhan_vien(String ten_nhan_vien) {
-        this.ten_nhan_vien = ten_nhan_vien;
+    public void setTenNhanVien(String tenNhanVien) {
+        this.tenNhanVien = tenNhanVien;
     }
 
     public String getCCCD() {
@@ -47,27 +48,27 @@ public class NhanVien {
         this.CCCD = CCCD;
     }
 
-    public Date getNgay_sinh() {
-        return ngay_sinh;
+    public Timestamp getNgaySinh() {
+        return ngaySinh;
     }
 
-    public void setNgay_sinh(Date ngay_sinh) {
-        this.ngay_sinh = ngay_sinh;
+    public void setNgaySinh(Timestamp ngaySinh) {
+        this.ngaySinh = ngaySinh;
     }
 
-    public String getSo_dien_thoai() {
-        return so_dien_thoai;
+    public String getSoDienThoai() {
+        return soDienThoai;
     }
 
-    public void setSo_dien_thoai(String so_dien_thoai) {
-        this.so_dien_thoai = so_dien_thoai;
+    public void setSoDienThoai(String soDienThoai) {
+        this.soDienThoai = soDienThoai;
     }
 
-    public Timestamp getThoi_gian_tao() {
-        return thoi_gian_tao;
+    public Timestamp getThoiGianTao() {
+        return thoiGianTao;
     }
 
-    public void setThoi_gian_tao(Timestamp thoi_gian_tao) {
-        this.thoi_gian_tao = thoi_gian_tao;
+    public void setThoiGianTao(Timestamp thoiGianTao) {
+        this.thoiGianTao = thoiGianTao;
     }
 }
