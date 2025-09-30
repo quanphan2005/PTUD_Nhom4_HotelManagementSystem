@@ -46,11 +46,11 @@ public class FineTicketDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, bienBan.getMa_bien_ban());
-            ps.setTimestamp(2, bienBan.getThoi_gian_tao());
-            ps.setString(3, bienBan.getLi_do());
-            ps.setDouble(4, bienBan.getPhi_bien_ban());
-            ps.setString(5, bienBan.getMa_chi_tiet_dat_phong());
+            ps.setString(1, bienBan.getMaBienBan());
+            ps.setTimestamp(2, bienBan.getThoiGianTao());
+            ps.setString(3, bienBan.getLiDo());
+            ps.setDouble(4, bienBan.getPhiBienBan());
+            ps.setString(5, bienBan.getMaChiTietDatPhong());
 
             ps.executeUpdate();
             return bienBan;
@@ -68,17 +68,17 @@ public class FineTicketDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setTimestamp(1, bienBan.getThoi_gian_tao());
-            ps.setString(2, bienBan.getLi_do());
-            ps.setDouble(3, bienBan.getPhi_bien_ban());
-            ps.setString(4, bienBan.getMa_chi_tiet_dat_phong());
-            ps.setString(5, bienBan.getMa_bien_ban());
+            ps.setTimestamp(1, bienBan.getThoiGianTao());
+            ps.setString(2, bienBan.getLiDo());
+            ps.setDouble(3, bienBan.getPhiBienBan());
+            ps.setString(4, bienBan.getMaChiTietDatPhong());
+            ps.setString(5, bienBan.getMaBienBan());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getFineTicketByID(bienBan.getMa_bien_ban());
+                return getFineTicketByID(bienBan.getMaBienBan());
             } else {
-                System.out.println("No FineTicket found with ID: " + bienBan.getMa_bien_ban());
+                System.out.println("No FineTicket found with ID: " + bienBan.getMaBienBan());
                 return null;
             }
 
@@ -117,11 +117,11 @@ public class FineTicketDAO {
     public BienBan mapResultSetToFineTicket(ResultSet rs) throws SQLException {
         BienBan bienBan = new BienBan();
         try {
-            bienBan.setMa_bien_ban(rs.getString("id"));
-            bienBan.setThoi_gian_tao(rs.getTimestamp("create_time"));
-            bienBan.setLi_do(rs.getString("ticket_description"));
-            bienBan.setPhi_bien_ban(rs.getDouble("total_fine"));
-            bienBan.setMa_chi_tiet_dat_phong(rs.getString("reservation_form_id"));
+            bienBan.setMaBienBan(rs.getString("id"));
+            bienBan.setThoiGianTao(rs.getTimestamp("create_time"));
+            bienBan.setLiDo(rs.getString("ticket_description"));
+            bienBan.setPhiBienBan(rs.getDouble("total_fine"));
+            bienBan.setMaChiTietDatPhong(rs.getString("reservation_form_id"));
             return bienBan;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to FineTicket: " + e);

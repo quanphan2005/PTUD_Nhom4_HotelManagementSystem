@@ -3,48 +3,48 @@ package vn.iuh.entity;
 import java.sql.Timestamp;
 
 public class KhachHang {
-    private String ma_khach_hang;
+    private String maKhachHang;
     private String CCCD;
-    private String ten_khach_hang;
-    private String so_dien_thoai;
-    private Timestamp thoi_gian_tao;
+    private String tenKhachHang;
+    private String soDienThoai;
+    private Timestamp thoiGianTao;
 
 
 
     public KhachHang() {
     }
 
-    public KhachHang(String ma_khach_hang, String CCCD, String ten_khach_hang, String so_dien_thoai, Timestamp thoi_gian_tao) {
-        this.ma_khach_hang = ma_khach_hang;
+    public KhachHang(String maKhachHang, String CCCD, String tenKhachHang, String soDienThoai, Timestamp thoiGianTao) {
+        this.maKhachHang = maKhachHang;
         this.CCCD = CCCD;
-        this.ten_khach_hang = ten_khach_hang;
-        this.so_dien_thoai = so_dien_thoai;
-        this.thoi_gian_tao = thoi_gian_tao;
+        this.tenKhachHang = tenKhachHang;
+        this.soDienThoai = soDienThoai;
+        this.thoiGianTao = thoiGianTao;
     }
 
     // Getters and Setters
-    public String getMa_khach_hang() {
-        return ma_khach_hang;
+    public String getMaKhachHang() {
+        return maKhachHang;
     }
 
-    public void setMa_khach_hang(String ma_khach_hang) {
-        this.ma_khach_hang = ma_khach_hang;
+    public void setMaKhachHang(String maKhachHang) {
+        this.maKhachHang = maKhachHang;
     }
 
-    public String getTen_khach_hang() {
-        return ten_khach_hang;
+    public String getTenKhachHang() {
+        return tenKhachHang;
     }
 
-    public void setTen_khach_hang(String ten_khach_hang) {
-        this.ten_khach_hang = ten_khach_hang;
+    public void setTenKhachHang(String tenKhachHang) {
+        this.tenKhachHang = tenKhachHang;
     }
 
-    public String getSo_dien_thoai() {
-        return so_dien_thoai;
+    public String getSoDienThoai() {
+        return soDienThoai;
     }
 
-    public void setSo_dien_thoai(String so_dien_thoai) {
-        this.so_dien_thoai = so_dien_thoai;
+    public void setSoDienThoai(String soDienThoai) {
+        this.soDienThoai = soDienThoai;
     }
 
     public String getCCCD() {
@@ -55,11 +55,11 @@ public class KhachHang {
         this.CCCD = CCCD;
     }
 
-    public Timestamp getThoi_gian_tao() {
-        return thoi_gian_tao;
+    public Timestamp getThoiGianTao() {
+        return thoiGianTao;
     }
 
-    public void setThoi_gian_tao(Timestamp thoi_gian_tao) {
-        this.thoi_gian_tao = thoi_gian_tao;
+    public void setThoiGianTao(Timestamp thoiGianTao) {
+        this.thoiGianTao = thoiGianTao;
     }
 }

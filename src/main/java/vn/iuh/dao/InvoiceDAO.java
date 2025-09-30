@@ -44,17 +44,17 @@ public class InvoiceDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, hoaDon.getMa_hoa_don());
-            ps.setTimestamp(2, hoaDon.getThoi_gian_tao() != null ? new Timestamp(hoaDon.getThoi_gian_tao().getTime()) : null);
-            ps.setString(3, hoaDon.getPhuong_thuc_thanh_toan());
-            ps.setDouble(4, hoaDon.getTong_tien());
-            ps.setDouble(5, hoaDon.getTien_thue());
-            ps.setDouble(6, hoaDon.getTong_hoa_don());
-            ps.setString(7, hoaDon.getKieu_hoa_don());
-            ps.setString(8, hoaDon.getTinh_trang_thanh_toan());
-            ps.setString(9, hoaDon.getMa_phien_dang_nhap());
-            ps.setString(10, hoaDon.getMa_don_dat_phong());
-            ps.setString(11, hoaDon.getMa_khach_hang());
+            ps.setString(1, hoaDon.getMaHoaDon());
+            ps.setTimestamp(2, hoaDon.getThoiGianTao() != null ? new Timestamp(hoaDon.getThoiGianTao().getTime()) : null);
+            ps.setString(3, hoaDon.getPhuongThucThanhToan());
+            ps.setDouble(4, hoaDon.getTongTien());
+            ps.setDouble(5, hoaDon.getTienThue());
+            ps.setDouble(6, hoaDon.getTongHoaDon());
+            ps.setString(7, hoaDon.getKieuHoaDon());
+            ps.setString(8, hoaDon.getTinhTrangThanhToan());
+            ps.setString(9, hoaDon.getMaPhienDangNhap());
+            ps.setString(10, hoaDon.getMaDonDatPhong());
+            ps.setString(11, hoaDon.getMaKhachHang());
 
             ps.executeUpdate();
             return hoaDon;
@@ -72,23 +72,23 @@ public class InvoiceDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setTimestamp(1, hoaDon.getThoi_gian_tao() != null ? new Timestamp(hoaDon.getThoi_gian_tao().getTime()) : null);
-            ps.setString(2, hoaDon.getPhuong_thuc_thanh_toan());
-            ps.setDouble(3, hoaDon.getTong_tien());
-            ps.setDouble(4, hoaDon.getTien_thue());
-            ps.setDouble(5, hoaDon.getTong_hoa_don());
-            ps.setString(6, hoaDon.getKieu_hoa_don());
-            ps.setString(7, hoaDon.getTinh_trang_thanh_toan());
-            ps.setString(8, hoaDon.getMa_phien_dang_nhap());
-            ps.setString(9, hoaDon.getMa_don_dat_phong());
-            ps.setString(10, hoaDon.getMa_khach_hang());
-            ps.setString(11, hoaDon.getMa_hoa_don());
+            ps.setTimestamp(1, hoaDon.getThoiGianTao() != null ? new Timestamp(hoaDon.getThoiGianTao().getTime()) : null);
+            ps.setString(2, hoaDon.getPhuongThucThanhToan());
+            ps.setDouble(3, hoaDon.getTongTien());
+            ps.setDouble(4, hoaDon.getTienThue());
+            ps.setDouble(5, hoaDon.getTongHoaDon());
+            ps.setString(6, hoaDon.getKieuHoaDon());
+            ps.setString(7, hoaDon.getTinhTrangThanhToan());
+            ps.setString(8, hoaDon.getMaPhienDangNhap());
+            ps.setString(9, hoaDon.getMaDonDatPhong());
+            ps.setString(10, hoaDon.getMaKhachHang());
+            ps.setString(11, hoaDon.getMaHoaDon());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getInvoiceByID(hoaDon.getMa_hoa_don());
+                return getInvoiceByID(hoaDon.getMaHoaDon());
             } else {
-                System.out.println("No invoice found with ID: " + hoaDon.getMa_hoa_don());
+                System.out.println("No invoice found with ID: " + hoaDon.getMaHoaDon());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -123,17 +123,17 @@ public class InvoiceDAO {
     private HoaDon mapResultSetToInvoice(ResultSet rs) throws SQLException {
         HoaDon hoaDon = new HoaDon();
         try {
-            hoaDon.setMa_hoa_don(rs.getString("id"));
-            hoaDon.setThoi_gian_tao(rs.getTimestamp("create_date")); // mapping datetime -> java.util.Date
-            hoaDon.setPhuong_thuc_thanh_toan(rs.getString("payment"));
-            hoaDon.setTong_tien(rs.getDouble("total_price"));
-            hoaDon.setTien_thue(rs.getDouble("tax_price"));
-            hoaDon.setTong_hoa_don(rs.getDouble("total_due"));
-            hoaDon.setKieu_hoa_don(rs.getString("invoice_type"));
-            hoaDon.setTinh_trang_thanh_toan(rs.getString("invoice_status"));
-            hoaDon.setMa_phien_dang_nhap(rs.getString("shift_assignment_id"));
-            hoaDon.setMa_don_dat_phong(rs.getString("reservation_form_id"));
-            hoaDon.setMa_khach_hang(rs.getString("customer_id"));
+            hoaDon.setMaHoaDon(rs.getString("id"));
+            hoaDon.setThoiGianTao(rs.getTimestamp("create_date")); // mapping datetime -> java.util.Date
+            hoaDon.setPhuongThucThanhToan(rs.getString("payment"));
+            hoaDon.setTongTien(rs.getDouble("total_price"));
+            hoaDon.setTienThue(rs.getDouble("tax_price"));
+            hoaDon.setTongHoaDon(rs.getDouble("total_due"));
+            hoaDon.setKieuHoaDon(rs.getString("invoice_type"));
+            hoaDon.setTinhTrangThanhToan(rs.getString("invoice_status"));
+            hoaDon.setMaPhienDangNhap(rs.getString("shift_assignment_id"));
+            hoaDon.setMaDonDatPhong(rs.getString("reservation_form_id"));
+            hoaDon.setMaKhachHang(rs.getString("customer_id"));
             return hoaDon;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to Invoice: " + e);
