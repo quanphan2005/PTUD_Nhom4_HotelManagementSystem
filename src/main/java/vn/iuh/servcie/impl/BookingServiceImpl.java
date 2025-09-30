@@ -4,7 +4,7 @@ import vn.iuh.constraint.ActionType;
 import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.BookingDAO;
-import vn.iuh.dao.CustomerDAO;
+import vn.iuh.dao.KhachHangDAO;
 import vn.iuh.dao.JobDAO;
 import vn.iuh.dao.WorkingHistoryDAO;
 import vn.iuh.dto.event.create.BookingCreationEvent;
@@ -24,13 +24,13 @@ import java.util.Objects;
 
 public class BookingServiceImpl implements BookingService {
     private final BookingDAO bookingDAO;
-    private final CustomerDAO customerDAO;
+    private final KhachHangDAO khachHangDAO;
     private final WorkingHistoryDAO workingHistoryDAO;
     private final JobDAO jobDAO;
 
     public BookingServiceImpl() {
         this.bookingDAO = new BookingDAO();
-        this.customerDAO = new CustomerDAO();
+        this.khachHangDAO = new KhachHangDAO();
         this.workingHistoryDAO = new WorkingHistoryDAO();
         this.jobDAO = new JobDAO();
     }
@@ -39,14 +39,14 @@ public class BookingServiceImpl implements BookingService {
     public boolean createBooking(BookingCreationEvent bookingCreationEvent) {
 
         // 1. find Customer by CCCD
-        Customer customer = customerDAO.findCustomerByCCCD(bookingCreationEvent.getCCCD());
+        Customer customer = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
 
         try {
             bookingDAO.beginTransaction();
 
             // 1.1 Create Customer if not exist
             if (Objects.isNull(customer)) {
-                customerDAO.createCustomer(new Customer(
+                khachHangDAO.themKhachHang(new Customer(
                         EntityUtil.increaseEntityID(null,
                                                     EntityIDSymbol.CUSTOMER_PREFIX.getPrefix(),
                                                     EntityIDSymbol.CUSTOMER_PREFIX.getLength()),

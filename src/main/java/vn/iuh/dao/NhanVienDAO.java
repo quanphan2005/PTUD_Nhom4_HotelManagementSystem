@@ -9,26 +9,26 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class EmployeeDAO {
+public class NhanVienDAO {
     private final Connection connection;
 
-    public EmployeeDAO() {
+    public NhanVienDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public EmployeeDAO(Connection connection) {
+    public NhanVienDAO(Connection connection) {
         this.connection = connection;
     }
 
-    public NhanVien getEmployeeByID(String id) {
-        String query = "SELECT * FROM Employee WHERE id = ? AND is_deleted = false";
+    public NhanVien timNhanVien(String id) {
+        String query = "SELECT * FROM NhanVien WHERE ma_nhan_vien = ? AND da_xoa = 0";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, id);
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapResultSetToEmployee(rs);
+                return chuyenKetQuaThanhNhanVien(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -39,9 +39,9 @@ public class EmployeeDAO {
         return null;
     }
 
-    public NhanVien createEmployee(NhanVien nhanVien) {
-        String query = "INSERT INTO Employee (id, employee_name, CCCD, birth_date, is_deleted) " +
-                "VALUES (?, ?, ?, ?, false)";
+    public NhanVien themNhanVien(NhanVien nhanVien) {
+        String query = "INSERT INTO NhanVien (ma_nhan_vien, ten_nhan_vien, CCCD, ngay_sinh, so_dien_thoai) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -49,6 +49,7 @@ public class EmployeeDAO {
             ps.setString(2, nhanVien.getTenNhanVien());
             ps.setString(3, nhanVien.getCCCD());
             ps.setDate(4, new java.sql.Date(nhanVien.getNgaySinh().getTime()));
+            ps.setString(5, nhanVien.getSoDienThoai());
 
             ps.executeUpdate();
             return nhanVien;
@@ -59,22 +60,23 @@ public class EmployeeDAO {
         return null;
     }
 
-    public NhanVien updateEmployee(NhanVien nhanVien) {
-        String query = "UPDATE Employee SET employee_name = ?, CCCD = ?, birth_date = ? " +
-                "WHERE id = ? AND is_deleted = false";
+    public NhanVien capNhatNhanVien(NhanVien nhanVien) {
+        String query = "UPDATE NhanVien SET ten_nhan_vien = ?, CCCD = ?, ngay_sinh = ?, so_dien_thoai = ?" +
+                "WHERE ma_nhan_vien = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, nhanVien.getTenNhanVien());
             ps.setString(2, nhanVien.getCCCD());
             ps.setDate(3, new java.sql.Date(nhanVien.getNgaySinh().getTime()));
-            ps.setString(4, nhanVien.getMaNhanVien());
+            ps.setString(4, nhanVien.getSoDienThoai());
+            ps.setString(5, nhanVien.getMaNhanVien());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getEmployeeByID(nhanVien.getMaNhanVien());
+                return timNhanVien(nhanVien.getMaNhanVien());
             } else {
-                System.out.println("No Employee found with ID: " + nhanVien.getMaNhanVien());
+                System.out.println("Không tìm thấy nhân viên có mã: " + nhanVien.getMaNhanVien());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -83,19 +85,19 @@ public class EmployeeDAO {
         return null;
     }
 
-    public boolean deleteEmployeeByID(String id) {
-        if (getEmployeeByID(id) == null) {
-            System.out.println("No Employee found with ID: " + id);
+    public boolean xoaNhanVien(String id) {
+        if (timNhanVien(id) == null) {
+            System.out.println("Không tìm thấy nhân viên có mã: " + id);
             return false;
         }
 
-        String query = "UPDATE Employee SET is_deleted = true WHERE id = ?";
+        String query = "UPDATE NhanVien SET da_xoa = 0 WHERE ma_nhan_vien = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Employee has been deleted successfully");
+                System.out.println("Xóa nhân viên thành công!");
                 return true;
             }
         } catch (SQLException e) {
@@ -105,16 +107,17 @@ public class EmployeeDAO {
         return false;
     }
 
-    private NhanVien mapResultSetToEmployee(ResultSet rs) {
+    private NhanVien chuyenKetQuaThanhNhanVien(ResultSet rs) {
         NhanVien nhanVien = new NhanVien();
         try {
-            nhanVien.setMaNhanVien(rs.getString("id"));
-            nhanVien.setTenNhanVien(rs.getString("employee_name"));
+            nhanVien.setMaNhanVien(rs.getString("ma_nhan_vien"));
+            nhanVien.setTenNhanVien(rs.getString("ten_nhan_vien"));
             nhanVien.setCCCD(rs.getString("CCCD"));
-            nhanVien.setNgaySinh(rs.getDate("birth_date"));
+            nhanVien.setNgaySinh(rs.getTimestamp("ngay_sinh"));
+            nhanVien.setSoDienThoai(rs.getString("so_dien_thoai"));
             return nhanVien;
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Can't map ResultSet to Employee: " + e.getMessage());
+            throw new TableEntityMismatch("Không thể chuyển kết quả thành nhân viên: " + e.getMessage());
         }
     }
 }

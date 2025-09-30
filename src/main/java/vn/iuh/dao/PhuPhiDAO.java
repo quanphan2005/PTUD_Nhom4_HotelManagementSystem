@@ -9,19 +9,19 @@
     import java.sql.ResultSet;
     import java.sql.SQLException;
 
-    public class AdditionalFeeDAO {
+    public class PhuPhiDAO {
         private final Connection connection;
 
-        public AdditionalFeeDAO() {
+        public PhuPhiDAO() {
             this.connection = DatabaseUtil.getConnect();
         }
 
-        public AdditionalFeeDAO(Connection connection) {
+        public PhuPhiDAO(Connection connection) {
             this.connection = connection;
         }
 
-        public PhuPhi getAdditionalFeeByID(String id) {
-            String query = "SELECT * FROM AdditionalFee WHERE id = ?";
+        public PhuPhi timPhuPhi(String id) {
+            String query = "SELECT * FROM PhuPhi WHERE ma_phu_phi = ?";
 
             try {
                 PreparedStatement ps = connection.prepareStatement(query);
@@ -29,7 +29,7 @@
 
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
-                    return mapResultSetToAdditionalFee(rs);
+                    return chuyenKetQuaThanhPhuPhi(rs);
                 }
 
             } catch (SQLException e) {
@@ -42,13 +42,12 @@
         }
 
         // Tạo mới AdditionalFee
-        public PhuPhi createAdditionalFee(PhuPhi phuPhi) {
-            String query = "INSERT INTO AdditionalFee (id, fee_name, create_at) VALUES (?, ?, ?)";
+        public PhuPhi themPhuPhi(PhuPhi phuPhi) {
+            String query = "INSERT INTO PhuPhi (ma_phu_phi, ten_phu_phi) VALUES (?, ?)";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
                 ps.setString(1, phuPhi.getMaPhuPhi());
                 ps.setString(2, phuPhi.getTenPhuPhi());
-                ps.setDate(3, new java.sql.Date(phuPhi.getThoiGianTao().getTime()));
 
                 ps.executeUpdate();
                 return phuPhi;
@@ -59,8 +58,8 @@
             return null;
         }
 
-        public PhuPhi updateAdditionalFee(PhuPhi phuPhi) {
-            String query = "UPDATE AdditionalFee SET fee_name = ? WHERE id = ?";
+        public PhuPhi capNhatPhuPhi(PhuPhi phuPhi) {
+            String query = "UPDATE PhuPhi SET ten_phu_phi = ? WHERE ma_phu_phi = ?";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
                 ps.setDate(1, new java.sql.Date(phuPhi.getThoiGianTao().getTime()));
@@ -68,9 +67,9 @@
 
                 int rowsAffected = ps.executeUpdate();
                 if (rowsAffected > 0) {
-                    return getAdditionalFeeByID(phuPhi.getMaPhuPhi());
+                    return timPhuPhi(phuPhi.getMaPhuPhi());
                 } else {
-                    System.out.println("No AdditionalFee found with ID: " + phuPhi.getMaPhuPhi());
+                    System.out.println("Không tìm thấy phụ phí có mã: " + phuPhi.getMaPhuPhi());
                     return null;
                 }
 
@@ -81,20 +80,20 @@
             return null;
         }
 
-        public boolean deleteAdditionalFeeByID(String id) {
-            if (getAdditionalFeeByID(id) == null) {
-                System.out.println("No AdditionalFee found with ID: " + id);
+        public boolean xoaPhuPhi(String id) {
+            if (timPhuPhi(id) == null) {
+                System.out.println("Không tìm thấy phụ phí có mã: " + id);
                 return false;
             }
 
-            String query = "DELETE FROM AdditionalFee WHERE id = ?";
+            String query = "DELETE FROM PhuPhi WHERE ma_phu_phi = ?";
 
             try {
                 PreparedStatement ps = connection.prepareStatement(query);
                 ps.setString(1, id);
                 int rowsAffected = ps.executeUpdate();
                 if (rowsAffected > 0) {
-                    System.out.println("AdditionalFee has been deleted successfully");
+                    System.out.println("Xóa phụ phí thành công!");
                     return true;
                 }
 
@@ -105,15 +104,14 @@
             return false;
         }
 
-        private PhuPhi mapResultSetToAdditionalFee(ResultSet rs) {
+        private PhuPhi chuyenKetQuaThanhPhuPhi(ResultSet rs) {
             PhuPhi phuPhi = new PhuPhi();
             try {
-                phuPhi.setMaPhuPhi(rs.getString("id"));
-                phuPhi.setTenPhuPhi(rs.getString("fee_name"));
-                phuPhi.setThoiGianTao(rs.getDate("create_at"));
+                phuPhi.setMaPhuPhi(rs.getString("ma_phu_phi"));
+                phuPhi.setTenPhuPhi(rs.getString("ten_phu_phi"));
                 return phuPhi;
             } catch (SQLException e) {
-                throw new TableEntityMismatch("Can't map ResultSet to AdditionalFee: " + e.getMessage());
+                throw new TableEntityMismatch("Không thể chuyển kết quả thành phụ phí: " + e.getMessage());
             }
         }
     }

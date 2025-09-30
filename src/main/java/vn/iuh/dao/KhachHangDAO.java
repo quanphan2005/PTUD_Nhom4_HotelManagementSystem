@@ -9,19 +9,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class CustomerDAO {
+public class KhachHangDAO {
     private final Connection connection;
 
-    public CustomerDAO() {
+    public KhachHangDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public CustomerDAO(Connection connection) {
+    public KhachHangDAO(Connection connection) {
         this.connection = connection;
     }
 
-    public KhachHang getCustomerByID(String id) {
-        String query = "SELECT * FROM Customer WHERE id = ? AND is_deleted = 0";
+    public KhachHang timKhachHang(String id) {
+        String query = "SELECT * FROM KhachHang WHERE ma_khach_hang = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -29,7 +29,7 @@ public class CustomerDAO {
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapResultSetToCustomer(rs);
+                return chuyenKetQuaThanhKhachHang(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -40,8 +40,8 @@ public class CustomerDAO {
         return null;
     }
 
-    public KhachHang findCustomerByCCCD(String cccd) {
-        String query = "SELECT * FROM Customer WHERE CCCD = ? AND is_deleted = 0";
+    public KhachHang timKhachHangBangCCCD(String cccd) {
+        String query = "SELECT * FROM KhachHang WHERE CCCD = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -49,7 +49,7 @@ public class CustomerDAO {
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapResultSetToCustomer(rs);
+                return chuyenKetQuaThanhKhachHang(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -60,15 +60,15 @@ public class CustomerDAO {
         return null;
     }
 
-    public KhachHang findLastCustomer() {
-        String query = "SELECT TOP 1 * FROM Customer WHERE is_deleted = 0 ORDER BY id DESC";
+    public KhachHang timKhachHangMoiNhat() {
+        String query = "SELECT TOP 1 * FROM KhachHang WHERE da_xoa = 0 ORDER BY ma_khach_hang DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapResultSetToCustomer(rs);
+                return chuyenKetQuaThanhKhachHang(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -79,15 +79,16 @@ public class CustomerDAO {
         return null;
     }
 
-    public KhachHang createCustomer(KhachHang khachHang) {
-        String query = "INSERT INTO Customer (id, customer_name, phone_number, CCCD, is_deleted) " +
+    public KhachHang themKhachHang(KhachHang khachHang) {
+        String query = "INSERT INTO KhachHang (ma_khach_hang, CCCD, ten_khach_hang, so_dien_thoai) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, khachHang.getMaKhachHang());
-            ps.setString(2, khachHang.getTenKhachHang());
-            ps.setString(3, khachHang.getSoDienThoai());
-            ps.setString(4, khachHang.getCCCD());
+            ps.setString(2, khachHang.getCCCD());
+            ps.setString(3, khachHang.getTenKhachHang());
+            ps.setString(4, khachHang.getSoDienThoai());
 
             ps.executeUpdate();
             return khachHang;
@@ -98,21 +99,22 @@ public class CustomerDAO {
         return null;
     }
 
-    public KhachHang updateCustomer(KhachHang khachHang) {
-        String query = "UPDATE Customer SET customer_name = ?, phone_number = ?, CCCD = ? " +
-                "WHERE id = ? AND is_deleted = false";
+    public KhachHang capNhatKhachHang(KhachHang khachHang) {
+        String query = "UPDATE KhachHang SET CCCD = ? ,ten_khach_hang = ?, so_dien_thoai = ?" +
+                "WHERE ma_khach_hang = ? AND is_deleted = 0";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, khachHang.getTenKhachHang());
-            ps.setString(2, khachHang.getSoDienThoai());
-            ps.setString(3, khachHang.getCCCD());
+        try{
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, khachHang.getCCCD());
+            ps.setString(2, khachHang.getTenKhachHang());
+            ps.setString(3, khachHang.getSoDienThoai());
             ps.setString(4, khachHang.getMaKhachHang());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getCustomerByID(khachHang.getMaKhachHang());
+                return timKhachHang(khachHang.getMaKhachHang());
             } else {
-                System.out.println("No Customer found with ID: " + khachHang.getMaKhachHang());
+                System.out.println("Không tìm thấy khách hàng có mã: " + khachHang.getMaKhachHang());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -121,19 +123,19 @@ public class CustomerDAO {
         return null;
     }
 
-    public boolean deleteCustomerByID(String id) {
-        if (getCustomerByID(id) == null) {
-            System.out.println("No Customer found with ID: " + id);
+    public boolean xoaKhachHang(String id) {
+        if (timKhachHang(id) == null) {
+            System.out.println("Không tìm thấy khách hàng có mã: " + id);
             return false;
         }
 
-        String query = "UPDATE Customer SET is_deleted = true WHERE id = ?";
+        String query = "UPDATE KhachHang SET da_xoa = 1 WHERE ma_khach_hang = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Customer has been deleted successfully");
+                System.out.println("Xóa khách hàng thành công!");
                 return true;
             }
         } catch (SQLException e) {
@@ -143,16 +145,16 @@ public class CustomerDAO {
         return false;
     }
 
-    private KhachHang mapResultSetToCustomer(ResultSet rs) {
+    private KhachHang chuyenKetQuaThanhKhachHang(ResultSet rs) {
         KhachHang khachHang = new KhachHang();
         try {
-            khachHang.setMaKhachHang(rs.getString("id"));
-            khachHang.setTenKhachHang(rs.getString("customer_name"));
-            khachHang.setSoDienThoai(rs.getString("phone_number"));
+            khachHang.setMaKhachHang(rs.getString("ma_khach_hang"));
             khachHang.setCCCD(rs.getString("CCCD"));
+            khachHang.setTenKhachHang(rs.getString("ten_khach_hang"));
+            khachHang.setSoDienThoai(rs.getString("so_dien_thoai"));
             return khachHang;
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Can't map ResultSet to Customer: " + e.getMessage());
+            throw new TableEntityMismatch("Không thể chuyển kết quả thành khách hàng: " + e.getMessage());
         }
     }
 }
