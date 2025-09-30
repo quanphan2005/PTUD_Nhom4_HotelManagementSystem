@@ -9,26 +9,26 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class AccountDAO {
+public class TaiKhoanDAO {
     private final Connection connection;
 
-    public AccountDAO() {
+    public TaiKhoanDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public AccountDAO(Connection connection) {
+    public TaiKhoanDAO(Connection connection) {
         this.connection = connection;
     }
 
-    public TaiKhoan findLastAccount() {
-        String query = "select TOP 1 * from account where is_deleted = false order by id desc";
+    public TaiKhoan timTaiKhoanMoiNhat() {
+        String query = "SELECT TOP 1 * FROM TaiKhoan WHERE da_xoa = 0 ORDER BY ma_tai_khoan DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
             if(rs.next()) {
-                return mapResultSetToAccount(rs);
+                return chuyenKetQuaThanhTaiKhoan(rs);
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -37,9 +37,9 @@ public class AccountDAO {
         return null;
     }
 
-    public TaiKhoan createAccount(TaiKhoan taiKhoan) {
-        String query  = "INSERT INTO Account (id, userName, user_password, user_role, employee_id, is_deleted)" +
-                "VALUES (?, ?, ?, ?, ?, false)";
+    public TaiKhoan themTaiKhoan(TaiKhoan taiKhoan) {
+        String query  = "INSERT INTO Account (ma_tai_khoan, ten_dang_nhap, mat_khau, ma_chuc_vu, ma_nhan_vien)" +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -58,9 +58,9 @@ public class AccountDAO {
         return null;
     }
 
-    public TaiKhoan updateAccount(TaiKhoan taiKhoan) {
-        String query = "update Account set userName = ?, user_password = ?, user_role = ?, " +
-                "employee_id = ? where id = ? AND is_deleted = false";
+    public TaiKhoan capNhatTaiKhoan(TaiKhoan taiKhoan) {
+        String query = "UPDATE TaiKhoan SET ten_dang_nhap = ?, mat_khau = ?, ma_chuc_vu = ?, " +
+                "ma_nhan_vien = ? WHERE ma_tai_khoan = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -72,9 +72,9 @@ public class AccountDAO {
 
             int rowsAffected = ps.executeUpdate();
             if(rowsAffected > 0) {
-                return getAccountByID(taiKhoan.getMaTaiKhoan());
+                return timTaiKhoan(taiKhoan.getMaTaiKhoan());
             } else {
-                System.out.println("No account found with ID: " + taiKhoan.getMaTaiKhoan());
+                System.out.println("Không tim thấy tài khoản có mã tài khoản: " + taiKhoan.getMaTaiKhoan());
                 return null;
             }
 
@@ -85,20 +85,20 @@ public class AccountDAO {
         return null;
     }
 
-    public boolean deleteAccountByID(String id) {
-        if(getAccountByID(id) == null) {
-            System.out.println("No account found with ID: " + id);
+    public boolean xoaTaiKhoan(String id) {
+        if(timTaiKhoan(id) == null) {
+            System.out.println("Không tìm thấy tài khoản có mã: " + id);
             return false;
         }
 
-        String query = "UPDATE Account SET is_deleted = true WHERE id = ?";
+        String query = "UPDATE TaiKhoan SET da_xoa = 1 WHERE ma_tai_khoan = ?";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if(rowsAffected > 0) {
-                System.out.println("Account has been deleted successfully");
+                System.out.println("Tài khoản đã được xóa thành công!");
                 return true;
             }
 
@@ -109,8 +109,8 @@ public class AccountDAO {
         return false;
     }
 
-    public TaiKhoan getAccountByID(String accountID) {
-        String query = "SELECT * FROM Account WHERE ID = ? AND is_deleted = false";
+    public TaiKhoan timTaiKhoan(String accountID) {
+        String query = "SELECT * FROM TaiKhoan WHERE ma_tai_khoan = ? AND is_deleted = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -118,7 +118,7 @@ public class AccountDAO {
 
             var rs = ps.executeQuery();
             if(rs.next())
-                return mapResultSetToAccount(rs);
+                return chuyenKetQuaThanhTaiKhoan(rs);
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -129,17 +129,17 @@ public class AccountDAO {
         return null;
     }
 
-    public TaiKhoan mapResultSetToAccount(ResultSet rs) throws SQLException {
+    public TaiKhoan chuyenKetQuaThanhTaiKhoan(ResultSet rs) throws SQLException {
         TaiKhoan taiKhoan = new TaiKhoan();
         try {
-            taiKhoan.setMaTaiKhoan(rs.getString("id"));
-            taiKhoan.setTenDangNhap(rs.getString("userName"));
-            taiKhoan.setMatKhau(rs.getString("user_password"));
-            taiKhoan.setMaChucVu(rs.getString("user_role"));
-            taiKhoan.setMaNhanVien(rs.getString("employee_id"));
+            taiKhoan.setMaTaiKhoan(rs.getString("ma_tai_khoan"));
+            taiKhoan.setTenDangNhap(rs.getString("ten_dang_nhap"));
+            taiKhoan.setMatKhau(rs.getString("mat_khau"));
+            taiKhoan.setMaChucVu(rs.getString("ma_chuc_vu"));
+            taiKhoan.setMaNhanVien(rs.getString("ma_nhan_vien"));
             return taiKhoan;
         } catch(SQLException e) {
-            throw new TableEntityMismatch("Can't map ResultSet to Account" + e);
+            throw new TableEntityMismatch("Không thể chuyển kết quả thành tài khoản: " + e);
         }
     }
 }
