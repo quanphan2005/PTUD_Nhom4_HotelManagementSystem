@@ -6,19 +6,19 @@ public class LichSuThaoTac {
     private String maLichSuThaoTac;
     private String tenThaoTac;
     private String moTa;
-    private Timestamp thoiGianTao;
     private String maPhienDangNhap;
+    private Timestamp thoiGianTao;
 
     public LichSuThaoTac() {
     }
 
-    public LichSuThaoTac(String maLichSuThaoTac, String tenThaoTac, String moTa, Timestamp thoiGianTao,
-                         String maPhienDangNhap) {
+    public LichSuThaoTac(String maLichSuThaoTac, String tenThaoTac, String moTa, String maPhienDangNhap,
+                         Timestamp thoiGianTao) {
         this.maLichSuThaoTac = maLichSuThaoTac;
         this.tenThaoTac = tenThaoTac;
         this.moTa = moTa;
-        this.thoiGianTao = thoiGianTao;
         this.maPhienDangNhap = maPhienDangNhap;
+        this.thoiGianTao = thoiGianTao;
     }
 
     public String getMaLichSuThaoTac() {

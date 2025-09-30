@@ -6,19 +6,19 @@ import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 
-public class RoomCategoryDAO {
+public class LoaiPhongDAO {
     private final Connection connection;
 
-    public RoomCategoryDAO() {
+    public LoaiPhongDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public RoomCategoryDAO(Connection connection) {
+    public LoaiPhongDAO(Connection connection) {
         this.connection = connection;
     }
 
     public LoaiPhong getRoomCategoryByID(String id) {
-        String query = "SELECT * FROM RoomCategory WHERE id = ? AND is_deleted = 0";
+        String query = "SELECT * FROM LoaiPhong WHERE ma_loai_phong = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -26,7 +26,7 @@ public class RoomCategoryDAO {
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapResultSetToRoomCategory(rs);
+                return chuyenKetQuaThanhLoaiPhong(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -37,9 +37,8 @@ public class RoomCategoryDAO {
         return null;
     }
 
-    public LoaiPhong createRoomCategory(LoaiPhong loaiPhong) {
-        String query = "INSERT INTO RoomCategory " +
-                "(id, category_name, number_customer, room_type) " +
+    public LoaiPhong themLoaiPhong(LoaiPhong loaiPhong) {
+        String query = "INSERT INTO LoaiPhong (ma_loai_phong, ten_loai_phong, so_luong_khach, phan_loai) " +
                 "VALUES (?, ?, ?, ?)";
 
         try {
@@ -58,17 +57,21 @@ public class RoomCategoryDAO {
         return null;
     }
 
-    public LoaiPhong updateRoomCategory(LoaiPhong loaiPhong) {
-        String query = "UPDATE RoomCategory SET category_name = ?, number_customer = ?, room_type = ?, create_at = ? " +
-                "WHERE id = ? AND is_deleted = 0";
+    public LoaiPhong capNhatLoaiPhong(LoaiPhong loaiPhong) {
+        if (getRoomCategoryByID(loaiPhong.getMaLoaiPhong()) == null) {
+            System.out.println("No room category found with ID: " + loaiPhong.getMaLoaiPhong());
+            return null;
+        }
+
+        String query = "UPDATE LoaiPhong SET ten_loai_phong = ?, so_luong_khach = ?, phan_loai = ? " +
+                " WHERE ma_loai_phong = ?";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, loaiPhong.getTenLoaiPhong());
             ps.setInt(2, loaiPhong.getSoLuongKhach());
             ps.setString(3, loaiPhong.getPhanLoai());
-            ps.setTimestamp(4, loaiPhong.getThoiGianTao() != null ? new Timestamp(loaiPhong.getThoiGianTao().getTime()) : null);
-            ps.setString(5, loaiPhong.getMaLoaiPhong());
+            ps.setString(4, loaiPhong.getMaLoaiPhong());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
@@ -83,20 +86,20 @@ public class RoomCategoryDAO {
         return null;
     }
 
-    public boolean deleteRoomCategoryByID(String id) {
+    public boolean xoaLoaiPhong(String id) {
         if (getRoomCategoryByID(id) == null) {
-            System.out.println("No room category found with ID: " + id);
+            System.out.println("Không tìm thấy loại phòng, mã: " + id);
             return false;
         }
 
-        String query = "UPDATE RoomCategory SET is_deleted = 1 WHERE id = ?";
+        String query = "UPDATE LoaiPhong SET da_xoa = 1 WHERE ma_loai_phong = ?";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Room category has been deleted successfully");
+                System.out.println("Xóa loại phòng thành công, mã: " + id);
                 return true;
             }
         } catch (SQLException e) {
@@ -106,18 +109,36 @@ public class RoomCategoryDAO {
         return false;
     }
 
-    private LoaiPhong mapResultSetToRoomCategory(ResultSet rs) throws SQLException {
+    public LoaiPhong timLoaiPhongMoiNhat() {
+        String query = "SELECT TOP 1 * FROM LoaiPhong WHERE da_xoa = 0 ORDER BY ma_loai_phong DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhLoaiPhong(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+
+        return null;
+    }
+
+    private LoaiPhong chuyenKetQuaThanhLoaiPhong(ResultSet rs) throws SQLException {
         LoaiPhong loaiPhong = new LoaiPhong();
         try {
-            loaiPhong.setMaLoaiPhong(rs.getString("id"));
-            loaiPhong.setTenLoaiPhong(rs.getString("category_name"));
-            loaiPhong.setSoLuongKhach(rs.getInt("number_customer"));
-            loaiPhong.setPhanLoai(rs.getString("room_type"));
-            loaiPhong.setThoiGianTao(rs.getTimestamp("create_at"));
-            loaiPhong.setDeleted(rs.getBoolean("is_deleted"));
+            loaiPhong.setMaLoaiPhong(rs.getString("ma_loai_phong"));
+            loaiPhong.setTenLoaiPhong(rs.getString("ten_loai_phong"));
+            loaiPhong.setSoLuongKhach(rs.getInt("so_luong_khach"));
+            loaiPhong.setPhanLoai(rs.getString("phan_loai"));
+            loaiPhong.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             return loaiPhong;
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Can't map ResultSet to RoomCategory: " + e);
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành LoaiPhong" + e.getMessage());
         }
     }
 }

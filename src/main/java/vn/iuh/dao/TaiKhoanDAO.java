@@ -38,7 +38,7 @@ public class TaiKhoanDAO {
     }
 
     public TaiKhoan themTaiKhoan(TaiKhoan taiKhoan) {
-        String query  = "INSERT INTO Account (ma_tai_khoan, ten_dang_nhap, mat_khau, ma_chuc_vu, ma_nhan_vien)" +
+        String query  = "INSERT INTO TaiKhoan (ma_tai_khoan, ten_dang_nhap, mat_khau, ma_chuc_vu, ma_nhan_vien)" +
                 "VALUES (?, ?, ?, ?, ?)";
 
         try {
@@ -110,7 +110,7 @@ public class TaiKhoanDAO {
     }
 
     public TaiKhoan timTaiKhoan(String accountID) {
-        String query = "SELECT * FROM TaiKhoan WHERE ma_tai_khoan = ? AND is_deleted = 0";
+        String query = "SELECT * FROM TaiKhoan WHERE ma_tai_khoan = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -137,9 +137,10 @@ public class TaiKhoanDAO {
             taiKhoan.setMatKhau(rs.getString("mat_khau"));
             taiKhoan.setMaChucVu(rs.getString("ma_chuc_vu"));
             taiKhoan.setMaNhanVien(rs.getString("ma_nhan_vien"));
+            taiKhoan.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             return taiKhoan;
         } catch(SQLException e) {
-            throw new TableEntityMismatch("Không thể chuyển kết quả thành tài khoản: " + e);
+            throw new TableEntityMismatch("Không thể chuyển kết quả thành TaiKhoan: " + e);
         }
     }
 }

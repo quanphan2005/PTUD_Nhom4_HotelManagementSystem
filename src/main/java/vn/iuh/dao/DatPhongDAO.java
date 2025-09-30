@@ -168,7 +168,7 @@ public class DatPhongDAO {
                        ", gp.gia_ngay_moi, gp.gia_gio_moi" +
                        " FROM Phong p" +
                        " LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong" +
-                       " JOIN LoaiPhong lp ON lp.ma_loai_phong = p.ma_phong" +
+                       " JOIN LoaiPhong lp ON lp.ma_loai_phong = p.ma_loai_phong" +
                        " JOIN GiaPhong gp ON gp.ma_loai_phong = lp.ma_loai_phong" +
                        " WHERE p.da_xoa = 0" +
                        " ORDER BY gp.thoi_gian_tao DESC, p.ma_phong ASC";
@@ -233,7 +233,7 @@ public class DatPhongDAO {
     }
 
     public DonDatPhong timDonDatPhongMoiNhat() {
-        String query = "SELECT TOP 1 * FROM DonDatPhong ORDER BY ma_don_dat_phong DESC";
+        String query = "SELECT TOP 1 * FROM DonDatPhong WHERE da_xoa = 0 ORDER BY ma_don_dat_phong DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);

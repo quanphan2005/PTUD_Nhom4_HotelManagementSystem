@@ -898,24 +898,23 @@ public class BookingFormPanel extends JPanel {
 
     // Create booking event from form data
     private BookingCreationEvent createBookingEvent() {
-        String customerName = txtCustomerName.getText().trim();
-        String phoneNumber = txtPhoneNumber.getText().trim();
+        String tenKhachHang = txtCustomerName.getText().trim();
+        String soDienThoai = txtPhoneNumber.getText().trim();
         String cccd = txtCCCD.getText().trim();
-        java.sql.Timestamp reserveDate = new java.sql.Timestamp(System.currentTimeMillis());
-        String note = txtNote.getText().trim();
-        java.sql.Timestamp checkInDate = new java.sql.Timestamp(((java.util.Date) spnCheckInDate.getValue()).getTime());
-        java.sql.Timestamp checkOutDate = new java.sql.Timestamp(((java.util.Date) spnCheckOutDate.getValue()).getTime());
-        java.sql.Timestamp createAt = new java.sql.Timestamp(System.currentTimeMillis());
-        double initialPrice = Double.parseDouble(txtInitialPrice.getText());
-        double depositPrice = Double.parseDouble(txtDepositPrice.getText());
-        boolean isAdvanced = chkIsAdvanced.isSelected();
-        List<String> roomIds = java.util.Arrays.asList(selectedRoom.getRoomId());
-        List<String> serviceIds = java.util.Arrays.asList(); // Empty for now
-        String shiftAssignmentId = "SA00000002"; // TODO - get actual shift assignment ID
+        String moTa = txtNote.getText().trim();
+        java.sql.Timestamp ngayNhanPhong = new java.sql.Timestamp(((java.util.Date) spnCheckInDate.getValue()).getTime());
+        java.sql.Timestamp ngayTraPhong = new java.sql.Timestamp(((java.util.Date) spnCheckOutDate.getValue()).getTime());
+        java.sql.Timestamp thoiGianTao = new java.sql.Timestamp(System.currentTimeMillis());
+        double tongTienDuTinh = Double.parseDouble(txtInitialPrice.getText());
+        double tienDatCoc = Double.parseDouble(txtDepositPrice.getText());
+        boolean daDatTruoc = chkIsAdvanced.isSelected();
+        List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
+        List<String> danhSachMaDichVu = java.util.Arrays.asList(); // Empty for now
+        String maPhienDangNhap = "SA00000002"; // TODO - get actual shift assignment ID
 
-        return new BookingCreationEvent(customerName, phoneNumber, cccd, reserveDate, note,
-                checkInDate, checkOutDate, initialPrice, depositPrice, isAdvanced,
-                roomIds, serviceIds, shiftAssignmentId, createAt);
+        return new BookingCreationEvent(tenKhachHang, soDienThoai, cccd, moTa,
+                                        ngayNhanPhong, ngayTraPhong, tongTienDuTinh, tienDatCoc, daDatTruoc,
+                                        danhSachMaPhong, danhSachMaDichVu, maPhienDangNhap, thoiGianTao);
     }
 
     // Setup event handlers for buttons

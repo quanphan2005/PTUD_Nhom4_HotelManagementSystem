@@ -107,6 +107,43 @@ public class NhanVienDAO {
         return false;
     }
 
+    public NhanVien timNhanVienBangCCCD(String cccd) {
+        String query = "SELECT * FROM NhanVien WHERE CCCD = ? AND da_xoa = 0";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, cccd);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhNhanVien(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
+    public NhanVien timNhanVienMoiNhat() {
+        String query = "SELECT TOP 1 * FROM NhanVien WHERE da_xoa = 0 ORDER BY ma_nhan_vien DESC";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhNhanVien(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
     private NhanVien chuyenKetQuaThanhNhanVien(ResultSet rs) {
         NhanVien nhanVien = new NhanVien();
         try {

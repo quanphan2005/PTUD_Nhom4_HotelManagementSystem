@@ -7,18 +7,18 @@ import vn.iuh.util.DatabaseUtil;
 import java.sql.*;
 import java.util.List;
 
-public class JobDAO {
+public class CongViecDAO {
     private final Connection connection;
 
-    public JobDAO() {
+    public CongViecDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public JobDAO(Connection connection) {
+    public CongViecDAO(Connection connection) {
         this.connection = connection;
     }
 
-    public CongViec findLastJob() {
+    public CongViec timCongViecMoiNhat() {
         String query = "SELECT TOP 1 * FROM CongViec ORDER BY ma_cong_viec DESC";
 
         try {
@@ -26,7 +26,7 @@ public class JobDAO {
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapResultSetToJob(rs);
+                return chuyenKetQuaThanhCongViec(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -37,7 +37,7 @@ public class JobDAO {
         return null;
     }
 
-    public void insertJobs(List<CongViec> congViecs) {
+    public void themDanhSachCongViec(List<CongViec> congViecs) {
         String query = "INSERT INTO CongViec (ma_cong_viec, ten_trang_thai, tg_bat_dau, tg_ket_thuc, ma_phong) VALUES (?, ?, ?, ?, ?)";
 
         try {
@@ -58,7 +58,7 @@ public class JobDAO {
         }
     }
 
-    public CongViec mapResultSetToJob(ResultSet rs) throws SQLException, TableEntityMismatch {
+    public CongViec chuyenKetQuaThanhCongViec(ResultSet rs) throws SQLException, TableEntityMismatch {
         try {
             String maCongViec = rs.getString("ma_cong_viec");
             String tenTrangThai = rs.getString("ten_trang_thai");

@@ -4,91 +4,87 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public class BookingCreationEvent {
-    private String customerName;
-    private String phoneNumber;
+    private String tenKhachHang;
+    private String soDienThoai;
     private String CCCD;
-    private Timestamp reserveDate;
-    private String note;
-    private Timestamp checkInDate;
-    private Timestamp checkOutDate;
-    private double initialPrice;
-    private double depositPrice;
-    private boolean isAdvanced;
-    private List<String> roomIds;
-    private List<String> serviceIds;
-    private String shiftAssignmentId;
-    private Timestamp createAt;
-    public BookingCreationEvent(String customerName, String phoneNumber, String CCCD, Timestamp reserveDate, String note,
-                                Timestamp checkInDate, Timestamp checkOutDate, double initialPrice, double depositPrice,
-                                boolean isAdvanced, List<String> roomIds, List<String> serviceIds,
-                                String shiftAssignmentId, Timestamp createAt) {
-        this.customerName = customerName;
-        this.phoneNumber = phoneNumber;
+    private String moTa;
+    private Timestamp tgNhanPhong;
+    private Timestamp tgTraPhong;
+    private double tongTienDuTinh;
+    private double tienDatCoc;
+    private boolean daDatTruoc;
+    private List<String> danhSachMaPhong;
+    private List<String> danhSachMaDichVu;
+    private String maPhienDangNhap;
+    private Timestamp thoiGianTao;
+
+    public BookingCreationEvent(String tenKhachHang, String soDienThoai, String CCCD, String moTa,
+                                Timestamp tgNhanPhong,
+                                Timestamp tgTraPhong, double tongTienDuTinh, double tienDatCoc, boolean daDatTruoc,
+                                List<String> danhSachMaPhong, List<String> danhSachMaDichVu, String maPhienDangNhap,
+                                Timestamp thoiGianTao) {
+        this.tenKhachHang = tenKhachHang;
+        this.soDienThoai = soDienThoai;
         this.CCCD = CCCD;
-        this.reserveDate = reserveDate;
-        this.note = note;
-        this.checkInDate = checkInDate;
-        this.checkOutDate = checkOutDate;
-        this.initialPrice = initialPrice;
-        this.depositPrice = depositPrice;
-        this.isAdvanced = isAdvanced;
-        this.roomIds = roomIds;
-        this.serviceIds = serviceIds;
-        this.shiftAssignmentId = shiftAssignmentId;
-        this.createAt = createAt;
+        this.moTa = moTa;
+        this.tgNhanPhong = tgNhanPhong;
+        this.tgTraPhong = tgTraPhong;
+        this.tongTienDuTinh = tongTienDuTinh;
+        this.tienDatCoc = tienDatCoc;
+        this.daDatTruoc = daDatTruoc;
+        this.danhSachMaPhong = danhSachMaPhong;
+        this.danhSachMaDichVu = danhSachMaDichVu;
+        this.maPhienDangNhap = maPhienDangNhap;
+        this.thoiGianTao = thoiGianTao;
     }
 
-    public String getCustomerName() {
-        return customerName;
+    public String getTenKhachHang() {
+        return tenKhachHang;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public String getSoDienThoai() {
+        return soDienThoai;
     }
 
     public String getCCCD() {
         return CCCD;
     }
 
-    public Timestamp getReserveDate() {
-        return reserveDate;
+    public Timestamp getTgNhanPhong() {
+        return tgNhanPhong;
     }
 
-    public String getNote() {
-        return note;
+    public String getMoTa() {
+        return moTa;
     }
 
-    public Timestamp getCheckInDate() {
-        return checkInDate;
+    public Timestamp getTgTraPhong() {
+        return tgTraPhong;
     }
 
-    public Timestamp getCheckOutDate() {
-        return checkOutDate;
+    public double getTongTienDuTinh() {
+        return tongTienDuTinh;
     }
 
-    public double getInitialPrice() {
-        return initialPrice;
+    public double getTienDatCoc() {
+        return tienDatCoc;
     }
 
-    public double getDepositPrice() {
-        return depositPrice;
+    public boolean isDaDatTruoc() {
+        return daDatTruoc;
     }
 
-    public boolean isAdvanced() {
-        return isAdvanced;
+    public List<String> getDanhSachMaPhong() {
+        return danhSachMaPhong;
     }
 
-    public List<String> getRoomIds() {
-        return roomIds;
+    public List<String> getDanhSachMaDichVu() {
+        return danhSachMaDichVu;
     }
 
-    public List<String> getServiceIds() {
-        return serviceIds;
+    public String getMaPhienDangNhap() {
+        return maPhienDangNhap;
     }
 
-    public String getShiftAssignmentId() {
-        return shiftAssignmentId;
-    }
-
-    public Timestamp getCreateAt() { return createAt; }
+    public Timestamp getThoiGianTao() { return thoiGianTao; }
 }

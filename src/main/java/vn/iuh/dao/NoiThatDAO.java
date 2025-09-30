@@ -9,19 +9,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class FurnitureItemDAO {
+public class NoiThatDAO {
     private final Connection connection;
 
-    public FurnitureItemDAO() {
+    public NoiThatDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public FurnitureItemDAO(Connection connection) {
+    public NoiThatDAO(Connection connection) {
         this.connection = connection;
     }
 
-    public NoiThat createFurnitureItem(NoiThat noiThat) {
-        String query = "INSERT INTO FurnitureItem (id, item_name, item_description, is_deleted) VALUES (?, ?, ?, false)";
+    public NoiThat themNoiThat(NoiThat noiThat) {
+        String query = "INSERT INTO NoiThat (ma_noi_that, ten_noi_that, mo_ta) VALUES (?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -38,8 +38,8 @@ public class FurnitureItemDAO {
         return null;
     }
 
-    public NoiThat updateFurnitureItem(NoiThat noiThat) {
-        String query = "UPDATE FurnitureItem SET item_name = ?, item_description = ? WHERE id = ? AND is_deleted = false";
+    public NoiThat capNhatNoiThat(NoiThat noiThat) {
+        String query = "UPDATE NoiThat SET ten_noi_that = ?, mo_ta = ? WHERE ma_noi_that = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -49,9 +49,9 @@ public class FurnitureItemDAO {
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getFurnitureItemByID(noiThat.getMaNoiThat());
+                return timNoiThat(noiThat.getMaNoiThat());
             } else {
-                System.out.println("No FurnitureItem found with ID (or it is deleted): " + noiThat.getMaNoiThat());
+                System.out.println("Không tìm thấy nội thất với mã: " + noiThat.getMaNoiThat());
                 return null;
             }
 
@@ -62,20 +62,20 @@ public class FurnitureItemDAO {
         return null;
     }
 
-    public boolean deleteFurnitureItemByID(String id) {
-        if (getFurnitureItemByID(id) == null) {
+    public boolean xoaNoiThat(String id) {
+        if (timNoiThat(id) == null) {
             System.out.println("No FurnitureItem found with ID: " + id);
             return false;
         }
 
-        String query = "UPDATE FurnitureItem SET is_deleted = true WHERE id = ?";
+        String query = "UPDATE NoiThat SET da_xoa = 1 WHERE ma_noi_that = ?";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("FurnitureItem has been soft deleted successfully");
+                System.out.println("Xoa nội thất thành công với mã: " + id);
                 return true;
             }
 
@@ -86,8 +86,8 @@ public class FurnitureItemDAO {
         return false;
     }
 
-    public NoiThat getFurnitureItemByID(String id) {
-        String query = "SELECT * FROM FurnitureItem WHERE id = ? AND is_deleted = false";
+    public NoiThat timNoiThat(String id) {
+        String query = "SELECT * FROM NoiThat WHERE ma_noi_that = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -95,7 +95,7 @@ public class FurnitureItemDAO {
 
             var rs = ps.executeQuery();
             if (rs.next())
-                return mapResultSetToFurnitureItem(rs);
+                return chuyenKetQuaThanhNoiThat(rs);
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -106,15 +106,34 @@ public class FurnitureItemDAO {
         return null;
     }
 
-    public NoiThat mapResultSetToFurnitureItem(ResultSet rs) throws SQLException {
+    public NoiThat timNoiThatMoiNhat() {
+        String query = "SELECT TOP 1 * FROM NoiThat WHERE da_xoa = 0 ORDER BY ma_noi_that DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhNoiThat(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+
+        return null;
+    }
+
+    public NoiThat chuyenKetQuaThanhNoiThat(ResultSet rs) throws SQLException {
         NoiThat item = new NoiThat();
         try {
-            item.setMaNoiThat(rs.getString("id"));
-            item.setTenNoiThat(rs.getString("item_name"));
-            item.setMoTa(rs.getString("item_description"));
+            item.setMaNoiThat(rs.getString("ma_noi_that"));
+            item.setTenNoiThat(rs.getString("ten_noi_that"));
+            item.setMoTa(rs.getString("mo_ta"));
             return item;
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Can't map ResultSet to FurnitureItem " + e);
+            throw new TableEntityMismatch("Lỗi chuyển kết quả thành NoiThat" + e.getMessage());
         }
     }
 

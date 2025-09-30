@@ -1,7 +1,7 @@
 package vn.iuh.servcie.impl;
 
 import vn.iuh.constraint.EntityIDSymbol;
-import vn.iuh.dao.RoomDAO;
+import vn.iuh.dao.PhongDAO;
 import vn.iuh.dto.event.create.RoomCreationEvent;
 import vn.iuh.dto.event.update.RoomModificationEvent;
 import vn.iuh.entity.Phong;
@@ -13,19 +13,19 @@ import java.util.Date;
 import java.util.List;
 
 public class RoomServiceImpl implements RoomService {
-    private final RoomDAO roomDAO;
+    private final PhongDAO phongDAO;
 
     public RoomServiceImpl() {
-        roomDAO = new RoomDAO();
+        phongDAO = new PhongDAO();
     }
 
-    public RoomServiceImpl(RoomDAO roomDAO) {
-        this.roomDAO = roomDAO;
+    public RoomServiceImpl(PhongDAO phongDAO) {
+        this.phongDAO = phongDAO;
     }
 
     @Override
     public Phong getRoomByID(String roomID) {
-        Phong phong = roomDAO.findRoomByID(roomID);
+        Phong phong = phongDAO.timPhong(roomID);
         if (phong == null) {
             System.out.println("Room with ID " + roomID + " not found.");
             return null;
@@ -36,7 +36,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public List<Phong> getAll() {
-        List<Phong> phongs = roomDAO.findAll();
+        List<Phong> phongs = phongDAO.timTatCaPhong();
         if (phongs.isEmpty()) {
             System.out.println("No rooms found.");
             return null;
@@ -47,7 +47,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Phong createRoom(RoomCreationEvent room) {
-        Phong lastedPhong = roomDAO.findLastRoom();
+        Phong lastedPhong = phongDAO.timPhongMoiNhat();
         String newID = EntityUtil.increaseEntityID(
                 lastedPhong.getMaPhong(),
                 EntityIDSymbol.ROOM_PREFIX.getPrefix(),
@@ -56,19 +56,19 @@ public class RoomServiceImpl implements RoomService {
         Phong newPhong = new Phong(
                 newID,
                 room.getRoomName(),
-                room.getIsActive(),
-                new Timestamp(new Date().getTime()),
+                true,
                 room.getNote(),
                 room.getRoomDescription(),
-                room.getRoomCategoryId()
+                room.getRoomCategoryId(),
+                new Timestamp(new Date().getTime())
         );
 
-        return roomDAO.insertRoom(newPhong);
+        return phongDAO.themPhong(newPhong);
     }
 
     @Override
     public Phong updateRoom(RoomModificationEvent room) {
-        Phong existingPhong = roomDAO.findRoomByID(room.getId());
+        Phong existingPhong = phongDAO.timPhong(room.getId());
         if (existingPhong == null) {
             System.out.println("Room with ID " + room.getId() + " not found.");
             return null;
@@ -80,11 +80,11 @@ public class RoomServiceImpl implements RoomService {
         existingPhong.setMoTaPhong(room.getRoomDescription());
         existingPhong.setMaLoaiPhong(room.getRoomCategoryId());
 
-        return roomDAO.updateRoom(existingPhong);
+        return phongDAO.capNhatPhong(existingPhong);
     }
 
     @Override
     public boolean deleteRoomByID(String roomID) {
-        return roomDAO.deleteRoomByID(roomID);
+        return phongDAO.xoaPhong(roomID);
     }
 }

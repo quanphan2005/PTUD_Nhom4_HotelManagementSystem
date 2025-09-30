@@ -6,19 +6,19 @@ import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 
-public class ServiceItemDAO {
+public class DichVuDAO {
     private final Connection connection;
 
-    public ServiceItemDAO() {
+    public DichVuDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public ServiceItemDAO(Connection connection) {
+    public DichVuDAO(Connection connection) {
         this.connection = connection;
     }
 
-    public DichVu getServiceItemByID(String id) {
-        String query = "SELECT * FROM ServiceItem WHERE id = ? AND is_deleted = 0";
+    public DichVu timDichVu(String id) {
+        String query = "SELECT * FROM DichVu WHERE ma_dich_vu = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -26,7 +26,7 @@ public class ServiceItemDAO {
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapResultSetToServiceItem(rs);
+                return chuyenKetQuaThanhDichVu(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -38,8 +38,8 @@ public class ServiceItemDAO {
     }
 
     public DichVu createServiceItem(DichVu dichVu) {
-        String query = "INSERT INTO ServiceItem " +
-                "(id, item_name, service_category_id) " +
+        String query = "INSERT INTO DichVu " +
+                "(ma_dich_vu, ten_dich_vu, ma_loai_dich_vu) " +
                 "VALUES (?, ?, ?)";
 
         try {
@@ -47,7 +47,6 @@ public class ServiceItemDAO {
             ps.setString(1, dichVu.getMaDichVu());
             ps.setString(2, dichVu.getTenDichVu());
             ps.setString(3, dichVu.getMaLoaiDichVu());
-
 
             ps.executeUpdate();
             return dichVu;
@@ -59,8 +58,13 @@ public class ServiceItemDAO {
     }
 
     public DichVu updateServiceItem(DichVu dichVu) {
-        String query = "UPDATE ServiceItem SET item_name = ?, service_category_id = ?, create_at = ? " +
-                "WHERE id = ? AND is_deleted = 0";
+        if (timDichVu(dichVu.getMaDichVu()) == null) {
+            System.out.println("Không tìm thấy dịch vụ, mã: " + dichVu.getMaDichVu());
+            return null;
+        }
+
+        String query = "UPDATE DichVu SET ten_dich_vu = ?, ma_loai_dich_vu = ?, thoi_gian_tao = ? " +
+                "WHERE ma_dich_vu = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -71,7 +75,7 @@ public class ServiceItemDAO {
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getServiceItemByID(dichVu.getMaDichVu());
+                return timDichVu(dichVu.getMaDichVu());
             } else {
                 System.out.println("No service item found with ID: " + dichVu.getMaDichVu());
             }
@@ -83,19 +87,19 @@ public class ServiceItemDAO {
     }
 
     public boolean deleteServiceItemByID(String id) {
-        if (getServiceItemByID(id) == null) {
-            System.out.println("No service item found with ID: " + id);
+        if (timDichVu(id) == null) {
+            System.out.println("Không tìm thấy dịch vụ, mã: " + id);
             return false;
         }
 
-        String query = "UPDATE ServiceItem SET is_deleted = 1 WHERE id = ?";
+        String query = "UPDATE DichVu SET da_xoa = 1 WHERE ma_dich_vu = ?";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Service item has been deleted successfully");
+                System.out.println("Xóa dịch vụ thành công!");
                 return true;
             }
         } catch (SQLException e) {
@@ -105,17 +109,35 @@ public class ServiceItemDAO {
         return false;
     }
 
-    private DichVu mapResultSetToServiceItem(ResultSet rs) throws SQLException {
+    public DichVu timDichVUMoiNhat() {
+        String query = "SELECT TOP 1 * FROM DichVu ORDER BY ma_dich_vu DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhDichVu(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
+    private DichVu chuyenKetQuaThanhDichVu(ResultSet rs) throws SQLException {
         DichVu dichVu = new DichVu();
         try {
-            dichVu.setMaDichVu(rs.getString("id"));
-            dichVu.setTenDichVu(rs.getString("item_name"));
-            dichVu.setMaLoaiDichVu(rs.getString("service_category_id"));
-            dichVu.setThoiGianTao(rs.getTimestamp("create_at"));
-            dichVu.setDeleted(rs.getBoolean("is_deleted"));
+            dichVu.setMaDichVu(rs.getString("ma_dich_vu"));
+            dichVu.setTenDichVu(rs.getString("ten_dich_vu"));
+            dichVu.setMaLoaiDichVu(rs.getString("ma_loai_dich_vu"));
+            dichVu.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             return dichVu;
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Can't map ResultSet to ServiceItem: " + e);
+            throw new TableEntityMismatch("Không thể chuyển kết quả thành DichVu: " + e.getMessage());
         }
     }
 

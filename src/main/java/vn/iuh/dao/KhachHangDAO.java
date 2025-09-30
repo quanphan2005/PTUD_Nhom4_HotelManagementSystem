@@ -81,7 +81,7 @@ public class KhachHangDAO {
 
     public KhachHang themKhachHang(KhachHang khachHang) {
         String query = "INSERT INTO KhachHang (ma_khach_hang, CCCD, ten_khach_hang, so_dien_thoai) " +
-                "VALUES (?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -90,18 +90,18 @@ public class KhachHangDAO {
             ps.setString(3, khachHang.getTenKhachHang());
             ps.setString(4, khachHang.getSoDienThoai());
 
+
             ps.executeUpdate();
             return khachHang;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            throw new RuntimeException(e);
         }
-
-        return null;
     }
 
     public KhachHang capNhatKhachHang(KhachHang khachHang) {
         String query = "UPDATE KhachHang SET CCCD = ? ,ten_khach_hang = ?, so_dien_thoai = ?" +
-                "WHERE ma_khach_hang = ? AND is_deleted = 0";
+                "WHERE ma_khach_hang = ?";
 
         try{
             PreparedStatement ps = connection.prepareStatement(query);
@@ -154,7 +154,7 @@ public class KhachHangDAO {
             khachHang.setSoDienThoai(rs.getString("so_dien_thoai"));
             return khachHang;
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Không thể chuyển kết quả thành khách hàng: " + e.getMessage());
+            throw new TableEntityMismatch("Không thể chuyển kết quả thành KhachHang: " + e.getMessage());
         }
     }
 }
