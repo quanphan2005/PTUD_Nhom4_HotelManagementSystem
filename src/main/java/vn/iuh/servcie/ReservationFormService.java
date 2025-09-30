@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.ReservationForm;
+import vn.iuh.entity.DonDatPhong;
 
 public interface ReservationFormService {
-    ReservationForm getReservationFormByID(String id);
-    ReservationForm createReservationForm(ReservationForm reservationForm);
-    ReservationForm updateReservationForm(ReservationForm reservationForm);
+    DonDatPhong getReservationFormByID(String id);
+    DonDatPhong createReservationForm(DonDatPhong donDatPhong);
+    DonDatPhong updateReservationForm(DonDatPhong donDatPhong);
     boolean deleteReservationFormByID(String id);
 }

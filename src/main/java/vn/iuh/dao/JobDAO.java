@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.Job;
+import vn.iuh.entity.CongViec;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -21,7 +21,7 @@ public class JobDAO {
         this.connection = connection;
     }
 
-    public Job findLastJob() {
+    public CongViec findLastJob() {
         String query = "SELECT TOP 1 * FROM Job ORDER BY id DESC";
 
         try {
@@ -40,17 +40,17 @@ public class JobDAO {
         return null;
     }
 
-    public void insertJobs(List<Job> jobs) {
+    public void insertJobs(List<CongViec> congViecs) {
         String query = "INSERT INTO Job (id, start_time, end_time, status_name, room_id) VALUES (?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            for (Job job : jobs) {
-                ps.setString(1, job.getId());
-                ps.setTimestamp(2, job.getStartTime());
-                ps.setTimestamp(3, job.getEndTime());
-                ps.setString(4, job.getStatusName());
-                ps.setString(5, job.getRoomdId());
+            for (CongViec congViec : congViecs) {
+                ps.setString(1, congViec.getMaCongViec());
+                ps.setTimestamp(2, congViec.getStartTime());
+                ps.setTimestamp(3, congViec.getEndTime());
+                ps.setString(4, congViec.getTenTrangThai());
+                ps.setString(5, congViec.getPhongId());
 
                 ps.addBatch();
             }
@@ -61,7 +61,7 @@ public class JobDAO {
         }
     }
 
-    public Job mapResultSetToJob(ResultSet rs) throws SQLException, TableEntityMismatch {
+    public CongViec mapResultSetToJob(ResultSet rs) throws SQLException, TableEntityMismatch {
         try {
             String id = rs.getString("id");
             String statusName = rs.getString("status_name");
@@ -69,7 +69,7 @@ public class JobDAO {
             java.sql.Timestamp endTime = rs.getTimestamp("end_time");
             String roomId = rs.getString("room_id");
 
-            return new Job(id, startTime, endTime, statusName, roomId);
+            return new CongViec(id, startTime, endTime, statusName, roomId);
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can not map ResultSet to Job entity" + e.getMessage());
         }

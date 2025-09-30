@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.Room;
+import vn.iuh.entity.Phong;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -22,7 +22,7 @@ public class RoomDAO {
         this.connection = connection;
     }
 
-    public Room findRoomByID(String roomID) {
+    public Phong findRoomByID(String roomID) {
         String query = "SELECT * FROM Room WHERE id = ?";
 
         try {
@@ -42,16 +42,16 @@ public class RoomDAO {
         return null;
     }
 
-    public List<Room> findAll() {
+    public List<Phong> findAll() {
         String query = "SELECT * FROM Room";
-        List<Room> rooms = new ArrayList<>();
+        List<Phong> phongs = new ArrayList<>();
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
             while (rs.next())
-                rooms.add(mapResultSetToRoom(rs));
+                phongs.add(mapResultSetToRoom(rs));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -59,21 +59,21 @@ public class RoomDAO {
             System.out.println(mismatchException.getMessage());
         }
 
-        return rooms;
+        return phongs;
     }
 
-    public Room insertRoom(Room room) {
+    public Phong insertRoom(Phong phong) {
         String query = "INSERT INTO Room (room_name, is_active, create_at, note, room_description, room_category_id)" +
                        " VALUES (?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, room.getRoomName());
-            ps.setBoolean(2, room.isActive());
-            ps.setDate(3, new java.sql.Date(room.getCreateDate().getTime()));
-            ps.setString(4, room.getNote());
-            ps.setString(5, room.getRoomDescription());
-            ps.setString(6, room.getRoomCategoryId());
+            ps.setString(1, phong.getTenPhong());
+            ps.setBoolean(2, phong.isDangHoatDong());
+            ps.setDate(3, new java.sql.Date(phong.getCreateDate().getTime()));
+            ps.setString(4, phong.getGhiChu());
+            ps.setString(5, phong.getMoTaPhong());
+            ps.setString(6, phong.getMaLoaiPhong());
 
             ps.executeUpdate();
             return findLastRoom();
@@ -83,9 +83,9 @@ public class RoomDAO {
         }
     }
 
-    public Room updateRoom(Room room) {
-        if (findRoomByID(room.getId()) == null) {
-            System.out.println("No room found with ID: " + room.getId());
+    public Phong updateRoom(Phong phong) {
+        if (findRoomByID(phong.getMaPhong()) == null) {
+            System.out.println("No room found with ID: " + phong.getMaPhong());
             return null;
         }
 
@@ -94,19 +94,19 @@ public class RoomDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, room.getRoomName());
-            ps.setBoolean(2, room.isActive());
-            ps.setDate(3, new java.sql.Date(room.getCreateDate().getTime()));
-            ps.setString(4, room.getNote());
-            ps.setString(5, room.getRoomDescription());
-            ps.setString(6, room.getRoomCategoryId());
-            ps.setString(7, room.getId());
+            ps.setString(1, phong.getTenPhong());
+            ps.setBoolean(2, phong.isDangHoatDong());
+            ps.setDate(3, new java.sql.Date(phong.getCreateDate().getTime()));
+            ps.setString(4, phong.getGhiChu());
+            ps.setString(5, phong.getMoTaPhong());
+            ps.setString(6, phong.getMaLoaiPhong());
+            ps.setString(7, phong.getMaPhong());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return findRoomByID(room.getId());
+                return findRoomByID(phong.getMaPhong());
             } else {
-                System.out.println("No room found with ID: " + room.getId());
+                System.out.println("No room found with ID: " + phong.getMaPhong());
                 return null;
             }
 
@@ -135,7 +135,7 @@ public class RoomDAO {
         }
     }
 
-    public Room findLastRoom() {
+    public Phong findLastRoom() {
         String query = "SELECT TOP 1 * FROM Room ORDER BY id DESC";
 
         try {
@@ -154,18 +154,18 @@ public class RoomDAO {
         return null;
     }
 
-    private Room mapResultSetToRoom(ResultSet rs) {
-        Room room = new Room();
+    private Phong mapResultSetToRoom(ResultSet rs) {
+        Phong phong = new Phong();
         try {
-            room.setId(rs.getString("id"));
-            room.setRoomName(rs.getString("roomName"));
-            room.setActive(rs.getBoolean("isActive"));
-            room.setCreateDate(rs.getTimestamp("createDate"));
-            room.setNote(rs.getString("note"));
-            room.setRoomDescription(rs.getString("roomDescription"));
-            room.setRoomCategoryId(rs.getString("roomCategoryId"));
+            phong.setMaPhong(rs.getString("id"));
+            phong.setTenPhong(rs.getString("roomName"));
+            phong.setDangHoatDong(rs.getBoolean("isDangHoatDong"));
+            phong.setCreateDate(rs.getTimestamp("createDate"));
+            phong.setGhiChu(rs.getString("note"));
+            phong.setMoTaPhong(rs.getString("roomDescription"));
+            phong.setMaLoaiPhong(rs.getString("roomCategoryId"));
 
-            return room;
+            return phong;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can`t map ResultSet to Room entity" + e);
         }

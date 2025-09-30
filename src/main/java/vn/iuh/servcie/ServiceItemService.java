@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.ServiceItem;
+import vn.iuh.entity.DichVu;
 
 public interface ServiceItemService {
-    ServiceItem getServiceItemByID(String id);
-    ServiceItem createServiceItem(ServiceItem serviceItem);
-    ServiceItem updateServiceItem(ServiceItem serviceItem);
+    DichVu getServiceItemByID(String id);
+    DichVu createServiceItem(DichVu dichVu);
+    DichVu updateServiceItem(DichVu dichVu);
     boolean deleteServiceItemByID(String id);
 }

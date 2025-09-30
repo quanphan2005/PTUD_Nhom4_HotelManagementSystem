@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.Notification;
+import vn.iuh.entity.ThongBao;
 
 public interface NotificationService {
-    Notification getNotificationByID(String id);
-    Notification createNotification(Notification notification);
-    Notification updateNotification(Notification notification);
+    ThongBao getNotificationByID(String id);
+    ThongBao createNotification(ThongBao thongBao);
+    ThongBao updateNotification(ThongBao thongBao);
     boolean deleteNotificationByID(String id);
 }

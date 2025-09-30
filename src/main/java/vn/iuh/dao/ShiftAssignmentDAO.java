@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.ShiftAssignment;
+import vn.iuh.entity.PhienDangNhap;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -17,7 +17,7 @@ public class ShiftAssignmentDAO {
         this.connection = connection;
     }
 
-    public ShiftAssignment getShiftAssignmentByID(String id) {
+    public PhienDangNhap getShiftAssignmentByID(String id) {
         String query = "SELECT * FROM ShiftAssignment WHERE id = ? AND is_deleted = 0";
 
         try {
@@ -37,18 +37,18 @@ public class ShiftAssignmentDAO {
         return null;
     }
 
-    public ShiftAssignment createShiftAssignment(ShiftAssignment shift) {
+    public PhienDangNhap createShiftAssignment(PhienDangNhap shift) {
         String query = "INSERT INTO ShiftAssignment " +
                 "(id, counter_number, start_time, end_time, account_id) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, shift.getId());
-            ps.setInt(2, shift.getCounterNumber());
-            ps.setTimestamp(3, shift.getStartTime() != null ? new Timestamp(shift.getStartTime().getTime()) : null);
-            ps.setTimestamp(4, shift.getEndTime() != null ? new Timestamp(shift.getEndTime().getTime()) : null);
-            ps.setString(5, shift.getAccountId());
+            ps.setString(1, shift.getMaPhienDangNhap());
+            ps.setInt(2, shift.getSoQuay());
+            ps.setTimestamp(3, shift.getTgBatDau() != null ? new Timestamp(shift.getTgBatDau().getTime()) : null);
+            ps.setTimestamp(4, shift.getTgKetThuc() != null ? new Timestamp(shift.getTgKetThuc().getTime()) : null);
+            ps.setString(5, shift.getMaTaiKhoan());
 
             ps.executeUpdate();
             return shift;
@@ -59,24 +59,24 @@ public class ShiftAssignmentDAO {
         return null;
     }
 
-    public ShiftAssignment updateShiftAssignment(ShiftAssignment shift) {
+    public PhienDangNhap updateShiftAssignment(PhienDangNhap shift) {
         String query = "UPDATE ShiftAssignment SET counter_number = ?, start_time = ?, end_time = ?, account_id = ?, create_at = ? " +
                 "WHERE id = ? AND is_deleted = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setInt(1, shift.getCounterNumber());
-            ps.setTimestamp(2, shift.getStartTime() != null ? new Timestamp(shift.getStartTime().getTime()) : null);
-            ps.setTimestamp(3, shift.getEndTime() != null ? new Timestamp(shift.getEndTime().getTime()) : null);
-            ps.setString(4, shift.getAccountId());
-            ps.setTimestamp(5, shift.getCreateAt() != null ? new Timestamp(shift.getCreateAt().getTime()) : null);
-            ps.setString(6, shift.getId());
+            ps.setInt(1, shift.getSoQuay());
+            ps.setTimestamp(2, shift.getTgBatDau() != null ? new Timestamp(shift.getTgBatDau().getTime()) : null);
+            ps.setTimestamp(3, shift.getTgKetThuc() != null ? new Timestamp(shift.getTgKetThuc().getTime()) : null);
+            ps.setString(4, shift.getMaTaiKhoan());
+            ps.setTimestamp(5, shift.getThoiGianTao() != null ? new Timestamp(shift.getThoiGianTao().getTime()) : null);
+            ps.setString(6, shift.getMaPhienDangNhap());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getShiftAssignmentByID(shift.getId());
+                return getShiftAssignmentByID(shift.getMaPhienDangNhap());
             } else {
-                System.out.println("No shift assignment found with ID: " + shift.getId());
+                System.out.println("No shift assignment found with ID: " + shift.getMaPhienDangNhap());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -108,15 +108,15 @@ public class ShiftAssignmentDAO {
         return false;
     }
 
-    private ShiftAssignment mapResultSetToShiftAssignment(ResultSet rs) throws SQLException {
-        ShiftAssignment shift = new ShiftAssignment();
+    private PhienDangNhap mapResultSetToShiftAssignment(ResultSet rs) throws SQLException {
+        PhienDangNhap shift = new PhienDangNhap();
         try {
-            shift.setId(rs.getString("id"));
-            shift.setCounterNumber(rs.getInt("counter_number"));
-            shift.setStartTime(rs.getTimestamp("start_time"));
-            shift.setEndTime(rs.getTimestamp("end_time"));
-            shift.setAccountId(rs.getString("account_id"));
-            shift.setCreateAt(rs.getTimestamp("create_at"));
+            shift.setMaPhienDangNhap(rs.getString("id"));
+            shift.setSoQuay(rs.getInt("counter_number"));
+            shift.setTgBatDau(rs.getTimestamp("start_time"));
+            shift.setTgKetThuc(rs.getTimestamp("end_time"));
+            shift.setMaTaiKhoan(rs.getString("account_id"));
+            shift.setThoiGianTao(rs.getTimestamp("create_at"));
             shift.setIsDeleted(rs.getBoolean("is_deleted"));
             return shift;
         } catch (SQLException e) {

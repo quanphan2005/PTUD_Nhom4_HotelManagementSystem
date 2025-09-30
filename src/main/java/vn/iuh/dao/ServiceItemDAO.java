@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.ServiceItem;
+import vn.iuh.entity.DichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -17,7 +17,7 @@ public class ServiceItemDAO {
         this.connection = connection;
     }
 
-    public ServiceItem getServiceItemByID(String id) {
+    public DichVu getServiceItemByID(String id) {
         String query = "SELECT * FROM ServiceItem WHERE id = ? AND is_deleted = 0";
 
         try {
@@ -37,20 +37,20 @@ public class ServiceItemDAO {
         return null;
     }
 
-    public ServiceItem createServiceItem(ServiceItem serviceItem) {
+    public DichVu createServiceItem(DichVu dichVu) {
         String query = "INSERT INTO ServiceItem " +
                 "(id, item_name, service_category_id) " +
                 "VALUES (?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, serviceItem.getId());
-            ps.setString(2, serviceItem.getItemName());
-            ps.setString(3, serviceItem.getServiceCategoryId());
+            ps.setString(1, dichVu.getMaDichVu());
+            ps.setString(2, dichVu.getTenDichVu());
+            ps.setString(3, dichVu.getMaLoaiDichVu());
 
 
             ps.executeUpdate();
-            return serviceItem;
+            return dichVu;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -58,22 +58,22 @@ public class ServiceItemDAO {
         return null;
     }
 
-    public ServiceItem updateServiceItem(ServiceItem serviceItem) {
+    public DichVu updateServiceItem(DichVu dichVu) {
         String query = "UPDATE ServiceItem SET item_name = ?, service_category_id = ?, create_at = ? " +
                 "WHERE id = ? AND is_deleted = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, serviceItem.getItemName());
-            ps.setString(2, serviceItem.getServiceCategoryId());
-            ps.setTimestamp(3, serviceItem.getCreateAt() != null ? new Timestamp(serviceItem.getCreateAt().getTime()) : null);
-            ps.setString(4, serviceItem.getId());
+            ps.setString(1, dichVu.getTenDichVu());
+            ps.setString(2, dichVu.getMaLoaiDichVu());
+            ps.setTimestamp(3, dichVu.getThoiGianTao() != null ? new Timestamp(dichVu.getThoiGianTao().getTime()) : null);
+            ps.setString(4, dichVu.getMaDichVu());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getServiceItemByID(serviceItem.getId());
+                return getServiceItemByID(dichVu.getMaDichVu());
             } else {
-                System.out.println("No service item found with ID: " + serviceItem.getId());
+                System.out.println("No service item found with ID: " + dichVu.getMaDichVu());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -105,15 +105,15 @@ public class ServiceItemDAO {
         return false;
     }
 
-    private ServiceItem mapResultSetToServiceItem(ResultSet rs) throws SQLException {
-        ServiceItem serviceItem = new ServiceItem();
+    private DichVu mapResultSetToServiceItem(ResultSet rs) throws SQLException {
+        DichVu dichVu = new DichVu();
         try {
-            serviceItem.setId(rs.getString("id"));
-            serviceItem.setItemName(rs.getString("item_name"));
-            serviceItem.setServiceCategoryId(rs.getString("service_category_id"));
-            serviceItem.setCreateAt(rs.getTimestamp("create_at"));
-            serviceItem.setDeleted(rs.getBoolean("is_deleted"));
-            return serviceItem;
+            dichVu.setMaDichVu(rs.getString("id"));
+            dichVu.setTenDichVu(rs.getString("item_name"));
+            dichVu.setMaLoaiDichVu(rs.getString("service_category_id"));
+            dichVu.setThoiGianTao(rs.getTimestamp("create_at"));
+            dichVu.setDeleted(rs.getBoolean("is_deleted"));
+            return dichVu;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to ServiceItem: " + e);
         }

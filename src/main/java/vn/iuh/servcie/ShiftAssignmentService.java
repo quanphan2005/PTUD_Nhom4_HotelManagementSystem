@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.ShiftAssignment;
+import vn.iuh.entity.PhienDangNhap;
 
 public interface ShiftAssignmentService {
-    ShiftAssignment getShiftAssignmentByID(String id);
-    ShiftAssignment createShiftAssignment(ShiftAssignment shiftAssignment);
-    ShiftAssignment updateShiftAssignment(ShiftAssignment shiftAssignment);
+    PhienDangNhap getShiftAssignmentByID(String id);
+    PhienDangNhap createShiftAssignment(PhienDangNhap phienDangNhap);
+    PhienDangNhap updateShiftAssignment(PhienDangNhap phienDangNhap);
     boolean deleteShiftAssignmentByID(String id);
 }

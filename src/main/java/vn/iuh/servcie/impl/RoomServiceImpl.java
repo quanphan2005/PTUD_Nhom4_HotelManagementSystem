@@ -4,7 +4,7 @@ import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.dao.RoomDAO;
 import vn.iuh.dto.event.create.RoomCreationEvent;
 import vn.iuh.dto.event.update.RoomModificationEvent;
-import vn.iuh.entity.Room;
+import vn.iuh.entity.Phong;
 import vn.iuh.servcie.RoomService;
 import vn.iuh.util.EntityUtil;
 
@@ -24,36 +24,36 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public Room getRoomByID(String roomID) {
-        Room room = roomDAO.findRoomByID(roomID);
-        if (room == null) {
+    public Phong getRoomByID(String roomID) {
+        Phong phong = roomDAO.findRoomByID(roomID);
+        if (phong == null) {
             System.out.println("Room with ID " + roomID + " not found.");
             return null;
         } else {
-            return room;
+            return phong;
         }
     }
 
     @Override
-    public List<Room> getAll() {
-        List<Room> rooms = roomDAO.findAll();
-        if (rooms.isEmpty()) {
+    public List<Phong> getAll() {
+        List<Phong> phongs = roomDAO.findAll();
+        if (phongs.isEmpty()) {
             System.out.println("No rooms found.");
             return null;
         } else {
-            return rooms;
+            return phongs;
         }
     }
 
     @Override
-    public Room createRoom(RoomCreationEvent room) {
-        Room lastedRoom = roomDAO.findLastRoom();
+    public Phong createRoom(RoomCreationEvent room) {
+        Phong lastedPhong = roomDAO.findLastRoom();
         String newID = EntityUtil.increaseEntityID(
-                lastedRoom.getId(),
+                lastedPhong.getMaPhong(),
                 EntityIDSymbol.ROOM_PREFIX.getPrefix(),
                 EntityIDSymbol.ROOM_PREFIX.getLength());
 
-        Room newRoom = new Room(
+        Phong newPhong = new Phong(
                 newID,
                 room.getRoomName(),
                 room.getIsActive(),
@@ -63,24 +63,24 @@ public class RoomServiceImpl implements RoomService {
                 room.getRoomCategoryId()
         );
 
-        return roomDAO.insertRoom(newRoom);
+        return roomDAO.insertRoom(newPhong);
     }
 
     @Override
-    public Room updateRoom(RoomModificationEvent room) {
-        Room existingRoom = roomDAO.findRoomByID(room.getId());
-        if (existingRoom == null) {
+    public Phong updateRoom(RoomModificationEvent room) {
+        Phong existingPhong = roomDAO.findRoomByID(room.getId());
+        if (existingPhong == null) {
             System.out.println("Room with ID " + room.getId() + " not found.");
             return null;
         }
 
-        existingRoom.setRoomName(room.getRoomName());
-        existingRoom.setActive(existingRoom.isActive());
-        existingRoom.setNote(room.getNote());
-        existingRoom.setRoomDescription(room.getRoomDescription());
-        existingRoom.setRoomCategoryId(room.getRoomCategoryId());
+        existingPhong.setTenPhong(room.getRoomName());
+        existingPhong.setDangHoatDong(existingPhong.isDangHoatDong());
+        existingPhong.setGhiChu(room.getNote());
+        existingPhong.setMoTaPhong(room.getRoomDescription());
+        existingPhong.setMaLoaiPhong(room.getRoomCategoryId());
 
-        return roomDAO.updateRoom(existingRoom);
+        return roomDAO.updateRoom(existingPhong);
     }
 
     @Override

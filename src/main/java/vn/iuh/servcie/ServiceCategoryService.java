@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.ServiceCategory;
+import vn.iuh.entity.LoaiDichVu;
 
 public interface ServiceCategoryService {
-    ServiceCategory getServiceCategoryByID(String id);
-    ServiceCategory createServiceCategory(ServiceCategory serviceCategory);
-    ServiceCategory updateServiceCategory(ServiceCategory serviceCategory);
+    LoaiDichVu getServiceCategoryByID(String id);
+    LoaiDichVu createServiceCategory(LoaiDichVu loaiDichVu);
+    LoaiDichVu updateServiceCategory(LoaiDichVu loaiDichVu);
     boolean deleteServiceCategoryByID(String id);
 }

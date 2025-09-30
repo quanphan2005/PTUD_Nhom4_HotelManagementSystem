@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.WorkingHistory;
+import vn.iuh.entity.LichSuThaoTac;
 
 public interface WorkingHistoryService {
-    WorkingHistory getWorkingHistoryByID(String id);
-    WorkingHistory createWorkingHistory(WorkingHistory workingHistory);
-    WorkingHistory updateWorkingHistory(WorkingHistory workingHistory);
+    LichSuThaoTac getWorkingHistoryByID(String id);
+    LichSuThaoTac createWorkingHistory(LichSuThaoTac lichSuThaoTac);
+    LichSuThaoTac updateWorkingHistory(LichSuThaoTac lichSuThaoTac);
     boolean deleteWorkingHistoryByID(String id);
 }

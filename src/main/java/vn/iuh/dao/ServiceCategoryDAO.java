@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.ServiceCategory;
+import vn.iuh.entity.LoaiDichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -17,7 +17,7 @@ public class ServiceCategoryDAO {
         this.connection = connection;
     }
 
-    public ServiceCategory getServiceCategoryByID(String id) {
+    public LoaiDichVu getServiceCategoryByID(String id) {
         String query = "SELECT * FROM ServiceCategory WHERE id = ? AND is_deleted = 0";
 
         try {
@@ -37,17 +37,17 @@ public class ServiceCategoryDAO {
         return null;
     }
 
-    public ServiceCategory createServiceCategory(ServiceCategory serviceCategory) {
+    public LoaiDichVu createServiceCategory(LoaiDichVu loaiDichVu) {
         String query = "INSERT INTO ServiceCategory " +
                 "(id, category_name) VALUES (?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, serviceCategory.getId());
-            ps.setString(2, serviceCategory.getCategoryName());
+            ps.setString(1, loaiDichVu.getMaLoaiDichVu());
+            ps.setString(2, loaiDichVu.getTenDichVu());
 
             ps.executeUpdate();
-            return serviceCategory;
+            return loaiDichVu;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -55,21 +55,21 @@ public class ServiceCategoryDAO {
         return null;
     }
 
-    public ServiceCategory updateServiceCategory(ServiceCategory serviceCategory) {
+    public LoaiDichVu updateServiceCategory(LoaiDichVu loaiDichVu) {
         String query = "UPDATE ServiceCategory SET category_name = ?, create_at = ? " +
                 "WHERE id = ? AND is_deleted = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, serviceCategory.getCategoryName());
-            ps.setTimestamp(2, serviceCategory.getCreateAt() != null ? new Timestamp(serviceCategory.getCreateAt().getTime()) : null);
-            ps.setString(3, serviceCategory.getId());
+            ps.setString(1, loaiDichVu.getTenDichVu());
+            ps.setTimestamp(2, loaiDichVu.getThoiGianTao() != null ? new Timestamp(loaiDichVu.getThoiGianTao().getTime()) : null);
+            ps.setString(3, loaiDichVu.getMaLoaiDichVu());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getServiceCategoryByID(serviceCategory.getId());
+                return getServiceCategoryByID(loaiDichVu.getMaLoaiDichVu());
             } else {
-                System.out.println("No service category found with ID: " + serviceCategory.getId());
+                System.out.println("No service category found with ID: " + loaiDichVu.getMaLoaiDichVu());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -101,14 +101,14 @@ public class ServiceCategoryDAO {
         return false;
     }
 
-    private ServiceCategory mapResultSetToServiceCategory(ResultSet rs) throws SQLException {
-        ServiceCategory serviceCategory = new ServiceCategory();
+    private LoaiDichVu mapResultSetToServiceCategory(ResultSet rs) throws SQLException {
+        LoaiDichVu loaiDichVu = new LoaiDichVu();
         try {
-            serviceCategory.setId(rs.getString("id"));
-            serviceCategory.setCategoryName(rs.getString("category_name"));
-            serviceCategory.setCreateAt(rs.getTimestamp("create_at"));
-            serviceCategory.setDeleted(rs.getBoolean("is_deleted"));
-            return serviceCategory;
+            loaiDichVu.setMaLoaiDichVu(rs.getString("id"));
+            loaiDichVu.setTenDichVu(rs.getString("category_name"));
+            loaiDichVu.setThoiGianTao(rs.getTimestamp("create_at"));
+            loaiDichVu.setDeleted(rs.getBoolean("is_deleted"));
+            return loaiDichVu;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to ServiceCategory: " + e);
         }

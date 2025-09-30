@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.ReservationForm;
+import vn.iuh.entity.DonDatPhong;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -17,7 +17,7 @@ public class ReservationFormDAO {
         this.connection = connection;
     }
 
-    public ReservationForm getReservationFormByID(String id) {
+    public DonDatPhong getReservationFormByID(String id) {
         String query = "SELECT * FROM ReservationForm WHERE id = ? AND is_deleted = 0";
 
         try {
@@ -37,7 +37,7 @@ public class ReservationFormDAO {
         return null;
     }
 
-    public ReservationForm createReservationForm(ReservationForm reservationForm) {
+    public DonDatPhong createReservationForm(DonDatPhong donDatPhong) {
         String query = "INSERT INTO ReservationForm " +
                 "(id, reserve_date, note, check_in_date, check_out_date, initial_price, deposit_price, " +
                 "is_advanced, customer_id, shift_assignment_id) " +
@@ -45,19 +45,19 @@ public class ReservationFormDAO {
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, reservationForm.getId());
-            ps.setTimestamp(2, reservationForm.getReserveDate() != null ? new Timestamp(reservationForm.getReserveDate().getTime()) : null);
-            ps.setString(3, reservationForm.getNote());
-            ps.setTimestamp(4, reservationForm.getCheckInDate() != null ? new Timestamp(reservationForm.getCheckInDate().getTime()) : null);
-            ps.setTimestamp(5, reservationForm.getCheckOutDate() != null ? new Timestamp(reservationForm.getCheckOutDate().getTime()) : null);
-            ps.setDouble(6, reservationForm.getInitialPrice());
-            ps.setDouble(7, reservationForm.getDepositPrice());
-            ps.setBoolean(8, reservationForm.getIsAdvanced());
-            ps.setString(9, reservationForm.getCustomerId());
-            ps.setString(10, reservationForm.getShiftAssignmentId());
+            ps.setString(1, donDatPhong.getMaDonDatPhong());
+            ps.setTimestamp(2, donDatPhong.getReserveDate() != null ? new Timestamp(donDatPhong.getReserveDate().getTime()) : null);
+            ps.setString(3, donDatPhong.getMoTa());
+            ps.setTimestamp(4, donDatPhong.getTgNhanPhong() != null ? new Timestamp(donDatPhong.getTgNhanPhong().getTime()) : null);
+            ps.setTimestamp(5, donDatPhong.getTgRoiPhong() != null ? new Timestamp(donDatPhong.getTgRoiPhong().getTime()) : null);
+            ps.setDouble(6, donDatPhong.getTongTienDuTinh());
+            ps.setDouble(7, donDatPhong.getTienDatCoc());
+            ps.setBoolean(8, donDatPhong.getIsAdvanced());
+            ps.setString(9, donDatPhong.getMaKhachHang());
+            ps.setString(10, donDatPhong.getMaPhienDangNhap());
 
             ps.executeUpdate();
-            return reservationForm;
+            return donDatPhong;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -65,29 +65,29 @@ public class ReservationFormDAO {
         return null;
     }
 
-    public ReservationForm updateReservationForm(ReservationForm reservationForm) {
+    public DonDatPhong updateReservationForm(DonDatPhong donDatPhong) {
         String query = "UPDATE ReservationForm SET reserve_date = ?, note = ?, check_in_date = ?, check_out_date = ?, " +
                 "initial_price = ?, deposit_price = ?, is_advanced = ?, customer_id = ?, shift_assignment_id = ?" +
                 "WHERE id = ? AND is_deleted = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setTimestamp(1, reservationForm.getReserveDate() != null ? new Timestamp(reservationForm.getReserveDate().getTime()) : null);
-            ps.setString(2, reservationForm.getNote());
-            ps.setTimestamp(3, reservationForm.getCheckInDate() != null ? new Timestamp(reservationForm.getCheckInDate().getTime()) : null);
-            ps.setTimestamp(4, reservationForm.getCheckOutDate() != null ? new Timestamp(reservationForm.getCheckOutDate().getTime()) : null);
-            ps.setDouble(5, reservationForm.getInitialPrice());
-            ps.setDouble(6, reservationForm.getDepositPrice());
-            ps.setBoolean(7, reservationForm.getIsAdvanced());
-            ps.setString(8, reservationForm.getCustomerId());
-            ps.setString(9, reservationForm.getShiftAssignmentId());
-            ps.setString(10, reservationForm.getId());
+            ps.setTimestamp(1, donDatPhong.getReserveDate() != null ? new Timestamp(donDatPhong.getReserveDate().getTime()) : null);
+            ps.setString(2, donDatPhong.getMoTa());
+            ps.setTimestamp(3, donDatPhong.getTgNhanPhong() != null ? new Timestamp(donDatPhong.getTgNhanPhong().getTime()) : null);
+            ps.setTimestamp(4, donDatPhong.getTgRoiPhong() != null ? new Timestamp(donDatPhong.getTgRoiPhong().getTime()) : null);
+            ps.setDouble(5, donDatPhong.getTongTienDuTinh());
+            ps.setDouble(6, donDatPhong.getTienDatCoc());
+            ps.setBoolean(7, donDatPhong.getIsAdvanced());
+            ps.setString(8, donDatPhong.getMaKhachHang());
+            ps.setString(9, donDatPhong.getMaPhienDangNhap());
+            ps.setString(10, donDatPhong.getMaDonDatPhong());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getReservationFormByID(reservationForm.getId());
+                return getReservationFormByID(donDatPhong.getMaDonDatPhong());
             } else {
-                System.out.println("No reservation form found with ID: " + reservationForm.getId());
+                System.out.println("No reservation form found with ID: " + donDatPhong.getMaDonDatPhong());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -119,20 +119,19 @@ public class ReservationFormDAO {
         return false;
     }
 
-    private ReservationForm mapResultSetToReservationForm(ResultSet rs) throws SQLException {
-        ReservationForm reservationForm = new ReservationForm();
+    private DonDatPhong mapResultSetToReservationForm(ResultSet rs) throws SQLException {
+        DonDatPhong donDatPhong = new DonDatPhong();
         try {
-            reservationForm.setId(rs.getString("id"));
-            reservationForm.setReserveDate(rs.getTimestamp("reserve_date"));
-            reservationForm.setNote(rs.getString("note"));
-            reservationForm.setCheckInDate(rs.getTimestamp("check_in_date"));
-            reservationForm.setCheckOutDate(rs.getTimestamp("check_out_date"));
-            reservationForm.setInitialPrice(rs.getDouble("initial_price"));
-            reservationForm.setDepositPrice(rs.getDouble("deposit_price"));
-            reservationForm.setIsAdvanced(rs.getBoolean("is_advanced"));
-            reservationForm.setCustomerId(rs.getString("customer_id"));
-            reservationForm.setShiftAssignmentId(rs.getString("shift_assignment_id"));
-            return reservationForm;
+            donDatPhong.setMaDonDatPhong(rs.getString("id"));
+            donDatPhong.setMoTa(rs.getString("note"));
+            donDatPhong.setTgNhanPhong(rs.getTimestamp("check_in_date"));
+            donDatPhong.setTgRoiPhong(rs.getTimestamp("check_out_date"));
+            donDatPhong.setTongTienDuTinh(rs.getDouble("initial_price"));
+            donDatPhong.setTienDatCoc(rs.getDouble("deposit_price"));
+            donDatPhong.setDaDatTruoc(rs.getBoolean("is_advanced"));
+            donDatPhong.setMaKhachHang(rs.getString("customer_id"));
+            donDatPhong.setMaPhienDangNhap(rs.getString("shift_assignment_id"));
+            return donDatPhong;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to ReservationForm: " + e);
         }

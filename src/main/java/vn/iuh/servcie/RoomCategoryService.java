@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.RoomCategory;
+import vn.iuh.entity.LoaiPhong;
 
 public interface RoomCategoryService {
-    RoomCategory getRoomCategoryByID(String id);
-    RoomCategory createRoomCategory(RoomCategory roomCategory);
-    RoomCategory updateRoomCategory(RoomCategory roomCategory);
+    LoaiPhong getRoomCategoryByID(String id);
+    LoaiPhong createRoomCategory(LoaiPhong loaiPhong);
+    LoaiPhong updateRoomCategory(LoaiPhong loaiPhong);
     boolean deleteRoomCategoryByID(String id);
 }
