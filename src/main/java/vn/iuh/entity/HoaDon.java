@@ -3,121 +3,121 @@ package vn.iuh.entity;
 import java.sql.Timestamp;
 
 public class HoaDon {
-    private String ma_hoa_don;
-    private String phuong_thuc_thanh_toan;
-    private double tong_tien;
-    private double tien_thue;
-    private double tong_hoa_don;
-    private String kieu_hoa_don;
-    private String tinh_trang_thanh_toan;
-    private String ma_phien_dang_nhap;
-    private String ma_don_dat_phong;
-    private String ma_khach_hang;
-    private Timestamp thoi_gian_tao;
+    private String maHoaDon;
+    private String phuongThucThanhToan;
+    private double tongTien;
+    private double tienThue;
+    private double tongHoaDon;
+    private String kieuHoaDon;
+    private String tinhTrangThanhToan;
+    private String maPhienDangNhap;
+    private String maDonDatPhong;
+    private String maKhachHang;
+    private Timestamp thoiGianTao;
 
     public HoaDon() {
     }
 
-    public HoaDon(String ma_hoa_don, String phuong_thuc_thanh_toan, double tong_tien, double tien_thue, double tong_hoa_don, String kieu_hoa_don, String tinh_trang_thanh_toan, String ma_phien_dang_nhap, String ma_don_dat_phong, String ma_khach_hang, Timestamp thoi_gian_tao) {
-        this.ma_hoa_don = ma_hoa_don;
-        this.phuong_thuc_thanh_toan = phuong_thuc_thanh_toan;
-        this.tong_tien = tong_tien;
-        this.tien_thue = tien_thue;
-        this.tong_hoa_don = tong_hoa_don;
-        this.kieu_hoa_don = kieu_hoa_don;
-        this.tinh_trang_thanh_toan = tinh_trang_thanh_toan;
-        this.ma_phien_dang_nhap = ma_phien_dang_nhap;
-        this.ma_don_dat_phong = ma_don_dat_phong;
-        this.ma_khach_hang = ma_khach_hang;
-        this.thoi_gian_tao = thoi_gian_tao;
+    public HoaDon(String maHoaDon, String phuongThucThanhToan, double tongTien, double tienThue, double tongHoaDon, String kieuHoaDon, String tinhTrangThanhToan, String maPhienDangNhap, String maDonDatPhong, String maKhachHang, Timestamp thoiGianTao) {
+        this.maHoaDon = maHoaDon;
+        this.phuongThucThanhToan = phuongThucThanhToan;
+        this.tongTien = tongTien;
+        this.tienThue = tienThue;
+        this.tongHoaDon = tongHoaDon;
+        this.kieuHoaDon = kieuHoaDon;
+        this.tinhTrangThanhToan = tinhTrangThanhToan;
+        this.maPhienDangNhap = maPhienDangNhap;
+        this.maDonDatPhong = maDonDatPhong;
+        this.maKhachHang = maKhachHang;
+        this.thoiGianTao = thoiGianTao;
     }
 
     // Getters and Setters
-    public String getMa_hoa_don() {
-        return ma_hoa_don;
+    public String getMaHoaDon() {
+        return maHoaDon;
     }
 
-    public void setMa_hoa_don(String ma_hoa_don) {
-        this.ma_hoa_don = ma_hoa_don;
+    public void setMaHoaDon(String maHoaDon) {
+        this.maHoaDon = maHoaDon;
     }
 
-    public String getPhuong_thuc_thanh_toan() {
-        return phuong_thuc_thanh_toan;
+    public String getPhuongThucThanhToan() {
+        return phuongThucThanhToan;
     }
 
-    public void setPhuong_thuc_thanh_toan(String phuong_thuc_thanh_toan) {
-        this.phuong_thuc_thanh_toan = phuong_thuc_thanh_toan;
+    public void setPhuongThucThanhToan(String phuongThucThanhToan) {
+        this.phuongThucThanhToan = phuongThucThanhToan;
     }
 
-    public double getTong_tien() {
-        return tong_tien;
+    public double getTongTien() {
+        return tongTien;
     }
 
-    public void setTong_tien(double tong_tien) {
-        this.tong_tien = tong_tien;
+    public void setTongTien(double tongTien) {
+        this.tongTien = tongTien;
     }
 
-    public double getTien_thue() {
-        return tien_thue;
+    public double getTienThue() {
+        return tienThue;
     }
 
-    public void setTien_thue(double tien_thue) {
-        this.tien_thue = tien_thue;
+    public void setTienThue(double tienThue) {
+        this.tienThue = tienThue;
     }
 
-    public double getTong_hoa_don() {
-        return tong_hoa_don;
+    public double getTongHoaDon() {
+        return tongHoaDon;
     }
 
-    public void setTong_hoa_don(double tong_hoa_don) {
-        this.tong_hoa_don = tong_hoa_don;
+    public void setTongHoaDon(double tongHoaDon) {
+        this.tongHoaDon = tongHoaDon;
     }
 
-    public String getKieu_hoa_don() {
-        return kieu_hoa_don;
+    public String getKieuHoaDon() {
+        return kieuHoaDon;
     }
 
-    public void setKieu_hoa_don(String kieu_hoa_don) {
-        this.kieu_hoa_don = kieu_hoa_don;
+    public void setKieuHoaDon(String kieuHoaDon) {
+        this.kieuHoaDon = kieuHoaDon;
     }
 
-    public String getTinh_trang_thanh_toan() {
-        return tinh_trang_thanh_toan;
+    public String getTinhTrangThanhToan() {
+        return tinhTrangThanhToan;
     }
 
-    public void setTinh_trang_thanh_toan(String tinh_trang_thanh_toan) {
-        this.tinh_trang_thanh_toan = tinh_trang_thanh_toan;
+    public void setTinhTrangThanhToan(String tinhTrangThanhToan) {
+        this.tinhTrangThanhToan = tinhTrangThanhToan;
     }
 
-    public String getMa_phien_dang_nhap() {
-        return ma_phien_dang_nhap;
+    public String getMaPhienDangNhap() {
+        return maPhienDangNhap;
     }
 
-    public void setMa_phien_dang_nhap(String ma_phien_dang_nhap) {
-        this.ma_phien_dang_nhap = ma_phien_dang_nhap;
+    public void setMaPhienDangNhap(String maPhienDangNhap) {
+        this.maPhienDangNhap = maPhienDangNhap;
     }
 
-    public String getMa_don_dat_phong() {
-        return ma_don_dat_phong;
+    public String getMaDonDatPhong() {
+        return maDonDatPhong;
     }
 
-    public void setMa_don_dat_phong(String ma_don_dat_phong) {
-        this.ma_don_dat_phong = ma_don_dat_phong;
+    public void setMaDonDatPhong(String maDonDatPhong) {
+        this.maDonDatPhong = maDonDatPhong;
     }
 
-    public String getMa_khach_hang() {
-        return ma_khach_hang;
+    public String getMaKhachHang() {
+        return maKhachHang;
     }
 
-    public void setMa_khach_hang(String ma_khach_hang) {
-        this.ma_khach_hang = ma_khach_hang;
+    public void setMaKhachHang(String maKhachHang) {
+        this.maKhachHang = maKhachHang;
     }
 
-    public Timestamp getThoi_gian_tao() {
-        return thoi_gian_tao;
+    public Timestamp getThoiGianTao() {
+        return thoiGianTao;
     }
 
-    public void setThoi_gian_tao(Timestamp thoi_gian_tao) {
-        this.thoi_gian_tao = thoi_gian_tao;
+    public void setThoiGianTao(Timestamp thoiGianTao) {
+        this.thoiGianTao = thoiGianTao;
     }
 }

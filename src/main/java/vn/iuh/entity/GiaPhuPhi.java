@@ -3,81 +3,81 @@ package vn.iuh.entity;
 import java.sql.Timestamp;
 
 public class GiaPhuPhi {
-    private String ma_gia_phu_phi;
-    private double gia_truoc_do;
-    private double gia_hien_tai;
-    private boolean la_phan_tram;
-    private String ma_phien_dang_nhap;
-    private String ma_phu_phi;
-    private Timestamp thoi_gian_tao;
+    private String maGiaPhuPhi;
+    private double giaTruocDo;
+    private double giaHienTai;
+    private boolean laPhanTram;
+    private String maPhienDangNhap;
+    private String maPhuPhi;
+    private Timestamp thoiGianTao;
 
     public GiaPhuPhi() {
     }
 
-    public GiaPhuPhi(String ma_gia_phu_phi, double gia_truoc_do, double gia_hien_tai, boolean la_phan_tram, String ma_phien_dang_nhap, String ma_phu_phi, Timestamp thoi_gian_tao) {
-        this.ma_gia_phu_phi = ma_gia_phu_phi;
-        this.gia_truoc_do = gia_truoc_do;
-        this.gia_hien_tai = gia_hien_tai;
-        this.la_phan_tram = la_phan_tram;
-        this.ma_phien_dang_nhap = ma_phien_dang_nhap;
-        this.ma_phu_phi = ma_phu_phi;
-        this.thoi_gian_tao = thoi_gian_tao;
+    public GiaPhuPhi(String maGiaPhuPhi, double giaTruocDo, double giaHienTai, boolean laPhanTram, String maPhienDangNhap, String maPhuPhi, Timestamp thoiGianTao) {
+        this.maGiaPhuPhi = maGiaPhuPhi;
+        this.giaTruocDo = giaTruocDo;
+        this.giaHienTai = giaHienTai;
+        this.laPhanTram = laPhanTram;
+        this.maPhienDangNhap = maPhienDangNhap;
+        this.maPhuPhi = maPhuPhi;
+        this.thoiGianTao = thoiGianTao;
     }
 
     // Getters and Setters
-    public String getMa_gia_phu_phi() {
-        return ma_gia_phu_phi;
+    public String getMaGiaPhuPhi() {
+        return maGiaPhuPhi;
     }
 
-    public void setMa_gia_phu_phi(String ma_gia_phu_phi) {
-        this.ma_gia_phu_phi = ma_gia_phu_phi;
+    public void setMaGiaPhuPhi(String maGiaPhuPhi) {
+        this.maGiaPhuPhi = maGiaPhuPhi;
     }
 
-    public double getGia_truoc_do() {
-        return gia_truoc_do;
+    public double getGiaTruocDo() {
+        return giaTruocDo;
     }
 
-    public void setGia_truoc_do(double gia_truoc_do) {
-        this.gia_truoc_do = gia_truoc_do;
+    public void setGiaTruocDo(double giaTruocDo) {
+        this.giaTruocDo = giaTruocDo;
     }
 
-    public double getGia_hien_tai() {
-        return gia_hien_tai;
+    public double getGiaHienTai() {
+        return giaHienTai;
     }
 
-    public void setGia_hien_tai(double gia_hien_tai) {
-        this.gia_hien_tai = gia_hien_tai;
+    public void setGiaHienTai(double giaHienTai) {
+        this.giaHienTai = giaHienTai;
     }
 
-    public boolean getLa_phan_tram() {
-        return la_phan_tram;
+    public boolean getLaPhanTram() {
+        return laPhanTram;
     }
 
-    public void setLa_phan_tram(boolean la_phan_tram) {
-        this.la_phan_tram = la_phan_tram;
+    public void setLaPhanTram(boolean laPhanTram) {
+        this.laPhanTram = laPhanTram;
     }
 
-    public String getMa_phien_dang_nhap() {
-        return ma_phien_dang_nhap;
+    public String getMaPhienDangNhap() {
+        return maPhienDangNhap;
     }
 
-    public void setMa_phien_dang_nhap(String ma_phien_dang_nhap) {
-        this.ma_phien_dang_nhap = ma_phien_dang_nhap;
+    public void setMaPhienDangNhap(String maPhienDangNhap) {
+        this.maPhienDangNhap = maPhienDangNhap;
     }
 
-    public String getMa_phu_phi() {
-        return ma_phu_phi;
+    public String getMaPhuPhi() {
+        return maPhuPhi;
     }
 
-    public void setMa_phu_phi(String ma_phu_phi) {
-        this.ma_phu_phi = ma_phu_phi;
+    public void setMaPhuPhi(String maPhuPhi) {
+        this.maPhuPhi = maPhuPhi;
     }
 
-    public Timestamp getThoi_gian_tao() {
-        return thoi_gian_tao;
+    public Timestamp getThoiGianTao() {
+        return thoiGianTao;
     }
 
-    public void setThoi_gian_tao(Timestamp thoi_gian_tao) {
-        this.thoi_gian_tao = thoi_gian_tao;
+    public void setThoiGianTao(Timestamp thoiGianTao) {
+        this.thoiGianTao = thoiGianTao;
     }
 }
