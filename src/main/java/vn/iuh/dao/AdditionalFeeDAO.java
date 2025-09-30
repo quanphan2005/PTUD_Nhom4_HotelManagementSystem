@@ -1,6 +1,6 @@
     package vn.iuh.dao;
 
-    import vn.iuh.entity.AdditionalFee;
+    import vn.iuh.entity.PhuPhi;
     import vn.iuh.exception.TableEntityMismatch;
     import vn.iuh.util.DatabaseUtil;
 
@@ -20,7 +20,7 @@
             this.connection = connection;
         }
 
-        public AdditionalFee getAdditionalFeeByID(String id) {
+        public PhuPhi getAdditionalFeeByID(String id) {
             String query = "SELECT * FROM AdditionalFee WHERE id = ?";
 
             try {
@@ -42,16 +42,16 @@
         }
 
         // Tạo mới AdditionalFee
-        public AdditionalFee createAdditionalFee(AdditionalFee additionalFee) {
+        public PhuPhi createAdditionalFee(PhuPhi phuPhi) {
             String query = "INSERT INTO AdditionalFee (id, fee_name, create_at) VALUES (?, ?, ?)";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
-                ps.setString(1, additionalFee.getId());
-                ps.setString(2, additionalFee.getFeeName());
-                ps.setDate(3, new java.sql.Date(additionalFee.getCreateAt().getTime()));
+                ps.setString(1, phuPhi.getMa_phu_phi());
+                ps.setString(2, phuPhi.getTen_phu_phi());
+                ps.setDate(3, new java.sql.Date(phuPhi.getThoi_gian_tao().getTime()));
 
                 ps.executeUpdate();
-                return additionalFee;
+                return phuPhi;
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
@@ -59,18 +59,18 @@
             return null;
         }
 
-        public AdditionalFee updateAdditionalFee(AdditionalFee additionalFee) {
+        public PhuPhi updateAdditionalFee(PhuPhi phuPhi) {
             String query = "UPDATE AdditionalFee SET fee_name = ? WHERE id = ?";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
-                ps.setDate(1, new java.sql.Date(additionalFee.getCreateAt().getTime()));
-                ps.setString(2, additionalFee.getId());
+                ps.setDate(1, new java.sql.Date(phuPhi.getThoi_gian_tao().getTime()));
+                ps.setString(2, phuPhi.getMa_phu_phi());
 
                 int rowsAffected = ps.executeUpdate();
                 if (rowsAffected > 0) {
-                    return getAdditionalFeeByID(additionalFee.getId());
+                    return getAdditionalFeeByID(phuPhi.getMa_phu_phi());
                 } else {
-                    System.out.println("No AdditionalFee found with ID: " + additionalFee.getId());
+                    System.out.println("No AdditionalFee found with ID: " + phuPhi.getMa_phu_phi());
                     return null;
                 }
 
@@ -105,13 +105,13 @@
             return false;
         }
 
-        private AdditionalFee mapResultSetToAdditionalFee(ResultSet rs) {
-            AdditionalFee additionalFee = new AdditionalFee();
+        private PhuPhi mapResultSetToAdditionalFee(ResultSet rs) {
+            PhuPhi phuPhi = new PhuPhi();
             try {
-                additionalFee.setId(rs.getString("id"));
-                additionalFee.setFeeName(rs.getString("fee_name"));
-                additionalFee.setCreateAt(rs.getDate("create_at"));
-                return additionalFee;
+                phuPhi.setMa_phu_phi(rs.getString("id"));
+                phuPhi.setTen_phu_phi(rs.getString("fee_name"));
+                phuPhi.setThoi_gian_tao(rs.getDate("create_at"));
+                return phuPhi;
             } catch (SQLException e) {
                 throw new TableEntityMismatch("Can't map ResultSet to AdditionalFee: " + e.getMessage());
             }

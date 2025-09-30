@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.FurnitureItem;
+import vn.iuh.entity.NoiThat;
 
 public interface FurnitureItemService {
-    FurnitureItem getFurnitureItemByID(String id);
-    FurnitureItem createFurnitureItem(FurnitureItem furnitureItem);
-    FurnitureItem updateFurnitureItem(FurnitureItem furnitureItem);
+    NoiThat getFurnitureItemByID(String id);
+    NoiThat createFurnitureItem(NoiThat noiThat);
+    NoiThat updateFurnitureItem(NoiThat noiThat);
     boolean deleteFurnitureItemByID(String id);
 }

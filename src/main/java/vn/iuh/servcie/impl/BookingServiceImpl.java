@@ -39,14 +39,14 @@ public class BookingServiceImpl implements BookingService {
     public boolean createBooking(BookingCreationEvent bookingCreationEvent) {
 
         // 1. find Customer by CCCD
-        Customer customer = customerDAO.findCustomerByCCCD(bookingCreationEvent.getCCCD());
+        KhachHang khachHang = customerDAO.findCustomerByCCCD(bookingCreationEvent.getCCCD());
 
         try {
             bookingDAO.beginTransaction();
 
             // 1.1 Create Customer if not exist
-            if (Objects.isNull(customer)) {
-                customerDAO.createCustomer(new Customer(
+            if (Objects.isNull(khachHang)) {
+                customerDAO.createCustomer(new KhachHang(
                         EntityUtil.increaseEntityID(null,
                                                     EntityIDSymbol.CUSTOMER_PREFIX.getPrefix(),
                                                     EntityIDSymbol.CUSTOMER_PREFIX.getLength()),
@@ -68,12 +68,12 @@ public class BookingServiceImpl implements BookingService {
             bookingDAO.insertRoomReservationDetail(reservationForm, roomReservationDetails);
 
             // 2.3. Create HistoryCheckInEntity & insert to DB
-            List<HistoryCheckIn> historyCheckIns = new ArrayList<>();
+            List<LichSuDiVao> lichSuDiVaos = new ArrayList<>();
             for (RoomReservationDetail roomReservationDetail : roomReservationDetails) {
-                historyCheckIns.add(createHistoryCheckInEntity(roomReservationDetail));
+                lichSuDiVaos.add(createHistoryCheckInEntity(roomReservationDetail));
             }
 
-            bookingDAO.insertHistoryCheckIn(reservationForm, historyCheckIns);
+            bookingDAO.insertHistoryCheckIn(reservationForm, lichSuDiVaos);
 
             // 2.4. Create RoomUsageServiceEntity & insert to DB
             List<RoomUsageService> roomUsageServices = new ArrayList<>();
@@ -278,19 +278,19 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    private HistoryCheckIn createHistoryCheckInEntity(RoomReservationDetail roomReservationDetail) {
+    private LichSuDiVao createHistoryCheckInEntity(RoomReservationDetail roomReservationDetail) {
         String id;
         String prefix = EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getLength();
 
-        HistoryCheckIn lastedHistoryCheckIn = bookingDAO.findLastHistoryCheckIn();
-        if (lastedHistoryCheckIn == null) {
+        LichSuDiVao lastedLichSuDiVao = bookingDAO.findLastHistoryCheckIn();
+        if (lastedLichSuDiVao == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
-            id = EntityUtil.increaseEntityID(lastedHistoryCheckIn.getId(), prefix, numberLength);
+            id = EntityUtil.increaseEntityID(lastedLichSuDiVao.getMa_lich_su_di_vao(), prefix, numberLength);
         }
 
-        return new HistoryCheckIn(
+        return new LichSuDiVao(
                 id,
                 roomReservationDetail.getTimeIn(),
                 true,

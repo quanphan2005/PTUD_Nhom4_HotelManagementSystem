@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.Customer;
+import vn.iuh.entity.KhachHang;
 
 public interface CustomerService {
-    Customer getCustomerByID(String id);
-    Customer createCustomer(Customer customer);
-    Customer updateCustomer(Customer customer);
+    KhachHang getCustomerByID(String id);
+    KhachHang createCustomer(KhachHang khachHang);
+    KhachHang updateCustomer(KhachHang khachHang);
     boolean deleteCustomerByID(String id);
 }

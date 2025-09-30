@@ -4,7 +4,7 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.RoomFilter;
 import vn.iuh.dto.repository.BookingInfo;
 import vn.iuh.dto.repository.RoomInfo;
-import vn.iuh.entity.HistoryCheckIn;
+import vn.iuh.entity.LichSuDiVao;
 import vn.iuh.entity.ReservationForm;
 import vn.iuh.entity.RoomReservationDetail;
 import vn.iuh.entity.RoomUsageService;
@@ -194,7 +194,7 @@ public class BookingDAO {
         }
     }
 
-    public boolean insertHistoryCheckIn(ReservationForm reservationForm, List<HistoryCheckIn> historyCheckIns) {
+    public boolean insertHistoryCheckIn(ReservationForm reservationForm, List<LichSuDiVao> lichSuDiVaos) {
         String query = "INSERT INTO HistoryCheckIn" +
                        " (id, check_in_time, is_first, room_reservation_detail_id)" +
                        " VALUES (?, ?, ?, ?)";
@@ -202,17 +202,17 @@ public class BookingDAO {
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 
-            for (HistoryCheckIn historyCheckIn : historyCheckIns) {
-                ps.setString(1, historyCheckIn.getId());
-                ps.setTimestamp(2, historyCheckIn.getCheckInTime());
-                ps.setBoolean(3, historyCheckIn.getIsFirst());
-                ps.setString(4, historyCheckIn.getRoomReservationDetailId());
+            for (LichSuDiVao lichSuDiVao : lichSuDiVaos) {
+                ps.setString(1, lichSuDiVao.getMa_lich_su_di_vao());
+                ps.setTimestamp(2, lichSuDiVao.getCheckInTime());
+                ps.setBoolean(3, lichSuDiVao.getIsFirst());
+                ps.setString(4, lichSuDiVao.getMa_chi_tiet_dat_phong());
 
                 ps.addBatch();
             }
 
             int[] rowsAffected = ps.executeBatch();
-            return rowsAffected.length == historyCheckIns.size();
+            return rowsAffected.length == lichSuDiVaos.size();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -352,7 +352,7 @@ public class BookingDAO {
         }
     }
 
-    public HistoryCheckIn findLastHistoryCheckIn() {
+    public LichSuDiVao findLastHistoryCheckIn() {
         String query = "SELECT TOP 1 * FROM HistoryCheckIn ORDER BY id DESC";
 
         try {
@@ -469,9 +469,9 @@ public class BookingDAO {
         }
     }
 
-    private HistoryCheckIn mapResultSetToHistoryCheckIn(ResultSet rs) {
+    private LichSuDiVao mapResultSetToHistoryCheckIn(ResultSet rs) {
         try {
-            return new HistoryCheckIn(
+            return new LichSuDiVao(
                     rs.getString("id"),
                     rs.getTimestamp("check_in_time"),
                     rs.getBoolean("is_first"),

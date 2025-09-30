@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.Invoice;
+import vn.iuh.entity.HoaDon;
 
 public interface InvoiceService {
-    Invoice getInvoiceByID(String id);
-    Invoice createInvoice(Invoice invoice);
-    Invoice updateInvoice(Invoice invoice);
+    HoaDon getInvoiceByID(String id);
+    HoaDon createInvoice(HoaDon hoaDon);
+    HoaDon updateInvoice(HoaDon hoaDon);
     boolean deleteInvoiceByID(String id);
 }

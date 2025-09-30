@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.Account;
+import vn.iuh.entity.TaiKhoan;
 
 public interface AccountService {
-    Account getAccountByID(String id);
-    Account createAccount(Account account);
-    Account updateAccount(Account account);
+    TaiKhoan getAccountByID(String id);
+    TaiKhoan createAccount(TaiKhoan taiKhoan);
+    TaiKhoan updateAccount(TaiKhoan taiKhoan);
     boolean deleteAccountByID(String id);
 }
