@@ -8,7 +8,5 @@ import java.util.List;
 
 public interface BookingService {
     boolean createBooking(BookingCreationEvent bookingCreationEvent);
-    List<BookingResponse> getAllEmptyRooms();
-    List<BookingResponse> getRoomsByFilter(RoomFilter roomFilter);
     List<BookingResponse> getAllBookingInfo();
 }

@@ -1,60 +1,60 @@
 package vn.iuh.dto.repository;
 
 public class RoomInfo {
-    private final String id;
-    private final String roomName;
-    private boolean isActive;
-    private String roomStatus;
-    private final String roomType;
-    private final String numberOfCustomers;
-    private final double dailyPrice;
-    private final double hourlyPrice;
+    private final String maPhong;
+    private final String tenPhong;
+    private boolean dangHoatDong;
+    private String tenTrangThai;
+    private final String phanLoai;
+    private final String soLuongKhach;
+    private final double giaNgay;
+    private final double giaGio;
 
-    public RoomInfo(String id, String roomName, boolean isActive, String roomStatus, String roomType, String numberOfCustomers,
-                    double dailyPrice, double hourlyPrice) {
-        this.id = id;
-        this.roomName = roomName;
-        this.isActive = isActive;
-        this.roomStatus = roomStatus;
-        this.roomType = roomType;
-        this.numberOfCustomers = numberOfCustomers;
-        this.dailyPrice = dailyPrice;
-        this.hourlyPrice = hourlyPrice;
+    public RoomInfo(String maPhong, String tenPhong, boolean dangHoatDong, String tenTrangThai, String phanLoai, String soLuongKhach,
+                    double giaNgay, double giaGio) {
+        this.maPhong = maPhong;
+        this.tenPhong = tenPhong;
+        this.dangHoatDong = dangHoatDong;
+        this.tenTrangThai = tenTrangThai;
+        this.phanLoai = phanLoai;
+        this.soLuongKhach = soLuongKhach;
+        this.giaNgay = giaNgay;
+        this.giaGio = giaGio;
     }
 
-    public String getId() {
-        return id;
+    public String getMaPhong() {
+        return maPhong;
     }
 
-    public String getRoomName() {
-        return roomName;
+    public String getTenPhong() {
+        return tenPhong;
     }
 
-    public boolean isActive() {
-        return isActive;
+    public boolean isDangHoatDong() {
+        return dangHoatDong;
     }
 
-    public String getRoomStatus() {
-        return roomStatus;
+    public String getTenTrangThai() {
+        return tenTrangThai;
     }
 
-    public void setRoomStatus(String roomStatus) {
-        this.roomStatus = roomStatus;
+    public void setTenTrangThai(String tenTrangThai) {
+        this.tenTrangThai = tenTrangThai;
     }
 
-    public String getRoomType() {
-        return roomType;
+    public String getPhanLoai() {
+        return phanLoai;
     }
 
-    public String getNumberOfCustomers() {
-        return numberOfCustomers;
+    public String getSoLuongKhach() {
+        return soLuongKhach;
     }
 
-    public double getDailyPrice() {
-        return dailyPrice;
+    public double getGiaNgay() {
+        return giaNgay;
     }
 
-    public double getHourlyPrice() {
-        return hourlyPrice;
+    public double getGiaGio() {
+        return giaGio;
     }
 }

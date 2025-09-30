@@ -135,24 +135,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponse> getAllEmptyRooms() {
-        List<RoomInfo> RoomInfos = bookingDAO.findAllEmptyRooms();
-
-        List<BookingResponse> bookingResponses = new ArrayList<>();
-        for (RoomInfo roomInfo : RoomInfos) {
-            bookingResponses.add(createBookingResponse(roomInfo));
-        }
-
-        return bookingResponses;
-    }
-
-    @Override
-    public List<BookingResponse> getRoomsByFilter(RoomFilter roomFilter) {
-//        return bookingDAO.findRoomsByFilter(roomFilter);
-        return null;
-    }
-
-    @Override
     public List<BookingResponse> getAllBookingInfo() {
         // Get All Room Info
         List<RoomInfo> roomInfos = bookingDAO.findAllRoomInfo();
@@ -165,20 +147,20 @@ public class BookingServiceImpl implements BookingService {
         for (RoomInfo roomInfo : roomInfos) {
 
             // Set default Room Status if null or empty
-            if (Objects.isNull(roomInfo.getRoomStatus()) || roomInfo.getRoomStatus().isEmpty()) {
-                roomInfo.setRoomStatus(roomInfo.isActive()
+            if (Objects.isNull(roomInfo.getTenTrangThai()) || roomInfo.getTenTrangThai().isEmpty()) {
+                roomInfo.setTenTrangThai(roomInfo.isDangHoatDong()
                                                ? RoomStatus.ROOM_AVAILABLE_STATUS.getStatus()
                                                : RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus()
                 );
             }
 
-            if (Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
-                Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_CHECKING_STATUS.getStatus()) ||
-                Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_USING_STATUS.getStatus()) ||
-                Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
+            if (Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
+                Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_CHECKING_STATUS.getStatus()) ||
+                Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_USING_STATUS.getStatus()) ||
+                Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
             ) {
 
-                nonAvailableRoomIds.add(roomInfo.getId());
+                nonAvailableRoomIds.add(roomInfo.getMaPhong());
             }
 
             bookingResponses.add(createBookingResponse(roomInfo));
@@ -300,14 +282,14 @@ public class BookingServiceImpl implements BookingService {
 
     private BookingResponse createBookingResponse(RoomInfo roomInfo) {
         return new BookingResponse(
-                roomInfo.getId(),
-                roomInfo.getRoomName(),
-                roomInfo.isActive(),
-                roomInfo.getRoomStatus(),
-                roomInfo.getRoomType(),
-                roomInfo.getNumberOfCustomers(),
-                roomInfo.getDailyPrice(),
-                roomInfo.getHourlyPrice()
+                roomInfo.getMaPhong(),
+                roomInfo.getTenPhong(),
+                roomInfo.isDangHoatDong(),
+                roomInfo.getTenTrangThai(),
+                roomInfo.getPhanLoai(),
+                roomInfo.getSoLuongKhach(),
+                roomInfo.getGiaNgay(),
+                roomInfo.getGiaGio()
         );
     }
 

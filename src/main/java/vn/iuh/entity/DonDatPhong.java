@@ -6,7 +6,7 @@ public class DonDatPhong {
     private String maDonDatPhong;
     private String moTa;
     private Timestamp tgNhanPhong;
-    private Timestamp tgRoiPhong;
+    private Timestamp tgTraPhong;
     private boolean daDatTruoc;
     private double tongTienDuTinh;
     private double tienDatCoc;
@@ -17,14 +17,14 @@ public class DonDatPhong {
     public DonDatPhong() {
     }
 
-    public DonDatPhong(String maDonDatPhong, String moTa, Timestamp tgNhanPhong, Timestamp tgRoiPhong,
+    public DonDatPhong(String maDonDatPhong, String moTa, Timestamp tgNhanPhong, Timestamp tgTraPhong,
                        boolean daDatTruoc,
                        double tongTienDuTinh, double tienDatCoc, String maKhachHang, String maPhienDangNhap,
                        String thoiGianTao) {
         this.maDonDatPhong = maDonDatPhong;
         this.moTa = moTa;
         this.tgNhanPhong = tgNhanPhong;
-        this.tgRoiPhong = tgRoiPhong;
+        this.tgTraPhong = tgTraPhong;
         this.daDatTruoc = daDatTruoc;
         this.tongTienDuTinh = tongTienDuTinh;
         this.tienDatCoc = tienDatCoc;
@@ -57,15 +57,15 @@ public class DonDatPhong {
         this.tgNhanPhong = tgNhanPhong;
     }
 
-    public Timestamp getTgRoiPhong() {
-        return tgRoiPhong;
+    public Timestamp getTgTraPhong() {
+        return tgTraPhong;
     }
 
-    public void setTgRoiPhong(Timestamp tgRoiPhong) {
-        this.tgRoiPhong = tgRoiPhong;
+    public void setTgTraPhong(Timestamp tgTraPhong) {
+        this.tgTraPhong = tgTraPhong;
     }
 
-    public boolean isDaDatTruoc() {
+    public boolean getDaDatTruoc() {
         return daDatTruoc;
     }
 

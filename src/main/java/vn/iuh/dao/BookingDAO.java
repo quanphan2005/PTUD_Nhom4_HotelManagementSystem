@@ -4,17 +4,14 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.RoomFilter;
 import vn.iuh.dto.repository.BookingInfo;
 import vn.iuh.dto.repository.RoomInfo;
-import vn.iuh.entity.HistoryCheckIn;
+import vn.iuh.entity.LichSuDiVao;
 import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.ChiTietDatPhong;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,91 +52,38 @@ public class BookingDAO {
         }
     }
 
-    public List<RoomInfo> findAllEmptyRooms() {
-        String query = "SELECT r.id, r.room_name, r.is_active, rc.room_type, rc.number_customer" +
-                       ", rlp.updated_daily_price, rlp.updated_hourly_price" +
-                       " FROM Room r" +
-                       " JOIN RoomCategory rc ON rc.id = r.room_category_id" +
-                       " JOIN RoomListPrice rlp ON rlp.room_category_id = rc.id" +
-                       " WHERE r.is_active = ? AND r.is_deleted = 0" +
-                       " ORDER BY rlp.create_at DESC, r.id ASC";
-        List<RoomInfo> rooms = new ArrayList<>();
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, RoomStatus.ROOM_AVAILABLE_STATUS.getStatus());
-            var rs = ps.executeQuery();
-            while (rs.next())
-                rooms.add(mapResultSetToRoomInfo(rs));
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (TableEntityMismatch mismatchException) {
-            System.out.println(mismatchException.getMessage());
-        }
-
-        return rooms;
-    }
-
-    public List<RoomInfo> findRoomsByFilter(RoomFilter roomFilter) {
-        String query = "SELECT r.id, r.room_name, r.is_active, rc.room_type, rc.number_customer" +
-                       ", rlp.updated_daily_price, rlp.updated_hourly_price" +
-                       " FROM Room r" +
-                       " JOIN RoomCategory rc ON rc.id = r.room_category_id" +
-                       " JOIN RoomListPrice rlp ON rlp.room_category_id = rc.id" +
-                       " WHERE r.is_active = ? AND r.is_deleted = 0" +
-                       " ORDER BY rlp.create_at DESC, r.id ASC";
-        List<RoomInfo> rooms = new ArrayList<>();
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, RoomStatus.ROOM_AVAILABLE_STATUS.getStatus());
-            var rs = ps.executeQuery();
-            while (rs.next())
-                rooms.add(mapResultSetToRoomInfo(rs));
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (TableEntityMismatch mismatchException) {
-            System.out.println(mismatchException.getMessage());
-        }
-
-        return rooms;
-    }
-
     public boolean insertReservationForm(DonDatPhong donDatPhongEntity) {
-        String query = "INSERT INTO ReservationForm" +
-                       " (id, reserve_date, note, check_in_date, check_out_date, initial_price" +
-                       ", deposit_price, is_advanced, customer_id, shift_assignment_id)" +
-                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO DonDatPhong" +
+                       " (ma_don_dat_phong, mo_ta, tg_nhan_phong, tg_tra_phong, tong_tien_du_tinh, tien_dat_coc" +
+                       ", da_dat_truoc, ma_khach_hang, ma_phien_dang_nhap)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, donDatPhongEntity.getMaDonDatPhong());
-            ps.setTimestamp(2, donDatPhongEntity.getReserveDate());
-            ps.setString(3, donDatPhongEntity.getMoTa());
-            ps.setTimestamp(4, donDatPhongEntity.getTgNhanPhong());
-            ps.setTimestamp(5, donDatPhongEntity.getTgRoiPhong());
-            ps.setDouble(6, donDatPhongEntity.getTongTienDuTinh());
-            ps.setDouble(7, donDatPhongEntity.getTienDatCoc());
-            ps.setBoolean(8, donDatPhongEntity.getIsAdvanced());
-            ps.setString(9, donDatPhongEntity.getMaKhachHang());
-            ps.setString(10, donDatPhongEntity.getMaPhienDangNhap());
+            ps.setString(2, donDatPhongEntity.getMoTa());
+            ps.setTimestamp(3, donDatPhongEntity.getTgNhanPhong());
+            ps.setTimestamp(4, donDatPhongEntity.getTgTraPhong());
+            ps.setDouble(5, donDatPhongEntity.getTongTienDuTinh());
+            ps.setDouble(6, donDatPhongEntity.getTienDatCoc());
+            ps.setBoolean(7, donDatPhongEntity.getDaDatTruoc());
+            ps.setString(8, donDatPhongEntity.getMaKhachHang());
+            ps.setString(9, donDatPhongEntity.getMaPhienDangNhap());
 
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
 
         } catch (SQLException e) {
-            System.out.println("Lỗi insert ReservationForm: " + e.getMessage());
+            System.out.println("Lỗi thêm đơn đặt phòng: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
     public boolean insertRoomReservationDetail(DonDatPhong donDatPhongEntity,
                                                List<ChiTietDatPhong> chiTietDatPhongs) {
-        String query = "INSERT INTO RoomReservationDetail" +
-                       " (id, time_in, time_out, reservation_form_id, room_id, shift_assignment_id)" +
-                       " VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO ChiTietDatPhong" +
+                       " (ma_chi_tiet_dat_phong, tg_nhan_phong, tg_tra_phong, kieu_ket_thuc, ma_don_dat_phong, ma_phong, ma_phien_dang_nhap)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -150,9 +94,10 @@ public class BookingDAO {
                 ps.setString(1, chiTietDatPhong.getMaChiTietDatPhong());
                 ps.setTimestamp(2, chiTietDatPhong.getTgNhanPhong());
                 ps.setTimestamp(3, chiTietDatPhong.getTgTraPhong());
-                ps.setString(4, donDatPhongEntity.getMaDonDatPhong());
-                ps.setString(5, chiTietDatPhong.getMaPhong());
-                ps.setString(6, donDatPhongEntity.getMaPhienDangNhap());
+                ps.setString(4, chiTietDatPhong.getKieuKetThuc());
+                ps.setString(5, donDatPhongEntity.getMaDonDatPhong());
+                ps.setString(6, chiTietDatPhong.getMaPhong());
+                ps.setString(7, donDatPhongEntity.getMaPhienDangNhap());
 
                 ps.addBatch();
             }
@@ -168,20 +113,22 @@ public class BookingDAO {
 
     public boolean insertRoomUsageService(DonDatPhong donDatPhongEntity,
                                           List<PhongDungDichVu> phongDungDichVus) {
-        String query = "INSERT INTO RoomUsageService" +
-                       " (id, quantity, total_price, order_time, service_item_id, room_detail_id)" +
-                       " VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO PhongDungDichVu" +
+                       " (ma_phong_dung_dich_vu, tong_tien, so_luong, thoi_gian_dung, gia_thoi_diem_do, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 
             for (PhongDungDichVu phongDungDichVu : phongDungDichVus) {
                 ps.setString(1, phongDungDichVu.getMaPhongDungDichVu());
-                ps.setInt(2, phongDungDichVu.getSoLuong());
-                ps.setDouble(3, phongDungDichVu.getTongTien());
-                ps.setDate(4, phongDungDichVu.getThoiGianDung());
-                ps.setString(5, phongDungDichVu.getMaDichVu());
-                ps.setString(6, donDatPhongEntity.getMaDonDatPhong());
+                ps.setDouble(2, phongDungDichVu.getTongTien());
+                ps.setInt(3, phongDungDichVu.getSoLuong());
+                ps.setTimestamp(4, phongDungDichVu.getThoiGianDung());
+                ps.setDouble(5, phongDungDichVu.getGiaThoiDiemDo());
+                ps.setString(6, phongDungDichVu.getMaChiTietDatPhong());
+                ps.setString(7, phongDungDichVu.getMaDichVu());
+                ps.setString(8, donDatPhongEntity.getMaPhienDangNhap());
 
                 ps.addBatch();
             }
@@ -194,19 +141,18 @@ public class BookingDAO {
         }
     }
 
-    public boolean insertHistoryCheckIn(DonDatPhong donDatPhong, List<HistoryCheckIn> historyCheckIns) {
-        String query = "INSERT INTO HistoryCheckIn" +
-                       " (id, check_in_time, is_first, room_reservation_detail_id)" +
-                       " VALUES (?, ?, ?, ?)";
+    public boolean insertHistoryCheckIn(DonDatPhong donDatPhong, List<LichSuDiVao> historyCheckIns) {
+        String query = "INSERT INTO LichSuDiVao" +
+                       " (ma_lich_su_di_vao, la_lan_dau_tien, ma_chi_tiet_dat_phong)" +
+                       " VALUES (?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 
-            for (HistoryCheckIn historyCheckIn : historyCheckIns) {
-                ps.setString(1, historyCheckIn.getId());
-                ps.setTimestamp(2, historyCheckIn.getCheckInTime());
-                ps.setBoolean(3, historyCheckIn.getIsFirst());
-                ps.setString(4, historyCheckIn.getRoomReservationDetailId());
+            for (LichSuDiVao historyCheckIn : historyCheckIns) {
+                ps.setString(1, historyCheckIn.getMaLichSuDiVao());
+                ps.setBoolean(2, historyCheckIn.getLaLanDauTien());
+                ps.setString(3, historyCheckIn.getMaChiTietDatPhong());
 
                 ps.addBatch();
             }
@@ -219,39 +165,15 @@ public class BookingDAO {
         }
     }
 
-    public List<ChiTietDatPhong> findRoomReservationDetailByReservationFormID(String reservationFormId) {
-        String query = "SELECT * FROM RoomReservationDetail WHERE reservation_form_id = ?";
-        List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, reservationFormId);
-
-            var rs = ps.executeQuery();
-            if (rs.next())
-                chiTietDatPhongs.add(mapResultSetToRoomReservationDetail(rs));
-            else
-                return null;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (TableEntityMismatch mismatchException) {
-            System.out.println(mismatchException.getMessage());
-            return null;
-        }
-
-        return chiTietDatPhongs;
-    }
-
     public List<RoomInfo> findAllRoomInfo() {
-        String query = "SELECT r.id, r.room_name, r.is_active, j.status_name, rc.room_type, rc.number_customer" +
-                       ", rlp.updated_daily_price, rlp.updated_hourly_price" +
-                       " FROM Room r" +
-                       " LEFT JOIN Job j ON j.room_id = r.id" +
-                       " JOIN RoomCategory rc ON rc.id = r.room_category_id" +
-                       " JOIN RoomListPrice rlp ON rlp.room_category_id = rc.id" +
-                       " WHERE r.is_deleted = 0" +
-                       " ORDER BY rlp.create_at DESC, r.id ASC";
+        String query = "SELECT p.ma_phong, p.ten_phong, p.dang_hoat_dong, cv.ten_trang_thai, lp.phan_loai, lp.so_luong_khach" +
+                       ", gp.gia_ngay_moi, gp.gia_gio_moi" +
+                       " FROM Phong p" +
+                       " LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong" +
+                       " JOIN LoaiPhong lp ON lp.ma_loai_phong = p.ma_phong" +
+                       " JOIN GiaPhong gp ON gp.ma_loai_phong = lp.ma_loai_phong" +
+                       " WHERE p.da_xoa = 0" +
+                       " ORDER BY gp.thoi_gian_tao DESC, p.ma_phong ASC";
         List<RoomInfo> rooms = new ArrayList<>();
 
         try {
@@ -275,12 +197,12 @@ public class BookingDAO {
             return new ArrayList<>();
 
         StringBuilder query = new StringBuilder(
-                "SELECT r.id, c.customer_name, rrd.time_in, rrd.time_out" +
-                " FROM Room r" +
-                " JOIN RoomReservationDetail rrd ON r.id = rrd.room_id" +
-                " JOIN ReservationForm rf ON rf.id = rrd.reservation_form_id" +
-                " JOIN Customer c ON c.id = rf.customer_id" +
-                " WHERE r.id IN (");
+                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                " FROM Phong p" +
+                " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
+                " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
+                " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
+                " WHERE p.ma_phong IN (");
 
         for (int i = 0; i < nonAvailableRoomIds.size(); i++) {
             query.append("?");
@@ -313,7 +235,7 @@ public class BookingDAO {
     }
 
     public DonDatPhong findLastReservationForm() {
-        String query = "SELECT TOP 1 * FROM ReservationForm ORDER BY id DESC";
+        String query = "SELECT TOP 1 * FROM DonDatPhong ORDER BY ma_don_dat_phong DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -333,7 +255,7 @@ public class BookingDAO {
     }
 
     public ChiTietDatPhong findLastRoomReservationDetail() {
-        String query = "SELECT TOP 1 * FROM RoomReservationDetail ORDER BY id DESC";
+        String query = "SELECT TOP 1 * FROM ChiTietDatPhong ORDER BY ma_chi_tiet_dat_phong DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -352,8 +274,8 @@ public class BookingDAO {
         }
     }
 
-    public HistoryCheckIn findLastHistoryCheckIn() {
-        String query = "SELECT TOP 1 * FROM HistoryCheckIn ORDER BY id DESC";
+    public LichSuDiVao findLastHistoryCheckIn() {
+        String query = "SELECT TOP 1 * FROM LichSuDiVao ORDER BY ma_lich_su_di_vao DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -370,7 +292,7 @@ public class BookingDAO {
     }
 
     public PhongDungDichVu findLastRoomUsageService() {
-        String query = "SELECT TOP 1 * FROM RoomUsageService ORDER BY id DESC";
+        String query = "SELECT TOP 1 * FROM PhongDungDichVu ORDER BY ma_phong_dung_dich_vu DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -389,33 +311,17 @@ public class BookingDAO {
         }
     }
 
-    public boolean updateRoomStatus(String roomId, String newStatus) {
-        String query = "UPDATE Room SET is_active = ? WHERE id = ?";
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, newStatus);
-            ps.setString(2, roomId);
-
-            int rowsAffected = ps.executeUpdate();
-            return rowsAffected > 0;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private RoomInfo mapResultSetToRoomInfo(ResultSet rs) {
         try {
             return new RoomInfo(
-                    rs.getString("id"),
-                    rs.getString("room_name"),
-                    rs.getBoolean("is_active"),
-                    rs.getString("status_name"),
-                    rs.getString("room_type"),
-                    rs.getString("number_customer"),
-                    rs.getDouble("updated_daily_price"),
-                    rs.getDouble("updated_hourly_price")
+                    rs.getString("ma_phong"),
+                    rs.getString("ten_phong"),
+                    rs.getBoolean("dang_hoat_dong"),
+                    rs.getString("ten_trang_thai"),
+                    rs.getString("phan_loai"),
+                    rs.getString("so_luong_khach"),
+                    rs.getDouble("gia_ngay_moi"),
+                    rs.getDouble("gia_gio_moi")
             );
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can`t map ResultSet to RoomInfo" + e.getMessage());
@@ -437,16 +343,16 @@ public class BookingDAO {
     private DonDatPhong mapResultSetToReservationForm(ResultSet rs) {
         try {
             return new DonDatPhong(
-                    rs.getString("id"),
-                    rs.getTimestamp("reserve_date"),
-                    rs.getString("note"),
-                    rs.getTimestamp("check_in_date"),
-                    rs.getTimestamp("check_out_date"),
-                    rs.getDouble("initial_price"),
-                    rs.getDouble("deposit_price"),
-                    rs.getBoolean("is_advanced"),
-                    rs.getString("customer_id"),
-                    rs.getString("shift_assignment_id")
+                    rs.getString("ma_don_dat_phong"),
+                    rs.getString("mo_ta"),
+                    rs.getTimestamp("tg_nhan_phong"),
+                    rs.getTimestamp("tg_tra_phong"),
+                    rs.getBoolean("da_dat_truoc"),
+                    rs.getDouble("tong_tien_du_tinh"),
+                    rs.getDouble("tien_dat_coc"),
+                    rs.getString("ma_khach_hang"),
+                    rs.getString("ma_phien_dang_nhap"),
+                    rs.getString("thoi_gian_tao")
             );
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can`t map ResultSet to ReservationForm" + e.getMessage());
@@ -456,26 +362,27 @@ public class BookingDAO {
     private ChiTietDatPhong mapResultSetToRoomReservationDetail(ResultSet rs) {
         try {
             return new ChiTietDatPhong(
-                    rs.getString("id"),
-                    rs.getTimestamp("time_out"),
-                    rs.getTimestamp("time_in"),
-                    rs.getString("end_type"),
-                    rs.getString("reservation_form_id"),
-                    rs.getString("room_id"),
-                    rs.getString("shift_assignment_id")
+                    rs.getString("ma_chi_tiet_dat_phong"),
+                    rs.getTimestamp("tg_nhan_phong"),
+                    rs.getTimestamp("tg_tra_phong"),
+                    rs.getString("kieu_ket_thuc"),
+                    rs.getString("ma_don_dat_phong"),
+                    rs.getString("ma_phong"),
+                    rs.getString("ma_phien_dang_nhap"),
+                    rs.getTimestamp("thoi_gian_tao")
             );
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can`t map ResultSet to RoomReservationDetail" + e.getMessage());
         }
     }
 
-    private HistoryCheckIn mapResultSetToHistoryCheckIn(ResultSet rs) {
+    private LichSuDiVao mapResultSetToHistoryCheckIn(ResultSet rs) {
         try {
-            return new HistoryCheckIn(
-                    rs.getString("id"),
-                    rs.getTimestamp("check_in_time"),
-                    rs.getBoolean("is_first"),
-                    rs.getString("room_reservation_detail_id")
+            return new LichSuDiVao(
+                    rs.getString("ma_lich_su_di_vao"),
+                    rs.getBoolean("la_lan_dau_tien"),
+                    rs.getString("ma_chi_tiet_dat_phong"),
+                    rs.getTimestamp("thoi_gian_tao")
             );
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can`t map ResultSet to HistoryCheckIn" + e.getMessage());
@@ -485,13 +392,15 @@ public class BookingDAO {
     private PhongDungDichVu mapResultSetToRoomUsageService(ResultSet rs) {
         try {
             return new PhongDungDichVu(
-                    rs.getString("id"),
-                    rs.getDouble("total_price"),
-                    rs.getInt("quantity"),
-                    rs.getDate("order_time"),
-                    rs.getString("reservation_form_id"),
-                    rs.getString("service_item_id"),
-                    rs.getString("shift_assignment_id")
+                    rs.getString("ma_phong_dung_dich_vu"),
+                    rs.getDouble("tong_tien"),
+                    rs.getInt("so_luong"),
+                    rs.getTimestamp("thoi_gian_dung"),
+                    rs.getDouble("gia_thoi_diem_do"),
+                    rs.getString("ma_chi_tiet_dat_phong"),
+                    rs.getString("ma_dich_vu"),
+                    rs.getString("ma_phien_dang_nhap"),
+                    rs.getTimestamp("thoi_gian_tao")
             );
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can`t map ResultSet to RoomUsageService" + e.getMessage());

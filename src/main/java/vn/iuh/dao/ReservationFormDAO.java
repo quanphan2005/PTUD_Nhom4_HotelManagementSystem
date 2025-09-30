@@ -49,7 +49,7 @@ public class ReservationFormDAO {
             ps.setTimestamp(2, donDatPhong.getReserveDate() != null ? new Timestamp(donDatPhong.getReserveDate().getTime()) : null);
             ps.setString(3, donDatPhong.getMoTa());
             ps.setTimestamp(4, donDatPhong.getTgNhanPhong() != null ? new Timestamp(donDatPhong.getTgNhanPhong().getTime()) : null);
-            ps.setTimestamp(5, donDatPhong.getTgRoiPhong() != null ? new Timestamp(donDatPhong.getTgRoiPhong().getTime()) : null);
+            ps.setTimestamp(5, donDatPhong.getTgTraPhong() != null ? new Timestamp(donDatPhong.getTgTraPhong().getTime()) : null);
             ps.setDouble(6, donDatPhong.getTongTienDuTinh());
             ps.setDouble(7, donDatPhong.getTienDatCoc());
             ps.setBoolean(8, donDatPhong.getIsAdvanced());
@@ -75,7 +75,7 @@ public class ReservationFormDAO {
             ps.setTimestamp(1, donDatPhong.getReserveDate() != null ? new Timestamp(donDatPhong.getReserveDate().getTime()) : null);
             ps.setString(2, donDatPhong.getMoTa());
             ps.setTimestamp(3, donDatPhong.getTgNhanPhong() != null ? new Timestamp(donDatPhong.getTgNhanPhong().getTime()) : null);
-            ps.setTimestamp(4, donDatPhong.getTgRoiPhong() != null ? new Timestamp(donDatPhong.getTgRoiPhong().getTime()) : null);
+            ps.setTimestamp(4, donDatPhong.getTgTraPhong() != null ? new Timestamp(donDatPhong.getTgTraPhong().getTime()) : null);
             ps.setDouble(5, donDatPhong.getTongTienDuTinh());
             ps.setDouble(6, donDatPhong.getTienDatCoc());
             ps.setBoolean(7, donDatPhong.getIsAdvanced());
@@ -125,7 +125,7 @@ public class ReservationFormDAO {
             donDatPhong.setMaDonDatPhong(rs.getString("id"));
             donDatPhong.setMoTa(rs.getString("note"));
             donDatPhong.setTgNhanPhong(rs.getTimestamp("check_in_date"));
-            donDatPhong.setTgRoiPhong(rs.getTimestamp("check_out_date"));
+            donDatPhong.setTgTraPhong(rs.getTimestamp("check_out_date"));
             donDatPhong.setTongTienDuTinh(rs.getDouble("initial_price"));
             donDatPhong.setTienDatCoc(rs.getDouble("deposit_price"));
             donDatPhong.setDaDatTruoc(rs.getBoolean("is_advanced"));

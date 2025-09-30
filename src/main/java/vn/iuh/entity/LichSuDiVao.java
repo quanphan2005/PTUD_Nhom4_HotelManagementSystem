@@ -27,7 +27,7 @@ public class LichSuDiVao {
         this.maLichSuDiVao = maLichSuDiVao;
     }
 
-    public boolean isLaLanDauTien() {
+    public boolean getLaLanDauTien() {
         return laLanDauTien;
     }
 
