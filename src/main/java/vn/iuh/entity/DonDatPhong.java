@@ -7,9 +7,9 @@ public class DonDatPhong {
     private String moTa;
     private Timestamp tgNhanPhong;
     private Timestamp tgTraPhong;
-    private boolean daDatTruoc;
     private double tongTienDuTinh;
     private double tienDatCoc;
+    private boolean daDatTruoc;
     private String maKhachHang;
     private String maPhienDangNhap;
     private String thoiGianTao;
@@ -18,16 +18,15 @@ public class DonDatPhong {
     }
 
     public DonDatPhong(String maDonDatPhong, String moTa, Timestamp tgNhanPhong, Timestamp tgTraPhong,
-                       boolean daDatTruoc,
-                       double tongTienDuTinh, double tienDatCoc, String maKhachHang, String maPhienDangNhap,
-                       String thoiGianTao) {
+                       double tongTienDuTinh, double tienDatCoc, boolean daDatTruoc, String maKhachHang,
+                       String maPhienDangNhap, String thoiGianTao) {
         this.maDonDatPhong = maDonDatPhong;
         this.moTa = moTa;
         this.tgNhanPhong = tgNhanPhong;
         this.tgTraPhong = tgTraPhong;
-        this.daDatTruoc = daDatTruoc;
         this.tongTienDuTinh = tongTienDuTinh;
         this.tienDatCoc = tienDatCoc;
+        this.daDatTruoc = daDatTruoc;
         this.maKhachHang = maKhachHang;
         this.maPhienDangNhap = maPhienDangNhap;
         this.thoiGianTao = thoiGianTao;
@@ -65,14 +64,6 @@ public class DonDatPhong {
         this.tgTraPhong = tgTraPhong;
     }
 
-    public boolean getDaDatTruoc() {
-        return daDatTruoc;
-    }
-
-    public void setDaDatTruoc(boolean daDatTruoc) {
-        this.daDatTruoc = daDatTruoc;
-    }
-
     public double getTongTienDuTinh() {
         return tongTienDuTinh;
     }
@@ -87,6 +78,14 @@ public class DonDatPhong {
 
     public void setTienDatCoc(double tienDatCoc) {
         this.tienDatCoc = tienDatCoc;
+    }
+
+    public boolean getDaDatTruoc() {
+        return daDatTruoc;
+    }
+
+    public void setDaDatTruoc(boolean daDatTruoc) {
+        this.daDatTruoc = daDatTruoc;
     }
 
     public String getMaKhachHang() {

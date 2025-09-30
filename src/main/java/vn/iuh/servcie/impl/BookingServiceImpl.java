@@ -3,14 +3,13 @@ package vn.iuh.servcie.impl;
 import vn.iuh.constraint.ActionType;
 import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.constraint.RoomStatus;
-import vn.iuh.dao.BookingDAO;
+import vn.iuh.dao.DatPhongDAO;
 import vn.iuh.dao.KhachHangDAO;
 import vn.iuh.dao.JobDAO;
 import vn.iuh.dao.WorkingHistoryDAO;
 import vn.iuh.dto.event.create.BookingCreationEvent;
-import vn.iuh.dto.event.create.RoomFilter;
-import vn.iuh.dto.repository.BookingInfo;
-import vn.iuh.dto.repository.RoomInfo;
+import vn.iuh.dto.repository.ThongTinDatPhong;
+import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.entity.*;
 import vn.iuh.servcie.BookingService;
@@ -23,13 +22,13 @@ import java.util.List;
 import java.util.Objects;
 
 public class BookingServiceImpl implements BookingService {
-    private final BookingDAO bookingDAO;
+    private final DatPhongDAO datPhongDAO;
     private final KhachHangDAO khachHangDAO;
     private final WorkingHistoryDAO workingHistoryDAO;
     private final JobDAO jobDAO;
 
     public BookingServiceImpl() {
-        this.bookingDAO = new BookingDAO();
+        this.datPhongDAO = new DatPhongDAO();
         this.khachHangDAO = new KhachHangDAO();
         this.workingHistoryDAO = new WorkingHistoryDAO();
         this.jobDAO = new JobDAO();
@@ -42,7 +41,7 @@ public class BookingServiceImpl implements BookingService {
         Customer customer = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
 
         try {
-            bookingDAO.beginTransaction();
+            datPhongDAO.khoiTaoGiaoTac();
 
             // 1.1 Create Customer if not exist
             if (Objects.isNull(customer)) {
@@ -57,7 +56,7 @@ public class BookingServiceImpl implements BookingService {
 
             // 2.1. Create ReservationFormEntity & insert to DB
             DonDatPhong donDatPhong = createReservationFormEntity(bookingCreationEvent, null);
-            bookingDAO.insertReservationForm(donDatPhong);
+            datPhongDAO.themDonDatPhong(donDatPhong);
 
             // 2.2. Create RoomReservationDetail Entity & insert to DB
             List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
@@ -65,15 +64,15 @@ public class BookingServiceImpl implements BookingService {
                 chiTietDatPhongs.add(
                         createRoomReservationDetailEntity(bookingCreationEvent, roomId, donDatPhong.getMaDonDatPhong()));
 
-            bookingDAO.insertRoomReservationDetail(donDatPhong, chiTietDatPhongs);
+            datPhongDAO.themChiTietDatPhong(donDatPhong, chiTietDatPhongs);
 
             // 2.3. Create HistoryCheckInEntity & insert to DB
-            List<HistoryCheckIn> historyCheckIns = new ArrayList<>();
+            List<LichSuDiVao> historyCheckIns = new ArrayList<>();
             for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
                 historyCheckIns.add(createHistoryCheckInEntity(chiTietDatPhong));
             }
 
-            bookingDAO.insertHistoryCheckIn(donDatPhong, historyCheckIns);
+            datPhongDAO.themLichSuDiVao(historyCheckIns);
 
             // 2.4. Create RoomUsageServiceEntity & insert to DB
             List<PhongDungDichVu> phongDungDichVus = new ArrayList<>();
@@ -81,7 +80,7 @@ public class BookingServiceImpl implements BookingService {
                 phongDungDichVus.add(
                         createRoomUsageServiceEntity(bookingCreationEvent, serviceId, donDatPhong.getMaDonDatPhong()));
 
-            bookingDAO.insertRoomUsageService(donDatPhong, phongDungDichVus);
+            datPhongDAO.themPhongDungDichVu(donDatPhong, phongDungDichVus);
 
             // 2.5. Create Job for each booked room
             List<CongViec> congViecs = new ArrayList<>();
@@ -126,57 +125,57 @@ public class BookingServiceImpl implements BookingService {
             System.out.println("Lỗi khi đặt phòng: " + e.getMessage());
             System.out.println("Rollback transaction");
             e.printStackTrace();
-            bookingDAO.rollbackTransaction();
+            datPhongDAO.hoanTacGiaoTac();
             return false;
         }
 
-        bookingDAO.commitTransaction();
+        datPhongDAO.thucHienGiaoTac();
         return true;
     }
 
     @Override
     public List<BookingResponse> getAllBookingInfo() {
         // Get All Room Info
-        List<RoomInfo> roomInfos = bookingDAO.findAllRoomInfo();
+        List<ThongTinPhong> thongTinPhongs = datPhongDAO.timTatCaThongTinPhong();
 
         // Get All non-available Room Ids
         List<String> nonAvailableRoomIds = new ArrayList<>();
 
         // Create BookingResponse each Room info
         List<BookingResponse> bookingResponses = new ArrayList<>();
-        for (RoomInfo roomInfo : roomInfos) {
+        for (ThongTinPhong thongTinPhong : thongTinPhongs) {
 
             // Set default Room Status if null or empty
-            if (Objects.isNull(roomInfo.getTenTrangThai()) || roomInfo.getTenTrangThai().isEmpty()) {
-                roomInfo.setTenTrangThai(roomInfo.isDangHoatDong()
+            if (Objects.isNull(thongTinPhong.getTenTrangThai()) || thongTinPhong.getTenTrangThai().isEmpty()) {
+                thongTinPhong.setTenTrangThai(thongTinPhong.isDangHoatDong()
                                                ? RoomStatus.ROOM_AVAILABLE_STATUS.getStatus()
                                                : RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus()
                 );
             }
 
-            if (Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
-                Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_CHECKING_STATUS.getStatus()) ||
-                Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_USING_STATUS.getStatus()) ||
-                Objects.equals(roomInfo.getTenTrangThai(), RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
+            if (Objects.equals(thongTinPhong.getTenTrangThai(), RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
+                Objects.equals(thongTinPhong.getTenTrangThai(), RoomStatus.ROOM_CHECKING_STATUS.getStatus()) ||
+                Objects.equals(thongTinPhong.getTenTrangThai(), RoomStatus.ROOM_USING_STATUS.getStatus()) ||
+                Objects.equals(thongTinPhong.getTenTrangThai(), RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
             ) {
 
-                nonAvailableRoomIds.add(roomInfo.getMaPhong());
+                nonAvailableRoomIds.add(thongTinPhong.getMaPhong());
             }
 
-            bookingResponses.add(createBookingResponse(roomInfo));
+            bookingResponses.add(createBookingResponse(thongTinPhong));
         }
 
         // Find all Booking Info for non-available rooms
-        List<BookingInfo> bookingInfos = bookingDAO.findAllBookingInfo(nonAvailableRoomIds);
+        List<ThongTinDatPhong> thongTinDatPhongs = datPhongDAO.timTatCaThongTinDatPhong(nonAvailableRoomIds);
 
         // Update BookingResponse with Booking Info
-        for (BookingInfo bookingInfo : bookingInfos) {
+        for (ThongTinDatPhong thongTinDatPhong : thongTinDatPhongs) {
             for (BookingResponse bookingResponse : bookingResponses) {
-                if (Objects.equals(bookingResponse.getRoomId(), bookingInfo.getRoomId())) {
+                if (Objects.equals(bookingResponse.getRoomId(), thongTinDatPhong.getMaPhong())) {
                     bookingResponse.updateBookingInfo(
-                            bookingInfo.getCustomerName(),
-                            bookingInfo.getTimeIn(),
-                            bookingInfo.getTimeOut()
+                            thongTinDatPhong.getTenKhachHang(),
+                            thongTinDatPhong.getTgNhanPhong(),
+                            thongTinDatPhong.getTgTraPhong()
                     );
                 }
             }
@@ -190,7 +189,7 @@ public class BookingServiceImpl implements BookingService {
         String prefix = EntityIDSymbol.RESERVATION_FORM_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.RESERVATION_FORM_PREFIX.getLength();
 
-        DonDatPhong lastedDonDatPhong = bookingDAO.findLastReservationForm();
+        DonDatPhong lastedDonDatPhong = datPhongDAO.timDonDatPhongMoiNhat();
         if (lastedDonDatPhong == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
@@ -217,7 +216,7 @@ public class BookingServiceImpl implements BookingService {
         String prefix = EntityIDSymbol.ROOM_RESERVATION_DETAIL_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.ROOM_RESERVATION_DETAIL_PREFIX.getLength();
 
-        ChiTietDatPhong lastedReservationDetail = bookingDAO.findLastRoomReservationDetail();
+        ChiTietDatPhong lastedReservationDetail = datPhongDAO.timChiTietDatPhongMoiNhat();
         if (lastedReservationDetail == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
@@ -242,7 +241,7 @@ public class BookingServiceImpl implements BookingService {
         String prefix = EntityIDSymbol.ROOM_USAGE_SERVICE_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.ROOM_USAGE_SERVICE_PREFIX.getLength();
 
-        PhongDungDichVu lastedPhongDungDichVu = bookingDAO.findLastRoomUsageService();
+        PhongDungDichVu lastedPhongDungDichVu = datPhongDAO.findLastRoomUsageService();
         if (lastedPhongDungDichVu == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
@@ -260,19 +259,19 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    private HistoryCheckIn createHistoryCheckInEntity(ChiTietDatPhong chiTietDatPhong) {
+    private LichSuDiVao createHistoryCheckInEntity(ChiTietDatPhong chiTietDatPhong) {
         String id;
         String prefix = EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getLength();
 
-        HistoryCheckIn lastedHistoryCheckIn = bookingDAO.findLastHistoryCheckIn();
+        LichSuDiVao lastedHistoryCheckIn = datPhongDAO.timLichSuDiVaoMoiNhat();
         if (lastedHistoryCheckIn == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
-            id = EntityUtil.increaseEntityID(lastedHistoryCheckIn.getId(), prefix, numberLength);
+            id = EntityUtil.increaseEntityID(lastedHistoryCheckIn.getMaLichSuDiVao(), prefix, numberLength);
         }
 
-        return new HistoryCheckIn(
+        return new LichSuDiVao(
                 id,
                 chiTietDatPhong.getTgNhanPhong(),
                 true,
@@ -280,16 +279,16 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    private BookingResponse createBookingResponse(RoomInfo roomInfo) {
+    private BookingResponse createBookingResponse(ThongTinPhong thongTinPhong) {
         return new BookingResponse(
-                roomInfo.getMaPhong(),
-                roomInfo.getTenPhong(),
-                roomInfo.isDangHoatDong(),
-                roomInfo.getTenTrangThai(),
-                roomInfo.getPhanLoai(),
-                roomInfo.getSoLuongKhach(),
-                roomInfo.getGiaNgay(),
-                roomInfo.getGiaGio()
+                thongTinPhong.getMaPhong(),
+                thongTinPhong.getTenPhong(),
+                thongTinPhong.isDangHoatDong(),
+                thongTinPhong.getTenTrangThai(),
+                thongTinPhong.getPhanLoai(),
+                thongTinPhong.getSoLuongKhach(),
+                thongTinPhong.getGiaNgay(),
+                thongTinPhong.getGiaGio()
         );
     }
 

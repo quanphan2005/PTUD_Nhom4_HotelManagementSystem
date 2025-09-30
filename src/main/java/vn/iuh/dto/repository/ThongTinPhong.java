@@ -1,6 +1,6 @@
 package vn.iuh.dto.repository;
 
-public class RoomInfo {
+public class ThongTinPhong {
     private final String maPhong;
     private final String tenPhong;
     private boolean dangHoatDong;
@@ -10,8 +10,8 @@ public class RoomInfo {
     private final double giaNgay;
     private final double giaGio;
 
-    public RoomInfo(String maPhong, String tenPhong, boolean dangHoatDong, String tenTrangThai, String phanLoai, String soLuongKhach,
-                    double giaNgay, double giaGio) {
+    public ThongTinPhong(String maPhong, String tenPhong, boolean dangHoatDong, String tenTrangThai, String phanLoai, String soLuongKhach,
+                         double giaNgay, double giaGio) {
         this.maPhong = maPhong;
         this.tenPhong = tenPhong;
         this.dangHoatDong = dangHoatDong;

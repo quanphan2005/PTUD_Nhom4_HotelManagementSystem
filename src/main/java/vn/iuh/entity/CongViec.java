@@ -4,18 +4,18 @@ import java.sql.Timestamp;
 
 public class CongViec {
     private String maCongViec;
+    private String tenTrangThai;
     private Timestamp tgBatDau;
     private Timestamp tgKetThuc;
-    private String tenTrangThai;
     private String maPhong;
     private Timestamp thoiGianTao;
 
-    public CongViec(String maCongViec, Timestamp tgBatDau, Timestamp tgKetThuc, String tenTrangThai, String maPhong,
+    public CongViec(String maCongViec, String tenTrangThai, Timestamp tgBatDau, Timestamp tgKetThuc, String maPhong,
                     Timestamp thoiGianTao) {
         this.maCongViec = maCongViec;
+        this.tenTrangThai = tenTrangThai;
         this.tgBatDau = tgBatDau;
         this.tgKetThuc = tgKetThuc;
-        this.tenTrangThai = tenTrangThai;
         this.maPhong = maPhong;
         this.thoiGianTao = thoiGianTao;
     }
@@ -29,6 +29,14 @@ public class CongViec {
 
     public void setMaCongViec(String maCongViec) {
         this.maCongViec = maCongViec;
+    }
+
+    public String getTenTrangThai() {
+        return tenTrangThai;
+    }
+
+    public void setTenTrangThai(String tenTrangThai) {
+        this.tenTrangThai = tenTrangThai;
     }
 
     public Timestamp getTgBatDau() {
@@ -45,14 +53,6 @@ public class CongViec {
 
     public void setTgKetThuc(Timestamp tgKetThuc) {
         this.tgKetThuc = tgKetThuc;
-    }
-
-    public String getTenTrangThai() {
-        return tenTrangThai;
-    }
-
-    public void setTenTrangThai(String tenTrangThai) {
-        this.tenTrangThai = tenTrangThai;
     }
 
     public String getMaPhong() {

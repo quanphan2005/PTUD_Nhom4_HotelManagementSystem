@@ -4,10 +4,7 @@ import vn.iuh.entity.CongViec;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 
 public class JobDAO {
@@ -22,7 +19,7 @@ public class JobDAO {
     }
 
     public CongViec findLastJob() {
-        String query = "SELECT TOP 1 * FROM Job ORDER BY id DESC";
+        String query = "SELECT TOP 1 * FROM CongViec ORDER BY ma_cong_viec DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -41,16 +38,16 @@ public class JobDAO {
     }
 
     public void insertJobs(List<CongViec> congViecs) {
-        String query = "INSERT INTO Job (id, start_time, end_time, status_name, room_id) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO CongViec (ma_cong_viec, ten_trang_thai, tg_bat_dau, tg_ket_thuc, ma_phong) VALUES (?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             for (CongViec congViec : congViecs) {
                 ps.setString(1, congViec.getMaCongViec());
-                ps.setTimestamp(2, congViec.getStartTime());
-                ps.setTimestamp(3, congViec.getEndTime());
-                ps.setString(4, congViec.getTenTrangThai());
-                ps.setString(5, congViec.getPhongId());
+                ps.setString(2, congViec.getTenTrangThai());
+                ps.setTimestamp(3, congViec.getTgBatDau());
+                ps.setTimestamp(4, congViec.getTgKetThuc());
+                ps.setString(5, congViec.getMaPhong());
 
                 ps.addBatch();
             }
@@ -63,15 +60,16 @@ public class JobDAO {
 
     public CongViec mapResultSetToJob(ResultSet rs) throws SQLException, TableEntityMismatch {
         try {
-            String id = rs.getString("id");
-            String statusName = rs.getString("status_name");
-            java.sql.Timestamp startTime = rs.getTimestamp("start_time");
-            java.sql.Timestamp endTime = rs.getTimestamp("end_time");
-            String roomId = rs.getString("room_id");
+            String maCongViec = rs.getString("ma_cong_viec");
+            String tenTrangThai = rs.getString("ten_trang_thai");
+            Timestamp tgBatDau = rs.getTimestamp("tg_bat_dau");
+            Timestamp tgKetThuc = rs.getTimestamp("tg_ket_thuc");
+            String maPhong = rs.getString("ma_phong");
+            Timestamp thoiGianTao = rs.getTimestamp("thoi_gian_tao");
 
-            return new CongViec(id, startTime, endTime, statusName, roomId);
+            return new CongViec(maCongViec, tenTrangThai, tgBatDau, tgKetThuc, maPhong, thoiGianTao);
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Can not map ResultSet to Job entity" + e.getMessage());
+            throw new TableEntityMismatch("Lỗi chuyển kết quả thành CongViec" + e.getMessage());
         }
     }
 
