@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.FineTicket;
+import vn.iuh.entity.BienBan;
 
 public interface FineTicketService {
-    FineTicket getFineTicketByID(String id);
-    FineTicket createFineTicket(FineTicket fineTicket);
-    FineTicket updateFineTicket(FineTicket fineTicket);
+    BienBan getFineTicketByID(String id);
+    BienBan createFineTicket(BienBan bienBan);
+    BienBan updateFineTicket(BienBan bienBan);
     boolean deleteFineTicketByID(String id);
 }

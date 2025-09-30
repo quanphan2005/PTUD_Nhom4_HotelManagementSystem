@@ -1,10 +1,10 @@
 package vn.iuh.servcie;
 
-import vn.iuh.entity.AdditionalFee;
+import vn.iuh.entity.PhuPhi;
 
 public interface AdditionalFeeService {
-    AdditionalFee getAdditionalFeeByID(String id);
-    AdditionalFee createAdditionalFee(AdditionalFee additionalFee);
-    AdditionalFee updateAdditionalFee(AdditionalFee additionalFee);
+    PhuPhi getAdditionalFeeByID(String id);
+    PhuPhi createAdditionalFee(PhuPhi phuPhi);
+    PhuPhi updateAdditionalFee(PhuPhi phuPhi);
     boolean deleteAdditionalFeeByID(String id);
 }

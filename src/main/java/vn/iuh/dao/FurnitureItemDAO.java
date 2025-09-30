@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.FurnitureItem;
+import vn.iuh.entity.NoiThat;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -20,17 +20,17 @@ public class FurnitureItemDAO {
         this.connection = connection;
     }
 
-    public FurnitureItem createFurnitureItem(FurnitureItem furnitureItem) {
+    public NoiThat createFurnitureItem(NoiThat noiThat) {
         String query = "INSERT INTO FurnitureItem (id, item_name, item_description, is_deleted) VALUES (?, ?, ?, false)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, furnitureItem.getId());
-            ps.setString(2, furnitureItem.getItemName());
-            ps.setString(3, furnitureItem.getItemDescription());
+            ps.setString(1, noiThat.getMa_noi_that());
+            ps.setString(2, noiThat.getTen_noi_that());
+            ps.setString(3, noiThat.getMo_ta());
 
             ps.executeUpdate();
-            return furnitureItem;
+            return noiThat;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -38,20 +38,20 @@ public class FurnitureItemDAO {
         return null;
     }
 
-    public FurnitureItem updateFurnitureItem(FurnitureItem furnitureItem) {
+    public NoiThat updateFurnitureItem(NoiThat noiThat) {
         String query = "UPDATE FurnitureItem SET item_name = ?, item_description = ? WHERE id = ? AND is_deleted = false";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, furnitureItem.getItemName());
-            ps.setString(2, furnitureItem.getItemDescription());
-            ps.setString(3, furnitureItem.getId());
+            ps.setString(1, noiThat.getTen_noi_that());
+            ps.setString(2, noiThat.getMo_ta());
+            ps.setString(3, noiThat.getMa_noi_that());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getFurnitureItemByID(furnitureItem.getId());
+                return getFurnitureItemByID(noiThat.getMa_noi_that());
             } else {
-                System.out.println("No FurnitureItem found with ID (or it is deleted): " + furnitureItem.getId());
+                System.out.println("No FurnitureItem found with ID (or it is deleted): " + noiThat.getMa_noi_that());
                 return null;
             }
 
@@ -86,7 +86,7 @@ public class FurnitureItemDAO {
         return false;
     }
 
-    public FurnitureItem getFurnitureItemByID(String id) {
+    public NoiThat getFurnitureItemByID(String id) {
         String query = "SELECT * FROM FurnitureItem WHERE id = ? AND is_deleted = false";
 
         try {
@@ -106,12 +106,12 @@ public class FurnitureItemDAO {
         return null;
     }
 
-    public FurnitureItem mapResultSetToFurnitureItem(ResultSet rs) throws SQLException {
-        FurnitureItem item = new FurnitureItem();
+    public NoiThat mapResultSetToFurnitureItem(ResultSet rs) throws SQLException {
+        NoiThat item = new NoiThat();
         try {
-            item.setId(rs.getString("id"));
-            item.setItemName(rs.getString("item_name"));
-            item.setItemDescription(rs.getString("item_description"));
+            item.setMa_noi_that(rs.getString("id"));
+            item.setTen_noi_that(rs.getString("item_name"));
+            item.setMo_ta(rs.getString("item_description"));
             return item;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to FurnitureItem " + e);

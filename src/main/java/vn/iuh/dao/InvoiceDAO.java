@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.Invoice;
+import vn.iuh.entity.HoaDon;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -17,7 +17,7 @@ public class InvoiceDAO {
         this.connection = connection;
     }
 
-    public Invoice getInvoiceByID(String id) {
+    public HoaDon getInvoiceByID(String id) {
         String query = "SELECT * FROM Invoice WHERE id = ? AND is_deleted = false";
 
         try {
@@ -37,27 +37,27 @@ public class InvoiceDAO {
         return null;
     }
 
-    public Invoice createInvoice(Invoice invoice) {
+    public HoaDon createInvoice(HoaDon hoaDon) {
         String query = "INSERT INTO Invoice (id, create_date, payment, total_price, tax_price, total_due, " +
                 "invoice_type, invoice_status, shift_assignment_id, reservation_form_id, customer_id, is_deleted) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, false)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, invoice.getId());
-            ps.setTimestamp(2, invoice.getCreatDate() != null ? new Timestamp(invoice.getCreatDate().getTime()) : null);
-            ps.setString(3, invoice.getPayment());
-            ps.setDouble(4, invoice.getTotalPrice());
-            ps.setDouble(5, invoice.getTaxPrice());
-            ps.setDouble(6, invoice.getTotalDue());
-            ps.setString(7, invoice.getInvoiceType());
-            ps.setString(8, invoice.getInvoiceStatus());
-            ps.setString(9, invoice.getShiftAssignmentId());
-            ps.setString(10, invoice.getReservationFormId());
-            ps.setString(11, invoice.getCustomerId());
+            ps.setString(1, hoaDon.getMa_hoa_don());
+            ps.setTimestamp(2, hoaDon.getThoi_gian_tao() != null ? new Timestamp(hoaDon.getThoi_gian_tao().getTime()) : null);
+            ps.setString(3, hoaDon.getPhuong_thuc_thanh_toan());
+            ps.setDouble(4, hoaDon.getTong_tien());
+            ps.setDouble(5, hoaDon.getTien_thue());
+            ps.setDouble(6, hoaDon.getTong_hoa_don());
+            ps.setString(7, hoaDon.getKieu_hoa_don());
+            ps.setString(8, hoaDon.getTinh_trang_thanh_toan());
+            ps.setString(9, hoaDon.getMa_phien_dang_nhap());
+            ps.setString(10, hoaDon.getMa_don_dat_phong());
+            ps.setString(11, hoaDon.getMa_khach_hang());
 
             ps.executeUpdate();
-            return invoice;
+            return hoaDon;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -65,30 +65,30 @@ public class InvoiceDAO {
         return null;
     }
 
-    public Invoice updateInvoice(Invoice invoice) {
+    public HoaDon updateInvoice(HoaDon hoaDon) {
         String query = "UPDATE Invoice SET create_date = ?, payment = ?, total_price = ?, tax_price = ?, total_due = ?, " +
                 "invoice_type = ?, invoice_status = ?, shift_assignment_id = ?, reservation_form_id = ?, customer_id = ? " +
                 "WHERE id = ? AND is_deleted = false";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setTimestamp(1, invoice.getCreatDate() != null ? new Timestamp(invoice.getCreatDate().getTime()) : null);
-            ps.setString(2, invoice.getPayment());
-            ps.setDouble(3, invoice.getTotalPrice());
-            ps.setDouble(4, invoice.getTaxPrice());
-            ps.setDouble(5, invoice.getTotalDue());
-            ps.setString(6, invoice.getInvoiceType());
-            ps.setString(7, invoice.getInvoiceStatus());
-            ps.setString(8, invoice.getShiftAssignmentId());
-            ps.setString(9, invoice.getReservationFormId());
-            ps.setString(10, invoice.getCustomerId());
-            ps.setString(11, invoice.getId());
+            ps.setTimestamp(1, hoaDon.getThoi_gian_tao() != null ? new Timestamp(hoaDon.getThoi_gian_tao().getTime()) : null);
+            ps.setString(2, hoaDon.getPhuong_thuc_thanh_toan());
+            ps.setDouble(3, hoaDon.getTong_tien());
+            ps.setDouble(4, hoaDon.getTien_thue());
+            ps.setDouble(5, hoaDon.getTong_hoa_don());
+            ps.setString(6, hoaDon.getKieu_hoa_don());
+            ps.setString(7, hoaDon.getTinh_trang_thanh_toan());
+            ps.setString(8, hoaDon.getMa_phien_dang_nhap());
+            ps.setString(9, hoaDon.getMa_don_dat_phong());
+            ps.setString(10, hoaDon.getMa_khach_hang());
+            ps.setString(11, hoaDon.getMa_hoa_don());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getInvoiceByID(invoice.getId());
+                return getInvoiceByID(hoaDon.getMa_hoa_don());
             } else {
-                System.out.println("No invoice found with ID: " + invoice.getId());
+                System.out.println("No invoice found with ID: " + hoaDon.getMa_hoa_don());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -120,21 +120,21 @@ public class InvoiceDAO {
         return false;
     }
 
-    private Invoice mapResultSetToInvoice(ResultSet rs) throws SQLException {
-        Invoice invoice = new Invoice();
+    private HoaDon mapResultSetToInvoice(ResultSet rs) throws SQLException {
+        HoaDon hoaDon = new HoaDon();
         try {
-            invoice.setId(rs.getString("id"));
-            invoice.setCreatDate(rs.getTimestamp("create_date")); // mapping datetime -> java.util.Date
-            invoice.setPayment(rs.getString("payment"));
-            invoice.setTotalPrice(rs.getDouble("total_price"));
-            invoice.setTaxPrice(rs.getDouble("tax_price"));
-            invoice.setTotalDue(rs.getDouble("total_due"));
-            invoice.setInvoiceType(rs.getString("invoice_type"));
-            invoice.setInvoiceStatus(rs.getString("invoice_status"));
-            invoice.setShiftAssignmentId(rs.getString("shift_assignment_id"));
-            invoice.setReservationFormId(rs.getString("reservation_form_id"));
-            invoice.setCustomerId(rs.getString("customer_id"));
-            return invoice;
+            hoaDon.setMa_hoa_don(rs.getString("id"));
+            hoaDon.setThoi_gian_tao(rs.getTimestamp("create_date")); // mapping datetime -> java.util.Date
+            hoaDon.setPhuong_thuc_thanh_toan(rs.getString("payment"));
+            hoaDon.setTong_tien(rs.getDouble("total_price"));
+            hoaDon.setTien_thue(rs.getDouble("tax_price"));
+            hoaDon.setTong_hoa_don(rs.getDouble("total_due"));
+            hoaDon.setKieu_hoa_don(rs.getString("invoice_type"));
+            hoaDon.setTinh_trang_thanh_toan(rs.getString("invoice_status"));
+            hoaDon.setMa_phien_dang_nhap(rs.getString("shift_assignment_id"));
+            hoaDon.setMa_don_dat_phong(rs.getString("reservation_form_id"));
+            hoaDon.setMa_khach_hang(rs.getString("customer_id"));
+            return hoaDon;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to Invoice: " + e);
         }

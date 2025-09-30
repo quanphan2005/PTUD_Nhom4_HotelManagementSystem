@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.Employee;
+import vn.iuh.entity.NhanVien;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -20,7 +20,7 @@ public class EmployeeDAO {
         this.connection = connection;
     }
 
-    public Employee getEmployeeByID(String id) {
+    public NhanVien getEmployeeByID(String id) {
         String query = "SELECT * FROM Employee WHERE id = ? AND is_deleted = false";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
@@ -39,19 +39,19 @@ public class EmployeeDAO {
         return null;
     }
 
-    public Employee createEmployee(Employee employee) {
+    public NhanVien createEmployee(NhanVien nhanVien) {
         String query = "INSERT INTO Employee (id, employee_name, CCCD, birth_date, is_deleted) " +
                 "VALUES (?, ?, ?, ?, false)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, employee.getId());
-            ps.setString(2, employee.getEmployeeName());
-            ps.setString(3, employee.getCCCD());
-            ps.setDate(4, new java.sql.Date(employee.getBirthDate().getTime()));
+            ps.setString(1, nhanVien.getMa_nhan_vien());
+            ps.setString(2, nhanVien.getTen_nhan_vien());
+            ps.setString(3, nhanVien.getCCCD());
+            ps.setDate(4, new java.sql.Date(nhanVien.getNgay_sinh().getTime()));
 
             ps.executeUpdate();
-            return employee;
+            return nhanVien;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -59,22 +59,22 @@ public class EmployeeDAO {
         return null;
     }
 
-    public Employee updateEmployee(Employee employee) {
+    public NhanVien updateEmployee(NhanVien nhanVien) {
         String query = "UPDATE Employee SET employee_name = ?, CCCD = ?, birth_date = ? " +
                 "WHERE id = ? AND is_deleted = false";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, employee.getEmployeeName());
-            ps.setString(2, employee.getCCCD());
-            ps.setDate(3, new java.sql.Date(employee.getBirthDate().getTime()));
-            ps.setString(4, employee.getId());
+            ps.setString(1, nhanVien.getTen_nhan_vien());
+            ps.setString(2, nhanVien.getCCCD());
+            ps.setDate(3, new java.sql.Date(nhanVien.getNgay_sinh().getTime()));
+            ps.setString(4, nhanVien.getMa_nhan_vien());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getEmployeeByID(employee.getId());
+                return getEmployeeByID(nhanVien.getMa_nhan_vien());
             } else {
-                System.out.println("No Employee found with ID: " + employee.getId());
+                System.out.println("No Employee found with ID: " + nhanVien.getMa_nhan_vien());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -105,14 +105,14 @@ public class EmployeeDAO {
         return false;
     }
 
-    private Employee mapResultSetToEmployee(ResultSet rs) {
-        Employee employee = new Employee();
+    private NhanVien mapResultSetToEmployee(ResultSet rs) {
+        NhanVien nhanVien = new NhanVien();
         try {
-            employee.setId(rs.getString("id"));
-            employee.setEmployeeName(rs.getString("employee_name"));
-            employee.setCCCD(rs.getString("CCCD"));
-            employee.setBirthDate(rs.getDate("birth_date"));
-            return employee;
+            nhanVien.setMa_nhan_vien(rs.getString("id"));
+            nhanVien.setTen_nhan_vien(rs.getString("employee_name"));
+            nhanVien.setCCCD(rs.getString("CCCD"));
+            nhanVien.setNgay_sinh(rs.getDate("birth_date"));
+            return nhanVien;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to Employee: " + e.getMessage());
         }

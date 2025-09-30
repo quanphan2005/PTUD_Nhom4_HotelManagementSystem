@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.Account;
+import vn.iuh.entity.TaiKhoan;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -20,7 +20,7 @@ public class AccountDAO {
         this.connection = connection;
     }
 
-    public Account findLastAccount() {
+    public TaiKhoan findLastAccount() {
         String query = "select TOP 1 * from account where is_deleted = false order by id desc";
 
         try {
@@ -37,20 +37,20 @@ public class AccountDAO {
         return null;
     }
 
-    public Account createAccount(Account account) {
+    public TaiKhoan createAccount(TaiKhoan taiKhoan) {
         String query  = "INSERT INTO Account (id, userName, user_password, user_role, employee_id, is_deleted)" +
                 "VALUES (?, ?, ?, ?, ?, false)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, account.getId());
-            ps.setString(2, account.getUserName());
-            ps.setString(3, account.getUserPassword());
-            ps.setString(4, account.getUserRole());
-            ps.setString(5, account.getEmployeeId());
+            ps.setString(1, taiKhoan.getMa_tai_khoan());
+            ps.setString(2, taiKhoan.getTen_dang_nhap());
+            ps.setString(3, taiKhoan.getMat_khau());
+            ps.setString(4, taiKhoan.getMa_chuc_vu());
+            ps.setString(5, taiKhoan.getMa_nhan_vien());
 
             ps.executeUpdate();
-            return account;
+            return taiKhoan;
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -58,23 +58,23 @@ public class AccountDAO {
         return null;
     }
 
-    public Account updateAccount(Account account) {
+    public TaiKhoan updateAccount(TaiKhoan taiKhoan) {
         String query = "update Account set userName = ?, user_password = ?, user_role = ?, " +
                 "employee_id = ? where id = ? AND is_deleted = false";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, account.getUserName());
-            ps.setString(2, account.getUserPassword());
-            ps.setString(3, account.getUserRole());
-            ps.setString(4, account.getEmployeeId());
-            ps.setString(5, account.getId());
+            ps.setString(1, taiKhoan.getTen_dang_nhap());
+            ps.setString(2, taiKhoan.getMat_khau());
+            ps.setString(3, taiKhoan.getMa_chuc_vu());
+            ps.setString(4, taiKhoan.getMa_nhan_vien());
+            ps.setString(5, taiKhoan.getMa_tai_khoan());
 
             int rowsAffected = ps.executeUpdate();
             if(rowsAffected > 0) {
-                return getAccountByID(account.getId());
+                return getAccountByID(taiKhoan.getMa_tai_khoan());
             } else {
-                System.out.println("No account found with ID: " + account.getId());
+                System.out.println("No account found with ID: " + taiKhoan.getMa_tai_khoan());
                 return null;
             }
 
@@ -109,7 +109,7 @@ public class AccountDAO {
         return false;
     }
 
-    public Account getAccountByID(String accountID) {
+    public TaiKhoan getAccountByID(String accountID) {
         String query = "SELECT * FROM Account WHERE ID = ? AND is_deleted = false";
 
         try {
@@ -129,15 +129,15 @@ public class AccountDAO {
         return null;
     }
 
-    public Account mapResultSetToAccount(ResultSet rs) throws SQLException {
-        Account account = new Account();
+    public TaiKhoan mapResultSetToAccount(ResultSet rs) throws SQLException {
+        TaiKhoan taiKhoan = new TaiKhoan();
         try {
-            account.setId(rs.getString("id"));
-            account.setUserName(rs.getString("userName"));
-            account.setUserPassword(rs.getString("user_password"));
-            account.setUserRole(rs.getString("user_role"));
-            account.setEmployeeId(rs.getString("employee_id"));
-            return account;
+            taiKhoan.setMa_tai_khoan(rs.getString("id"));
+            taiKhoan.setTen_dang_nhap(rs.getString("userName"));
+            taiKhoan.setMat_khau(rs.getString("user_password"));
+            taiKhoan.setMa_chuc_vu(rs.getString("user_role"));
+            taiKhoan.setMa_nhan_vien(rs.getString("employee_id"));
+            return taiKhoan;
         } catch(SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to Account" + e);
         }

@@ -1,6 +1,6 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.Customer;
+import vn.iuh.entity.KhachHang;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -20,7 +20,7 @@ public class CustomerDAO {
         this.connection = connection;
     }
 
-    public Customer getCustomerByID(String id) {
+    public KhachHang getCustomerByID(String id) {
         String query = "SELECT * FROM Customer WHERE id = ? AND is_deleted = 0";
 
         try {
@@ -40,7 +40,7 @@ public class CustomerDAO {
         return null;
     }
 
-    public Customer findCustomerByCCCD(String cccd) {
+    public KhachHang findCustomerByCCCD(String cccd) {
         String query = "SELECT * FROM Customer WHERE CCCD = ? AND is_deleted = 0";
 
         try {
@@ -60,7 +60,7 @@ public class CustomerDAO {
         return null;
     }
 
-    public Customer findLastCustomer() {
+    public KhachHang findLastCustomer() {
         String query = "SELECT TOP 1 * FROM Customer WHERE is_deleted = 0 ORDER BY id DESC";
 
         try {
@@ -79,18 +79,18 @@ public class CustomerDAO {
         return null;
     }
 
-    public Customer createCustomer(Customer customer) {
+    public KhachHang createCustomer(KhachHang khachHang) {
         String query = "INSERT INTO Customer (id, customer_name, phone_number, CCCD, is_deleted) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, customer.getId());
-            ps.setString(2, customer.getCustomerName());
-            ps.setString(3, customer.getPhoneNumber());
-            ps.setString(4, customer.getCCCD());
+            ps.setString(1, khachHang.getMa_khach_hang());
+            ps.setString(2, khachHang.getTen_khach_hang());
+            ps.setString(3, khachHang.getSo_dien_thoai());
+            ps.setString(4, khachHang.getCCCD());
 
             ps.executeUpdate();
-            return customer;
+            return khachHang;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -98,21 +98,21 @@ public class CustomerDAO {
         return null;
     }
 
-    public Customer updateCustomer(Customer customer) {
+    public KhachHang updateCustomer(KhachHang khachHang) {
         String query = "UPDATE Customer SET customer_name = ?, phone_number = ?, CCCD = ? " +
                 "WHERE id = ? AND is_deleted = false";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, customer.getCustomerName());
-            ps.setString(2, customer.getPhoneNumber());
-            ps.setString(3, customer.getCCCD());
-            ps.setString(4, customer.getId());
+            ps.setString(1, khachHang.getTen_khach_hang());
+            ps.setString(2, khachHang.getSo_dien_thoai());
+            ps.setString(3, khachHang.getCCCD());
+            ps.setString(4, khachHang.getMa_khach_hang());
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                return getCustomerByID(customer.getId());
+                return getCustomerByID(khachHang.getMa_khach_hang());
             } else {
-                System.out.println("No Customer found with ID: " + customer.getId());
+                System.out.println("No Customer found with ID: " + khachHang.getMa_khach_hang());
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -143,14 +143,14 @@ public class CustomerDAO {
         return false;
     }
 
-    private Customer mapResultSetToCustomer(ResultSet rs) {
-        Customer customer = new Customer();
+    private KhachHang mapResultSetToCustomer(ResultSet rs) {
+        KhachHang khachHang = new KhachHang();
         try {
-            customer.setId(rs.getString("id"));
-            customer.setCustomerName(rs.getString("customer_name"));
-            customer.setPhoneNumber(rs.getString("phone_number"));
-            customer.setCCCD(rs.getString("CCCD"));
-            return customer;
+            khachHang.setMa_khach_hang(rs.getString("id"));
+            khachHang.setTen_khach_hang(rs.getString("customer_name"));
+            khachHang.setSo_dien_thoai(rs.getString("phone_number"));
+            khachHang.setCCCD(rs.getString("CCCD"));
+            return khachHang;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to Customer: " + e.getMessage());
         }
