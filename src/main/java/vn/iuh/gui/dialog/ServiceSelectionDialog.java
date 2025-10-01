@@ -1,13 +1,22 @@
 package vn.iuh.gui.dialog;
 
+import vn.iuh.dto.repository.ThongTinDichVu;
+import vn.iuh.entity.DichVu;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.servcie.GoiDichVuService;
+import vn.iuh.servcie.ServiceItemService;
+import vn.iuh.servcie.impl.GoiDichVuServiceImpl;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ServiceSelectionDialog extends JDialog {
+    GoiDichVuService goiDichVuService;
+
     private JTextField txtSearchService;
     private JPanel serviceListPanel;
     private JLabel lblTotalServiceCost;
@@ -15,11 +24,14 @@ public class ServiceSelectionDialog extends JDialog {
     private ServiceSelectionCallback callback;
 
     public interface ServiceSelectionCallback {
-        void onServiceConfirmed(List<String> selectedServices);
+        void onServiceConfirmed(Map<String, Integer> selectedServices);
     }
 
     public ServiceSelectionDialog(Frame parent, ServiceSelectionCallback callback) {
         super(parent, "GỌI DỊCH VỤ", true);
+
+        goiDichVuService = new GoiDichVuServiceImpl();
+
         this.callback = callback;
         initializeComponents();
         setupLayout();
@@ -42,10 +54,10 @@ public class ServiceSelectionDialog extends JDialog {
         serviceListPanel.setBackground(new Color(255, 255, 204));
 
         // Add sample services
-        addServiceItem("Phần Ăn Sáng", "100.000");
-        addServiceItem("Gọi xe đưa đón", "50.000");
-        addServiceItem("Massage", "200.000");
-        addServiceItem("Giặt ủi", "30.000");
+        List<ThongTinDichVu> danhSachThongTinDichVu = goiDichVuService.timTatCaThongTinDichVu();
+        for (ThongTinDichVu dv : danhSachThongTinDichVu) {
+            addServiceItem(dv);
+        }
 
         // Total cost label
         lblTotalServiceCost = new JLabel("Tổng tiền:                                        500.000");
@@ -125,17 +137,17 @@ public class ServiceSelectionDialog extends JDialog {
         txtSearchService.setForeground(Color.GRAY);
     }
 
-    private void addServiceItem(String serviceName, String price) {
+    private void addServiceItem(ThongTinDichVu thongTinDichVu) {
         JPanel serviceItem = new JPanel(new BorderLayout());
         serviceItem.setBackground(Color.WHITE);
         serviceItem.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
         serviceItem.setPreferredSize(new Dimension(350, 35));
 
-        JLabel nameLabel = new JLabel(serviceName);
+        JLabel nameLabel = new JLabel(thongTinDichVu.getTenDichVu());
         nameLabel.setFont(CustomUI.normalFont);
         nameLabel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
-        JLabel priceLabel = new JLabel(price);
+        JLabel priceLabel = new JLabel(String.format("%.0f", thongTinDichVu.getDonGia()));
         priceLabel.setFont(CustomUI.normalFont);
         priceLabel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         priceLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -147,7 +159,7 @@ public class ServiceSelectionDialog extends JDialog {
         serviceItem.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                selectService(serviceName, price);
+                selectService(thongTinDichVu.getTenDichVu(), String.valueOf(thongTinDichVu.getDonGia()));
             }
 
             @Override
@@ -196,7 +208,7 @@ public class ServiceSelectionDialog extends JDialog {
     private void confirmServiceSelection() {
         if (!selectedServices.isEmpty()) {
             if (callback != null) {
-                callback.onServiceConfirmed(new ArrayList<>(selectedServices));
+                callback.onServiceConfirmed(new HashMap<>());
             }
             JOptionPane.showMessageDialog(this,
                 "Đã chọn " + selectedServices.size() + " dịch vụ",

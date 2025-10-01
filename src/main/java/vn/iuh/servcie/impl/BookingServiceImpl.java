@@ -80,9 +80,12 @@ public class BookingServiceImpl implements BookingService {
 
             // 2.4. Create RoomUsageServiceEntity & insert to DB
             List<PhongDungDichVu> phongDungDichVus = new ArrayList<>();
-            for (String serviceId : bookingCreationEvent.getDanhSachMaDichVu())
-                phongDungDichVus.add(
-                        createRoomUsageServiceEntity(bookingCreationEvent, serviceId));
+
+            for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
+                for (String serviceId : bookingCreationEvent.getDanhSachMaDichVu())
+                    phongDungDichVus.add(
+                            createRoomUsageServiceEntity(bookingCreationEvent, serviceId));
+            }
 
             datPhongDAO.themPhongDungDichVu(donDatPhong, phongDungDichVus);
 

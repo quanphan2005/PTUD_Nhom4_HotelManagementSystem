@@ -39,7 +39,7 @@ public class LoaiDichVuDAO {
 
     public boolean themLoaiDichVuDAO(LoaiDichVu loaiDichVuDAO) {
         String query = "INSERT INTO LoaiDichVu " +
-                "(ma_loai_dich_vu, ten_dich_vu) VALUES (?, ?)";
+                "(ma_loai_dich_vu, ten_loai_dich_vu) VALUES (?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -56,7 +56,7 @@ public class LoaiDichVuDAO {
     }
 
     public LoaiDichVu capNhatLoaiDichVuDAO(LoaiDichVu loaiDichVu) {
-        String query = "UPDATE LoaiDichVu SET ten_dich_vu = ?" +
+        String query = "UPDATE LoaiDichVu SET ten_loai_dich_vu = ?" +
                 " WHERE ma_loai_dich_vu = ? AND da_xoa = 0";
 
         try {

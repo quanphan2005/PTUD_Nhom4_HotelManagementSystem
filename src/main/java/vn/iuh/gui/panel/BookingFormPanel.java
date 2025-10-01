@@ -7,6 +7,7 @@ import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.dialog.ServiceSelectionDialog;
+import vn.iuh.servcie.BookingService;
 import vn.iuh.util.IconUtil;
 
 import javax.swing.*;
@@ -14,13 +15,12 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
 
 public class BookingFormPanel extends JPanel {
     private BookingResponse selectedRoom;
-    private vn.iuh.servcie.BookingService bookingService;
+    private BookingService bookingService;
 
     // Room Information Components
     private JLabel lblRoomNumber;
@@ -46,7 +46,7 @@ public class BookingFormPanel extends JPanel {
     private JButton reservationButton;
 
     // Service Components - simplified to use dialog
-    private List<String> selectedServices = new ArrayList<>();
+    private Map<String, Integer> selectedServices = new HashMap<>();
 
     // Action Buttons
     private JButton btnCancel;
@@ -932,7 +932,7 @@ public class BookingFormPanel extends JPanel {
                 (services) -> {
                     // Update the selected services when dialog confirms
                     selectedServices.clear();
-                    selectedServices.addAll(services);
+                    selectedServices.putAll(services);
 
                     // Show confirmation message
                     if (!services.isEmpty()) {

@@ -5,6 +5,7 @@ import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
+import java.util.List;
 
 public class DichVuDAO {
     private final Connection connection;
@@ -34,7 +35,28 @@ public class DichVuDAO {
             System.out.println(te.getMessage());
         }
 
+        System.out.println("Không tìm thấy dịch vụ, mã: " + id);
         return null;
+    }
+
+    public List<DichVu> timTatCaDichVu() {
+        String query = "SELECT * FROM DichVu WHERE da_xoa = 0";
+        List<DichVu> dichVus = new java.util.ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next())
+                dichVus.add(chuyenKetQuaThanhDichVu(rs));
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return dichVus;
     }
 
     public DichVu createServiceItem(DichVu dichVu) {
@@ -140,5 +162,4 @@ public class DichVuDAO {
             throw new TableEntityMismatch("Không thể chuyển kết quả thành DichVu: " + e.getMessage());
         }
     }
-
 }
