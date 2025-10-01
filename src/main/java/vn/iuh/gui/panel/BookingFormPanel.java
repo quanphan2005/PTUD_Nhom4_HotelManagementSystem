@@ -910,7 +910,7 @@ public class BookingFormPanel extends JPanel {
         boolean daDatTruoc = chkIsAdvanced.isSelected();
         List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
         List<String> danhSachMaDichVu = java.util.Arrays.asList(); // Empty for now
-        String maPhienDangNhap = "SA00000002"; // TODO - get actual shift assignment ID
+        String maPhienDangNhap = "PN00000002"; // TODO - get actual shift assignment ID
 
         return new BookingCreationEvent(tenKhachHang, soDienThoai, cccd, moTa,
                                         ngayNhanPhong, ngayTraPhong, tongTienDuTinh, tienDatCoc, daDatTruoc,
