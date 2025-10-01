@@ -1,16 +1,16 @@
 package vn.iuh.constraint;
 
 public enum EntityIDSymbol {
-    ROOM_PREFIX("RO", 8),
-    RESERVATION_FORM_PREFIX("RF",8),
-    ROOM_RESERVATION_DETAIL_PREFIX("RD",8),
-    HISTORY_CHECKIN_PREFIX("HI",8),
-    ROOM_USAGE_SERVICE_PREFIX("RS",8),
-    ACCOUNT_PREFIX("AC", 8),
-    AdditionalFee_PREFIX("AF", 8),
-    CUSTOMER_PREFIX("CU", 8),
-    JOB_PREFIX("JO", 8),
-    WORKING_HISTORY_PREFIX("WH", 8);
+    ROOM_PREFIX("PO", 8),
+    RESERVATION_FORM_PREFIX("DP",8),
+    ROOM_RESERVATION_DETAIL_PREFIX("CP",8),
+    HISTORY_CHECKIN_PREFIX("LV",8),
+    ROOM_USAGE_SERVICE_PREFIX("PV",8),
+    ACCOUNT_PREFIX("TK", 8),
+    AdditionalFee_PREFIX("PP", 8),
+    CUSTOMER_PREFIX("KH", 8),
+    JOB_PREFIX("CV", 8),
+    WORKING_HISTORY_PREFIX("LT", 8);
 //................... Other here
 
 
