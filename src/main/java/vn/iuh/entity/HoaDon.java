@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 public class HoaDon {
     private String maHoaDon;
     private String phuongThucThanhToan;
-    private double tongTien;
     private double tienThue;
     private double tongHoaDon;
     private String kieuHoaDon;
@@ -18,10 +17,9 @@ public class HoaDon {
     public HoaDon() {
     }
 
-    public HoaDon(String maHoaDon, String phuongThucThanhToan, double tongTien, double tienThue, double tongHoaDon, String kieuHoaDon, String tinhTrangThanhToan, String maPhienDangNhap, String maDonDatPhong, String maKhachHang, Timestamp thoiGianTao) {
+    public HoaDon(String maHoaDon, String phuongThucThanhToan, double tienThue, double tongHoaDon, String kieuHoaDon, String tinhTrangThanhToan, String maPhienDangNhap, String maDonDatPhong, String maKhachHang, Timestamp thoiGianTao) {
         this.maHoaDon = maHoaDon;
         this.phuongThucThanhToan = phuongThucThanhToan;
-        this.tongTien = tongTien;
         this.tienThue = tienThue;
         this.tongHoaDon = tongHoaDon;
         this.kieuHoaDon = kieuHoaDon;
@@ -47,14 +45,6 @@ public class HoaDon {
 
     public void setPhuongThucThanhToan(String phuongThucThanhToan) {
         this.phuongThucThanhToan = phuongThucThanhToan;
-    }
-
-    public double getTongTien() {
-        return tongTien;
-    }
-
-    public void setTongTien(double tongTien) {
-        this.tongTien = tongTien;
     }
 
     public double getTienThue() {

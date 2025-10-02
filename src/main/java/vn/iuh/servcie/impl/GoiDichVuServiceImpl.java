@@ -30,6 +30,7 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
 
     @Override
     public boolean goiDichVu(List<DonGoiDichVu> danhSachDichVu) {
-
+        // TODO - implement
+        return false;
     }
 }

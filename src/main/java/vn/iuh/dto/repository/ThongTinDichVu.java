@@ -3,14 +3,20 @@ package vn.iuh.dto.repository;
 public class ThongTinDichVu {
     private String maDichVu;
     private String tenDichVu;
-    private String loaiDichVu;
+    private int tonKho;
+    private boolean coTheTang;
     private double donGia;
+    private String tenLoaiDichVu;
 
-    public ThongTinDichVu(String maDichVu, String tenDichVu, String loaiDichVu, double donGia) {
+
+    public ThongTinDichVu(String maDichVu, String tenDichVu, int tonKho, boolean coTheTang, double donGia,
+                          String tenLoaiDichVu) {
         this.maDichVu = maDichVu;
         this.tenDichVu = tenDichVu;
-        this.loaiDichVu = loaiDichVu;
+        this.tonKho = tonKho;
+        this.coTheTang = coTheTang;
         this.donGia = donGia;
+        this.tenLoaiDichVu = tenLoaiDichVu;
     }
 
     public String getMaDichVu() {
@@ -21,11 +27,19 @@ public class ThongTinDichVu {
         return tenDichVu;
     }
 
-    public String getLoaiDichVu() {
-        return loaiDichVu;
+    public int getTonKho() {
+        return tonKho;
+    }
+
+    public boolean isCoTheTang() {
+        return coTheTang;
     }
 
     public double getDonGia() {
         return donGia;
+    }
+
+    public String getTenLoaiDichVu() {
+        return tenLoaiDichVu;
     }
 }

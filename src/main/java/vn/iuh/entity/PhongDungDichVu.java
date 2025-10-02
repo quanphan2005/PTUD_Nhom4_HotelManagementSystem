@@ -5,10 +5,10 @@ import java.sql.Timestamp;
 
 public class PhongDungDichVu {
     private String maPhongDungDichVu;
-    private double tongTien;
     private int soLuong;
     private Timestamp thoiGianDung;
     private double giaThoiDiemDo;
+    private boolean duoc_tang;
     private String maChiTietDatPhong;
     private String maDichVu;
     private String maPhienDangNhap;
@@ -16,14 +16,14 @@ public class PhongDungDichVu {
 
     public PhongDungDichVu() {}
 
-    public PhongDungDichVu(String maPhongDungDichVu, double tongTien, int soLuong, Timestamp thoiGianDung,
-                           double giaThoiDiemDo, String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
+    public PhongDungDichVu(String maPhongDungDichVu, int soLuong, Timestamp thoiGianDung, double giaThoiDiemDo,
+                           boolean duoc_tang, String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
                            Timestamp thoiGianTao) {
         this.maPhongDungDichVu = maPhongDungDichVu;
-        this.tongTien = tongTien;
         this.soLuong = soLuong;
         this.thoiGianDung = thoiGianDung;
         this.giaThoiDiemDo = giaThoiDiemDo;
+        this.duoc_tang = duoc_tang;
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.maDichVu = maDichVu;
         this.maPhienDangNhap = maPhienDangNhap;
@@ -36,14 +36,6 @@ public class PhongDungDichVu {
 
     public void setMaPhongDungDichVu(String maPhongDungDichVu) {
         this.maPhongDungDichVu = maPhongDungDichVu;
-    }
-
-    public double getTongTien() {
-        return tongTien;
-    }
-
-    public void setTongTien(double tongTien) {
-        this.tongTien = tongTien;
     }
 
     public int getSoLuong() {
@@ -68,6 +60,14 @@ public class PhongDungDichVu {
 
     public void setGiaThoiDiemDo(double giaThoiDiemDo) {
         this.giaThoiDiemDo = giaThoiDiemDo;
+    }
+
+    public boolean getDuocTang() {
+        return duoc_tang;
+    }
+
+    public void setDuoc_tang(boolean duoc_tang) {
+        this.duoc_tang = duoc_tang;
     }
 
     public String getMaChiTietDatPhong() {

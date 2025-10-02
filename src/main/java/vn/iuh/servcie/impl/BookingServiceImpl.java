@@ -258,16 +258,8 @@ public class BookingServiceImpl implements BookingService {
             id = EntityUtil.increaseEntityID(phongDungDichVuMoiNhat.getMaPhongDungDichVu(), prefix, numberLength);
         }
 
+        // TODO - Implement when Service feature is ready
         return new PhongDungDichVu(
-                id,
-                0,
-                1,
-                bookingCreationEvent.getTgNhanPhong(),
-                0,
-                null,
-                serviceId,
-                bookingCreationEvent.getMaPhienDangNhap(),
-                null
         );
     }
 

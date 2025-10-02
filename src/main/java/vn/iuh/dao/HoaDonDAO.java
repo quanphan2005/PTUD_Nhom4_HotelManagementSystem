@@ -18,7 +18,7 @@ public class HoaDonDAO {
     }
 
     public HoaDon timHoaDon(String id) {
-        String query = "SELECT * FROM HoaDon WHERE ma_hoa_don = ? AND da_xoa = 0";
+        String query = "SELECT * FROM HoaDon WHERE ma_hoa_don = ?";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -38,22 +38,21 @@ public class HoaDonDAO {
     }
 
     public HoaDon createInvoice(HoaDon hoaDon) {
-        String query = "INSERT INTO HoaDon (ma_hoa_don, phuong_thuc_thanh_toan, tong_tien, tien_thue, tong_hoa_don, " +
+        String query = "INSERT INTO HoaDon (ma_hoa_don, phuong_thuc_thanh_toan, tien_thue, tong_hoa_don, " +
                 "kieu_hoa_don, tinh_trang_thanh_toan, ma_phien_dang_nhap, ma_don_dat_phong, ma_khach_hang) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, hoaDon.getMaHoaDon());
             ps.setString(2, hoaDon.getPhuongThucThanhToan());
-            ps.setDouble(3, hoaDon.getTongTien());
-            ps.setDouble(4, hoaDon.getTienThue());
-            ps.setDouble(5, hoaDon.getTongHoaDon());
-            ps.setString(6, hoaDon.getKieuHoaDon());
-            ps.setString(7, hoaDon.getTinhTrangThanhToan());
-            ps.setString(8, hoaDon.getMaPhienDangNhap());
-            ps.setString(9, hoaDon.getMaDonDatPhong());
-            ps.setString(10, hoaDon.getMaKhachHang());
+            ps.setDouble(3, hoaDon.getTienThue());
+            ps.setDouble(4, hoaDon.getTongHoaDon());
+            ps.setString(5, hoaDon.getKieuHoaDon());
+            ps.setString(6, hoaDon.getTinhTrangThanhToan());
+            ps.setString(7, hoaDon.getMaPhienDangNhap());
+            ps.setString(8, hoaDon.getMaDonDatPhong());
+            ps.setString(9, hoaDon.getMaKhachHang());
 
             ps.executeUpdate();
             return hoaDon;
@@ -65,7 +64,7 @@ public class HoaDonDAO {
     }
 
     public HoaDon timHoaDonMoiNhat() {
-        String query = "SELECT TOP 1 * FROM HoaDon WHERE da_xoa = 0 ORDER BY ma_hoa_don DESC";
+        String query = "SELECT TOP 1 * FROM HoaDon ORDER BY ma_hoa_don DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -88,7 +87,6 @@ public class HoaDonDAO {
         try {
             hoaDon.setMaHoaDon(rs.getString("ma_hoa_don"));
             hoaDon.setPhuongThucThanhToan(rs.getString("phuong_thuc_thanh_toan"));
-            hoaDon.setTongTien(rs.getDouble("tong_tien"));
             hoaDon.setTienThue(rs.getDouble("tien_thue"));
             hoaDon.setTongHoaDon(rs.getDouble("tong_hoa_don"));
             hoaDon.setKieuHoaDon(rs.getString("kieu_hoa_don"));

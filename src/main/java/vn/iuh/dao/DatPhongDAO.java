@@ -112,7 +112,7 @@ public class DatPhongDAO {
     public boolean themPhongDungDichVu(DonDatPhong donDatPhongEntity,
                                        List<PhongDungDichVu> phongDungDichVus) {
         String query = "INSERT INTO PhongDungDichVu" +
-                       " (ma_phong_dung_dich_vu, tong_tien, so_luong, thoi_gian_dung, gia_thoi_diem_do, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
+                       " (ma_phong_dung_dich_vu, so_luong, thoi_gian_dung, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
                        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
@@ -120,10 +120,10 @@ public class DatPhongDAO {
 
             for (PhongDungDichVu phongDungDichVu : phongDungDichVus) {
                 ps.setString(1, phongDungDichVu.getMaPhongDungDichVu());
-                ps.setDouble(2, phongDungDichVu.getTongTien());
-                ps.setInt(3, phongDungDichVu.getSoLuong());
-                ps.setTimestamp(4, phongDungDichVu.getThoiGianDung());
-                ps.setDouble(5, phongDungDichVu.getGiaThoiDiemDo());
+                ps.setInt(2, phongDungDichVu.getSoLuong());
+                ps.setTimestamp(3, phongDungDichVu.getThoiGianDung());
+                ps.setDouble(4, phongDungDichVu.getGiaThoiDiemDo());
+                ps.setBoolean(5, phongDungDichVu.getDuocTang());
                 ps.setString(6, phongDungDichVu.getMaChiTietDatPhong());
                 ps.setString(7, phongDungDichVu.getMaDichVu());
                 ps.setString(8, donDatPhongEntity.getMaPhienDangNhap());
@@ -392,10 +392,10 @@ public class DatPhongDAO {
         try {
             return new PhongDungDichVu(
                     rs.getString("ma_phong_dung_dich_vu"),
-                    rs.getDouble("tong_tien"),
                     rs.getInt("so_luong"),
                     rs.getTimestamp("thoi_gian_dung"),
                     rs.getDouble("gia_thoi_diem_do"),
+                    rs.getBoolean("duoc_tang"),
                     rs.getString("ma_chi_tiet_dat_phong"),
                     rs.getString("ma_dich_vu"),
                     rs.getString("ma_phien_dang_nhap"),

@@ -61,14 +61,16 @@ public class DichVuDAO {
 
     public DichVu createServiceItem(DichVu dichVu) {
         String query = "INSERT INTO DichVu " +
-                "(ma_dich_vu, ten_dich_vu, ma_loai_dich_vu) " +
-                "VALUES (?, ?, ?)";
+                "(ma_dich_vu, ten_dich_vu, ton_kho, co_the_tang, ma_loai_dich_vu) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, dichVu.getMaDichVu());
             ps.setString(2, dichVu.getTenDichVu());
-            ps.setString(3, dichVu.getMaLoaiDichVu());
+            ps.setInt(3, dichVu.getTonKho());
+            ps.setBoolean(4, dichVu.getCoTheTang());
+            ps.setString(5, dichVu.getMaLoaiDichVu());
 
             ps.executeUpdate();
             return dichVu;
@@ -85,15 +87,17 @@ public class DichVuDAO {
             return null;
         }
 
-        String query = "UPDATE DichVu SET ten_dich_vu = ?, ma_loai_dich_vu = ?, thoi_gian_tao = ? " +
+        String query = "UPDATE DichVu SET ten_dich_vu = ?, ton_kho = ?, co_the_tang = ?, ma_loai_dich_vu = ?" +
                 "WHERE ma_dich_vu = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, dichVu.getTenDichVu());
-            ps.setString(2, dichVu.getMaLoaiDichVu());
-            ps.setTimestamp(3, dichVu.getThoiGianTao() != null ? new Timestamp(dichVu.getThoiGianTao().getTime()) : null);
-            ps.setString(4, dichVu.getMaDichVu());
+            ps.setInt(2, dichVu.getTonKho());
+            ps.setBoolean(3, dichVu.getCoTheTang());
+            ps.setString(4, dichVu.getMaLoaiDichVu());
+            ps.setString(5, dichVu.getMaDichVu());
+
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
@@ -155,6 +159,8 @@ public class DichVuDAO {
         try {
             dichVu.setMaDichVu(rs.getString("ma_dich_vu"));
             dichVu.setTenDichVu(rs.getString("ten_dich_vu"));
+            dichVu.setTonKho(rs.getInt("ton_kho"));
+            dichVu.setCoTheTang(rs.getBoolean("co_the_tang"));
             dichVu.setMaLoaiDichVu(rs.getString("ma_loai_dich_vu"));
             dichVu.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             return dichVu;
