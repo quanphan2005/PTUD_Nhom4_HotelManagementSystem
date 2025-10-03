@@ -14,14 +14,14 @@ public class BookingCreationEvent {
     private double tienDatCoc;
     private boolean daDatTruoc;
     private List<String> danhSachMaPhong;
-    private List<String> danhSachMaDichVu;
+    private List<DonGoiDichVu> danhSachDichVu;
     private String maPhienDangNhap;
     private Timestamp thoiGianTao;
 
     public BookingCreationEvent(String tenKhachHang, String soDienThoai, String CCCD, String moTa,
                                 Timestamp tgNhanPhong,
                                 Timestamp tgTraPhong, double tongTienDuTinh, double tienDatCoc, boolean daDatTruoc,
-                                List<String> danhSachMaPhong, List<String> danhSachMaDichVu, String maPhienDangNhap,
+                                List<String> danhSachMaPhong, List<DonGoiDichVu> danhSachDichVu, String maPhienDangNhap,
                                 Timestamp thoiGianTao) {
         this.tenKhachHang = tenKhachHang;
         this.soDienThoai = soDienThoai;
@@ -33,7 +33,7 @@ public class BookingCreationEvent {
         this.tienDatCoc = tienDatCoc;
         this.daDatTruoc = daDatTruoc;
         this.danhSachMaPhong = danhSachMaPhong;
-        this.danhSachMaDichVu = danhSachMaDichVu;
+        this.danhSachDichVu = danhSachDichVu;
         this.maPhienDangNhap = maPhienDangNhap;
         this.thoiGianTao = thoiGianTao;
     }
@@ -78,8 +78,8 @@ public class BookingCreationEvent {
         return danhSachMaPhong;
     }
 
-    public List<String> getDanhSachMaDichVu() {
-        return danhSachMaDichVu;
+    public List<DonGoiDichVu> getDanhSachDichVu() {
+        return danhSachDichVu;
     }
 
     public String getMaPhienDangNhap() {

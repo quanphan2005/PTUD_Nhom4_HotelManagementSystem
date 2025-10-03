@@ -1,8 +1,11 @@
-package vn.iuh.gui.dialog;
+package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.PanelName;
+import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.base.Main;
 import vn.iuh.servcie.GoiDichVuService;
 import vn.iuh.servcie.impl.GoiDichVuServiceImpl;
 
@@ -13,11 +16,12 @@ import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 
-public class ServiceSelectionDialog extends JDialog {
+public class ServiceSelectionPanel extends JPanel {
     private GoiDichVuService goiDichVuService;
 
     // Components
@@ -32,11 +36,13 @@ public class ServiceSelectionDialog extends JDialog {
     private JLabel lblTotalCost;
     private JButton btnReset;
     private JButton btnConfirm;
+    private JButton btnUndo;
 
     // Data
     private List<ThongTinDichVu> allServices;
     private List<ThongTinDichVu> filteredServices;
     private Map<String, Integer> selectedServicesMap;
+    private Map<String, Double> servicePricesMap; // Track service prices for total cost calculation
     private Map<String, Boolean> giftServicesMap; // Track which services are marked as gifts
     private ServiceSelectionCallback callback;
 
@@ -44,33 +50,27 @@ public class ServiceSelectionDialog extends JDialog {
     private DecimalFormat priceFormatter = new DecimalFormat("#,###");
 
     public interface ServiceSelectionCallback {
-        void onServiceConfirmed(Map<String, Integer> selectedServices);
+        void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
 
-    public ServiceSelectionDialog(Frame parent, ServiceSelectionCallback callback) {
-        super(parent, "Gọi dịch vụ", true);
+    public ServiceSelectionPanel(ServiceSelectionCallback callback) {
 
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
-        this.giftServicesMap = new HashMap<>(); // Initialize gift tracking
+        this.giftServicesMap = new HashMap<>();
 
         initializeComponents();
         loadServices();
         setupLayout();
         setupEventHandlers();
-
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setSize(1200, 650);
-        setResizable(false);
-        setLocationRelativeTo(parent);
     }
 
     private void initializeComponents() {
         // Search components
         txtSearchService = new JTextField();
         txtSearchService.setFont(CustomUI.normalFont);
-        txtSearchService.setPreferredSize(new Dimension(600, 35));
+        txtSearchService.setPreferredSize(new Dimension(500, 35));
         txtSearchService.setMinimumSize(new Dimension(500, 35)); // Add minimum size
         txtSearchService.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tìm kiếm");
 
@@ -87,7 +87,7 @@ public class ServiceSelectionDialog extends JDialog {
         lblTotalServices.setFont(CustomUI.normalFont);
         lblTotalServices.setOpaque(true);
         lblTotalServices.setBackground(new Color(100, 150, 255));
-        lblTotalServices.setForeground(Color.WHITE);
+        lblTotalServices.setForeground(Color.BLACK);
         lblTotalServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         lblTotalServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
         lblTotalServices.setMinimumSize(new Dimension(150, 40)); // Fixed minimum
@@ -116,18 +116,18 @@ public class ServiceSelectionDialog extends JDialog {
         serviceTable.getTableHeader().setBackground(Color.LIGHT_GRAY);
 
         // Set fixed column widths to prevent resizing
-        serviceTable.getColumnModel().getColumn(0).setPreferredWidth(200); // Tên
-        serviceTable.getColumnModel().getColumn(1).setPreferredWidth(150); // Loại
+        serviceTable.getColumnModel().getColumn(0).setPreferredWidth(150); // Tên
+        serviceTable.getColumnModel().getColumn(1).setPreferredWidth(120); // Loại
         serviceTable.getColumnModel().getColumn(2).setPreferredWidth(120);  // Giá
         serviceTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Tồn kho
         serviceTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Quà tặng
         serviceTable.getColumnModel().getColumn(5).setPreferredWidth(140); // Đã chọn
 
         // Lock column widths - set min and max to same as preferred
-        serviceTable.getColumnModel().getColumn(0).setMinWidth(200);
-        serviceTable.getColumnModel().getColumn(0).setMaxWidth(200);
-        serviceTable.getColumnModel().getColumn(1).setMinWidth(150);
-        serviceTable.getColumnModel().getColumn(1).setMaxWidth(150);
+        serviceTable.getColumnModel().getColumn(0).setMinWidth(150);
+        serviceTable.getColumnModel().getColumn(0).setMaxWidth(150);
+        serviceTable.getColumnModel().getColumn(1).setMinWidth(120);
+        serviceTable.getColumnModel().getColumn(1).setMaxWidth(120);
         serviceTable.getColumnModel().getColumn(2).setMinWidth(120);
         serviceTable.getColumnModel().getColumn(2).setMaxWidth(120);
         serviceTable.getColumnModel().getColumn(3).setMinWidth(100);
@@ -168,7 +168,7 @@ public class ServiceSelectionDialog extends JDialog {
         selectedServicesTable.getTableHeader().setBackground(Color.LIGHT_GRAY);
 
         // Set fixed column widths for selected services table
-        selectedServicesTable.getColumnModel().getColumn(0).setPreferredWidth(130); // Tên
+        selectedServicesTable.getColumnModel().getColumn(0).setPreferredWidth(100); // Tên
         selectedServicesTable.getColumnModel().getColumn(1).setPreferredWidth(50);  // SL
         selectedServicesTable.getColumnModel().getColumn(2).setPreferredWidth(140); // Thành tiền
         selectedServicesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -185,12 +185,23 @@ public class ServiceSelectionDialog extends JDialog {
 
         btnConfirm = new JButton("Xác Nhận");
         btnConfirm.setBackground(Color.GREEN);
-        btnConfirm.setForeground(Color.WHITE);
+        btnConfirm.setForeground(Color.BLACK);
         btnConfirm.setFont(CustomUI.normalFont);
         btnConfirm.setPreferredSize(new Dimension(120, 40));
         btnConfirm.setMinimumSize(new Dimension(120, 40)); // Fixed minimum
         btnConfirm.setMaximumSize(new Dimension(120, 40)); // Fixed maximum
         btnConfirm.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+
+        ImageIcon undoIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/undo.png")));
+        undoIcon = new ImageIcon(undoIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
+
+        btnUndo = new JButton();
+        btnUndo.setBackground(CustomUI.red);
+        btnUndo.setIcon(undoIcon);
+        btnUndo.setForeground(Color.WHITE);
+        btnUndo.setFont(CustomUI.normalFont);
+        btnUndo.setPreferredSize(new Dimension(60, 40));
+
 
         // Total cost label with fixed size and improved formatting
         lblTotalCost = new JLabel("Tổng tiền: 0 VNĐ");
@@ -202,7 +213,6 @@ public class ServiceSelectionDialog extends JDialog {
         lblTotalCost.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
         lblTotalCost.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
         lblTotalCost.setHorizontalAlignment(SwingConstants.CENTER);
-
     }
 
     private void setupLayout() {
@@ -217,6 +227,7 @@ public class ServiceSelectionDialog extends JDialog {
         titleLabel.setFont(CustomUI.veryBigFont);
         titleLabel.setForeground(Color.WHITE);
 
+        headerPanel.add(btnUndo, BorderLayout.WEST);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
 
         // Main content panel with GridBagLayout
@@ -253,7 +264,7 @@ public class ServiceSelectionDialog extends JDialog {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 0.6; gbc.weighty = 1.0;
         JScrollPane serviceScrollPane = new JScrollPane(serviceTable);
-        serviceScrollPane.setBorder(BorderFactory.createTitledBorder("Danh sách dịch vụ"));
+        serviceScrollPane.setBorder(BorderFactory.createTitledBorder("DANH SÁCH DỊCH VỤ"));
         serviceScrollPane.setPreferredSize(new Dimension(500, 400));
         serviceScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         mainPanel.add(serviceScrollPane, gbc);
@@ -282,7 +293,7 @@ public class ServiceSelectionDialog extends JDialog {
         gbc.anchor = GridBagConstraints.CENTER;
         JScrollPane selectedScrollPane = new JScrollPane(selectedServicesTable);
         selectedScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        selectedScrollPane.setBorder(BorderFactory.createTitledBorder("Danh sách đã chọn"));
+        selectedScrollPane.setBorder(BorderFactory.createTitledBorder("DANH SÁCH ĐÃ CHỌN"));
         selectedScrollPane.setPreferredSize(new Dimension(350, 400));
         mainPanel.add(selectedScrollPane, gbc);
 
@@ -300,9 +311,77 @@ public class ServiceSelectionDialog extends JDialog {
 
     private void loadServices() {
         allServices = goiDichVuService.timTatCaThongTinDichVu();
+        servicePricesMap = new HashMap<>();
+        for (ThongTinDichVu service : allServices) {
+            servicePricesMap.put(service.getMaDichVu(), service.getDonGia());
+        }
         filteredServices = new ArrayList<>(allServices);
         updateServiceTable();
         updateInfoLabels();
+    }
+
+    private void setupEventHandlers() {
+        btnSearch.addActionListener(e -> filterServices());
+
+        txtSearchService.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                filterServices();
+            }
+        });
+
+        btnReset.addActionListener(e -> resetAllSelections());
+
+        btnConfirm.addActionListener(e -> confirmSelection());
+
+        btnUndo.addActionListener(e -> {
+            Main.showCard("Đặt phòng");
+        });
+    }
+
+    private void resetAllSelections() {
+        selectedServicesMap.clear();
+        giftServicesMap.clear(); // Also clear gift selections
+        updateServiceTable();
+        updateSelectedServicesTable();
+
+        JOptionPane.showMessageDialog(this,
+                                      "Đã xóa tất cả dịch vụ đã chọn",
+                                      "Hoàn tác",
+                                      JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void confirmSelection() {
+        if (selectedServicesMap.isEmpty() || selectedServicesMap.values().stream().allMatch(qty -> qty == 0)) {
+            JOptionPane.showMessageDialog(this,
+                "Vui lòng chọn ít nhất một dịch vụ",
+                "Thông báo",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Filter out services with 0 quantity
+        List<DonGoiDichVu> serviceOrdered = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : selectedServicesMap.entrySet()) {
+            if (entry.getValue() > 0) {
+                String serviceId = entry.getKey();
+                double price = servicePricesMap.getOrDefault(serviceId, 0.0);
+                int quantity = entry.getValue();
+                boolean isGift = giftServicesMap.getOrDefault(serviceId, false);
+                serviceOrdered.add(new DonGoiDichVu(serviceId, price, quantity, isGift));
+            }
+        }
+
+        if (callback != null) {
+            callback.onServiceConfirmed(serviceOrdered);
+        }
+
+        JOptionPane.showMessageDialog(this,
+            "Xác nhận dịch vụ thành công!",
+            "Thành công",
+            JOptionPane.INFORMATION_MESSAGE);
+
+        Main.showCard(PanelName.BOOKING.getName());
     }
 
     private void updateServiceTable() {
@@ -396,42 +475,6 @@ public class ServiceSelectionDialog extends JDialog {
         updateInfoLabels();
     }
 
-    private void resetAllSelections() {
-        selectedServicesMap.clear();
-        giftServicesMap.clear(); // Also clear gift selections
-        updateServiceTable();
-        updateSelectedServicesTable();
-
-        JOptionPane.showMessageDialog(this,
-            "Đã xóa tất cả dịch vụ đã chọn",
-            "Hoàn tác",
-            JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void confirmSelection() {
-        if (selectedServicesMap.isEmpty() || selectedServicesMap.values().stream().allMatch(qty -> qty == 0)) {
-            JOptionPane.showMessageDialog(this,
-                "Vui lòng chọn ít nhất một dịch vụ",
-                "Thông báo",
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // Filter out services with 0 quantity
-        Map<String, Integer> finalSelection = new HashMap<>();
-        for (Map.Entry<String, Integer> entry : selectedServicesMap.entrySet()) {
-            if (entry.getValue() > 0) {
-                finalSelection.put(entry.getKey(), entry.getValue());
-            }
-        }
-
-        if (callback != null) {
-            callback.onServiceConfirmed(finalSelection);
-        }
-
-        dispose();
-    }
-
     // Custom renderer for gift column
     private class GiftRenderer extends JPanel implements TableCellRenderer {
         private JCheckBox giftCheckBox;
@@ -483,7 +526,6 @@ public class ServiceSelectionDialog extends JDialog {
             giftCheckBox = new JCheckBox();
             giftCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
             giftCheckBox.setVerticalAlignment(SwingConstants.CENTER);
-            giftCheckBox.setPreferredSize(new Dimension(20, 20)); // Make checkbox bigger
             giftCheckBox.setOpaque(false); // Make checkbox background transparent
 
             // Add checkbox to center of panel
@@ -541,7 +583,8 @@ public class ServiceSelectionDialog extends JDialog {
 
     // Custom renderer for quantity column (updated for new column index)
     private class QuantityRenderer extends JPanel implements TableCellRenderer {
-        private JLabel quantityLabel;
+        // Change label to text field to support user can edit directly
+        private JTextField quantityField;
         private JButton btnDecrease;
         private JButton btnIncrease;
 
@@ -552,18 +595,19 @@ public class ServiceSelectionDialog extends JDialog {
             btnDecrease.setPreferredSize(new Dimension(25, 25));
             btnDecrease.setFont(new Font("Arial", Font.BOLD, 10));
 
-            quantityLabel = new JLabel("0", SwingConstants.CENTER);
-            quantityLabel.setPreferredSize(new Dimension(30, 25));
-            quantityLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-            quantityLabel.setOpaque(true);
-            quantityLabel.setBackground(Color.WHITE);
+            quantityField = new JTextField("0", 3);
+            quantityField.setPreferredSize(new Dimension(40, 25));
+            quantityField.setHorizontalAlignment(SwingConstants.CENTER);
+            quantityField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            quantityField.setFont(new Font("Arial", Font.PLAIN, 12));
+            quantityField.setEditable(false); // Make read-only in renderer
 
             btnIncrease = new JButton("▲");
             btnIncrease.setPreferredSize(new Dimension(25, 25));
             btnIncrease.setFont(new Font("Arial", Font.BOLD, 10));
 
             add(btnDecrease);
-            add(quantityLabel);
+            add(quantityField);
             add(btnIncrease);
         }
 
@@ -572,12 +616,14 @@ public class ServiceSelectionDialog extends JDialog {
                 boolean isSelected, boolean hasFocus, int row, int column) {
 
             int quantity = (Integer) value;
-            quantityLabel.setText(String.valueOf(quantity));
+            quantityField.setText(String.valueOf(quantity));
 
             if (isSelected) {
                 setBackground(table.getSelectionBackground());
+                quantityField.setBackground(table.getSelectionBackground());
             } else {
                 setBackground(table.getBackground());
+                quantityField.setBackground(Color.WHITE);
             }
 
             return this;
@@ -587,7 +633,7 @@ public class ServiceSelectionDialog extends JDialog {
     // Custom editor for quantity column (updated for new column index)
     private class QuantityEditor extends AbstractCellEditor implements TableCellEditor {
         private JPanel panel;
-        private JLabel quantityLabel;
+        private JTextField quantityField;
         private JButton btnDecrease;
         private JButton btnIncrease;
         private int currentQuantity;
@@ -600,23 +646,25 @@ public class ServiceSelectionDialog extends JDialog {
             btnDecrease.setPreferredSize(new Dimension(25, 25));
             btnDecrease.setFont(new Font("Arial", Font.BOLD, 10));
 
-            quantityLabel = new JLabel("0", SwingConstants.CENTER);
-            quantityLabel.setPreferredSize(new Dimension(30, 25));
-            quantityLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-            quantityLabel.setOpaque(true);
-            quantityLabel.setBackground(Color.WHITE);
+            quantityField = new JTextField("0", 3);
+            quantityField.setPreferredSize(new Dimension(40, 25));
+            quantityField.setHorizontalAlignment(SwingConstants.CENTER);
+            quantityField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            quantityField.setFont(new Font("Arial", Font.PLAIN, 12));
 
             btnIncrease = new JButton("▲");
             btnIncrease.setPreferredSize(new Dimension(25, 25));
             btnIncrease.setFont(new Font("Arial", Font.BOLD, 10));
 
             panel.add(btnDecrease);
-            panel.add(quantityLabel);
+            panel.add(quantityField);
             panel.add(btnIncrease);
 
+            // Button event handlers
             btnDecrease.addActionListener(e -> {
                 if (currentQuantity > 0) {
                     currentQuantity--;
+                    quantityField.setText(String.valueOf(currentQuantity));
                     updateQuantity();
                 }
             });
@@ -625,6 +673,7 @@ public class ServiceSelectionDialog extends JDialog {
                 ThongTinDichVu service = filteredServices.get(currentRow);
                 if (currentQuantity < service.getTonKho()) {
                     currentQuantity++;
+                    quantityField.setText(String.valueOf(currentQuantity));
                     updateQuantity();
                 } else {
                     JOptionPane.showMessageDialog(panel,
@@ -633,11 +682,84 @@ public class ServiceSelectionDialog extends JDialog {
                         JOptionPane.WARNING_MESSAGE);
                 }
             });
+
+            // TextField event handlers for direct input
+            quantityField.addKeyListener(new KeyAdapter() {
+                // Allow only numeric input
+                @Override
+                public void keyTyped(KeyEvent e) {
+                    char c = e.getKeyChar();
+                    // Allow digits, backspace, and delete
+                    if (!Character.isDigit(c) && c != KeyEvent.VK_BACK_SPACE && c != KeyEvent.VK_DELETE) {
+                        e.consume(); // Ignore non-numeric characters
+                    }
+                }
+
+                // Handle Enter key to validate input
+                @Override
+                public void keyReleased(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                        validateAndUpdateFromTextField();
+                    }
+                }
+            });
+
+            quantityField.addFocusListener(new java.awt.event.FocusListener() {
+                @Override
+                public void focusGained(java.awt.event.FocusEvent e) {
+                    // Select all text when field gains focus
+                    SwingUtilities.invokeLater(() -> quantityField.selectAll());
+                }
+
+                @Override
+                public void focusLost(java.awt.event.FocusEvent e) {
+                    validateAndUpdateFromTextField();
+                }
+            });
+        }
+
+        private void validateAndUpdateFromTextField() {
+            try {
+                String text = quantityField.getText().trim();
+                if (text.isEmpty()) {
+                    text = "0";
+                    quantityField.setText("0");
+                }
+
+                int newQuantity = Integer.parseInt(text);
+                ThongTinDichVu service = filteredServices.get(currentRow);
+
+                // Validate bounds
+                if (newQuantity < 0) {
+                    newQuantity = 0;
+                    quantityField.setText("0");
+                    JOptionPane.showMessageDialog(panel,
+                        "Số lượng không thể âm!",
+                        "Thông báo",
+                        JOptionPane.WARNING_MESSAGE);
+                } else if (newQuantity > service.getTonKho()) {
+                    newQuantity = service.getTonKho();
+                    quantityField.setText(String.valueOf(newQuantity));
+                    JOptionPane.showMessageDialog(panel,
+                        "Không đủ tồn kho! Tồn kho hiện tại: " + service.getTonKho(),
+                        "Thông báo",
+                        JOptionPane.WARNING_MESSAGE);
+                }
+
+                currentQuantity = newQuantity;
+                updateQuantity();
+
+            } catch (NumberFormatException e) {
+                // Reset to current valid value if invalid input
+                quantityField.setText(String.valueOf(currentQuantity));
+                JOptionPane.showMessageDialog(panel,
+                    "Vui lòng nhập số hợp lệ!",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            }
         }
 
         private void updateQuantity() {
-            quantityLabel.setText(String.valueOf(currentQuantity));
-
             ThongTinDichVu service = filteredServices.get(currentRow);
             selectedServicesMap.put(service.getMaDichVu(), currentQuantity);
 
@@ -653,7 +775,7 @@ public class ServiceSelectionDialog extends JDialog {
 
             currentQuantity = (Integer) value;
             currentRow = row;
-            quantityLabel.setText(String.valueOf(currentQuantity));
+            quantityField.setText(String.valueOf(currentQuantity));
 
             return panel;
         }
@@ -664,18 +786,114 @@ public class ServiceSelectionDialog extends JDialog {
         }
     }
 
-    private void setupEventHandlers() {
-        btnSearch.addActionListener(e -> filterServices());
+    // Custom glass pane for blur effect
+    private static class BlurGlassPane extends JComponent {
+        private BufferedImage blurBuffer;
+        private JFrame parentFrame;
 
-        txtSearchService.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent e) {
-                filterServices();
+        public BlurGlassPane(JFrame parent) {
+            this.parentFrame = parent;
+            setOpaque(false);
+            createBlurEffect();
+        }
+
+        private void createBlurEffect() {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    // Capture the parent frame content
+                    Rectangle bounds = parentFrame.getBounds();
+                    Robot robot = new Robot();
+                    BufferedImage screenshot = robot.createScreenCapture(bounds);
+
+                    // Create blurred version
+                    blurBuffer = createBlurredImage(screenshot);
+
+                    repaint();
+                } catch (Exception e) {
+                    System.err.println("Failed to create blur effect: " + e.getMessage());
+                    // Fallback to semi-transparent overlay
+                    createFallbackOverlay();
+                }
+            });
+        }
+
+        private BufferedImage createBlurredImage(BufferedImage source) {
+            if (source == null) return null;
+
+            int width = source.getWidth();
+            int height = source.getHeight();
+
+            BufferedImage blurred = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = blurred.createGraphics();
+
+            // Apply blur using convolution
+            float[] blurKernel = {
+                1f/16f, 2f/16f, 1f/16f,
+                2f/16f, 4f/16f, 2f/16f,
+                1f/16f, 2f/16f, 1f/16f
+            };
+
+            try {
+                java.awt.image.ConvolveOp blurOp = new java.awt.image.ConvolveOp(
+                    new java.awt.image.Kernel(3, 3, blurKernel),
+                    java.awt.image.ConvolveOp.EDGE_NO_OP,
+                    null
+                );
+
+                // Apply blur effect multiple times for stronger blur
+                BufferedImage temp = source;
+                for (int i = 0; i < 3; i++) {
+                    temp = blurOp.filter(temp, null);
+                }
+
+                g2d.drawImage(temp, 0, 0, null);
+
+                // Add semi-transparent overlay for better effect
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+                g2d.setColor(Color.BLACK);
+                g2d.fillRect(0, 0, width, height);
+
+            } finally {
+                g2d.dispose();
             }
-        });
 
-        btnReset.addActionListener(e -> resetAllSelections());
+            return blurred;
+        }
 
-        btnConfirm.addActionListener(e -> confirmSelection());
+        private void createFallbackOverlay() {
+            // Simple fallback - semi-transparent dark overlay
+            blurBuffer = new BufferedImage(
+                parentFrame.getWidth(),
+                parentFrame.getHeight(),
+                BufferedImage.TYPE_INT_ARGB
+            );
+
+            Graphics2D g2d = blurBuffer.createGraphics();
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+            g2d.setColor(Color.BLACK);
+            g2d.fillRect(0, 0, blurBuffer.getWidth(), blurBuffer.getHeight());
+            g2d.dispose();
+
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            if (blurBuffer != null) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+                // Draw the blurred background
+                g2d.drawImage(blurBuffer, 0, 0, getWidth(), getHeight(), null);
+
+                g2d.dispose();
+            } else {
+                // Fallback overlay while blur is being created
+                g.setColor(new Color(0, 0, 0, 100));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        }
     }
 }

@@ -3,10 +3,10 @@ package vn.iuh.gui.panel;
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.BookingCreationEvent;
+import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
-import vn.iuh.gui.dialog.ServiceSelectionDialog;
 import vn.iuh.servcie.BookingService;
 import vn.iuh.util.IconUtil;
 
@@ -17,6 +17,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
+
+import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 
 public class BookingFormPanel extends JPanel {
     private BookingResponse selectedRoom;
@@ -46,7 +48,7 @@ public class BookingFormPanel extends JPanel {
     private JButton reservationButton;
 
     // Service Components - simplified to use dialog
-    private Map<String, Integer> selectedServices = new HashMap<>();
+    private List<DonGoiDichVu> serviceOrdered = new ArrayList<>();
 
     // Action Buttons
     private JButton btnCancel;
@@ -898,6 +900,7 @@ public class BookingFormPanel extends JPanel {
 
     // Create booking event from form data
     private BookingCreationEvent createBookingEvent() {
+
         String tenKhachHang = txtCustomerName.getText().trim();
         String soDienThoai = txtPhoneNumber.getText().trim();
         String cccd = txtCCCD.getText().trim();
@@ -909,12 +912,12 @@ public class BookingFormPanel extends JPanel {
         double tienDatCoc = Double.parseDouble(txtDepositPrice.getText());
         boolean daDatTruoc = chkIsAdvanced.isSelected();
         List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
-        List<String> danhSachMaDichVu = java.util.Arrays.asList(); // Empty for now
+
         String maPhienDangNhap = "PN00000002"; // TODO - get actual shift assignment ID
 
         return new BookingCreationEvent(tenKhachHang, soDienThoai, cccd, moTa,
                                         ngayNhanPhong, ngayTraPhong, tongTienDuTinh, tienDatCoc, daDatTruoc,
-                                        danhSachMaPhong, danhSachMaDichVu, maPhienDangNhap, thoiGianTao);
+                                        danhSachMaPhong, serviceOrdered, maPhienDangNhap, thoiGianTao);
     }
 
     // Setup event handlers for buttons
@@ -926,23 +929,12 @@ public class BookingFormPanel extends JPanel {
 
     // Handler methods for action buttons
     private void handleCallService() {
-        // Create and show the service selection dialog
-        ServiceSelectionDialog dialog = new ServiceSelectionDialog(
-                (Frame) SwingUtilities.getWindowAncestor(this),
-                (services) -> {
-                    // Update the selected services when dialog confirms
-                    selectedServices.clear();
-                    selectedServices.putAll(services);
-
-                    // Show confirmation message
-                    if (!services.isEmpty()) {
-                        JOptionPane.showMessageDialog(this,
-                                                      "Đã chọn " + services.size() + " dịch vụ",
-                                                      "Xác nhận", JOptionPane.INFORMATION_MESSAGE);
-                    }
-                }
-        );
-        dialog.setVisible(true);
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel((services) -> {
+            serviceOrdered.clear();
+            serviceOrdered.addAll(services);
+        });
+        Main.addCard(servicePanel, SERVICE_ORDER.getName());
+        Main.showCard(SERVICE_ORDER.getName());
     }
 
     private void handleBookRoom() {

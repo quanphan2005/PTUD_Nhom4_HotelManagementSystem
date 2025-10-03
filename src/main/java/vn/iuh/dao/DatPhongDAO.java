@@ -112,8 +112,8 @@ public class DatPhongDAO {
     public boolean themPhongDungDichVu(DonDatPhong donDatPhongEntity,
                                        List<PhongDungDichVu> phongDungDichVus) {
         String query = "INSERT INTO PhongDungDichVu" +
-                       " (ma_phong_dung_dich_vu, so_luong, thoi_gian_dung, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
-                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                       " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -121,12 +121,11 @@ public class DatPhongDAO {
             for (PhongDungDichVu phongDungDichVu : phongDungDichVus) {
                 ps.setString(1, phongDungDichVu.getMaPhongDungDichVu());
                 ps.setInt(2, phongDungDichVu.getSoLuong());
-                ps.setTimestamp(3, phongDungDichVu.getThoiGianDung());
-                ps.setDouble(4, phongDungDichVu.getGiaThoiDiemDo());
-                ps.setBoolean(5, phongDungDichVu.getDuocTang());
-                ps.setString(6, phongDungDichVu.getMaChiTietDatPhong());
-                ps.setString(7, phongDungDichVu.getMaDichVu());
-                ps.setString(8, donDatPhongEntity.getMaPhienDangNhap());
+                ps.setDouble(3, phongDungDichVu.getGiaThoiDiemDo());
+                ps.setBoolean(4, phongDungDichVu.getDuocTang());
+                ps.setString(5, phongDungDichVu.getMaChiTietDatPhong());
+                ps.setString(6, phongDungDichVu.getMaDichVu());
+                ps.setString(7, donDatPhongEntity.getMaPhienDangNhap());
 
                 ps.addBatch();
             }

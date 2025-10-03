@@ -3,11 +3,9 @@ package vn.iuh.servcie.impl;
 import vn.iuh.constraint.ActionType;
 import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.constraint.RoomStatus;
-import vn.iuh.dao.DatPhongDAO;
-import vn.iuh.dao.KhachHangDAO;
-import vn.iuh.dao.CongViecDAO;
-import vn.iuh.dao.LichSuThaoTacDAO;
+import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.BookingCreationEvent;
+import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
@@ -66,7 +64,8 @@ public class BookingServiceImpl implements BookingService {
             List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
             for (String roomId : bookingCreationEvent.getDanhSachMaPhong())
                 chiTietDatPhongs.add(
-                        createRoomReservationDetailEntity(bookingCreationEvent, roomId, donDatPhong.getMaDonDatPhong()));
+                        createRoomReservationDetailEntity(bookingCreationEvent, roomId,
+                                                          donDatPhong.getMaDonDatPhong()));
 
             datPhongDAO.themChiTietDatPhong(donDatPhong, chiTietDatPhongs);
 
@@ -79,15 +78,24 @@ public class BookingServiceImpl implements BookingService {
             datPhongDAO.themLichSuDiVao(historyCheckIns);
 
             // 2.4. Create RoomUsageServiceEntity & insert to DB
-            List<PhongDungDichVu> phongDungDichVus = new ArrayList<>();
+            List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+            PhongDungDichVu phongDungDichVuMoiNhat = datPhongDAO.timPhongDungDichVuMoiNhat();
+            String maPhongDungDichVuMoiNhat =
+                    phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
             for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                for (String serviceId : bookingCreationEvent.getDanhSachMaDichVu())
-                    phongDungDichVus.add(
-                            createRoomUsageServiceEntity(bookingCreationEvent, serviceId));
+                for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
+                    phongDungDichVuMoiNhat =
+                            createRoomUsageServiceEntity(bookingCreationEvent,
+                                                         maPhongDungDichVuMoiNhat,
+                                                         chiTietDatPhong.getMaChiTietDatPhong(),
+                                                         dichVu);
+                    maPhongDungDichVuMoiNhat = phongDungDichVuMoiNhat.getMaPhongDungDichVu();
+                    danhSachPhongDungDichVu.add(phongDungDichVuMoiNhat);
+                }
             }
 
-            datPhongDAO.themPhongDungDichVu(donDatPhong, phongDungDichVus);
+            datPhongDAO.themPhongDungDichVu(donDatPhong, danhSachPhongDungDichVu);
 
             // 2.5. Create Job for each booked room
             List<CongViec> congViecs = new ArrayList<>();
@@ -119,7 +127,8 @@ public class BookingServiceImpl implements BookingService {
             String workingHistoryId = lichSuThaoTacMoiNhat == null ? null : lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
 
             String actionDescription = "Đặt phòng cho khách hàng " + bookingCreationEvent.getTenKhachHang()
-                                       + " - CCCD: " + bookingCreationEvent.getCCCD() + "Phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString();
+                                       + " - CCCD: " + bookingCreationEvent.getCCCD() + "Phòng: " +
+                                       bookingCreationEvent.getDanhSachMaPhong().toString();
             lichSuThaoTacDAO.themLichSuThaoTac(new LichSuThaoTac(
                     EntityUtil.increaseEntityID(workingHistoryId,
                                                 EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
@@ -158,8 +167,8 @@ public class BookingServiceImpl implements BookingService {
             // Set default Room Status if null or empty
             if (Objects.isNull(thongTinPhong.getTenTrangThai()) || thongTinPhong.getTenTrangThai().isEmpty()) {
                 thongTinPhong.setTenTrangThai(thongTinPhong.isDangHoatDong()
-                                               ? RoomStatus.ROOM_AVAILABLE_STATUS.getStatus()
-                                               : RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus()
+                                                      ? RoomStatus.ROOM_AVAILABLE_STATUS.getStatus()
+                                                      : RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus()
                 );
             }
 
@@ -246,20 +255,30 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    private PhongDungDichVu createRoomUsageServiceEntity(BookingCreationEvent bookingCreationEvent, String serviceId) {
+    private PhongDungDichVu createRoomUsageServiceEntity(BookingCreationEvent bookingCreationEvent,
+                                                         String maPhongDungDichVuMoiNhat,
+                                                         String maChiTietDatPhong,
+                                                         DonGoiDichVu dichVu) {
         String id;
         String prefix = EntityIDSymbol.ROOM_USAGE_SERVICE_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.ROOM_USAGE_SERVICE_PREFIX.getLength();
 
-        PhongDungDichVu phongDungDichVuMoiNhat = datPhongDAO.timPhongDungDichVuMoiNhat();
-        if (phongDungDichVuMoiNhat == null) {
+        if (maPhongDungDichVuMoiNhat == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
-            id = EntityUtil.increaseEntityID(phongDungDichVuMoiNhat.getMaPhongDungDichVu(), prefix, numberLength);
+            id = EntityUtil.increaseEntityID(maPhongDungDichVuMoiNhat, prefix, numberLength);
         }
 
-        // TODO - Implement when Service feature is ready
         return new PhongDungDichVu(
+                id,
+                dichVu.getSoLuong(),
+                new Timestamp(System.currentTimeMillis()),
+                dichVu.getGiaThoiDiemDo(),
+                dichVu.isDuocTang(),
+                maChiTietDatPhong,
+                dichVu.getMaDichVu(),
+                bookingCreationEvent.getMaPhienDangNhap(),
+                null
         );
     }
 

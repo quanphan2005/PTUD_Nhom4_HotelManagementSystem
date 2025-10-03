@@ -135,7 +135,7 @@ public class DichVuDAO {
         return false;
     }
 
-    public DichVu timDichVUMoiNhat() {
+    public DichVu timDichVuMoiNhat() {
         String query = "SELECT TOP 1 * FROM DichVu ORDER BY ma_dich_vu DESC";
 
         try {

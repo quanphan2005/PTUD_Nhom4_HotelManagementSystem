@@ -1,6 +1,5 @@
 package vn.iuh.entity;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 
 public class PhongDungDichVu {
@@ -8,7 +7,7 @@ public class PhongDungDichVu {
     private int soLuong;
     private Timestamp thoiGianDung;
     private double giaThoiDiemDo;
-    private boolean duoc_tang;
+    private boolean duocTang;
     private String maChiTietDatPhong;
     private String maDichVu;
     private String maPhienDangNhap;
@@ -17,13 +16,13 @@ public class PhongDungDichVu {
     public PhongDungDichVu() {}
 
     public PhongDungDichVu(String maPhongDungDichVu, int soLuong, Timestamp thoiGianDung, double giaThoiDiemDo,
-                           boolean duoc_tang, String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
+                           boolean duocTang, String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
                            Timestamp thoiGianTao) {
         this.maPhongDungDichVu = maPhongDungDichVu;
         this.soLuong = soLuong;
         this.thoiGianDung = thoiGianDung;
         this.giaThoiDiemDo = giaThoiDiemDo;
-        this.duoc_tang = duoc_tang;
+        this.duocTang = duocTang;
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.maDichVu = maDichVu;
         this.maPhienDangNhap = maPhienDangNhap;
@@ -63,11 +62,11 @@ public class PhongDungDichVu {
     }
 
     public boolean getDuocTang() {
-        return duoc_tang;
+        return duocTang;
     }
 
-    public void setDuoc_tang(boolean duoc_tang) {
-        this.duoc_tang = duoc_tang;
+    public void setDuocTang(boolean duocTang) {
+        this.duocTang = duocTang;
     }
 
     public String getMaChiTietDatPhong() {
