@@ -11,6 +11,7 @@ import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.entity.*;
 import vn.iuh.servcie.BookingService;
+import vn.iuh.servcie.GoiDichVuService;
 import vn.iuh.util.EntityUtil;
 
 import java.sql.Timestamp;
@@ -20,12 +21,14 @@ import java.util.Objects;
 
 public class BookingServiceImpl implements BookingService {
     private final DatPhongDAO datPhongDAO;
+    private final GoiDichVuDao goiDichVuDao;
     private final KhachHangDAO khachHangDAO;
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private final CongViecDAO congViecDAO;
 
     public BookingServiceImpl() {
         this.datPhongDAO = new DatPhongDAO();
+        this.goiDichVuDao = new GoiDichVuDao();
         this.khachHangDAO = new KhachHangDAO();
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecDAO = new CongViecDAO();
@@ -37,27 +40,43 @@ public class BookingServiceImpl implements BookingService {
         // 1. find Customer by CCCD
         KhachHang khachHang = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
 
+        // 1.1 Create Customer if not exist
+        if (Objects.isNull(khachHang)) {
+            KhachHang kh = khachHangDAO.timKhachHangMoiNhat();
+            String maKH = kh == null ? null : kh.getMaKhachHang();
+
+            khachHangDAO.themKhachHang(new KhachHang(
+                    EntityUtil.increaseEntityID(maKH,
+                                                EntityIDSymbol.CUSTOMER_PREFIX.getPrefix(),
+                                                EntityIDSymbol.CUSTOMER_PREFIX.getLength()),
+                    bookingCreationEvent.getTenKhachHang(),
+                    bookingCreationEvent.getSoDienThoai(),
+                    bookingCreationEvent.getCCCD(),
+                    null
+            ));
+            khachHang = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
+        }
+
+        List<ThongTinDatPhong> danhSachThongTinDatPhong = datPhongDAO.timThongTinDatPhongTrongKhoang(
+                bookingCreationEvent.getTgNhanPhong(),
+                bookingCreationEvent.getTgTraPhong(),
+                bookingCreationEvent.getDanhSachMaPhong()
+        );
+
+        // 1.2 If any room is already booked in the given time range, return false
+        if (!danhSachThongTinDatPhong.isEmpty()) {
+            System.out.println("Có phòng đã được đặt trong khoảng thời gian này: ");
+            for (ThongTinDatPhong thongTinDatPhong : danhSachThongTinDatPhong) {
+                System.out.println(thongTinDatPhong);
+            }
+            return false;
+        }
+
         try {
             datPhongDAO.khoiTaoGiaoTac();
 
-            // 1.1 Create Customer if not exist
-            if (Objects.isNull(khachHang)) {
-                KhachHang kh = khachHangDAO.timKhachHangMoiNhat();
-                String maKH = kh == null ? null : kh.getMaKhachHang();
-
-                khachHangDAO.themKhachHang(new KhachHang(
-                        EntityUtil.increaseEntityID(maKH,
-                                                    EntityIDSymbol.CUSTOMER_PREFIX.getPrefix(),
-                                                    EntityIDSymbol.CUSTOMER_PREFIX.getLength()),
-                        bookingCreationEvent.getTenKhachHang(),
-                        bookingCreationEvent.getSoDienThoai(),
-                        bookingCreationEvent.getCCCD(),
-                        null
-                ));
-            }
-
             // 2.1. Create ReservationFormEntity & insert to DB
-            DonDatPhong donDatPhong = createReservationFormEntity(bookingCreationEvent, null);
+            DonDatPhong donDatPhong = createReservationFormEntity(bookingCreationEvent, khachHang.getMaKhachHang());
             datPhongDAO.themDonDatPhong(donDatPhong);
 
             // 2.2. Create RoomReservationDetail Entity & insert to DB
@@ -65,7 +84,7 @@ public class BookingServiceImpl implements BookingService {
             for (String roomId : bookingCreationEvent.getDanhSachMaPhong())
                 chiTietDatPhongs.add(
                         createRoomReservationDetailEntity(bookingCreationEvent, roomId,
-                                                          donDatPhong.getMaDonDatPhong()));
+                                                                                          donDatPhong.getMaDonDatPhong()));
 
             datPhongDAO.themChiTietDatPhong(donDatPhong, chiTietDatPhongs);
 
@@ -79,7 +98,7 @@ public class BookingServiceImpl implements BookingService {
 
             // 2.4. Create RoomUsageServiceEntity & insert to DB
             List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
-            PhongDungDichVu phongDungDichVuMoiNhat = datPhongDAO.timPhongDungDichVuMoiNhat();
+            PhongDungDichVu phongDungDichVuMoiNhat = goiDichVuDao.timPhongDungDichVuMoiNhat();
             String maPhongDungDichVuMoiNhat =
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
@@ -95,9 +114,14 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
 
-            datPhongDAO.themPhongDungDichVu(donDatPhong, danhSachPhongDungDichVu);
+            goiDichVuDao.themPhongDungDichVu(bookingCreationEvent.getMaPhienDangNhap(), danhSachPhongDungDichVu);
 
-            // 2.5. Create Job for each booked room
+            // 2.5 Update Service Quantity
+            for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
+                goiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), dichVu.getSoLuong());
+            }
+
+            // 2.6. Create Job for each booked room
             List<CongViec> congViecs = new ArrayList<>();
             CongViec congViec = congViecDAO.timCongViecMoiNhat();
             String jobId = congViec == null ? null : congViec.getMaCongViec();
@@ -122,7 +146,7 @@ public class BookingServiceImpl implements BookingService {
 
             congViecDAO.themDanhSachCongViec(congViecs);
 
-            // 2.6. Update WorkingHistory
+            // 2.7. Update WorkingHistory
             LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
             String workingHistoryId = lichSuThaoTacMoiNhat == null ? null : lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
 
@@ -133,7 +157,8 @@ public class BookingServiceImpl implements BookingService {
                     EntityUtil.increaseEntityID(workingHistoryId,
                                                 EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
                                                 EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength()),
-                    ActionType.BOOKING.getActionName(),
+                    bookingCreationEvent.isDaDatTruoc() ? ActionType.PRE_BOOKING.getActionName()
+                            : ActionType.BOOKING.getActionName(),
                     actionDescription,
                     bookingCreationEvent.getMaPhienDangNhap(),
                     new Timestamp(System.currentTimeMillis())
@@ -272,7 +297,6 @@ public class BookingServiceImpl implements BookingService {
         return new PhongDungDichVu(
                 id,
                 dichVu.getSoLuong(),
-                new Timestamp(System.currentTimeMillis()),
                 dichVu.getGiaThoiDiemDo(),
                 dichVu.isDuocTang(),
                 maChiTietDatPhong,

@@ -2,6 +2,7 @@ package vn.iuh.constraint;
 
 public enum ActionType {
     BOOKING("ĐẶT PHÒNG"),
+    PRE_BOOKING("ĐẶT TRƯỚC"),
     CHECKIN("NHẬN PHÒNG"),
     CHECKOUT("TRẢ PHÒNG"),
     CANCEL("HỦY PHÒNG"),

@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import vn.iuh.dto.repository.ThongTinDichVu;
+import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -21,6 +22,34 @@ public class GoiDichVuDao {
 
     public GoiDichVuDao(Connection connection) {
         this.connection = connection;
+    }
+
+    public void themPhongDungDichVu(String maPhienDangNhap,
+                                       List<PhongDungDichVu> phongDungDichVus) {
+        String query = "INSERT INTO PhongDungDichVu" +
+                       " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            for (PhongDungDichVu phongDungDichVu : phongDungDichVus) {
+                ps.setString(1, phongDungDichVu.getMaPhongDungDichVu());
+                ps.setInt(2, phongDungDichVu.getSoLuong());
+                ps.setDouble(3, phongDungDichVu.getGiaThoiDiemDo());
+                ps.setBoolean(4, phongDungDichVu.getDuocTang());
+                ps.setString(5, phongDungDichVu.getMaChiTietDatPhong());
+                ps.setString(6, phongDungDichVu.getMaDichVu());
+                ps.setString(7, maPhienDangNhap);
+
+                ps.addBatch();
+            }
+
+            ps.executeBatch();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<ThongTinDichVu> timTatCaThongTinDichVu() {
@@ -47,8 +76,39 @@ public class GoiDichVuDao {
         return danhSachThongTinDichVu;
     }
 
-    public boolean goiDichVu(List<PhongDungDichVu> phongDungDichVus) {
-        return false;
+    public PhongDungDichVu timPhongDungDichVuMoiNhat() {
+        String query = "SELECT TOP 1 * FROM PhongDungDichVu ORDER BY ma_phong_dung_dich_vu DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhPhongDungDichVu(rs);
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
+    }
+
+    public void capNhatSoLuongTonKhoDichVu(String maDichVu, int soLuong) {
+        String query = "UPDATE DichVu SET ton_kho = ton_kho - ? WHERE ma_dich_vu = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setInt(1, soLuong);
+            ps.setString(2, maDichVu);
+
+            int rowsAffected = ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private ThongTinDichVu chuyenKetQuaThanhThongTinDichVu(ResultSet rs) throws SQLException, TableEntityMismatch {
@@ -63,6 +123,23 @@ public class GoiDichVuDao {
             return new ThongTinDichVu(maDichVu, tenDichVu, tonKho, coTheTang, giaMoi, tenLoaiDichVu);
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi khi chuyển kết quả sang ThongTinDichVu: " + e.getMessage());
+        }
+    }
+
+    private PhongDungDichVu chuyenKetQuaThanhPhongDungDichVu(ResultSet rs) {
+        try {
+            return new PhongDungDichVu(
+                    rs.getString("ma_phong_dung_dich_vu"),
+                    rs.getInt("so_luong"),
+                    rs.getDouble("gia_thoi_diem_do"),
+                    rs.getBoolean("duoc_tang"),
+                    rs.getString("ma_chi_tiet_dat_phong"),
+                    rs.getString("ma_dich_vu"),
+                    rs.getString("ma_phien_dang_nhap"),
+                    rs.getTimestamp("thoi_gian_tao")
+            );
+        } catch (SQLException e) {
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành PhongDungDichVu: " + e.getMessage());
         }
     }
 }

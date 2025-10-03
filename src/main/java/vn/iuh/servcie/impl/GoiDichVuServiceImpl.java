@@ -28,9 +28,9 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
         return danhSachThongTinDichVu;
     }
 
+    // TODO: implement method
     @Override
-    public boolean goiDichVu(List<DonGoiDichVu> danhSachDichVu) {
-        // TODO - implement
+    public boolean goiDichVu(String maPhienDangNhap, List<DonGoiDichVu> danhSachDichVu) {
         return false;
     }
 }

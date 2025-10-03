@@ -440,4 +440,12 @@ public class RoomItem extends JPanel {
     public int hashCode() {
         return Objects.hashCode(bookingResponse);
     }
+
+    public Object getRoomCategoryName() {
+        return bookingResponse.getRoomType();
+    }
+
+    public Object getCapacity() {
+        return bookingResponse.getNumberOfCustomers();
+    }
 }

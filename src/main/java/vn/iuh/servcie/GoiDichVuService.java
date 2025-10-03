@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface GoiDichVuService {
     List<ThongTinDichVu> timTatCaThongTinDichVu();
-    boolean goiDichVu(List<DonGoiDichVu> danhSachDichVu);
+    boolean goiDichVu(String maPhienDangNhap, List<DonGoiDichVu> danhSachDichVu);
 }

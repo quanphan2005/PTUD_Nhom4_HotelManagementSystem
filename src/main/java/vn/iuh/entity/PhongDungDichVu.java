@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 public class PhongDungDichVu {
     private String maPhongDungDichVu;
     private int soLuong;
-    private Timestamp thoiGianDung;
     private double giaThoiDiemDo;
     private boolean duocTang;
     private String maChiTietDatPhong;
@@ -15,12 +14,11 @@ public class PhongDungDichVu {
 
     public PhongDungDichVu() {}
 
-    public PhongDungDichVu(String maPhongDungDichVu, int soLuong, Timestamp thoiGianDung, double giaThoiDiemDo,
+    public PhongDungDichVu(String maPhongDungDichVu, int soLuong, double giaThoiDiemDo,
                            boolean duocTang, String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
                            Timestamp thoiGianTao) {
         this.maPhongDungDichVu = maPhongDungDichVu;
         this.soLuong = soLuong;
-        this.thoiGianDung = thoiGianDung;
         this.giaThoiDiemDo = giaThoiDiemDo;
         this.duocTang = duocTang;
         this.maChiTietDatPhong = maChiTietDatPhong;
@@ -43,14 +41,6 @@ public class PhongDungDichVu {
 
     public void setSoLuong(int soLuong) {
         this.soLuong = soLuong;
-    }
-
-    public Timestamp getThoiGianDung() {
-        return thoiGianDung;
-    }
-
-    public void setThoiGianDung(Timestamp thoiGianDung) {
-        this.thoiGianDung = thoiGianDung;
     }
 
     public double getGiaThoiDiemDo() {

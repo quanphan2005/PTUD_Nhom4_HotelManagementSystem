@@ -88,6 +88,13 @@ public class BookingFormPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // Initialize service selection
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel((services) -> {
+            serviceOrdered.clear();
+            serviceOrdered.addAll(services);
+        });
+        Main.addCard(servicePanel, SERVICE_ORDER.getName());
+
         // Room Information Labels
         lblRoomNumber = new JLabel();
         lblRoomType = new JLabel();
@@ -929,11 +936,6 @@ public class BookingFormPanel extends JPanel {
 
     // Handler methods for action buttons
     private void handleCallService() {
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel((services) -> {
-            serviceOrdered.clear();
-            serviceOrdered.addAll(services);
-        });
-        Main.addCard(servicePanel, SERVICE_ORDER.getName());
         Main.showCard(SERVICE_ORDER.getName());
     }
 
