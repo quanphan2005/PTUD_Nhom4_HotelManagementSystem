@@ -1,10 +1,12 @@
 package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.GridRoomPanel;
+import vn.iuh.gui.base.Main;
 import vn.iuh.gui.base.RoomItem;
 import vn.iuh.servcie.BookingService;
 import vn.iuh.servcie.impl.BookingServiceImpl;
@@ -14,6 +16,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 public class ReservationManagementPanel extends JPanel {
     private GridRoomPanel gridRoomPanels;
@@ -31,11 +34,12 @@ public class ReservationManagementPanel extends JPanel {
     // Filter state
     private RoomFilter roomFilter;
 
-    // Mode toggle components
+    // Multi-booking mode components
     private boolean isMultiBookingMode = false;
     private JToggleButton btnMultiBookingToggle;
     private JLabel lblSelectedRooms;
     private JButton btnConfirmSelection;
+    private List<BookingResponse> selectedRooms = new ArrayList<>();
 
     public ReservationManagementPanel() {
         bookingService = new BookingServiceImpl();
@@ -53,6 +57,30 @@ public class ReservationManagementPanel extends JPanel {
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         init();
+        setupMultiBookingCallbacks();
+    }
+
+    private void setupMultiBookingCallbacks() {
+        // Set selection callback for all room items
+        for (RoomItem roomItem : allRoomItems) {
+            roomItem.setSelectionCallback(this::handleRoomSelectionChanged);
+        }
+    }
+
+    private void handleRoomSelectionChanged(BookingResponse room, boolean selected) {
+        if (selected) {
+            if (!selectedRooms.contains(room)) {
+                selectedRooms.add(room);
+            }
+        } else {
+            selectedRooms.remove(room);
+        }
+        updateSelectionDisplay();
+    }
+
+    private void updateSelectionDisplay() {
+        lblSelectedRooms.setText("Đã chọn: " + selectedRooms.size() + " phòng");
+        btnConfirmSelection.setEnabled(selectedRooms.size() > 0);
     }
 
     private void init() {
@@ -192,7 +220,7 @@ public class ReservationManagementPanel extends JPanel {
 
         // Calculate actual quantities for each status
         int totalRooms = allRoomItems != null ? allRoomItems.size() : 0;
-        int availableCount = getStatusCount(RoomStatus.ROOM_AVAILABLE_STATUS.getStatus());
+        int availableCount = getStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
         int bookedCount = getStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
         int checkingCount = getStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
         int usingCount = getStatusCount(RoomStatus.ROOM_USING_STATUS.getStatus());
@@ -202,7 +230,7 @@ public class ReservationManagementPanel extends JPanel {
 
         // Create status buttons with actual quantities and proper colors
         createStatusButton(panel, gbc, 0, 0, "Tất cả (" + totalRooms + ")", CustomUI.lightGreen, "Tất cả");
-        createStatusButton(panel, gbc, 1, 0, RoomStatus.ROOM_AVAILABLE_STATUS.getStatus() + " (" + availableCount + ")", CustomUI.lightGreen, RoomStatus.ROOM_AVAILABLE_STATUS.getStatus());
+        createStatusButton(panel, gbc, 1, 0, RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")", CustomUI.lightGreen, RoomStatus.ROOM_EMPTY_STATUS.getStatus());
         createStatusButton(panel, gbc, 2, 0, RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")", CustomUI.cyan, RoomStatus.ROOM_BOOKED_STATUS.getStatus());
 
         createStatusButton(panel, gbc, 0, 1, RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")", CustomUI.lightBlue, RoomStatus.ROOM_CHECKING_STATUS.getStatus());
@@ -256,111 +284,141 @@ public class ReservationManagementPanel extends JPanel {
         JPanel modePanel = new JPanel(new BorderLayout());
         modePanel.setBackground(Color.WHITE);
         modePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.GRAY, 1),
-                BorderFactory.createEmptyBorder(5, 20, 5, 20)
-        ));
-        modePanel.setPreferredSize(new Dimension(1000, 50));
+                BorderFactory.createLineBorder(CustomUI.lightGray, 2),
+                BorderFactory.createEmptyBorder(5, 15, 5, 15
+        )));
+
+        // Left panel with toggle button
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        leftPanel.setBackground(Color.WHITE);
+
+        // Multi-booking toggle button with icon and shorter text
+        btnMultiBookingToggle = new JToggleButton();
+        updateToggleButtonAppearance(false);
+        btnMultiBookingToggle.setFont(CustomUI.normalFont);
+        btnMultiBookingToggle.setPreferredSize(new Dimension(250, 35));
+        btnMultiBookingToggle.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+        btnMultiBookingToggle.addActionListener(e -> toggleMultiBookingMode());
+
+        leftPanel.add(btnMultiBookingToggle);
+
+        // Right panel with selection info and confirm button
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
+        rightPanel.setBackground(Color.WHITE);
+
+        // Selected rooms label
+        lblSelectedRooms = new JLabel("Đã chọn: 0 phòng");
+        lblSelectedRooms.setFont(CustomUI.normalFont);
+        lblSelectedRooms.setForeground(new Color(0, 123, 255));
+        lblSelectedRooms.setVisible(false);
+
+        // Confirm selection button
+        btnConfirmSelection = new JButton("Xác nhận");
+        btnConfirmSelection.setFont(CustomUI.normalFont);
+        btnConfirmSelection.setBackground(CustomUI.darkGreen);
+        btnConfirmSelection.setForeground(Color.WHITE);
+        btnConfirmSelection.setPreferredSize(new Dimension(150, 35));
+        btnConfirmSelection.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+        btnConfirmSelection.setEnabled(false);
+        btnConfirmSelection.setVisible(false);
+        btnConfirmSelection.addActionListener(e -> confirmMultiRoomSelection());
+
+        rightPanel.add(lblSelectedRooms);
+        rightPanel.add(btnConfirmSelection);
+
+        modePanel.add(leftPanel, BorderLayout.WEST);
+        modePanel.add(rightPanel, BorderLayout.EAST);
+
+        // Set fixed height for mode panel
+        modePanel.setPreferredSize(new Dimension(0, 50));
         modePanel.setMinimumSize(new Dimension(0, 50));
         modePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
-        // Left side - Toggle button
-        ImageIcon errorIcon = new ImageIcon(getClass().getResource("/icons/error.png"));
-        errorIcon = new ImageIcon(errorIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
-
-        btnMultiBookingToggle = new JToggleButton("Đặt nhiều phòng", errorIcon);
-        btnMultiBookingToggle.setFont(CustomUI.smallFont);
-        btnMultiBookingToggle.setPreferredSize(new Dimension(200, 35));
-        btnMultiBookingToggle.setBackground(Color.LIGHT_GRAY);
-        btnMultiBookingToggle.setForeground(Color.BLACK);
-        btnMultiBookingToggle.setFocusPainted(false);
-        btnMultiBookingToggle.addActionListener(e -> toggleMultiBookingMode());
-
-        // Right side panel for the two buttons
-        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 2));
-        rightButtonPanel.setBackground(Color.WHITE);
-
-        // Selected rooms count label
-        lblSelectedRooms = new JLabel("Phòng đã chọn: 0");
-        lblSelectedRooms.setFont(CustomUI.smallFont);
-        lblSelectedRooms.setPreferredSize(new Dimension(250, 35));
-        lblSelectedRooms.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.GRAY, 1),
-                BorderFactory.createEmptyBorder(10, 20, 10, 20)
-        ));
-        lblSelectedRooms.setEnabled(false); // Initially disabled
-
-        // Confirm selection button
-        btnConfirmSelection = new JButton("Xác Nhận");
-        btnConfirmSelection.setFont(CustomUI.smallFont);
-        btnConfirmSelection.setPreferredSize(new Dimension(150, 35));
-        btnConfirmSelection.setBackground(CustomUI.darkGreen);
-        btnConfirmSelection.setForeground(Color.WHITE);
-        btnConfirmSelection.setFocusPainted(false);
-        btnConfirmSelection.setEnabled(false); // Initially disabled
-        btnConfirmSelection.addActionListener(e -> confirmRoomSelection());
-
-        rightButtonPanel.add(lblSelectedRooms);
-        rightButtonPanel.add(btnConfirmSelection);
-
-        modePanel.add(btnMultiBookingToggle, BorderLayout.WEST);
-        modePanel.add(rightButtonPanel, BorderLayout.EAST);
-
         add(modePanel);
+    }
+
+    private void updateToggleButtonAppearance(boolean isMultiMode) {
+        if (isMultiMode) {
+            // Exit multi-booking mode - use error icon
+            try {
+                ImageIcon errorIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/error.png")));
+                errorIcon = new ImageIcon(errorIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+                btnMultiBookingToggle.setIcon(errorIcon);
+            } catch (Exception e) {
+                // Fallback without icon
+            }
+            btnMultiBookingToggle.setText("Thoát đặt nhiều");
+            btnMultiBookingToggle.setBackground(new Color(220, 53, 69));
+            btnMultiBookingToggle.setForeground(Color.WHITE);
+        } else {
+            btnMultiBookingToggle.setIcon(null);
+            btnMultiBookingToggle.setText("Đặt nhiều phòng");
+            btnMultiBookingToggle.setBackground(new Color(108, 117, 125));
+        }
     }
 
     private void toggleMultiBookingMode() {
         isMultiBookingMode = btnMultiBookingToggle.isSelected();
 
+        // Update button appearance
+        updateToggleButtonAppearance(isMultiBookingMode);
+
         if (isMultiBookingMode) {
-            ImageIcon checkedIcon = new ImageIcon(getClass().getResource("/icons/checked.png"));
-            checkedIcon = new ImageIcon(checkedIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
-
-            btnMultiBookingToggle.setIcon(checkedIcon);
-            btnMultiBookingToggle.setBackground(CustomUI.purple);
-            btnMultiBookingToggle.setForeground(Color.WHITE);
-
-            // Enable the two buttons on the right
-            lblSelectedRooms.setEnabled(true);
-            btnConfirmSelection.setEnabled(true);
-
-            // Update label color when enabled
-            lblSelectedRooms.setOpaque(true);
-            lblSelectedRooms.setBackground(Color.WHITE);
+            lblSelectedRooms.setVisible(true);
+            btnConfirmSelection.setVisible(true);
         } else {
-            ImageIcon errorIcon = new ImageIcon(getClass().getResource("/icons/error.png"));
-            errorIcon = new ImageIcon(errorIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+            lblSelectedRooms.setVisible(false);
+            btnConfirmSelection.setVisible(false);
 
-            btnMultiBookingToggle.setIcon(errorIcon);
-            btnMultiBookingToggle.setBackground(Color.LIGHT_GRAY);
-            btnMultiBookingToggle.setForeground(Color.BLACK);
-
-            // Disable the two buttons on the right
-            lblSelectedRooms.setEnabled(false);
-            btnConfirmSelection.setEnabled(false);
-
-            // Reset selected rooms count
-            lblSelectedRooms.setText("Phòng đã chọn: 0");
-            lblSelectedRooms.setOpaque(false);
+            // Clear all selections when exiting multi-booking mode
+            clearAllSelections();
         }
 
-        // Repaint to show changes
+        // Update all room items with new mode
+        updateAllRoomItemsMode();
+
+        revalidate();
         repaint();
     }
 
-    private void confirmRoomSelection() {
-        if (isMultiBookingMode) {
-            // TODO: Implement multi-room booking confirmation logic
-            JOptionPane.showMessageDialog(this,
-                                          "Xác nhận đặt " + getSelectedRoomsCount() + " phòng",
-                                          "Xác nhận đặt phòng",
-                                          JOptionPane.INFORMATION_MESSAGE);
+    private void clearAllSelections() {
+        selectedRooms.clear();
+        for (RoomItem roomItem : allRoomItems) {
+            roomItem.setSelected(false);
+        }
+        updateSelectionDisplay();
+    }
+
+    private void updateAllRoomItemsMode() {
+        for (RoomItem roomItem : allRoomItems) {
+            roomItem.setMultiBookingMode(isMultiBookingMode);
+            roomItem.setSelectionCallback(this::handleRoomSelectionChanged);
         }
     }
 
-    private int getSelectedRoomsCount() {
-        // TODO: Implement logic to count selected rooms
-        // This would typically involve tracking which rooms are selected in the grid
-        return 0;
+    private void confirmMultiRoomSelection() {
+        if (selectedRooms.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Vui lòng chọn ít nhất một phòng!",
+                "Thông báo",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Show confirmation dialog
+        int result = JOptionPane.showConfirmDialog(this,
+            "Bạn đã chọn " + selectedRooms.size() + " phòng. Tiếp tục đặt phòng?",
+            "Xác nhận",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE);
+
+        if (result == JOptionPane.YES_OPTION) {
+            String cardName = PanelName.MULTI_BOOKING.getName();
+            MultiRoomBookingFormPanel multiBookingPanel = new MultiRoomBookingFormPanel(selectedRooms);
+
+            Main.addCard(multiBookingPanel, cardName);
+            Main.showCard(cardName);
+        }
     }
 
     private void createCenterPanel() {

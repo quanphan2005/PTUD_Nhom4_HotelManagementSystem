@@ -38,6 +38,9 @@ public class ServiceSelectionPanel extends JPanel {
     private JButton btnConfirm;
     private JButton btnUndo;
 
+    // Is multiBooking
+    private boolean isMultiBooking;
+
     // Data
     private List<ThongTinDichVu> allServices;
     private List<ThongTinDichVu> filteredServices;
@@ -53,12 +56,13 @@ public class ServiceSelectionPanel extends JPanel {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
 
-    public ServiceSelectionPanel(ServiceSelectionCallback callback) {
-
+    public ServiceSelectionPanel(boolean isMultiBooking, ServiceSelectionCallback callback) {
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
         this.giftServicesMap = new HashMap<>();
+
+        this.isMultiBooking = isMultiBooking;
 
         initializeComponents();
         loadServices();
@@ -335,7 +339,11 @@ public class ServiceSelectionPanel extends JPanel {
         btnConfirm.addActionListener(e -> confirmSelection());
 
         btnUndo.addActionListener(e -> {
-            Main.showCard("Đặt phòng");
+            if (isMultiBooking) {
+                Main.showCard(PanelName.MULTI_BOOKING.getName());
+            } else {
+                Main.showCard(PanelName.BOOKING.getName());
+            }
         });
     }
 

@@ -11,7 +11,6 @@ import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.entity.*;
 import vn.iuh.servcie.BookingService;
-import vn.iuh.servcie.GoiDichVuService;
 import vn.iuh.util.EntityUtil;
 
 import java.sql.Timestamp;
@@ -23,6 +22,7 @@ public class BookingServiceImpl implements BookingService {
     private final DatPhongDAO datPhongDAO;
     private final GoiDichVuDao goiDichVuDao;
     private final KhachHangDAO khachHangDAO;
+    private final LichSuDiVaoDAO lichSuDiVaoDAO;
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private final CongViecDAO congViecDAO;
 
@@ -30,6 +30,7 @@ public class BookingServiceImpl implements BookingService {
         this.datPhongDAO = new DatPhongDAO();
         this.goiDichVuDao = new GoiDichVuDao();
         this.khachHangDAO = new KhachHangDAO();
+        this.lichSuDiVaoDAO = new LichSuDiVaoDAO();
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecDAO = new CongViecDAO();
     }
@@ -76,22 +77,41 @@ public class BookingServiceImpl implements BookingService {
             datPhongDAO.khoiTaoGiaoTac();
 
             // 2.1. Create ReservationFormEntity & insert to DB
-            DonDatPhong donDatPhong = createReservationFormEntity(bookingCreationEvent, khachHang.getMaKhachHang());
+            DonDatPhong donDatPhongMoiNhat = datPhongDAO.timDonDatPhongMoiNhat();
+            DonDatPhong donDatPhong = createReservationFormEntity(bookingCreationEvent,
+                                                                  donDatPhongMoiNhat.getMaDonDatPhong(),
+                                                                  khachHang.getMaKhachHang());
             datPhongDAO.themDonDatPhong(donDatPhong);
 
             // 2.2. Create RoomReservationDetail Entity & insert to DB
             List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
-            for (String roomId : bookingCreationEvent.getDanhSachMaPhong())
-                chiTietDatPhongs.add(
-                        createRoomReservationDetailEntity(bookingCreationEvent, roomId,
-                                                                                          donDatPhong.getMaDonDatPhong()));
+            ChiTietDatPhong chiTietDatPhongMoiNhat = datPhongDAO.timChiTietDatPhongMoiNhat();
+            String maChiTietDatPhongMoiNhat = chiTietDatPhongMoiNhat == null
+                    ? null : chiTietDatPhongMoiNhat.getMaChiTietDatPhong();
+
+            for (String roomId : bookingCreationEvent.getDanhSachMaPhong()) {
+                ChiTietDatPhong chiTietDatPhong = createRoomReservationDetailEntity(bookingCreationEvent,
+                                                                                    maChiTietDatPhongMoiNhat,
+                                                                                    roomId,
+                                                                                    donDatPhong.getMaDonDatPhong());
+                chiTietDatPhongs.add(chiTietDatPhong);
+                maChiTietDatPhongMoiNhat = chiTietDatPhong.getMaChiTietDatPhong();
+            }
+
 
             datPhongDAO.themChiTietDatPhong(donDatPhong, chiTietDatPhongs);
 
             // 2.3. Create HistoryCheckInEntity & insert to DB
             List<LichSuDiVao> historyCheckIns = new ArrayList<>();
+            LichSuDiVao lichSuDiVaoMoiNhat = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
+            String maLichSuDiVaoMoiNhat = lichSuDiVaoMoiNhat == null ? null : lichSuDiVaoMoiNhat.getMaLichSuDiVao();
+
             for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                historyCheckIns.add(createHistoryCheckInEntity(chiTietDatPhong));
+                LichSuDiVao lichSuDiVao =
+                        createHistoryCheckInEntity(maLichSuDiVaoMoiNhat, chiTietDatPhong.getMaChiTietDatPhong());
+
+                historyCheckIns.add(lichSuDiVao);
+                maLichSuDiVaoMoiNhat = lichSuDiVao.getMaLichSuDiVao();
             }
 
             datPhongDAO.themLichSuDiVao(historyCheckIns);
@@ -125,6 +145,7 @@ public class BookingServiceImpl implements BookingService {
             List<CongViec> congViecs = new ArrayList<>();
             CongViec congViec = congViecDAO.timCongViecMoiNhat();
             String jobId = congViec == null ? null : congViec.getMaCongViec();
+
             for (String roomId : bookingCreationEvent.getDanhSachMaPhong()) {
                 String newId = EntityUtil.increaseEntityID(jobId,
                                                            EntityIDSymbol.JOB_PREFIX.getPrefix(),
@@ -146,6 +167,7 @@ public class BookingServiceImpl implements BookingService {
 
             congViecDAO.themDanhSachCongViec(congViecs);
 
+            // TODO: Update WorkingHistory later if booking multipleRooms
             // 2.7. Update WorkingHistory
             LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
             String workingHistoryId = lichSuThaoTacMoiNhat == null ? null : lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
@@ -192,7 +214,7 @@ public class BookingServiceImpl implements BookingService {
             // Set default Room Status if null or empty
             if (Objects.isNull(thongTinPhong.getTenTrangThai()) || thongTinPhong.getTenTrangThai().isEmpty()) {
                 thongTinPhong.setTenTrangThai(thongTinPhong.isDangHoatDong()
-                                                      ? RoomStatus.ROOM_AVAILABLE_STATUS.getStatus()
+                                                      ? RoomStatus.ROOM_EMPTY_STATUS.getStatus()
                                                       : RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus()
                 );
             }
@@ -228,16 +250,17 @@ public class BookingServiceImpl implements BookingService {
         return bookingResponses;
     }
 
-    private DonDatPhong createReservationFormEntity(BookingCreationEvent bookingCreationEvent, String customerId) {
+    private DonDatPhong createReservationFormEntity(BookingCreationEvent bookingCreationEvent,
+                                                    String donDatPhongMoiNhat,
+                                                    String customerId) {
         String id;
         String prefix = EntityIDSymbol.RESERVATION_FORM_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.RESERVATION_FORM_PREFIX.getLength();
 
-        DonDatPhong lastedDonDatPhong = datPhongDAO.timDonDatPhongMoiNhat();
-        if (lastedDonDatPhong == null) {
+        if (donDatPhongMoiNhat == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
-            id = EntityUtil.increaseEntityID(lastedDonDatPhong.getMaDonDatPhong(), prefix, numberLength);
+            id = EntityUtil.increaseEntityID(donDatPhongMoiNhat, prefix, numberLength);
         }
 
         return new DonDatPhong(
@@ -255,16 +278,16 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private ChiTietDatPhong createRoomReservationDetailEntity(BookingCreationEvent bookingCreationEvent,
+                                                              String chiTietDatPhongMoiNhat,
                                                               String roomId, String reservationFormId) {
         String id;
         String prefix = EntityIDSymbol.ROOM_RESERVATION_DETAIL_PREFIX.getPrefix();
         int numberLength = EntityIDSymbol.ROOM_RESERVATION_DETAIL_PREFIX.getLength();
 
-        ChiTietDatPhong lastedReservationDetail = datPhongDAO.timChiTietDatPhongMoiNhat();
-        if (lastedReservationDetail == null) {
+        if (chiTietDatPhongMoiNhat == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
-            id = EntityUtil.increaseEntityID(lastedReservationDetail.getMaChiTietDatPhong(), prefix, numberLength);
+            id = EntityUtil.increaseEntityID(chiTietDatPhongMoiNhat, prefix, numberLength);
         }
 
 
@@ -306,22 +329,21 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    private LichSuDiVao createHistoryCheckInEntity(ChiTietDatPhong chiTietDatPhong) {
+    private LichSuDiVao createHistoryCheckInEntity(String maLichSuDiVaoMoiNhat, String maChiTietDatPhong) {
         String id;
         String prefix = EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getPrefix();
-        int numberLength = EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getLength();
 
-        LichSuDiVao lastedHistoryCheckIn = datPhongDAO.timLichSuDiVaoMoiNhat();
-        if (lastedHistoryCheckIn == null) {
+        int numberLength = EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getLength();
+        if (maLichSuDiVaoMoiNhat == null) {
             id = EntityUtil.increaseEntityID(null, prefix, numberLength);
         } else {
-            id = EntityUtil.increaseEntityID(lastedHistoryCheckIn.getMaLichSuDiVao(), prefix, numberLength);
+            id = EntityUtil.increaseEntityID(maLichSuDiVaoMoiNhat, prefix, numberLength);
         }
 
         return new LichSuDiVao(
                 id,
                 true,
-                chiTietDatPhong.getMaChiTietDatPhong(),
+                maChiTietDatPhong,
                 null
         );
     }

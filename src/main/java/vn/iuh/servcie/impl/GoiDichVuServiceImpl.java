@@ -23,7 +23,7 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
         List<ThongTinDichVu> danhSachThongTinDichVu = goiDichVuDao.timTatCaThongTinDichVu();
 
         if (danhSachThongTinDichVu.isEmpty())
-            System.out.println("Khong tim thay thong tin dich vu nao");
+            System.out.println("Không tìm thấy dịch vụ nào trong hệ thống.");
 
         return danhSachThongTinDichVu;
     }

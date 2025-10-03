@@ -89,7 +89,7 @@ public class BookingFormPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel((services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(false, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
         });
@@ -104,9 +104,9 @@ public class BookingFormPanel extends JPanel {
         lblRoomStatus = new JLabel();
 
         // Customer Information Fields - increased width
-        txtCustomerName = new JTextField(25);
-        txtPhoneNumber = new JTextField(25);
-        txtCCCD = new JTextField(25);
+        txtCustomerName = new JTextField(12);
+        txtPhoneNumber = new JTextField(12);
+        txtCCCD = new JTextField(12);
 
         // Booking Information Fields
         spnCheckInDate = new JSpinner(new SpinnerDateModel());
@@ -239,25 +239,25 @@ public class BookingFormPanel extends JPanel {
         gbc.insets = new Insets(0, 5, 5, 5);
         contentPanel.add(actionMenu, gbc);
 
-        // LEFT COLUMN - Row 1: Customer info panel (WHITE background)
-        JPanel customerPanel = createCustomerInfoPanel();
-        customerPanel.setBackground(Color.WHITE);
+        // LEFT COLUMN - Row 1: Room info panel (WHITE background)
+        JPanel rightRoomPanel = createRoomInfoPanel();
+        rightRoomPanel.setBackground(Color.WHITE);
         gbc.gridx = 0; gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.gridheight = 1; // Reset to single row
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 0.6; gbc.weighty = 0.4; // Less height for customer info
         gbc.insets = new Insets(5, 0, 10, 5);
-        contentPanel.add(customerPanel, gbc);
+        contentPanel.add(rightRoomPanel, gbc);
 
-        // RIGHT COLUMN - Row 1: Room info panel (WHITE background)
-        JPanel rightRoomPanel = createRoomInfoPanel();
+        // RIGHT COLUMN - Row 1: Customer info panel (WHITE background)
+        JPanel customerPanel = createCustomerInfoPanel();
         gbc.gridx = 1; gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 0.4; gbc.weighty = 1;
+        gbc.weightx = 0.4; gbc.weighty = 0.4;
         gbc.insets = new Insets(5, 5, 10, 5);
-        contentPanel.add(rightRoomPanel, gbc);
+        contentPanel.add(customerPanel, gbc);
 
         return contentPanel;
     }
@@ -302,7 +302,7 @@ public class BookingFormPanel extends JPanel {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Color.WHITE);
 
-        ImageIcon menuIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/booking.png")));
+        ImageIcon menuIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/action.png")));
         menuIcon = new ImageIcon(menuIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
         // Create collapsible header
@@ -359,6 +359,9 @@ public class BookingFormPanel extends JPanel {
         addFormRow(bookingInfoContent, gbc, 1, "Ngày trả phòng:", spnCheckOutDate);
         addFormRow(bookingInfoContent, gbc, 2, "Giá ban đầu:", txtInitialPrice);
         addFormRow(bookingInfoContent, gbc, 3, "Tiền đặt cọc:", txtDepositPrice);
+
+        txtInitialPrice.setEditable(false);
+        txtDepositPrice.setEditable(false);
 
         // Advanced booking checkbox
         gbc.gridx = 0; gbc.gridy = 4;
@@ -522,8 +525,8 @@ public class BookingFormPanel extends JPanel {
 
         // Set grid layout based on number of items
         int itemCount = actionItems.size();
-        int cols = itemCount <= 2 ? itemCount : 2; // Max 2 columns
-        int rows = (int) Math.ceil((double) itemCount / 2);
+        int cols = Math.min(itemCount, 2); // Max 2 columns
+        int rows = Math.max((int) Math.ceil((double) itemCount / 2), 2);
         actionMenuContent.setLayout(new GridLayout(rows, cols, 10, 10));
 
         // Create and add action buttons
@@ -549,7 +552,7 @@ public class BookingFormPanel extends JPanel {
         ActionItem cancelReservationItem = new ActionItem("Hủy Đặt Phòng", IconUtil.createCancelIcon(), CustomUI.red, this::handleCancelReservation);
         ActionItem checkInItem = new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
-        if (roomStatus.equals(RoomStatus.ROOM_AVAILABLE_STATUS.getStatus())) {
+        if (roomStatus.equals(RoomStatus.ROOM_EMPTY_STATUS.getStatus())) {
             items.add(callServiceItem);
             items.add(bookRoomItem);
         }

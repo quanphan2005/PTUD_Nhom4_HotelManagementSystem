@@ -15,9 +15,6 @@ public class GridRoomPanel extends JPanel implements Serializable {
 
         this.roomItems = rooms;
         for(RoomItem room : rooms){
-//            room.setPreferredSize(new Dimension(200, 120));
-//            room.setMinimumSize(new Dimension(200, 120));
-//            room.setMaximumSize(new Dimension(200, 120));
             add(room);
         }
     }

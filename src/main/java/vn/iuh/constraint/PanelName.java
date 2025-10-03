@@ -2,12 +2,14 @@ package vn.iuh.constraint;
 
 public enum PanelName {
     BOOKING("Đặt phòng"),
+    MULTI_BOOKING("Đặt nhiều phòng"),
     CHECKIN("Nhận phòng"),
     CHECKOUT("Trả phòng"),
     SERVICE_ORDER("Gọi dịch vụ"),
     STATISTIC("Thống kê"),
     ACCOUNT("Tài khoản"),
     ;
+
 
     public final String name;
 

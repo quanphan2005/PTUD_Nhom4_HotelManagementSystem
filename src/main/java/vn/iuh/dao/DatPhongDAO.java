@@ -86,8 +86,6 @@ public class DatPhongDAO {
             PreparedStatement ps = connection.prepareStatement(query);
 
             for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                System.out.println(chiTietDatPhong.getMaPhong());
-
                 ps.setString(1, chiTietDatPhong.getMaChiTietDatPhong());
                 ps.setTimestamp(2, chiTietDatPhong.getTgNhanPhong());
                 ps.setTimestamp(3, chiTietDatPhong.getTgTraPhong());
@@ -290,23 +288,6 @@ public class DatPhongDAO {
         }
     }
 
-    public LichSuDiVao timLichSuDiVaoMoiNhat() {
-        String query = "SELECT TOP 1 * FROM LichSuDiVao ORDER BY ma_lich_su_di_vao DESC";
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-
-            var rs = ps.executeQuery();
-            if (rs.next())
-                return chuyenKetQuaThanhLichSuDiVao(rs);
-            else
-                return null;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private ThongTinPhong chuyenKetQuaThanhThongTinPhong(ResultSet rs) {
         try {
             return new ThongTinPhong(
@@ -370,19 +351,6 @@ public class DatPhongDAO {
             );
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành ChiTietDatPhong: " + e.getMessage());
-        }
-    }
-
-    private LichSuDiVao chuyenKetQuaThanhLichSuDiVao(ResultSet rs) {
-        try {
-            return new LichSuDiVao(
-                    rs.getString("ma_lich_su_di_vao"),
-                    rs.getBoolean("la_lan_dau_tien"),
-                    rs.getString("ma_chi_tiet_dat_phong"),
-                    rs.getTimestamp("thoi_gian_tao")
-            );
-        } catch (SQLException e) {
-            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành LichSuDiVao: " + e.getMessage());
         }
     }
 }
