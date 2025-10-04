@@ -95,7 +95,7 @@ public class BookingFormPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(false, (services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(1, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
             updateTotalServicePrice(); // Update service price when services are selected

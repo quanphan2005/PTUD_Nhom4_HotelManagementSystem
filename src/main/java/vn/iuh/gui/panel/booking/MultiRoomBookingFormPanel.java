@@ -90,7 +90,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(true, (services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(selectedRooms.size(), (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
             updateTotalServicePrice(); // Update service price when services are selected
@@ -431,8 +431,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
         addFormRow(bookingInfoContent, gbc, 0, "Ngày nhận phòng:", spnCheckInDate);
         addFormRow(bookingInfoContent, gbc, 1, "Ngày trả phòng:", spnCheckOutDate);
         addFormRow(bookingInfoContent, gbc, 2, "Tổng giá ban đầu:", txtTotalInitialPrice);
-        addFormRow(bookingInfoContent, gbc, 3, "Tiền đặt cọc:", txtDepositPrice);
-        addFormRow(bookingInfoContent, gbc, 4, "Tổng giá dịch vụ:", txtTotalServicePrice);
+        addFormRow(bookingInfoContent, gbc, 3, "Tổng giá dịch vụ:", txtTotalServicePrice);
+        addFormRow(bookingInfoContent, gbc, 4, "Tiền đặt cọc:", txtDepositPrice);
 
         txtTotalInitialPrice.setEditable(false);
         txtDepositPrice.setEditable(false);
@@ -835,8 +835,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
 
         try {
-            Double.parseDouble(txtTotalInitialPrice.getText());
-            Double.parseDouble(txtDepositPrice.getText());
+            Double.parseDouble(txtTotalInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
+            Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Giá phòng và tiền đặt cọc phải là số!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);

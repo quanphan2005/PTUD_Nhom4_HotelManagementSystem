@@ -116,14 +116,23 @@ public class BookingServiceImpl implements BookingService {
 
             datPhongDAO.themLichSuDiVao(historyCheckIns);
 
-            // 2.4. Create RoomUsageServiceEntity & insert to DB
+            // 2.4 Update Service Quantity
+            for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
+                goiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), dichVu.getSoLuong());
+            }
+
+            // 2.5. Create RoomUsageServiceEntity & insert to DB
             List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
             PhongDungDichVu phongDungDichVuMoiNhat = goiDichVuDao.timPhongDungDichVuMoiNhat();
             String maPhongDungDichVuMoiNhat =
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
-            for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
+            for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
+
+                // If booking multiple rooms, divide service equally to each booked room
+                dichVu.setSoLuong(dichVu.getSoLuong() / bookingCreationEvent.getDanhSachMaPhong().size());
+
+                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
                     phongDungDichVuMoiNhat =
                             createRoomUsageServiceEntity(bookingCreationEvent,
                                                          maPhongDungDichVuMoiNhat,
@@ -135,11 +144,6 @@ public class BookingServiceImpl implements BookingService {
             }
 
             goiDichVuDao.themPhongDungDichVu(bookingCreationEvent.getMaPhienDangNhap(), danhSachPhongDungDichVu);
-
-            // 2.5 Update Service Quantity
-            for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
-                goiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), dichVu.getSoLuong());
-            }
 
             // 2.6. Create Job for each booked room
             List<CongViec> congViecs = new ArrayList<>();
@@ -167,13 +171,12 @@ public class BookingServiceImpl implements BookingService {
 
             congViecDAO.themDanhSachCongViec(congViecs);
 
-            // TODO: Update WorkingHistory later if booking multipleRooms
             // 2.7. Update WorkingHistory
             LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
             String workingHistoryId = lichSuThaoTacMoiNhat == null ? null : lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
 
             String actionDescription = "Đặt phòng cho khách hàng " + bookingCreationEvent.getTenKhachHang()
-                                       + " - CCCD: " + bookingCreationEvent.getCCCD() + "Phòng: " +
+                                       + " - CCCD: " + bookingCreationEvent.getCCCD() + " - Phòng: " +
                                        bookingCreationEvent.getDanhSachMaPhong().toString();
             lichSuThaoTacDAO.themLichSuThaoTac(new LichSuThaoTac(
                     EntityUtil.increaseEntityID(workingHistoryId,

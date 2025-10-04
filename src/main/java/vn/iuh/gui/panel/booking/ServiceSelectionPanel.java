@@ -10,6 +10,7 @@ import vn.iuh.servcie.GoiDichVuService;
 import vn.iuh.servcie.impl.GoiDichVuServiceImpl;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableCellEditor;
@@ -38,8 +39,8 @@ public class ServiceSelectionPanel extends JPanel {
     private JButton btnConfirm;
     private JButton btnUndo;
 
-    // Is multiBooking
-    private boolean isMultiBooking;
+    // Selected rooms
+    private int selectedRooms;
 
     // Data
     private List<ThongTinDichVu> allServices;
@@ -56,13 +57,13 @@ public class ServiceSelectionPanel extends JPanel {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
 
-    public ServiceSelectionPanel(boolean isMultiBooking, ServiceSelectionCallback callback) {
+    public ServiceSelectionPanel(int selectedRooms, ServiceSelectionCallback callback) {
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
         this.giftServicesMap = new HashMap<>();
 
-        this.isMultiBooking = isMultiBooking;
+        this.selectedRooms = selectedRooms;
 
         initializeComponents();
         loadServices();
@@ -227,7 +228,7 @@ public class ServiceSelectionPanel extends JPanel {
         headerPanel.setBackground(new Color(65, 130, 255));
         headerPanel.setPreferredSize(new Dimension(0, 60));
 
-        JLabel titleLabel = new JLabel("Gọi dịch vụ", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Gọi dịch vụ (" + selectedRooms + " Phòng)", SwingConstants.CENTER);
         titleLabel.setFont(CustomUI.veryBigFont);
         titleLabel.setForeground(Color.WHITE);
 
@@ -339,7 +340,7 @@ public class ServiceSelectionPanel extends JPanel {
         btnConfirm.addActionListener(e -> confirmSelection());
 
         btnUndo.addActionListener(e -> {
-            if (isMultiBooking) {
+            if (selectedRooms > 1) {
                 Main.showCard(PanelName.MULTI_BOOKING.getName());
             } else {
                 Main.showCard(PanelName.BOOKING.getName());
@@ -386,16 +387,26 @@ public class ServiceSelectionPanel extends JPanel {
             }
         }
 
+        validateServiceQuantity(serviceOrdered);
+
         if (callback != null) {
             callback.onServiceConfirmed(serviceOrdered);
         }
 
-        JOptionPane.showMessageDialog(this,
-            "Xác nhận dịch vụ thành công!",
-            "Thành công",
-            JOptionPane.INFORMATION_MESSAGE);
+        // Show dialog base on selected rooms
+        if (selectedRooms > 1) {
+            JOptionPane.showMessageDialog(this,
+                                          "Đã thêm dịch vụ cho " + selectedRooms + " phòng\n" + "Số lượng dịch vụ đã gọi sẽ được chia đều cho (" + selectedRooms + " phòng)",
+                "Xác nhận",
+                                          JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                "Đã thêm dịch vụ cho phòng",
+                "Xác nhận",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
 
-        String cardName = isMultiBooking ? PanelName.MULTI_BOOKING.getName() : PanelName.BOOKING.getName();
+        String cardName = selectedRooms > 1 ? PanelName.MULTI_BOOKING.getName() : PanelName.BOOKING.getName();
         Main.showCard(cardName);
     }
 
@@ -463,6 +474,20 @@ public class ServiceSelectionPanel extends JPanel {
             }
         }
         lblTotalCost.setText("Tổng tiền: " + priceFormatter.format(total) + " VNĐ");
+    }
+
+    // Validate that ordered quantities that can divide equally for selected rooms
+    private void validateServiceQuantity(List<DonGoiDichVu> serviceOrdered) {
+        for (DonGoiDichVu order : serviceOrdered) {
+            ThongTinDichVu service = findServiceById(order.getMaDichVu());
+            if (order.getSoLuong() % selectedRooms != 0) {
+                JOptionPane.showMessageDialog(this,
+                    "Số lượng dịch vụ '" + service.getTenDichVu() + "' phải chia hết cho số phòng đã chọn (" + selectedRooms + " phòng).",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
     }
 
     private ThongTinDichVu findServiceById(String serviceId) {
@@ -675,26 +700,56 @@ public class ServiceSelectionPanel extends JPanel {
             panel.add(quantityField);
             panel.add(btnIncrease);
 
-            // Button event handlers
+            // Button event handlers - Updated with smart increment/decrement
             btnDecrease.addActionListener(e -> {
-                if (currentQuantity > 0) {
-                    currentQuantity--;
+                ThongTinDichVu service = filteredServices.get(currentRow);
+                int decrementAmount = getOptimalDecrementAmount(currentQuantity, service);
+
+                if (currentQuantity >= decrementAmount) {
+                    currentQuantity -= decrementAmount;
                     quantityField.setText(String.valueOf(currentQuantity));
                     updateQuantity();
+
+                    // Show feedback for multi-room decrements
+                    if (selectedRooms > 1 && decrementAmount > 1) {
+                        showQuantityFeedback("Giảm " + decrementAmount + " (" + selectedRooms + " phòng)", false);
+                    }
+                } else {
+                    // If can't decrease by full amount, set to 0
+                    if (currentQuantity > 0) {
+                        currentQuantity = 0;
+                        quantityField.setText("0");
+                        updateQuantity();
+                        showQuantityFeedback("Đặt về 0", false);
+                    }
                 }
             });
 
             btnIncrease.addActionListener(e -> {
                 ThongTinDichVu service = filteredServices.get(currentRow);
-                if (currentQuantity < service.getTonKho()) {
-                    currentQuantity++;
+                int incrementAmount = getOptimalIncrementAmount(currentQuantity, service);
+
+                if (currentQuantity + incrementAmount <= service.getTonKho()) {
+                    currentQuantity += incrementAmount;
                     quantityField.setText(String.valueOf(currentQuantity));
                     updateQuantity();
+
+                    // Show feedback for multi-room increments
+                    if (selectedRooms > 1 && incrementAmount > 1) {
+                        showQuantityFeedback("Tăng " + incrementAmount + " (" + selectedRooms + " phòng)", true);
+                    }
                 } else {
-                    JOptionPane.showMessageDialog(panel,
-                        "Không đủ tồn kho! Tồn kho hiện tại: " + service.getTonKho(),
-                        "Thông báo",
-                        JOptionPane.WARNING_MESSAGE);
+                    // Try to add as much as possible up to stock limit
+                    int maxPossible = getMaxPossibleQuantity(service);
+                    if (maxPossible > currentQuantity) {
+                        int actualIncrement = maxPossible - currentQuantity;
+                        currentQuantity = maxPossible;
+                        quantityField.setText(String.valueOf(currentQuantity));
+                        updateQuantity();
+                        showQuantityFeedback("Tăng tối đa " + actualIncrement + " (giới hạn tồn kho)", true);
+                    } else {
+                        showStockLimitWarning(service);
+                    }
                 }
             });
 
@@ -733,6 +788,92 @@ public class ServiceSelectionPanel extends JPanel {
             });
         }
 
+        /**
+         * Calculate optimal increment amount based on current quantity and selected rooms
+         */
+        private int getOptimalIncrementAmount(int currentQuantity, ThongTinDichVu service) {
+            // For single room booking, always increment by 1
+            if (selectedRooms == 1) {
+                return 1;
+            }
+
+            // For multi-room booking, increment by selectedRooms
+            // But ensure we don't exceed stock limit
+            int maxPossible = service.getTonKho() - currentQuantity;
+            return Math.min(selectedRooms, maxPossible);
+        }
+
+        /**
+         * Calculate optimal decrement amount based on current quantity and selected rooms
+         */
+        private int getOptimalDecrementAmount(int currentQuantity, ThongTinDichVu service) {
+            // For single room booking, always decrement by 1
+            if (selectedRooms == 1) {
+                return 1;
+            }
+
+            // For multi-room booking, decrement by selectedRooms
+            // But ensure we don't go below 0
+            return Math.min(selectedRooms, currentQuantity);
+        }
+
+        /**
+         * Get maximum possible quantity that satisfies room division requirement
+         */
+        private int getMaxPossibleQuantity(ThongTinDichVu service) {
+            // Calculate max quantity that divides evenly by selectedRooms
+            int maxStock = service.getTonKho();
+            return (maxStock / selectedRooms) * selectedRooms;
+        }
+
+        /**
+         * Show user-friendly feedback for quantity changes
+         */
+        private void showQuantityFeedback(String message, boolean isIncrease) {
+            // Create a small, non-intrusive tooltip-style message
+            JLabel feedbackLabel = new JLabel(message);
+            feedbackLabel.setFont(new Font("Arial", Font.PLAIN, 10));
+            feedbackLabel.setForeground(isIncrease ? new Color(0, 120, 0) : new Color(120, 0, 0));
+            feedbackLabel.setOpaque(true);
+            feedbackLabel.setBackground(new Color(255, 255, 200));
+            feedbackLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
+            // Position it near the quantity field
+            Point location = quantityField.getLocationOnScreen();
+
+            // Create a temporary popup window
+            JWindow popup = new JWindow();
+            popup.add(feedbackLabel);
+            popup.pack();
+            popup.setLocation(location.x, location.y - 25);
+            popup.setVisible(true);
+
+            // Auto-hide after 1.5 seconds
+            Timer timer = new Timer(1500, e -> popup.dispose());
+            timer.setRepeats(false);
+            timer.start();
+        }
+
+        /**
+         * Show stock limit warning with helpful information
+         */
+        private void showStockLimitWarning(ThongTinDichVu service) {
+            int maxPossible = getMaxPossibleQuantity(service);
+            String message = String.format(
+                "Không đủ tồn kho!\n" +
+                "Tồn kho hiện tại: %d\n" +
+                "Số lượng tối đa có thể đặt: %d\n" +
+                "(%d phòng × %d = %d)",
+                service.getTonKho(),
+                maxPossible,
+                selectedRooms,
+                maxPossible / selectedRooms,
+                maxPossible
+            );
+
+            JOptionPane.showMessageDialog(panel, message, "Thông báo", JOptionPane.WARNING_MESSAGE);
+        }
+
         private void validateAndUpdateFromTextField() {
             try {
                 String text = quantityField.getText().trim();
@@ -744,22 +885,8 @@ public class ServiceSelectionPanel extends JPanel {
                 int newQuantity = Integer.parseInt(text);
                 ThongTinDichVu service = filteredServices.get(currentRow);
 
-                // Validate bounds
-                if (newQuantity < 0) {
-                    newQuantity = 0;
-                    quantityField.setText("0");
-                    JOptionPane.showMessageDialog(panel,
-                        "Số lượng không thể âm!",
-                        "Thông báo",
-                        JOptionPane.WARNING_MESSAGE);
-                } else if (newQuantity > service.getTonKho()) {
-                    newQuantity = service.getTonKho();
-                    quantityField.setText(String.valueOf(newQuantity));
-                    JOptionPane.showMessageDialog(panel,
-                        "Không đủ tồn kho! Tồn kho hiện tại: " + service.getTonKho(),
-                        "Thông báo",
-                        JOptionPane.WARNING_MESSAGE);
-                }
+                // Validate bounds with improved logic
+                newQuantity = validateServiceQuantityWithSuggestion(newQuantity, service);
 
                 currentQuantity = newQuantity;
                 updateQuantity();
@@ -772,6 +899,59 @@ public class ServiceSelectionPanel extends JPanel {
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
             }
+        }
+
+        /**
+         * Enhanced validation with helpful suggestions
+         */
+        private int validateServiceQuantityWithSuggestion(int newQuantity, ThongTinDichVu service) {
+            if (newQuantity < 0) {
+                newQuantity = 0;
+                quantityField.setText("0");
+                JOptionPane.showMessageDialog(panel,
+                    "Số lượng không thể âm!",
+                    "Thông báo",
+                    JOptionPane.WARNING_MESSAGE);
+            } else if (newQuantity > service.getTonKho()) {
+                int maxPossible = getMaxPossibleQuantity(service);
+                newQuantity = maxPossible;
+                quantityField.setText(String.valueOf(newQuantity));
+                showStockLimitWarning(service);
+            } else if (newQuantity % selectedRooms != 0) {
+                // Provide smart suggestions for quantity adjustment
+                int roundedDown = (newQuantity / selectedRooms) * selectedRooms;
+                int roundedUp = roundedDown + selectedRooms;
+
+                // Choose the closer valid value, but don't exceed stock
+                int maxPossible = getMaxPossibleQuantity(service);
+                int suggestion;
+
+                if (roundedUp <= maxPossible && (newQuantity - roundedDown) > (roundedUp - newQuantity)) {
+                    suggestion = roundedUp;
+                } else {
+                    suggestion = roundedDown;
+                }
+
+                newQuantity = suggestion;
+                quantityField.setText(String.valueOf(newQuantity));
+
+                String message = String.format(
+                    "Số lượng dịch vụ phải chia hết cho số phòng đã chọn (%d).\n" +
+                    "Đã điều chỉnh thành: %d\n" +
+                    "(Mỗi phòng sẽ nhận: %d)",
+                    selectedRooms,
+                    suggestion,
+                    suggestion / selectedRooms
+                );
+
+                JOptionPane.showMessageDialog(panel, message, "Điều chỉnh số lượng", JOptionPane.INFORMATION_MESSAGE);
+            }
+            return newQuantity;
+        }
+
+        // Keep existing validateServiceQuantity method for backward compatibility
+        private int validateServiceQuantity(int newQuantity, ThongTinDichVu service) {
+            return validateServiceQuantityWithSuggestion(newQuantity, service);
         }
 
         private void updateQuantity() {
