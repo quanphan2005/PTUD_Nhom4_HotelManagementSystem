@@ -1,4 +1,4 @@
-package vn.iuh.gui.panel;
+package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
@@ -13,6 +13,7 @@ import vn.iuh.servcie.impl.BookingServiceImpl;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -183,27 +184,31 @@ public class ReservationManagementPanel extends JPanel {
 
         // Check-in date spinner following BookingFormPanel style
         spnCheckInDate = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor checkInEditor = new JSpinner.DateEditor(spnCheckInDate, "dd/MM/yyyy");
+        JSpinner.DateEditor checkInEditor = new JSpinner.DateEditor(spnCheckInDate, "dd/MM/yyyy HH:mm");
         spnCheckInDate.setEditor(checkInEditor);
+
+        // Initialize with today's date
+        Date today = new Date();
+        spnCheckInDate.setValue(today);
+        roomFilter.checkInDate = today; // Initialize filter too
+
         spnCheckInDate.setPreferredSize(new Dimension(200, 35));
         spnCheckInDate.setFont(CustomUI.smallFont);
-
-        spnCheckInDate.addChangeListener(e -> {
-            roomFilter.checkinDate = (java.util.Date) spnCheckInDate.getValue();
-            search();
-        });
+        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
 
         // Check-out date spinner following BookingFormPanel style
         spnCheckOutDate = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor checkOutEditor = new JSpinner.DateEditor(spnCheckOutDate, "dd/MM/yyyy");
+        JSpinner.DateEditor checkOutEditor = new JSpinner.DateEditor(spnCheckOutDate, "dd/MM/yyyy HH:mm");
         spnCheckOutDate.setEditor(checkOutEditor);
+
+        // Initialize with tomorrow's date
+        Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
+        spnCheckOutDate.setValue(tomorrow);
+        roomFilter.checkOutDate = tomorrow; // Initialize filter too
+
         spnCheckOutDate.setPreferredSize(new Dimension(200, 35));
         spnCheckOutDate.setFont(CustomUI.smallFont);
-
-        spnCheckOutDate.addChangeListener(e -> {
-            roomFilter.checkoutDate = (java.util.Date) spnCheckOutDate.getValue();
-            search();
-        });
+        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
     }
 
     private JPanel createStatusPanel() {
@@ -438,6 +443,36 @@ public class ReservationManagementPanel extends JPanel {
         search();
     }
 
+    private void handleCheckinDateChange() {
+        roomFilter.checkInDate = (java.util.Date) spnCheckInDate.getValue();
+        if (!validateDateRangeWithMinimumHours()) {
+            JOptionPane.showMessageDialog(this,
+                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
+                                          "Lỗi ngày tháng",
+                                          JOptionPane.ERROR_MESSAGE);
+
+            roomFilter.checkInDate = Date.from(roomFilter.checkOutDate.toInstant().minus(1, ChronoUnit.DAYS));
+            spnCheckInDate.setValue(roomFilter.checkInDate);
+            return;
+        }
+        search();
+    }
+
+    private void handleCheckoutDateChange() {
+        roomFilter.checkOutDate = (java.util.Date) spnCheckOutDate.getValue();
+        if (!validateDateRangeWithMinimumHours()) {
+            JOptionPane.showMessageDialog(this,
+                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
+                                          "Lỗi ngày tháng",
+                                          JOptionPane.ERROR_MESSAGE);
+
+            roomFilter.checkOutDate = Date.from(roomFilter.checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
+            spnCheckOutDate.setValue(roomFilter.checkOutDate);
+            return;
+        }
+        search();
+    }
+
     private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, int col, String labelText, JComponent component) {
         gbc.gridy = row;
         gbc.gridwidth = 1;
@@ -511,16 +546,16 @@ public class ReservationManagementPanel extends JPanel {
         }
 
         // Date filters
-        if (roomFilter.checkinDate != null || roomFilter.checkoutDate != null) {
+        if (roomFilter.checkInDate != null || roomFilter.checkOutDate != null) {
             java.sql.Timestamp roomTimeIn = bookingResponse.getTimeIn();
             java.sql.Timestamp roomTimeOut = bookingResponse.getTimeOut();
 
             // If room has no booking dates, it's available for any date
             if (roomTimeIn != null && roomTimeOut != null) {
-                java.sql.Timestamp filterCheckin = roomFilter.checkinDate != null ?
-                        new java.sql.Timestamp(roomFilter.checkinDate.getTime()) : null;
-                java.sql.Timestamp filterCheckout = roomFilter.checkoutDate != null ?
-                        new java.sql.Timestamp(roomFilter.checkoutDate.getTime()) : null;
+                java.sql.Timestamp filterCheckin = roomFilter.checkInDate != null ?
+                        new java.sql.Timestamp(roomFilter.checkInDate.getTime()) : null;
+                java.sql.Timestamp filterCheckout = roomFilter.checkOutDate != null ?
+                        new java.sql.Timestamp(roomFilter.checkOutDate.getTime()) : null;
 
                 // Check if the requested dates overlap with existing booking
                 // Room is available if: requested checkout <= room checkin OR requested checkin >= room checkout
@@ -550,33 +585,32 @@ public class ReservationManagementPanel extends JPanel {
         return true;
     }
 
-    private void reset() {
-        cmbRoomType.setSelectedIndex(0);
-        cmbCapacity.setSelectedIndex(0);
-        spnCheckInDate.setValue(new java.util.Date());
-        spnCheckOutDate.setValue(new java.util.Date());
+    private boolean validateDateRangeWithMinimumHours() {
+        if (roomFilter.checkInDate == null)
+            roomFilter.checkInDate = new Date();
+        if (roomFilter.checkOutDate == null)
+            roomFilter.checkOutDate = new Date();
 
-        // Reset filter state
-        roomFilter = new RoomFilter(null, null, null, null, null);
+        // Allow check-in to be in the past, but ensure check-out is at least 1 hour after check-in
+        long diffInMillis = roomFilter.checkOutDate.getTime() - roomFilter.checkInDate.getTime();
+        long diffInHours = diffInMillis / (1000 * 60 * 60);
 
-        gridRoomPanels.setRoomItems(allRoomItems);
-        gridRoomPanels.revalidate();
-        gridRoomPanels.repaint();
+        return diffInHours >= 1;
     }
 
-    private class RoomFilter {
+    // Internal class to hold current filter state
+    private static class RoomFilter {
         String roomType;
         Integer capacity;
-        java.util.Date checkinDate;
-        java.util.Date checkoutDate;
+        Date checkInDate;
+        Date checkOutDate;
         String roomStatus;
 
-        public RoomFilter(String roomType, Integer capacity, Date checkinDate, Date checkoutDate,
-                          String roomStatus) {
+        public RoomFilter(String roomType, Integer capacity, Date checkInDate, Date checkOutDate, String roomStatus) {
             this.roomType = roomType;
             this.capacity = capacity;
-            this.checkinDate = checkinDate;
-            this.checkoutDate = checkoutDate;
+            this.checkInDate = checkInDate;
+            this.checkOutDate = checkOutDate;
             this.roomStatus = roomStatus;
         }
     }

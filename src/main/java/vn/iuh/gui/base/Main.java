@@ -6,7 +6,7 @@
 package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
-import vn.iuh.gui.panel.ReservationManagementPanel;
+import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 
 import javax.swing.*;

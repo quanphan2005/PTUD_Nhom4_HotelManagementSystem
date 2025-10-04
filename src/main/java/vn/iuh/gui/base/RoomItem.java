@@ -2,7 +2,7 @@ package vn.iuh.gui.base;
 
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
-import vn.iuh.gui.panel.BookingFormPanel;
+import vn.iuh.gui.panel.booking.BookingFormPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,7 +10,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.Objects;
-import java.util.List;
 
 public class RoomItem extends JPanel {
     private BookingResponse bookingResponse;

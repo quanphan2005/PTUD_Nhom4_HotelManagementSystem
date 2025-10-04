@@ -1,4 +1,4 @@
-package vn.iuh.gui.panel;
+package vn.iuh.gui.panel.booking;
 
 import javax.swing.*;
 import java.awt.*;

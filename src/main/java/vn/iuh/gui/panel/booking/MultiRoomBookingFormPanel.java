@@ -1,7 +1,6 @@
-package vn.iuh.gui.panel;
+package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import vn.iuh.constraint.PanelName;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
@@ -18,8 +17,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 
@@ -87,7 +89,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(true, ( services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(true, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
         });
@@ -102,11 +104,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
         spnCheckInDate = new JSpinner(new SpinnerDateModel());
         spnCheckOutDate = new JSpinner(new SpinnerDateModel());
         spnCreateAt = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor checkInEditor = new JSpinner.DateEditor(spnCheckInDate, "dd/MM/yyyy");
-        JSpinner.DateEditor checkOutEditor = new JSpinner.DateEditor(spnCheckOutDate, "dd/MM/yyyy");
-        JSpinner.DateEditor createAtEditor = new JSpinner.DateEditor(spnCreateAt, "dd/MM/yyyy");
+        JSpinner.DateEditor checkInEditor = new JSpinner.DateEditor(spnCheckInDate, "dd/MM/yyyy HH:mm");
+        JSpinner.DateEditor checkOutEditor = new JSpinner.DateEditor(spnCheckOutDate, "dd/MM/yyyy HH:mm");
+        JSpinner.DateEditor createAtEditor = new JSpinner.DateEditor(spnCreateAt, "dd/MM/yyyy HH:mm");
         spnCheckInDate.setEditor(checkInEditor);
         spnCheckOutDate.setEditor(checkOutEditor);
+        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
+        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
         spnCreateAt.setEditor(createAtEditor);
 
         txtNote = new JTextArea(4, 25);
@@ -715,7 +719,53 @@ public class MultiRoomBookingFormPanel extends JPanel {
         Main.showCard("Quản lý đặt phòng");
     }
 
-    // Validation and booking creation methods (similar to BookingFormPanel)
+    private void handleCheckinDateChange() {
+        if (!validateDateRangeWithMinimumHours()) {
+            JOptionPane.showMessageDialog(this,
+                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
+                                          "Lỗi ngày tháng",
+                                          JOptionPane.ERROR_MESSAGE);
+
+            Date checkOutDate = (Date) spnCheckOutDate.getValue();
+            spnCheckInDate.setValue(Date.from(checkOutDate.toInstant().minus(1, ChronoUnit.DAYS)));
+            return;
+        }
+        
+        calculateTotalInitialPrice();
+    }
+
+    private void handleCheckoutDateChange() {
+        if (!validateDateRangeWithMinimumHours()) {
+            JOptionPane.showMessageDialog(this,
+                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
+                                          "Lỗi ngày tháng",
+                                          JOptionPane.ERROR_MESSAGE);
+
+            Date checkInDate = (Date) spnCheckInDate.getValue();
+            spnCheckOutDate.setValue(Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS)));
+            return;
+        }
+
+        calculateTotalInitialPrice();
+    }
+
+    private boolean validateDateRange() {
+        Date checkIn = (Date) spnCheckInDate.getValue();
+        Date checkOut = (Date) spnCheckOutDate.getValue();
+        return !checkIn.after(Date.from(checkOut.toInstant().minus(1, ChronoUnit.MINUTES)));
+    }
+
+    private boolean validateDateRangeWithMinimumHours() {
+        Date checkIn = (Date) spnCheckInDate.getValue();
+        Date checkOut = (Date) spnCheckOutDate.getValue();
+
+        // Allow check-in to be in the past, but ensure check-out is at least 1 hour after check-in
+        long diffInMillis = checkOut.getTime() - checkIn.getTime();
+        long diffInHours = diffInMillis / (1000 * 60 * 60);
+
+        return diffInHours >= 1;
+    }
+
     private boolean validateInput() {
         if (txtCustomerName.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!",
@@ -757,6 +807,26 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
 
         return true;
+    }
+
+    private void calculateTotalInitialPrice() {
+        Date checkIn = (Date) spnCheckInDate.getValue();
+        Date checkOut = (Date) spnCheckOutDate.getValue();
+
+        long diffInMillies = checkOut.getTime() - checkIn.getTime();
+        long diffInHours = TimeUnit.MILLISECONDS.toHours(diffInMillies);
+        long days = diffInHours / 24;
+        long hours = diffInHours % 24;
+
+        double totalDailyPrice = selectedRooms.stream()
+                .mapToDouble(BookingResponse::getDailyPrice)
+                .sum() * days;
+
+        double totalHourlyPrice = selectedRooms.stream()
+                .mapToDouble(BookingResponse::getDailyPrice)
+                .sum() * hours;
+        txtTotalInitialPrice.setText(String.format("%.0f", totalDailyPrice + totalHourlyPrice));
+        txtDepositPrice.setText("0");
     }
 
     private BookingCreationEvent createMultiRoomBookingEvent(List<String> roomIds) {
