@@ -15,6 +15,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.DecimalFormat;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
@@ -24,6 +25,9 @@ import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 public class BookingFormPanel extends JPanel {
     private BookingResponse selectedRoom;
     private BookingService bookingService;
+
+    // Formatters
+    private DecimalFormat priceFormatter = new DecimalFormat("#,###");
 
     // Room Information Components
     private JLabel lblRoomNumber;
@@ -44,6 +48,7 @@ public class BookingFormPanel extends JPanel {
     private JSpinner spnCreateAt;
     private JTextArea txtNote;
     private JTextField txtInitialPrice;
+    private JTextField txtTotalServicePrice;
     private JTextField txtDepositPrice;
     private JCheckBox chkIsAdvanced;
     private JButton reservationButton;
@@ -93,6 +98,7 @@ public class BookingFormPanel extends JPanel {
         ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(false, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
+            updateTotalServicePrice(); // Update service price when services are selected
         });
         Main.addCard(servicePanel, SERVICE_ORDER.getName());
 
@@ -115,6 +121,7 @@ public class BookingFormPanel extends JPanel {
         spnCreateAt = new JSpinner(new SpinnerDateModel());
 
         txtInitialPrice = new JTextField(15);
+        txtTotalServicePrice = new JTextField(15);
         txtDepositPrice = new JTextField(15);
 
         JSpinner.DateEditor checkInEditor = new JSpinner.DateEditor(spnCheckInDate, "dd/MM/yyyy HH:mm");
@@ -364,20 +371,22 @@ public class BookingFormPanel extends JPanel {
         addFormRow(bookingInfoContent, gbc, 0, "Ngày nhận phòng:", spnCheckInDate);
         addFormRow(bookingInfoContent, gbc, 1, "Ngày trả phòng:", spnCheckOutDate);
         addFormRow(bookingInfoContent, gbc, 2, "Giá ban đầu:", txtInitialPrice);
-        addFormRow(bookingInfoContent, gbc, 3, "Tiền đặt cọc:", txtDepositPrice);
+        addFormRow(bookingInfoContent, gbc, 3, "Tổng tiền dịch vụ:", txtTotalServicePrice);
+        addFormRow(bookingInfoContent, gbc, 4, "Tiền đặt cọc:", txtDepositPrice);
 
         txtInitialPrice.setEditable(false);
+        txtTotalServicePrice.setEditable(false);
         txtDepositPrice.setEditable(false);
 
         // Advanced booking checkbox
-        gbc.gridx = 0; gbc.gridy = 4;
+        gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 1;
         chkIsAdvanced.setFont(CustomUI.smallFont);
         chkIsAdvanced.setBackground(Color.WHITE);
         bookingInfoContent.add(chkIsAdvanced, gbc);
 
         // Reservation button
-        gbc.gridx = 1; gbc.gridy = 4;
+        gbc.gridx = 1; gbc.gridy = 5;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         reservationButton.setFont(CustomUI.smallFont);
@@ -393,13 +402,13 @@ public class BookingFormPanel extends JPanel {
 
         // Note area
         gbc.gridx = 0;
-        gbc.gridy = 5;
+        gbc.gridy = 6;
         gbc.gridwidth = 2;
         JLabel lblNote = new JLabel("Ghi chú:");
         lblNote.setFont(CustomUI.smallFont);
         bookingInfoContent.add(lblNote, gbc);
 
-        gbc.gridy = 6;
+        gbc.gridy = 7;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
         JTextArea txtNote = new JTextArea();
@@ -798,8 +807,10 @@ public class BookingFormPanel extends JPanel {
     }
 
     private void setDefaultValues() {
-        txtInitialPrice.setText(String.format("%.0f", selectedRoom.getDailyPrice()));
-        txtDepositPrice.setText("0");
+        // Set initial price based on daily rate
+        txtInitialPrice.setText(priceFormatter.format(selectedRoom.getDailyPrice()) + " VNĐ");
+        txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
+        calculatePrice();
 
         // Set default check-in date to today
         java.util.Date today = new java.util.Date();
@@ -810,8 +821,42 @@ public class BookingFormPanel extends JPanel {
         cal.setTime(today);
         cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
         spnCheckOutDate.setValue(cal.getTime());
+    }
 
-        // Set initial price based on daily rate
+    // Method to update total service price from ServiceSelectionPanel
+    private void updateTotalServicePrice() {
+        double totalServicePrice = 0.0;
+        for (DonGoiDichVu service : serviceOrdered) {
+            if (!service.isDuocTang()) { // Only count non-gift services
+                totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
+            }
+        }
+        txtTotalServicePrice.setText(priceFormatter.format(totalServicePrice) + " VNĐ");
+        calculateDepositPrice(); // Recalculate deposit when service price changes
+    }
+
+    // Method to calculate deposit price based on advanced booking status
+    private void calculateDepositPrice() {
+        try {
+            // Parse prices by removing formatting
+            String initialPriceText = txtInitialPrice.getText().replace(" VNĐ", "").replace(",", "");
+            String servicePriceText = txtTotalServicePrice.getText().replace(" VNĐ", "").replace(",", "");
+
+            double initialPrice = Double.parseDouble(initialPriceText);
+            double servicePrice = Double.parseDouble(servicePriceText);
+            double totalPrice = initialPrice + servicePrice;
+
+            if (chkIsAdvanced.isSelected()) {
+                // If advanced booking, deposit is 30% of total price
+                double depositPrice = totalPrice * 0.3;
+                txtDepositPrice.setText(priceFormatter.format(depositPrice) + " VNĐ");
+            } else {
+                // If not advanced booking, no deposit required
+                txtDepositPrice.setText(priceFormatter.format(0) + " VNĐ");
+            }
+        } catch (NumberFormatException e) {
+            txtDepositPrice.setText(priceFormatter.format(0) + " VNĐ");
+        }
     }
 
     private void calculatePrice() {
@@ -831,7 +876,8 @@ public class BookingFormPanel extends JPanel {
             if (diffInDays == 0) diffInDays = 1; // Minimum 1 day
 
             double totalPrice = diffInDays * selectedRoom.getDailyPrice();
-            txtInitialPrice.setText(String.format("%.0f", totalPrice));
+            txtInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
+            calculateDepositPrice(); // Recalculate deposit when initial price changes
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi tính giá: " + e.getMessage(),
                 "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -937,8 +983,8 @@ public class BookingFormPanel extends JPanel {
         }
 
         try {
-            Double.parseDouble(txtInitialPrice.getText());
-            Double.parseDouble(txtDepositPrice.getText());
+            Double.parseDouble(txtInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
+            Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Giá phòng và tiền đặt cọc phải là số!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
@@ -967,8 +1013,8 @@ public class BookingFormPanel extends JPanel {
         java.sql.Timestamp ngayNhanPhong = new java.sql.Timestamp(((java.util.Date) spnCheckInDate.getValue()).getTime());
         java.sql.Timestamp ngayTraPhong = new java.sql.Timestamp(((java.util.Date) spnCheckOutDate.getValue()).getTime());
         java.sql.Timestamp thoiGianTao = new java.sql.Timestamp(System.currentTimeMillis());
-        double tongTienDuTinh = Double.parseDouble(txtInitialPrice.getText());
-        double tienDatCoc = Double.parseDouble(txtDepositPrice.getText());
+        double tongTienDuTinh = Double.parseDouble(txtInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
+        double tienDatCoc = Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         boolean daDatTruoc = chkIsAdvanced.isSelected();
         List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
 
@@ -984,6 +1030,18 @@ public class BookingFormPanel extends JPanel {
         btnCancel.addActionListener(e -> handleCancel());
         btnCalculatePrice.addActionListener(e -> calculatePrice());
         closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
+
+        // Add event listener for chkIsAdvanced
+        chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
+    }
+
+    private void handleCalculateDeposit() {
+        boolean isSelected = chkIsAdvanced.isSelected();
+        txtDepositPrice.setEnabled(isSelected);
+        if (!isSelected) {
+            txtDepositPrice.setText("0");
+        }
+        calculateDepositPrice();
     }
 
     // Handler methods for action buttons

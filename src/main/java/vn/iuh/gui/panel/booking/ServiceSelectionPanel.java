@@ -357,6 +357,12 @@ public class ServiceSelectionPanel extends JPanel {
                                       "Đã xóa tất cả dịch vụ đã chọn",
                                       "Hoàn tác",
                                       JOptionPane.INFORMATION_MESSAGE);
+
+        // Update total services cost on booking panel
+        if (callback != null) {
+            callback.onServiceConfirmed(new ArrayList<>());
+        }
+
     }
 
     private void confirmSelection() {
@@ -389,7 +395,8 @@ public class ServiceSelectionPanel extends JPanel {
             "Thành công",
             JOptionPane.INFORMATION_MESSAGE);
 
-        Main.showCard(PanelName.BOOKING.getName());
+        String cardName = isMultiBooking ? PanelName.MULTI_BOOKING.getName() : PanelName.BOOKING.getName();
+        Main.showCard(cardName);
     }
 
     private void updateServiceTable() {

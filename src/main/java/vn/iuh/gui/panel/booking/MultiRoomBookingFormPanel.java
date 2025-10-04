@@ -40,6 +40,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
     private JSpinner spnCreateAt;
     private JTextArea txtNote;
     private JTextField txtTotalInitialPrice;
+    private JTextField txtTotalServicePrice;
     private JTextField txtDepositPrice;
     private JCheckBox chkIsAdvanced;
     private JButton reservationButton;
@@ -92,6 +93,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(true, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
+            updateTotalServicePrice(); // Update service price when services are selected
         });
         Main.addCard(servicePanel, SERVICE_ORDER.getName());
 
@@ -109,6 +111,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         JSpinner.DateEditor createAtEditor = new JSpinner.DateEditor(spnCreateAt, "dd/MM/yyyy HH:mm");
         spnCheckInDate.setEditor(checkInEditor);
         spnCheckOutDate.setEditor(checkOutEditor);
+        spnCheckOutDate.setValue(Date.from(((Date) spnCheckInDate.getValue()).toInstant().plus(1, ChronoUnit.DAYS)));
         spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
         spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
         spnCreateAt.setEditor(createAtEditor);
@@ -118,6 +121,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         txtNote.setWrapStyleWord(true);
 
         txtTotalInitialPrice = new JTextField(15);
+        txtTotalServicePrice = new JTextField(15);
         txtDepositPrice = new JTextField(15);
         chkIsAdvanced = new JCheckBox("Đặt phòng trước");
         reservationButton = new JButton(" Xem lịch đặt phòng");
@@ -428,19 +432,21 @@ public class MultiRoomBookingFormPanel extends JPanel {
         addFormRow(bookingInfoContent, gbc, 1, "Ngày trả phòng:", spnCheckOutDate);
         addFormRow(bookingInfoContent, gbc, 2, "Tổng giá ban đầu:", txtTotalInitialPrice);
         addFormRow(bookingInfoContent, gbc, 3, "Tiền đặt cọc:", txtDepositPrice);
+        addFormRow(bookingInfoContent, gbc, 4, "Tổng giá dịch vụ:", txtTotalServicePrice);
 
         txtTotalInitialPrice.setEditable(false);
         txtDepositPrice.setEditable(false);
+        txtTotalServicePrice.setEditable(false);
 
         // Advanced booking checkbox
-        gbc.gridx = 0; gbc.gridy = 4;
+        gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 1;
         chkIsAdvanced.setFont(CustomUI.smallFont);
         chkIsAdvanced.setBackground(Color.WHITE);
         bookingInfoContent.add(chkIsAdvanced, gbc);
 
         // Reservation button
-        gbc.gridx = 1; gbc.gridy = 4;
+        gbc.gridx = 1; gbc.gridy = 5;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         reservationButton.setFont(CustomUI.smallFont);
@@ -456,13 +462,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
 
         // Note area
         gbc.gridx = 0;
-        gbc.gridy = 5;
+        gbc.gridy = 6;
         gbc.gridwidth = 2;
         JLabel lblNote = new JLabel("Ghi chú:");
         lblNote.setFont(CustomUI.smallFont);
         bookingInfoContent.add(lblNote, gbc);
 
-        gbc.gridy = 6;
+        gbc.gridy = 7;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
         txtNote.setPreferredSize(new Dimension(300, 100));
@@ -654,31 +660,77 @@ public class MultiRoomBookingFormPanel extends JPanel {
     }
 
     private void setDefaultValues() {
+        // Calculate and set total initial price
+        double totalPrice = selectedRooms.stream()
+                                         .mapToDouble(BookingResponse::getDailyPrice)
+                                         .sum();
+        txtTotalInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
+        txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
+        calculateTotalInitialPrice();
+
         // Set default check-in date to today
-        Date today = new Date();
+        java.util.Date today = new java.util.Date();
         spnCheckInDate.setValue(today);
 
         // Set default check-out date to tomorrow
-        Calendar cal = Calendar.getInstance();
+        java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.setTime(today);
-        cal.add(Calendar.DAY_OF_MONTH, 1);
+        cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
         spnCheckOutDate.setValue(cal.getTime());
-
-        // Calculate and set total initial price
-        double totalPrice = selectedRooms.stream()
-                .mapToDouble(BookingResponse::getDailyPrice)
-                .sum();
-        txtTotalInitialPrice.setText(String.format("%.0f", totalPrice));
-        txtDepositPrice.setText("0");
     }
 
     private void setupEventHandlers() {
         closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
+        chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
     }
+
+    private void handleCalculateDeposit() {
+        boolean isSelected = chkIsAdvanced.isSelected();
+        txtDepositPrice.setEnabled(isSelected);
+        if (!isSelected) {
+            txtDepositPrice.setText("0");
+        }
+        calculateDepositPrice();
+    }
+
 
     // Action handlers
     private void handleCallService() {
         Main.showCard(SERVICE_ORDER.getName());
+    }
+
+    private void updateTotalServicePrice() {
+        double totalServicePrice = 0.0;
+        for (DonGoiDichVu service : serviceOrdered) {
+            if (!service.isDuocTang()) { // Only count non-gift services
+                totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
+            }
+        }
+        txtTotalServicePrice.setText(priceFormatter.format(totalServicePrice) + " VNĐ");
+        calculateDepositPrice(); // Recalculate deposit when service price changes
+    }
+
+    private void calculateDepositPrice() {
+        try {
+            // Parse prices by removing formatting
+            String initialPriceText = txtTotalInitialPrice.getText().replace(" VNĐ", "").replace(",", "");
+            String servicePriceText = txtTotalServicePrice.getText().replace(" VNĐ", "").replace(",", "");
+
+            double initialPrice = Double.parseDouble(initialPriceText);
+            double servicePrice = Double.parseDouble(servicePriceText);
+            double totalPrice = initialPrice + servicePrice;
+
+            if (chkIsAdvanced.isSelected()) {
+                // If advanced booking, deposit is 30% of total price
+                double depositPrice = totalPrice * 0.3;
+                txtDepositPrice.setText(priceFormatter.format(depositPrice) + " VNĐ");
+            } else {
+                // If not advanced booking, no deposit required
+                txtDepositPrice.setText(priceFormatter.format(0) + " VNĐ");
+            }
+        } catch (NumberFormatException e) {
+            txtDepositPrice.setText(priceFormatter.format(0) + " VNĐ");
+        }
     }
 
     private void handleConfirmBooking() {
@@ -747,12 +799,6 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
 
         calculateTotalInitialPrice();
-    }
-
-    private boolean validateDateRange() {
-        Date checkIn = (Date) spnCheckInDate.getValue();
-        Date checkOut = (Date) spnCheckOutDate.getValue();
-        return !checkIn.after(Date.from(checkOut.toInstant().minus(1, ChronoUnit.MINUTES)));
     }
 
     private boolean validateDateRangeWithMinimumHours() {
@@ -825,8 +871,9 @@ public class MultiRoomBookingFormPanel extends JPanel {
         double totalHourlyPrice = selectedRooms.stream()
                 .mapToDouble(BookingResponse::getDailyPrice)
                 .sum() * hours;
-        txtTotalInitialPrice.setText(String.format("%.0f", totalDailyPrice + totalHourlyPrice));
-        txtDepositPrice.setText("0");
+        txtTotalInitialPrice.setText(priceFormatter.format(totalDailyPrice + totalHourlyPrice) + " VNĐ");
+
+        calculateDepositPrice();
     }
 
     private BookingCreationEvent createMultiRoomBookingEvent(List<String> roomIds) {
@@ -837,8 +884,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
         Timestamp ngayNhanPhong = new Timestamp(((Date) spnCheckInDate.getValue()).getTime());
         Timestamp ngayTraPhong = new Timestamp(((Date) spnCheckOutDate.getValue()).getTime());
         Timestamp thoiGianTao = new Timestamp(System.currentTimeMillis());
-        double tongTienDuTinh = Double.parseDouble(txtTotalInitialPrice.getText());
-        double tienDatCoc = Double.parseDouble(txtDepositPrice.getText());
+        double tongTienDuTinh = Double.parseDouble(txtTotalInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
+        double tienDatCoc = Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         boolean daDatTruoc = chkIsAdvanced.isSelected();
 
         String maPhienDangNhap = "PN00000002"; // TODO - get actual shift assignment ID
