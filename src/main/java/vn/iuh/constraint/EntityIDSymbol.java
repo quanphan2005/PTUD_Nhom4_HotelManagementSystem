@@ -1,7 +1,7 @@
 package vn.iuh.constraint;
 
 public enum EntityIDSymbol {
-    ROOM_PREFIX("PO", 8),
+    ROOM_PREFIX("PH", 8),
     RESERVATION_FORM_PREFIX("DP",8),
     ROOM_RESERVATION_DETAIL_PREFIX("CP",8),
     HISTORY_CHECKIN_PREFIX("LV",8),
@@ -10,7 +10,8 @@ public enum EntityIDSymbol {
     AdditionalFee_PREFIX("PP", 8),
     CUSTOMER_PREFIX("KH", 8),
     JOB_PREFIX("CV", 8),
-    WORKING_HISTORY_PREFIX("LT", 8);
+    WORKING_HISTORY_PREFIX("LT", 8),
+    HISTORY_CHECKOUT_PREFIX("LN", 8);
 //................... Other here
 
 

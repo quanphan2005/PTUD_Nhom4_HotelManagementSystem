@@ -1,7 +1,6 @@
-package vn.iuh.servcie;
+package vn.iuh.service;
 
 import vn.iuh.dto.event.create.BookingCreationEvent;
-import vn.iuh.dto.event.create.RoomFilter;
 import vn.iuh.dto.response.BookingResponse;
 
 import java.util.List;

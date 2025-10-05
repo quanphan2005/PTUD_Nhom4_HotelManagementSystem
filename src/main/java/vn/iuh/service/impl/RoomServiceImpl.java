@@ -1,11 +1,11 @@
-package vn.iuh.servcie.impl;
+package vn.iuh.service.impl;
 
 import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.dao.PhongDAO;
 import vn.iuh.dto.event.create.RoomCreationEvent;
 import vn.iuh.dto.event.update.RoomModificationEvent;
 import vn.iuh.entity.Phong;
-import vn.iuh.servcie.RoomService;
+import vn.iuh.service.RoomService;
 import vn.iuh.util.EntityUtil;
 
 import java.sql.Timestamp;

@@ -1,13 +1,17 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
-import vn.iuh.servcie.BookingService;
+import vn.iuh.schedule.RoomStatusHandler;
+import vn.iuh.service.BookingService;
 import vn.iuh.util.IconUtil;
 
 import javax.swing.*;
@@ -15,9 +19,11 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.Calendar;
 import java.util.List;
 
 import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
@@ -80,7 +86,7 @@ public class BookingFormPanel extends JPanel {
 
     public BookingFormPanel(BookingResponse roomInfo) {
         this.selectedRoom = roomInfo;
-        this.bookingService = new vn.iuh.servcie.impl.BookingServiceImpl();
+        this.bookingService = new vn.iuh.service.impl.BookingServiceImpl();
 
         initializeComponents();
         setupLayout();
@@ -900,6 +906,11 @@ public class BookingFormPanel extends JPanel {
             if (success) {
                 JOptionPane.showMessageDialog(this, "Đặt phòng thành công!",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                if(!chkIsAdvanced.isSelected()){
+                    GridRoomPanel gridRoomPanel = ReservationManagementPanel.gridRoomPanels;
+                    BookingResponse booking = collectBookingResponse(bookingEvent.getTenKhachHang(), bookingEvent.getTgNhanPhong(), bookingEvent.getTgTraPhong());
+                    gridRoomPanel.updateSingleRoomItem(selectedRoom.getRoomId(), booking);
+                }
                 handleCancel(); // Return to previous screen
             } else {
                 JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Vui lòng thử lại.",
@@ -911,6 +922,17 @@ public class BookingFormPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Lỗi khi đặt phòng: " + e.getMessage(),
                 "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private BookingResponse collectBookingResponse(String customerName, Timestamp checkInDate, Timestamp checkOutDate) {
+        return new BookingResponse(selectedRoom.getRoomId(),
+                selectedRoom.getRoomName(),
+                selectedRoom.isActive(),
+                RoomStatus.ROOM_CHECKING_STATUS.getStatus(),
+                selectedRoom.getRoomType(),
+                selectedRoom.getNumberOfCustomers(),
+                selectedRoom.getDailyPrice(),
+                selectedRoom.getHourlyPrice());
     }
 
     private void handleCheckinDateChange() {
@@ -1129,5 +1151,9 @@ public class BookingFormPanel extends JPanel {
     }
 
     private void handleCompleteMaintenance() {
+    }
+
+    private void triggerUpdateRoomStatus(GridRoomPanel gridRoomPanel) {
+
     }
 }

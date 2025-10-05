@@ -22,6 +22,20 @@ public class ThongTinPhong {
         this.giaGio = giaGio;
     }
 
+    @Override
+    public String toString() {
+        return "ThongTinPhong{" +
+                "maPhong='" + maPhong + '\'' +
+                ", tenPhong='" + tenPhong + '\'' +
+                ", dangHoatDong=" + dangHoatDong +
+                ", tenTrangThai='" + tenTrangThai + '\'' +
+                ", phanLoai='" + phanLoai + '\'' +
+                ", soLuongKhach='" + soLuongKhach + '\'' +
+                ", giaNgay=" + giaNgay +
+                ", giaGio=" + giaGio +
+                '}';
+    }
+
     public String getMaPhong() {
         return maPhong;
     }

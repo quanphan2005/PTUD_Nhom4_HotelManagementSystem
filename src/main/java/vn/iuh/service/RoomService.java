@@ -1,4 +1,4 @@
-package vn.iuh.servcie;
+package vn.iuh.service;
 
 import vn.iuh.dto.event.create.RoomCreationEvent;
 import vn.iuh.dto.event.update.RoomModificationEvent;

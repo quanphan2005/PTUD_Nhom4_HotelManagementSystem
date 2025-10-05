@@ -1,6 +1,8 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
@@ -8,8 +10,9 @@ import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.base.RoomItem;
-import vn.iuh.servcie.BookingService;
-import vn.iuh.servcie.impl.BookingServiceImpl;
+import vn.iuh.schedule.RoomStatusHandler;
+import vn.iuh.service.BookingService;
+import vn.iuh.service.impl.BookingServiceImpl;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class ReservationManagementPanel extends JPanel {
-    private GridRoomPanel gridRoomPanels;
+    public static GridRoomPanel gridRoomPanels;
     private final BookingService bookingService;
 
     private List<RoomItem> allRoomItems;
@@ -436,6 +439,8 @@ public class ReservationManagementPanel extends JPanel {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         setOpaque(true);
         add(scrollPane);
+
+        createUpdateRoomStatusSchedule(gridRoomPanels);
     }
 
     private void handleStatusFilter(String status) {
@@ -612,6 +617,32 @@ public class ReservationManagementPanel extends JPanel {
             this.checkInDate = checkInDate;
             this.checkOutDate = checkOutDate;
             this.roomStatus = roomStatus;
+        }
+    }
+
+    private void createUpdateRoomStatusSchedule(GridRoomPanel gridRoomPanel) {
+        try {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+
+            JobDataMap jobDataMap = new JobDataMap();
+            jobDataMap.put("gridRoomPanel", gridRoomPanel);
+
+            JobDetail jobDetail = JobBuilder.newJob(RoomStatusHandler.class)
+                    .withIdentity("roomStatusUpdateJob", "group1")
+                    .usingJobData(jobDataMap)
+                    .build();
+
+            Trigger trigger = org.quartz.TriggerBuilder.newTrigger()
+                    .withIdentity("roomStatusUpdateTrigger", "group1")
+                    .withSchedule(org.quartz.SimpleScheduleBuilder.simpleSchedule()
+                            .withIntervalInSeconds(30)
+                            .repeatForever())
+                    .build();
+
+            scheduler.start();
+            scheduler.scheduleJob(jobDetail, trigger);
+        } catch (Exception e) {
+            System.out.println("Error creating schedule: " + e.getMessage());
         }
     }
 }

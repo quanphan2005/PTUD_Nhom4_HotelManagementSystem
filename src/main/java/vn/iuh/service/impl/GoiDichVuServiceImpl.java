@@ -1,9 +1,9 @@
-package vn.iuh.servcie.impl;
+package vn.iuh.service.impl;
 
 import vn.iuh.dao.GoiDichVuDao;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
-import vn.iuh.servcie.GoiDichVuService;
+import vn.iuh.service.GoiDichVuService;
 
 import java.util.List;
 

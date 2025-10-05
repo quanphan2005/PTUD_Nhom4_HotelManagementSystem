@@ -1,4 +1,4 @@
-package vn.iuh.servcie.impl;
+package vn.iuh.service.impl;
 
 import vn.iuh.constraint.ActionType;
 import vn.iuh.constraint.EntityIDSymbol;
@@ -10,7 +10,7 @@ import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.entity.*;
-import vn.iuh.servcie.BookingService;
+import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
 
 import java.sql.Timestamp;
@@ -155,17 +155,28 @@ public class BookingServiceImpl implements BookingService {
                                                            EntityIDSymbol.JOB_PREFIX.getPrefix(),
                                                            EntityIDSymbol.JOB_PREFIX.getLength());
 
-                String statusName = bookingCreationEvent.isDaDatTruoc()
-                        ? RoomStatus.ROOM_BOOKED_STATUS.getStatus()
-                        : RoomStatus.ROOM_USING_STATUS.getStatus();
-
-                congViecs.add(new CongViec(newId,
-                                           statusName,
-                                           bookingCreationEvent.getTgNhanPhong(),
-                                           bookingCreationEvent.getTgTraPhong(),
-                                           roomId,
-                                           null
-                ));
+//                String statusName = bookingCreationEvent.isDaDatTruoc()
+//                        ? RoomStatus.ROOM_BOOKED_STATUS.getStatus()
+//                        : RoomStatus.ROOM_CHECKING_STATUS.getStatus();
+//
+//                congViecs.add(new CongViec(newId,
+//                                           statusName,
+//                                           bookingCreationEvent.getTgNhanPhong(),
+//                                           bookingCreationEvent.getTgTraPhong(),
+//                                           roomId,
+//                                           null
+//                ));
+                int thoiGianKiemTra = 30; //phút
+                if(bookingCreationEvent.isDaDatTruoc()){
+                    congViecs.add(new CongViec(newId, RoomStatus.ROOM_BOOKED_STATUS.getStatus(),
+                            bookingCreationEvent.getTgNhanPhong(), bookingCreationEvent.getTgTraPhong(),
+                            roomId, null));
+                }
+                else{
+                    congViecs.add(new CongViec(newId, RoomStatus.ROOM_CHECKING_STATUS.getStatus(),
+                            bookingCreationEvent.getTgNhanPhong(), new Timestamp(bookingCreationEvent.getTgNhanPhong().getTime() + thoiGianKiemTra * 60 * 1000),
+                            roomId, null));
+                }
                 jobId = newId;
             }
 
@@ -249,7 +260,6 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
         }
-
         return bookingResponses;
     }
 

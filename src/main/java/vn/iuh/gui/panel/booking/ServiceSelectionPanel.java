@@ -6,8 +6,8 @@ import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
-import vn.iuh.servcie.GoiDichVuService;
-import vn.iuh.servcie.impl.GoiDichVuServiceImpl;
+import vn.iuh.service.GoiDichVuService;
+import vn.iuh.service.impl.GoiDichVuServiceImpl;
 
 import javax.swing.*;
 import javax.swing.Timer;

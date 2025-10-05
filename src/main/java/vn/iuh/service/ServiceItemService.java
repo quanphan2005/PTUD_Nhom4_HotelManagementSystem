@@ -1,4 +1,4 @@
-package vn.iuh.servcie;
+package vn.iuh.service;
 
 import vn.iuh.entity.DichVu;
 
