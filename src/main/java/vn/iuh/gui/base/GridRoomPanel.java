@@ -27,7 +27,6 @@ public class GridRoomPanel extends JPanel implements Serializable {
 
     public void updateRoomItemStatus(List<BookingResponse> updatedRoomItems) {
         for (BookingResponse res : updatedRoomItems) {
-            System.out.println("Updating room: " + res.getRoomId() + " to status: " + res.getRoomStatus());
             RoomItem roomItem = roomItemMap.get(res.getRoomId());
             RoomItem newItem = new RoomItem(res);
             int index = getComponentZOrder(roomItem);
