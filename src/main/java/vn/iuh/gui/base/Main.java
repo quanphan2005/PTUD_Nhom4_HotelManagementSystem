@@ -139,6 +139,10 @@ public class Main extends JFrame {
         pnlCenter.add(panel, name);
     }
 
+    public static void removeCard(Component component) {
+        pnlCenter.remove(component);
+    }
+
     //Tạo các màn hình con cho cardLayout (màn hình chức năng)
     public void initializeMainPanels(){
         JPanel pink = new JPanel();
@@ -155,5 +159,4 @@ public class Main extends JFrame {
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
         showCard("Quản lý đặt phòng");
     }
-
 }

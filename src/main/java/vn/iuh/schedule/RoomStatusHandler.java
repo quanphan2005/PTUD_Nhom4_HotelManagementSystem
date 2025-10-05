@@ -93,7 +93,7 @@ public class RoomStatusHandler implements Job {
                     RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(rj.getStatusName())){
                     ThongTinDatPhong thongTinDatPhong = datPhongDAO.timDonDatPhongChoCheckInCuaPhong(rj.getRoomId(), rj.getStartTime(), rj.getEndTime());
                     if(Objects.nonNull(thongTinDatPhong)){
-                        res.updateBookingInfo(thongTinDatPhong.getTenKhachHang(), thongTinDatPhong.getTgNhanPhong(), thongTinDatPhong.getTgTraPhong());
+                        res.updateBookingInfo(thongTinDatPhong.getTenKhachHang(), thongTinDatPhong.getMaChiTietDatPhong(), thongTinDatPhong.getTgNhanPhong(), thongTinDatPhong.getTgTraPhong());
                         res.setRoomStatus(rj.getStatusName());
                         updatedBookingResponse.add(res);
                         System.out.println(res);

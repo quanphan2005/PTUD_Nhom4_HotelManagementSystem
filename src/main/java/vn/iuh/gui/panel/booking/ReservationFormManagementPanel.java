@@ -6,6 +6,7 @@ import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -43,7 +44,8 @@ public class ReservationFormManagementPanel extends JPanel {
     public ReservationFormManagementPanel() {
         bookingService = new BookingServiceImpl();
         reservationFilter = new ReservationFilter(null, null, null);
-        
+        RefreshManager.setReservationFormManagementPanel(this);
+
         // Load data
         loadReservationData();
         
@@ -220,7 +222,12 @@ public class ReservationFormManagementPanel extends JPanel {
         // Populate table with initial data
         populateTable();
     }
-    
+
+    public void refreshData() {
+        loadReservationData();
+        applyFilters();
+    }
+
     // Custom renderer for alternating row colors and proper styling
     private class AlternatingRowRenderer extends DefaultTableCellRenderer {
         @Override
@@ -415,7 +422,7 @@ public class ReservationFormManagementPanel extends JPanel {
             
             // TODO: Implement actual cancellation logic
             // bookingService.cancelReservation(reservation.getId());
-            
+
             // Refresh data
             loadReservationData();
             applyFilters();
@@ -561,3 +568,4 @@ public class ReservationFormManagementPanel extends JPanel {
         }
     }
 }
+

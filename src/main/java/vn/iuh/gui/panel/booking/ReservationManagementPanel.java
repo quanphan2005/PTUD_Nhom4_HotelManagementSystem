@@ -13,6 +13,7 @@ import vn.iuh.gui.base.RoomItem;
 import vn.iuh.schedule.RoomStatusHandler;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,7 +25,7 @@ import java.util.Objects;
 
 public class ReservationManagementPanel extends JPanel {
     public static GridRoomPanel gridRoomPanels;
-    private final BookingService bookingService;
+    private BookingService bookingService;
 
     private List<RoomItem> allRoomItems;
     private List<RoomItem> filteredRooms;
@@ -46,22 +47,28 @@ public class ReservationManagementPanel extends JPanel {
     private List<BookingResponse> selectedRooms = new ArrayList<>();
 
     public ReservationManagementPanel() {
-        bookingService = new BookingServiceImpl();
-        roomFilter = new RoomFilter(null, null, null, null, null);
-
-        List<RoomItem> roomItems = new ArrayList<>();
-
-        List<BookingResponse> bookingResponses = bookingService.getAllBookingInfo();
-        for (BookingResponse bookingResponse : bookingResponses) {
-            roomItems.add(new RoomItem(bookingResponse));
-        }
-
-        allRoomItems = roomItems;
-        filteredRooms = new ArrayList<>(allRoomItems);
-
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         init();
         setupMultiBookingCallbacks();
+    }
+
+    public void initData() {
+        this.bookingService = new BookingServiceImpl();
+        List<BookingResponse> allBookingInfo = bookingService.getAllBookingInfo();
+
+        allRoomItems = new ArrayList<>();
+        for (BookingResponse bookingResponse : allBookingInfo) {
+            allRoomItems.add(new RoomItem(bookingResponse));
+        }
+
+        filteredRooms = new ArrayList<>(allRoomItems);
+
+        // Initialize filter with default values
+        Date today = new Date();
+        Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
+        roomFilter = new RoomFilter("TẤT CẢ", 1, today, tomorrow, "Tất cả");
+
+        // Register this panel for refresh events
+        RefreshManager.setReservationManagementPanel(this);
     }
 
     private void setupMultiBookingCallbacks() {
@@ -88,6 +95,8 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void init() {
+        initData();
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         createTopPanel();
         createSearchAndStatusPanel();
         createModeTogglePanel();

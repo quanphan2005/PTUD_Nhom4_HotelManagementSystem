@@ -9,6 +9,7 @@ import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.util.IconUtil;
+import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -751,6 +752,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
                 JOptionPane.showMessageDialog(this,
                     "Đặt " + selectedRooms.size() + " phòng thành công!",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+                RefreshManager.refreshAfterBooking();
                 handleCancel();
             } else {
                 JOptionPane.showMessageDialog(this,

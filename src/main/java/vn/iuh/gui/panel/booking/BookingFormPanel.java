@@ -13,6 +13,7 @@ import vn.iuh.gui.base.Main;
 import vn.iuh.schedule.RoomStatusHandler;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.IconUtil;
+import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -906,11 +907,15 @@ public class BookingFormPanel extends JPanel {
             if (success) {
                 JOptionPane.showMessageDialog(this, "Đặt phòng thành công!",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
                 if(!chkIsAdvanced.isSelected()){
                     GridRoomPanel gridRoomPanel = ReservationManagementPanel.gridRoomPanels;
                     BookingResponse booking = collectBookingResponse(bookingEvent.getTenKhachHang(), bookingEvent.getTgNhanPhong(), bookingEvent.getTgTraPhong());
                     gridRoomPanel.updateSingleRoomItem(selectedRoom.getRoomId(), booking);
                 }
+
+                // Refresh reservation management panel
+                RefreshManager.refreshAfterBooking();
                 handleCancel(); // Return to previous screen
             } else {
                 JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Vui lòng thử lại.",
@@ -1139,7 +1144,6 @@ public class BookingFormPanel extends JPanel {
     }
 
     private void handleCancel() {
-        // Return to the previous panel
         Main.showCard("Quản lý đặt phòng");
     }
 

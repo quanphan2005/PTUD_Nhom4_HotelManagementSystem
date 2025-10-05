@@ -143,7 +143,7 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
 
-            goiDichVuDao.themPhongDungDichVu(bookingCreationEvent.getMaPhienDangNhap(), danhSachPhongDungDichVu);
+            goiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
 
             // 2.6. Create Job for each booked room
             List<CongViec> congViecs = new ArrayList<>();
@@ -254,6 +254,7 @@ public class BookingServiceImpl implements BookingService {
                 if (Objects.equals(bookingResponse.getRoomId(), thongTinDatPhong.getMaPhong())) {
                     bookingResponse.updateBookingInfo(
                             thongTinDatPhong.getTenKhachHang(),
+                            thongTinDatPhong.getMaChiTietDatPhong(),
                             thongTinDatPhong.getTgNhanPhong(),
                             thongTinDatPhong.getTgTraPhong()
                     );
@@ -261,6 +262,11 @@ public class BookingServiceImpl implements BookingService {
             }
         }
         return bookingResponses;
+    }
+
+    // TODO Implement cancelBooking
+    private boolean cancelBooking(String maDatPhong) {
+        return false;
     }
 
     private DonDatPhong createReservationFormEntity(BookingCreationEvent bookingCreationEvent,
