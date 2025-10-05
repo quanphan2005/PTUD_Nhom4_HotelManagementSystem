@@ -6,5 +6,5 @@ import java.sql.Timestamp;
 
 public interface CongViecService {
     CongViec themCongViec(String tenTrangThai, Timestamp tgBatDau, Timestamp tgKetThuc, String maPhong);
-    void removeOutDateJob(String jobId);
+    boolean removeOutDateJob(String jobId);
 }

@@ -88,6 +88,20 @@ public class CongViecServiceImpl implements CongViecService {
                     System.out.println("Không thêm được trạng thái " + tenTrangThai + " cho phòng " + maPhong + " vì trạng thái hiện tại là " + congViecHientai.getTenTrangThai());
                     throw new RuntimeException("Phòng hiện tại không được checkin");
                 }
+            }else if(RoomStatus.ROOM_CLEANING_STATUS.getStatus().equalsIgnoreCase(tenTrangThai)){
+                if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(congViecHientai.getTenTrangThai())
+                        || RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(congViecHientai.getTenTrangThai())){
+                    var isFinished = jobDAO.capNhatThoiGianKetThuc(congViecHientai.getMaCongViec(), new Timestamp(System.currentTimeMillis()), true);
+                    if(isFinished){
+                        return jobDAO.themCongViec(new CongViec(id, tenTrangThai, tgBatDau, tgKetThuc, maPhong, null));
+                    } else {
+                        throw new RuntimeException("Không thể kết thúc công việc " + congViecHientai.getTenTrangThai() +" hiện tại của phòng");
+                    }
+                }
+                else {
+                    System.out.println("Không thêm được trạng thái " + tenTrangThai + " cho phòng " + maPhong + " vì trạng thái hiện tại là " + congViecHientai.getTenTrangThai());
+                    throw new RuntimeException("Phòng hiện tại không được checkin");
+                }
             }
             else {
                 throw new RuntimeException("Trạng thái công việc không hợp lệ");
@@ -138,8 +152,8 @@ public class CongViecServiceImpl implements CongViecService {
     }
 
     @Override
-    public void removeOutDateJob(String jobId){
-        jobDAO.removeJob(jobId);
+    public boolean removeOutDateJob(String jobId){
+        return jobDAO.removeJob(jobId);
     }
 
 

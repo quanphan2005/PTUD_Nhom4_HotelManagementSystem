@@ -28,11 +28,11 @@ public class GridRoomPanel extends JPanel implements Serializable {
     public void updateRoomItemStatus(List<BookingResponse> updatedRoomItems) {
         for (BookingResponse res : updatedRoomItems) {
             RoomItem roomItem = roomItemMap.get(res.getRoomId());
-            System.out.println("Cập nhật ui cho phòng " + roomItem.getRoomId() + " từ " + roomItem.getBookingResponse().getRoomStatus() + " thành " + res.getRoomStatus());
             RoomItem newItem = new RoomItem(res);
             int index = getComponentZOrder(roomItem);
             remove(roomItem);
             add(newItem, index);
+            roomItemMap.put(res.getRoomId(), newItem);
         }
         revalidate();
         repaint();
@@ -71,6 +71,5 @@ public class GridRoomPanel extends JPanel implements Serializable {
         revalidate();
         repaint();
     }
-
 
 }

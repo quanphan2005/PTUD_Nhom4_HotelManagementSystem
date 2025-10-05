@@ -143,7 +143,7 @@ public class CongViecDAO {
     }
 
     public CongViec layCongViecHienTaiCuaPhong(String maPhong){
-        String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? AND GETDATE() BETWEEN tg_bat_dau AND tg_ket_thuc ORDER BY tg_bat_dau DESC";
+        String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? AND getdate() >= tg_bat_dau and da_xoa = 0 ORDER BY tg_bat_dau DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -196,7 +196,7 @@ public class CongViecDAO {
         String query = "select cv.ma_cong_viec, p.ma_phong,cv.ten_trang_thai ,cv.tg_bat_dau, cv.tg_ket_thuc, cv.da_xoa from Phong p\n" +
                 "outer apply (\n" +
                 "\tselect top 1 * from CongViec cv\n" +
-                "\twhere p.ma_phong = cv.ma_phong and (getdate() between cv.tg_bat_dau and cv.tg_ket_thuc) and cv.da_xoa = 0\n" +
+                "\twhere p.ma_phong = cv.ma_phong AND getdate() >= cv.tg_bat_dau and cv.da_xoa = 0\n" +
                 "\torder by cv.thoi_gian_tao\n" +
                 ") as cv";
         try {
@@ -219,14 +219,16 @@ public class CongViecDAO {
         }
     }
 
-    public void removeJob(String maCongViec) {
+    public boolean removeJob(String maCongViec) {
         String query = "UPDATE CongViec SET da_xoa = 1 WHERE ma_cong_viec = ?";
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maCongViec);
+            return  ps.executeUpdate() > 1;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+        return false;
     }
 
 
