@@ -11,6 +11,7 @@ import vn.iuh.servcie.impl.GoiDichVuServiceImpl;
 
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableCellEditor;
@@ -115,10 +116,22 @@ public class ServiceSelectionPanel extends JPanel {
             }
         };
         serviceTable = new JTable(serviceTableModel);
-        serviceTable.setFont(CustomUI.smallFont);
+        serviceTable.setFont(CustomUI.tableDataFont); // Non-bold font for data
         serviceTable.setRowHeight(40);
-        serviceTable.getTableHeader().setFont(CustomUI.normalFont);
-        serviceTable.getTableHeader().setBackground(Color.LIGHT_GRAY);
+        serviceTable.setSelectionBackground(CustomUI.tableSelection);
+        serviceTable.setGridColor(CustomUI.tableBorder);
+        serviceTable.setShowGrid(true); // Show grid lines
+        serviceTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
+
+        // Enhanced header styling
+        serviceTable.getTableHeader().setFont(CustomUI.tableHeaderFont);
+        serviceTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
+        serviceTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
+        serviceTable.getTableHeader().setOpaque(true);
+        serviceTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
+
+        // Set alternating row colors for regular columns (not gift and quantity)
+        serviceTable.setDefaultRenderer(Object.class, new ServiceTableRenderer());
 
         // Set fixed column widths to prevent resizing
         serviceTable.getColumnModel().getColumn(0).setPreferredWidth(150); // Tên
@@ -167,10 +180,22 @@ public class ServiceSelectionPanel extends JPanel {
             }
         };
         selectedServicesTable = new JTable(selectedServicesTableModel);
-        selectedServicesTable.setFont(CustomUI.smallFont);
+        selectedServicesTable.setFont(CustomUI.tableDataFont); // Non-bold font for data
         selectedServicesTable.setRowHeight(30);
-        selectedServicesTable.getTableHeader().setFont(CustomUI.smallFont);
-        selectedServicesTable.getTableHeader().setBackground(Color.LIGHT_GRAY);
+        selectedServicesTable.setSelectionBackground(CustomUI.tableSelection);
+        selectedServicesTable.setGridColor(CustomUI.tableBorder);
+        selectedServicesTable.setShowGrid(true); // Show grid lines
+        selectedServicesTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
+
+        // Enhanced header styling for selected services table
+        selectedServicesTable.getTableHeader().setFont(CustomUI.tableHeaderFont);
+        selectedServicesTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
+        selectedServicesTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
+        selectedServicesTable.getTableHeader().setOpaque(true);
+        selectedServicesTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
+
+        // Set alternating row colors for selected services table
+        selectedServicesTable.setDefaultRenderer(Object.class, new SelectedServicesTableRenderer());
 
         // Set fixed column widths for selected services table
         selectedServicesTable.getColumnModel().getColumn(0).setPreferredWidth(100); // Tên
@@ -978,6 +1003,72 @@ public class ServiceSelectionPanel extends JPanel {
         @Override
         public Object getCellEditorValue() {
             return currentQuantity;
+        }
+    }
+
+    // Custom renderer for service table with alternating row colors and proper styling
+    private class ServiceTableRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            // Set font to non-bold for data
+            component.setFont(CustomUI.tableDataFont);
+
+            if (isSelected) {
+                component.setBackground(CustomUI.tableSelection);
+                component.setForeground(Color.BLACK);
+            } else {
+                // Alternating row colors
+                if (row % 2 == 0) {
+                    component.setBackground(CustomUI.tableRowEven);
+                } else {
+                    component.setBackground(CustomUI.tableRowOdd);
+                }
+                component.setForeground(Color.BLACK);
+            }
+
+            // Center align text for all columns except custom rendered columns (4 and 5)
+            if (column < 4) {
+                setHorizontalAlignment(JLabel.CENTER);
+            }
+
+            // Add subtle border
+            setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, CustomUI.tableBorder));
+
+            return component;
+        }
+    }
+
+    // Custom renderer for selected services table with alternating row colors and proper styling
+    private class SelectedServicesTableRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            // Set font to non-bold for data
+            component.setFont(CustomUI.tableDataFont);
+
+            if (isSelected) {
+                component.setBackground(CustomUI.tableSelection);
+                component.setForeground(Color.BLACK);
+            } else {
+                // Alternating row colors
+                if (row % 2 == 0) {
+                    component.setBackground(CustomUI.tableRowEven);
+                } else {
+                    component.setBackground(CustomUI.tableRowOdd);
+                }
+                component.setForeground(Color.BLACK);
+            }
+
+            // Center align text for all columns
+            setHorizontalAlignment(JLabel.CENTER);
+
+            // Add subtle border
+            setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, CustomUI.tableBorder));
+
+            return component;
         }
     }
 
