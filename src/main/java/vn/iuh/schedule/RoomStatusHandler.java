@@ -124,11 +124,15 @@ public class RoomStatusHandler implements Job {
         System.out.println("Xử lý chuyển trạng thái phòng " + rj.getRoomId() + " từ đang sử dụng sang trễ trả phòng");
         return congViecService.themCongViec(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus(),
                 rj.getEndTime(),
-                Timestamp.valueOf(LocalDateTime.now().plusMinutes(30)),
+                Timestamp.valueOf(LocalDateTime.now().plusMinutes(1)),
                 rj.getRoomId()).getTenTrangThai();
     }
 
-    private void handleAutoCheckOut(RoomJob rj) {
-//        return true;
+    private String handleAutoCheckOut(RoomJob rj) {
+        System.out.println("Xử lý tự động trả phòng cho phòng " + rj.getJobId());
+        return congViecService.themCongViec(RoomStatus.ROOM_CLEANING_STATUS.getStatus(),
+                rj.getEndTime(),
+                Timestamp.valueOf(LocalDateTime.now().plusMinutes(1)),
+                rj.getRoomId()).getTenTrangThai();
     }
 }
