@@ -15,11 +15,14 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.text.SimpleDateFormat;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 public class ReservationFormManagementPanel extends JPanel {
     private final BookingService bookingService;
@@ -132,19 +135,29 @@ public class ReservationFormManagementPanel extends JPanel {
     }
     
     private void initializeFilterComponents() {
-        // Room name text field
+        // Room name text field with auto-filtering
         txtRoomName = new JTextField(15);
         txtRoomName.setFont(CustomUI.smallFont);
-        txtRoomName.addActionListener(e -> applyFilters());
-        
-        // Customer name text field
+        txtRoomName.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                applyFilters(); // Auto-filter on every key release
+            }
+        });
+
+        // Customer name text field with auto-filtering
         txtCustomerName = new JTextField(15);
         txtCustomerName.setFont(CustomUI.smallFont);
-        txtCustomerName.addActionListener(e -> applyFilters());
-        
-        // Check-in date spinner
+        txtCustomerName.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                applyFilters(); // Auto-filter on every key release
+            }
+        });
+
+        // Check-in date spinner with time
         spnCheckinDate = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(spnCheckinDate, "dd/MM/yyyy");
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(spnCheckinDate, "dd/MM/yyyy HH:mm");
         spnCheckinDate.setEditor(dateEditor);
         spnCheckinDate.setValue(new Date());
         spnCheckinDate.setFont(CustomUI.smallFont);
@@ -191,11 +204,11 @@ public class ReservationFormManagementPanel extends JPanel {
 
         // Set column widths
         TableColumnModel columnModel = reservationTable.getColumnModel();
-        columnModel.getColumn(0).setPreferredWidth(150); // Khách hàng
+        columnModel.getColumn(0).setPreferredWidth(180); // Khách hàng
         columnModel.getColumn(1).setPreferredWidth(100); // Phòng
-        columnModel.getColumn(2).setPreferredWidth(120); // Checkin
-        columnModel.getColumn(3).setPreferredWidth(120); // Checkout
-        columnModel.getColumn(4).setPreferredWidth(200); // Thao tác
+        columnModel.getColumn(2).setPreferredWidth(100); // Checkin
+        columnModel.getColumn(3).setPreferredWidth(100); // Checkout
+        columnModel.getColumn(4).setPreferredWidth(250); // Thao tác
         
         // Set cell renderer for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
@@ -299,17 +312,13 @@ public class ReservationFormManagementPanel extends JPanel {
             }
         }
         
-        // Checkin date filter
+        // Checkin date filter - show all reservations with check-in time after the selected date/time
         if (reservationFilter.checkinDate != null && reservation.getTimeIn() != null) {
-            Date filterDate = reservationFilter.checkinDate;
-            Date reservationDate = new Date(reservation.getTimeIn().getTime());
-            
-            // Compare only dates, not times
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            String filterDateStr = dateFormat.format(filterDate);
-            String reservationDateStr = dateFormat.format(reservationDate);
-            
-            if (!filterDateStr.equals(reservationDateStr)) {
+            Date filterDateTime = reservationFilter.checkinDate;
+            Date reservationDateTime = new Date(reservation.getTimeIn().getTime());
+
+            // Show reservations where check-in is after the filter date/time
+            if (reservationDateTime.before(filterDateTime)) {
                 return false;
             }
         }
@@ -331,8 +340,16 @@ public class ReservationFormManagementPanel extends JPanel {
         // Clear existing data
         tableModel.setRowCount(0);
         
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-        
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+        // Sort filtered reservations by check-in date (nearest first)
+        filteredReservations.sort((r1, r2) -> {
+            if (r1.getTimeIn() == null && r2.getTimeIn() == null) return 0;
+            if (r1.getTimeIn() == null) return 1;
+            if (r2.getTimeIn() == null) return -1;
+            return r1.getTimeIn().compareTo(r2.getTimeIn());
+        });
+
         // Add filtered reservations to table
         for (BookingResponse reservation : filteredReservations) {
             Object[] rowData = new Object[5];
@@ -346,6 +363,25 @@ public class ReservationFormManagementPanel extends JPanel {
         }
     }
     
+    private void handleCheckIn(BookingResponse reservation) {
+        int result = JOptionPane.showConfirmDialog(this,
+            "Xác nhận check-in cho khách " + reservation.getCustomerName() + " vào phòng " + reservation.getRoomName() + "?",
+            "Xác nhận check-in", JOptionPane.YES_NO_OPTION);
+
+        if (result == JOptionPane.YES_OPTION) {
+            JOptionPane.showMessageDialog(this,
+                "Đã check-in thành công cho khách " + reservation.getCustomerName() + " vào phòng " + reservation.getRoomName(),
+                "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+            // TODO: Implement actual check-in logic
+            // bookingService.checkInReservation(reservation.getId());
+
+            // Refresh data
+            loadReservationData();
+            applyFilters();
+        }
+    }
+
     private void handleChangeRoom(BookingResponse reservation) {
         String newRoom = JOptionPane.showInputDialog(this,
             "Nhập số phòng muốn chuyển đến:",
@@ -392,13 +428,24 @@ public class ReservationFormManagementPanel extends JPanel {
     
     // Custom cell renderer for action buttons
     private class ActionButtonRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
+        private JButton btnCheckIn;
         private JButton btnChangeRoom;
         private JButton btnCancel;
         
         public ActionButtonRenderer() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+            setLayout(new FlowLayout(FlowLayout.CENTER, 3, 3));
             setOpaque(true);
             
+            // Check-in button
+            btnCheckIn = new JButton("Check-in");
+            btnCheckIn.setFont(CustomUI.verySmallFont);
+            btnCheckIn.setBackground(CustomUI.darkGreen);
+            btnCheckIn.setForeground(Color.WHITE);
+            btnCheckIn.setPreferredSize(new Dimension(120, 30));
+            btnCheckIn.setFocusPainted(false);
+            btnCheckIn.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
+
+            // Change room button
             btnChangeRoom = new JButton("Đổi phòng");
             btnChangeRoom.setFont(CustomUI.verySmallFont);
             btnChangeRoom.setBackground(CustomUI.lightBlue);
@@ -407,14 +454,18 @@ public class ReservationFormManagementPanel extends JPanel {
             btnChangeRoom.setFocusPainted(false);
             btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             
-            btnCancel = new JButton("Hủy đơn");
-            btnCancel.setFont(CustomUI.verySmallFont);
+            // Cancel button (small square with trash icon)
+            ImageIcon trashIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/bin.png")));
+            trashIcon = new ImageIcon(trashIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+            btnCancel = new JButton(trashIcon);
             btnCancel.setBackground(CustomUI.red);
             btnCancel.setForeground(Color.WHITE);
-            btnCancel.setPreferredSize(new Dimension(120, 30));
+            btnCancel.setPreferredSize(new Dimension(30, 30));
             btnCancel.setFocusPainted(false);
             btnCancel.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
-            
+            btnCancel.setToolTipText("Hủy đơn");
+
+            add(btnCheckIn);
             add(btnChangeRoom);
             add(btnCancel);
         }
@@ -433,6 +484,7 @@ public class ReservationFormManagementPanel extends JPanel {
     // Custom cell editor for action buttons
     private class ActionButtonEditor extends DefaultCellEditor {
         private JPanel panel;
+        private JButton btnCheckIn;
         private JButton btnChangeRoom;
         private JButton btnCancel;
         private BookingResponse currentReservation;
@@ -440,8 +492,22 @@ public class ReservationFormManagementPanel extends JPanel {
         public ActionButtonEditor() {
             super(new JCheckBox());
             
-            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
-            
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
+
+            // Check-in button
+            btnCheckIn = new JButton("Check-in");
+            btnCheckIn.setFont(CustomUI.verySmallFont);
+            btnCheckIn.setBackground(CustomUI.darkGreen);
+            btnCheckIn.setForeground(Color.WHITE);
+            btnCheckIn.setPreferredSize(new Dimension(120, 30));
+            btnCheckIn.setFocusPainted(false);
+            btnCheckIn.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
+            btnCheckIn.addActionListener(e -> {
+                handleCheckIn(currentReservation);
+                fireEditingStopped();
+            });
+
+            // Change room button
             btnChangeRoom = new JButton("Đổi phòng");
             btnChangeRoom.setFont(CustomUI.verySmallFont);
             btnChangeRoom.setBackground(CustomUI.lightBlue);
@@ -454,18 +520,22 @@ public class ReservationFormManagementPanel extends JPanel {
                 fireEditingStopped();
             });
             
-            btnCancel = new JButton("Hủy đơn");
-            btnCancel.setFont(CustomUI.verySmallFont);
+            // Cancel button (small square with trash icon)
+            ImageIcon trashIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/error.png")));
+            trashIcon = new ImageIcon(trashIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+            btnCancel = new JButton(trashIcon);
             btnCancel.setBackground(CustomUI.red);
             btnCancel.setForeground(Color.WHITE);
-            btnCancel.setPreferredSize(new Dimension(120, 30));
+            btnCancel.setPreferredSize(new Dimension(30, 30));
             btnCancel.setFocusPainted(false);
             btnCancel.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
+            btnCancel.setToolTipText("Hủy đơn");
             btnCancel.addActionListener(e -> {
                 handleCancelReservation(currentReservation);
                 fireEditingStopped();
             });
             
+            panel.add(btnCheckIn);
             panel.add(btnChangeRoom);
             panel.add(btnCancel);
         }

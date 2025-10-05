@@ -24,11 +24,10 @@ public class CustomUI {
     public static final Font bigFont = new Font("Arial", Font.BOLD, 24);
     public static final Font veryBigFont = new Font("Arial", Font.BOLD, 30);
 
-    // New fonts for table styling
+
     public static final Font tableHeaderFont = new Font("Arial", Font.BOLD, 16);
     public static final Font tableDataFont = new Font("Arial", Font.PLAIN, 13); // Non-bold for data
 
-    // New colors for enhanced table styling
     public static final Color tableHeaderBackground = new Color(52, 152, 219); // Professional blue
     public static final Color tableHeaderForeground = Color.WHITE;
     public static final Color tableBorder = new Color(189, 195, 199); // Light gray border
