@@ -32,10 +32,8 @@ public class RefreshManager {
         reservationManagementPanel.refreshPanel();
     }
 
+    // TODO - implement later
     public static void refreshReservationFormManagementPanel() {
-        Main.removeCard(reservationFormManagementPanel);
-        reservationFormManagementPanel = new ReservationFormManagementPanel();
-        Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_MANAGEMENT.getName());
     }
 
     public static void refreshGridRoomPanel() {

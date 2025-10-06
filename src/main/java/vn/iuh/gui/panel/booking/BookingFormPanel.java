@@ -915,7 +915,7 @@ public class BookingFormPanel extends JPanel {
                 }
 
                 // Refresh reservation management panel
-//                RefreshManager.refreshAfterBooking();
+                RefreshManager.refreshAfterBooking();
                 handleCancel(); // Return to previous screen
             } else {
                 JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Vui lòng thử lại.",

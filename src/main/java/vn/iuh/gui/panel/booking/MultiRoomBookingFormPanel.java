@@ -753,7 +753,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
                     "Đặt " + selectedRooms.size() + " phòng thành công!",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
-//                RefreshManager.refreshAfterBooking();
+                RefreshManager.refreshAfterBooking();
                 handleCancel();
             } else {
                 JOptionPane.showMessageDialog(this,

@@ -46,6 +46,9 @@ public class ReservationManagementPanel extends JPanel {
     private JButton btnConfirmSelection;
     private List<BookingResponse> selectedRooms = new ArrayList<>();
 
+    // Status buttons for refresh functionality
+    private JButton[] statusButtons;
+
     public ReservationManagementPanel() {
         init();
         setupMultiBookingCallbacks();
@@ -61,11 +64,7 @@ public class ReservationManagementPanel extends JPanel {
         }
 
         filteredRooms = new ArrayList<>(allRoomItems);
-
-        // Initialize filter with default values
-        Date today = new Date();
-        Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
-        roomFilter = new RoomFilter("TẤT CẢ", 1, today, tomorrow, "Tất cả");
+        roomFilter = new RoomFilter(null, null, null, null, null);
 
         // Register this panel for refresh events
         RefreshManager.setReservationManagementPanel(this);
@@ -246,25 +245,54 @@ public class ReservationManagementPanel extends JPanel {
         int maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
 
         // Create status buttons with actual quantities and proper colors
-        createStatusButton(panel, gbc, 0, 0, "Tất cả (" + totalRooms + ")", CustomUI.lightGreen, "Tất cả");
-        createStatusButton(panel, gbc, 1, 0, RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")", CustomUI.lightGreen, RoomStatus.ROOM_EMPTY_STATUS.getStatus());
-        createStatusButton(panel, gbc, 2, 0, RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")", CustomUI.cyan, RoomStatus.ROOM_BOOKED_STATUS.getStatus());
+        JButton btnAll = createStatusButton("Tất cả (" + totalRooms + ")", CustomUI.lightGreen, "Tất cả");
+        gbc.gridx = 0; gbc.gridy = 0; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        panel.add(btnAll, gbc);
 
-        createStatusButton(panel, gbc, 0, 1, RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")", CustomUI.lightBlue, RoomStatus.ROOM_CHECKING_STATUS.getStatus());
-        createStatusButton(panel, gbc, 1, 1, RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")", Color.ORANGE, RoomStatus.ROOM_USING_STATUS.getStatus());
-        createStatusButton(panel, gbc, 2, 1, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus() + " (" + lateCount + ")", Color.RED, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+        JButton btnAvailable = createStatusButton(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")", CustomUI.lightGreen, RoomStatus.ROOM_EMPTY_STATUS.getStatus());
+        gbc.gridx = 1; gbc.gridy = 0;
+        panel.add(btnAvailable, gbc);
 
-        createStatusButton(panel, gbc, 0, 2, RoomStatus.ROOM_CLEANING_STATUS.getStatus() + " (" + cleaningCount + ")", new Color(144, 238, 144), RoomStatus.ROOM_CLEANING_STATUS.getStatus());
-        createStatusButton(panel, gbc, 1, 2, RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus() + " (" + maintenanceCount + ")", Color.LIGHT_GRAY, RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+        JButton btnBooked = createStatusButton(RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")", CustomUI.cyan, RoomStatus.ROOM_BOOKED_STATUS.getStatus());
+        gbc.gridx = 2; gbc.gridy = 0;
+        panel.add(btnBooked, gbc);
+
+        JButton btnChecking = createStatusButton(RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")", CustomUI.lightBlue, RoomStatus.ROOM_CHECKING_STATUS.getStatus());
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(btnChecking, gbc);
+
+        JButton btnUsing = createStatusButton(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")", Color.ORANGE, RoomStatus.ROOM_USING_STATUS.getStatus());
+        gbc.gridx = 1; gbc.gridy = 1;
+        panel.add(btnUsing, gbc);
+
+        JButton btnLate = createStatusButton(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus() + " (" + lateCount + ")", Color.RED, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+        gbc.gridx = 2; gbc.gridy = 1;
+        panel.add(btnLate, gbc);
+
+        JButton btnCleaning = createStatusButton(RoomStatus.ROOM_CLEANING_STATUS.getStatus() + " (" + cleaningCount + ")", new Color(144, 238, 144), RoomStatus.ROOM_CLEANING_STATUS.getStatus());
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(btnCleaning, gbc);
+
+        JButton btnMaintenance = createStatusButton(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus() + " (" + maintenanceCount + ")", Color.LIGHT_GRAY, RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+        gbc.gridx = 1; gbc.gridy = 2;
+        panel.add(btnMaintenance, gbc);
+
+        JButton btnReset = createStatusButton("LÀM MỚI", CustomUI.lightGray, null);
+        btnReset.removeActionListener(btnReset.getActionListeners()[0]); // Remove existing listener
+        btnReset.addActionListener(e -> refreshPanel());
+        gbc.gridx = 2; gbc.gridy = 2;
+        panel.add(btnReset, gbc);
+        // Store references to status buttons for later updates
+        statusButtons = new JButton[] {btnAll, btnAvailable, btnBooked, btnChecking, btnUsing, btnLate, btnCleaning, btnMaintenance, btnReset};
 
         return panel;
     }
 
     private int getStatusCount(String status) {
-        if (allRoomItems == null) return 0;
+        if (filteredRooms == null) return 0;
 
         int count = 0;
-        for (RoomItem roomItem : allRoomItems) {
+        for (RoomItem roomItem : filteredRooms) {
             if (roomItem.getBookingResponse().getRoomStatus().equalsIgnoreCase(status)) {
                 count++;
             }
@@ -272,12 +300,7 @@ public class ReservationManagementPanel extends JPanel {
         return count;
     }
 
-    private void createStatusButton(JPanel parent, GridBagConstraints gbc, int x, int y, String text, Color color, String statusValue) {
-        gbc.gridx = x;
-        gbc.gridy = y;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-
+    private JButton createStatusButton(String text, Color color, String statusValue) {
         JButton statusBtn = new JButton(text);
         statusBtn.setBackground(color);
         statusBtn.setForeground(Color.BLACK);
@@ -294,7 +317,7 @@ public class ReservationManagementPanel extends JPanel {
         );
 
         statusBtn.addActionListener(e -> handleStatusFilter(statusValue));
-        parent.add(statusBtn, gbc);
+        return statusBtn;
     }
 
     private void createModeTogglePanel() {
@@ -529,11 +552,11 @@ public class ReservationManagementPanel extends JPanel {
 
             // Apply all filters
             if (passesAllFilters(bookingResponse)) {
-                System.out.println("room_id: " + bookingResponse.getRoomId());
                 filteredRooms.add(roomItem);
             }
         }
 
+        refreshFilterBtn();
         gridRoomPanels.setRoomItems(filteredRooms);
         gridRoomPanels.revalidate();
         gridRoomPanels.repaint();
@@ -604,7 +627,7 @@ public class ReservationManagementPanel extends JPanel {
         if (roomFilter.checkInDate == null)
             roomFilter.checkInDate = new Date();
         if (roomFilter.checkOutDate == null)
-            roomFilter.checkOutDate = new Date();
+            roomFilter.checkOutDate = Date.from(roomFilter.checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
 
         // Allow check-in to be in the past, but ensure check-out is at least 1 hour after check-in
         long diffInMillis = roomFilter.checkOutDate.getTime() - roomFilter.checkInDate.getTime();
@@ -614,33 +637,52 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     public void refreshPanel() {
-
-        // Reset RoomItem data
-        initData();
-
         // Reset filter form to defaults
         Date today = new Date();
         Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
-        roomFilter = new RoomFilter("TẤT CẢ", 1, today, tomorrow, "Tất cả");
-
         cmbRoomType.setSelectedIndex(0);
         cmbCapacity.setSelectedIndex(0);
         spnCheckInDate.setValue(today);
         spnCheckOutDate.setValue(tomorrow);
 
-        search();
+        // Reset room filter
+        roomFilter = new RoomFilter(null, null, today, tomorrow, null);
+
+        // Exit multi-booking mode if active
+        if (isMultiBookingMode) {
+            btnMultiBookingToggle.setSelected(false);
+            toggleMultiBookingMode();
+        }
+
+        // Reset RoomItem data
+        initData();
+        gridRoomPanels.setRoomItems(allRoomItems);
+
+        // Update status button counts
         refreshFilterBtn();
     }
 
     private void refreshFilterBtn() {
-//        totalRooms = allRoomItems != null ? allRoomItems.size() : 0;
-//        availableCount = getStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
-//        bookedCount = getStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
-//        checkingCount = getStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
-//        usingCount = getStatusCount(RoomStatus.ROOM_USING_STATUS.getStatus());
-//        lateCount = getStatusCount(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
-//        cleaningCount = getStatusCount(RoomStatus.ROOM_CLEANING_STATUS.getStatus());
-//        maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+        if (statusButtons == null) return;
+
+        int totalRooms = filteredRooms != null ? filteredRooms.size() : 0;
+        int availableCount = getStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
+        int bookedCount = getStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
+        int checkingCount = getStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
+        int usingCount = getStatusCount(RoomStatus.ROOM_USING_STATUS.getStatus());
+        int lateCount = getStatusCount(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+        int cleaningCount = getStatusCount(RoomStatus.ROOM_CLEANING_STATUS.getStatus());
+        int maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+
+        // Update status button texts with current counts
+        statusButtons[0].setText("Tất cả (" + totalRooms + ")");
+        statusButtons[1].setText(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")");
+        statusButtons[2].setText(RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")");
+        statusButtons[3].setText(RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")");
+        statusButtons[4].setText(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")");
+        statusButtons[5].setText(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus() + " (" + lateCount + ")");
+        statusButtons[6].setText(RoomStatus.ROOM_CLEANING_STATUS.getStatus() + " (" + cleaningCount + ")");
+        statusButtons[7].setText(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus() + " (" + maintenanceCount + ")");
     }
 
     // Internal class to hold current filter state
