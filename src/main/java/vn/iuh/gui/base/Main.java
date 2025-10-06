@@ -30,6 +30,8 @@ public class Main extends JFrame {
     private JPanel pnlCenterWrapper;
     private RoundedWrapperPanel pnlWrapperCenter;
 
+    private static String maPhienDangNhap = "PN00000002";
+
     public void init() {
         //Set hiển thị mặc định toàn màn hình
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -139,8 +141,8 @@ public class Main extends JFrame {
         pnlCenter.add(panel, name);
     }
 
-    public static void removeCard(Component component) {
-        pnlCenter.remove(component);
+    public static String getCurrentLoginSession() {
+        return maPhienDangNhap;
     }
 
     //Tạo các màn hình con cho cardLayout (màn hình chức năng)

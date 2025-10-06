@@ -43,6 +43,9 @@ public class ServiceSelectionPanel extends JPanel {
     // Selected rooms
     private int selectedRooms;
 
+    // For existing booking
+    private String maChiTietDatPhong;
+
     // Data
     private List<ThongTinDichVu> allServices;
     private List<ThongTinDichVu> filteredServices;
@@ -58,13 +61,27 @@ public class ServiceSelectionPanel extends JPanel {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
 
-    public ServiceSelectionPanel(int selectedRooms, ServiceSelectionCallback callback) {
+    public ServiceSelectionPanel(int selectedRooms, String maChiTietDatPhong, ServiceSelectionCallback callback) {
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
         this.giftServicesMap = new HashMap<>();
 
         this.selectedRooms = selectedRooms;
+        this.maChiTietDatPhong = maChiTietDatPhong;
+
+        initializeComponents();
+        loadServices();
+        setupLayout();
+        setupEventHandlers();
+    }
+
+    public ServiceSelectionPanel(String maChiTietDatPhong) {
+        this.goiDichVuService = new GoiDichVuServiceImpl();
+        this.selectedServicesMap = new HashMap<>();
+        this.giftServicesMap = new HashMap<>();
+
+        this.maChiTietDatPhong = maChiTietDatPhong;
 
         initializeComponents();
         loadServices();
@@ -192,7 +209,8 @@ public class ServiceSelectionPanel extends JPanel {
         selectedServicesTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
         selectedServicesTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
         selectedServicesTable.getTableHeader().setOpaque(true);
-        selectedServicesTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
+        selectedServicesTable.getTableHeader()
+                             .setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
 
         // Set alternating row colors for selected services table
         selectedServicesTable.setDefaultRenderer(Object.class, new SelectedServicesTableRenderer());
@@ -270,7 +288,8 @@ public class ServiceSelectionPanel extends JPanel {
 
         // LEFT COLUMN
         // Search area
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 0.8;
@@ -288,11 +307,13 @@ public class ServiceSelectionPanel extends JPanel {
         mainPanel.add(lblAvailableServices, gbc);
 
         // Service table
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         gbc.gridwidth = 2;
         gbc.gridheight = 2;
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 0.6; gbc.weighty = 1.0;
+        gbc.weightx = 0.6;
+        gbc.weighty = 1.0;
         JScrollPane serviceScrollPane = new JScrollPane(serviceTable);
         serviceScrollPane.setBorder(BorderFactory.createTitledBorder("DANH SÁCH DỊCH VỤ"));
         serviceScrollPane.setPreferredSize(new Dimension(500, 400));
@@ -301,11 +322,13 @@ public class ServiceSelectionPanel extends JPanel {
 
         // RIGHT COLUMN
         // Action buttons
-        gbc.gridx = 2; gbc.gridy = 0;
+        gbc.gridx = 2;
+        gbc.gridy = 0;
         gbc.gridwidth = 1;
         gbc.gridheight = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 0.1; gbc.weighty = 0;
+        gbc.weightx = 0.1;
+        gbc.weighty = 0;
         mainPanel.add(btnReset, gbc);
 
         gbc.gridy = 1;
@@ -319,7 +342,8 @@ public class ServiceSelectionPanel extends JPanel {
         // Selected services table
         gbc.gridy = 3;
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 0.4; gbc.weighty = 1.0;
+        gbc.weightx = 0.4;
+        gbc.weighty = 1.0;
         gbc.anchor = GridBagConstraints.CENTER;
         JScrollPane selectedScrollPane = new JScrollPane(selectedServicesTable);
         selectedScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -360,7 +384,7 @@ public class ServiceSelectionPanel extends JPanel {
             }
         });
 
-        btnReset.addActionListener(e -> resetAllSelections());
+        btnReset.addActionListener(e -> handleResetBtn());
 
         btnConfirm.addActionListener(e -> confirmSelection());
 
@@ -373,30 +397,55 @@ public class ServiceSelectionPanel extends JPanel {
         });
     }
 
+    private void resetPanel() {
+        resetAllSelections();
+        loadServices();
+    }
+
     private void resetAllSelections() {
+        // Stop any active cell editing to ensure updates take effect
+        if (serviceTable.isEditing()) {
+            serviceTable.getCellEditor().stopCellEditing();
+        }
+
         selectedServicesMap.clear();
         giftServicesMap.clear(); // Also clear gift selections
+
+        resetAllRowEditingCell();
+
         updateServiceTable();
         updateSelectedServicesTable();
-
-        JOptionPane.showMessageDialog(this,
-                                      "Đã xóa tất cả dịch vụ đã chọn",
-                                      "Hoàn tác",
-                                      JOptionPane.INFORMATION_MESSAGE);
 
         // Update total services cost on booking panel
         if (callback != null) {
             callback.onServiceConfirmed(new ArrayList<>());
         }
-
     }
+
+    private void resetAllRowEditingCell() {
+        // Reset data in maps first
+        for (ThongTinDichVu service : filteredServices) {
+            selectedServicesMap.put(service.getMaDichVu(), 0);
+            giftServicesMap.put(service.getMaDichVu(), false);
+        }
+
+        // Then update table display
+        for (int i = 0; i < serviceTableModel.getRowCount(); i++) {
+            serviceTableModel.setValueAt(false, i, 4); // Reset gift column
+            serviceTableModel.setValueAt(0, i, 5);     // Reset quantity column
+        }
+
+        // Force table repaint to ensure UI updates
+        serviceTable.repaint();
+    }
+
 
     private void confirmSelection() {
         if (selectedServicesMap.isEmpty() || selectedServicesMap.values().stream().allMatch(qty -> qty == 0)) {
             JOptionPane.showMessageDialog(this,
-                "Vui lòng chọn ít nhất một dịch vụ",
-                "Thông báo",
-                JOptionPane.WARNING_MESSAGE);
+                                          "Vui lòng chọn ít nhất một dịch vụ",
+                                          "Thông báo",
+                                          JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -414,6 +463,26 @@ public class ServiceSelectionPanel extends JPanel {
 
         validateServiceQuantity(serviceOrdered);
 
+        // Service ordered for existing booking
+        if (maChiTietDatPhong != null) {
+            boolean success = goiDichVuService.goiDichVu(maChiTietDatPhong, serviceOrdered,
+                                                         Main.getCurrentLoginSession());
+            if (success) {
+                JOptionPane.showMessageDialog(this,
+                                              "Gọi dịch vụ thành công.",
+                                              "Thành công",
+                                              JOptionPane.INFORMATION_MESSAGE);
+                resetPanel();
+                Main.showCard(PanelName.BOOKING.getName());
+            } else {
+                JOptionPane.showMessageDialog(this,
+                                              "Gọi dịch vụ thất bại. Vui lòng thử lại.",
+                                              "Lỗi",
+                                              JOptionPane.ERROR_MESSAGE);
+            }
+            return;
+        }
+
         if (callback != null) {
             callback.onServiceConfirmed(serviceOrdered);
         }
@@ -421,15 +490,18 @@ public class ServiceSelectionPanel extends JPanel {
         // Show dialog base on selected rooms
         if (selectedRooms > 1) {
             JOptionPane.showMessageDialog(this,
-                                          "Đã thêm dịch vụ cho " + selectedRooms + " phòng\n" + "Số lượng dịch vụ đã gọi sẽ được chia đều cho (" + selectedRooms + " phòng)",
-                "Xác nhận",
+                                          "Đã thêm dịch vụ cho " + selectedRooms + " phòng\n" +
+                                          "Số lượng dịch vụ đã gọi sẽ được chia đều cho (" + selectedRooms + " phòng)",
+                                          "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                "Đã thêm dịch vụ cho phòng",
-                "Xác nhận",
-                JOptionPane.INFORMATION_MESSAGE);
+                                          "Đã thêm dịch vụ cho phòng",
+                                          "Xác nhận",
+                                          JOptionPane.INFORMATION_MESSAGE);
         }
+
+        resetPanel();
 
         String cardName = selectedRooms > 1 ? PanelName.MULTI_BOOKING.getName() : PanelName.BOOKING.getName();
         Main.showCard(cardName);
@@ -442,12 +514,12 @@ public class ServiceSelectionPanel extends JPanel {
             int selectedQuantity = selectedServicesMap.getOrDefault(service.getMaDichVu(), 0);
             boolean isGift = giftServicesMap.getOrDefault(service.getMaDichVu(), false);
             Object[] row = {
-                service.getTenDichVu(),
-                service.getTenLoaiDichVu(), // Updated to use correct method name
-                priceFormatter.format(service.getDonGia()) + " VNĐ",
-                service.getTonKho(),
-                isGift, // Gift checkbox value
-                selectedQuantity
+                    service.getTenDichVu(),
+                    service.getTenLoaiDichVu(), // Updated to use correct method name
+                    priceFormatter.format(service.getDonGia()) + " VNĐ",
+                    service.getTonKho(),
+                    isGift, // Gift checkbox value
+                    selectedQuantity
             };
             serviceTableModel.addRow(row);
         }
@@ -463,9 +535,9 @@ public class ServiceSelectionPanel extends JPanel {
                     boolean isGift = giftServicesMap.getOrDefault(entry.getKey(), false);
                     double totalPrice = isGift ? 0 : service.getDonGia() * entry.getValue(); // 0 if gift
                     Object[] row = {
-                        service.getTenDichVu(),
-                        entry.getValue(),
-                        priceFormatter.format(totalPrice) + " VNĐ"
+                            service.getTenDichVu(),
+                            entry.getValue(),
+                            priceFormatter.format(totalPrice) + " VNĐ"
                     };
                     selectedServicesTableModel.addRow(row);
                 }
@@ -479,9 +551,9 @@ public class ServiceSelectionPanel extends JPanel {
         lblTotalServices.setText("Tổng dịch vụ: " + filteredServices.size());
 
         int availableCount = (int) filteredServices.stream()
-            .mapToInt(ThongTinDichVu::getTonKho)
-            .filter(stock -> stock > 0)
-            .count();
+                                                   .mapToInt(ThongTinDichVu::getTonKho)
+                                                   .filter(stock -> stock > 0)
+                                                   .count();
         lblAvailableServices.setText("Dịch vụ khả dụng: " + availableCount);
     }
 
@@ -507,19 +579,28 @@ public class ServiceSelectionPanel extends JPanel {
             ThongTinDichVu service = findServiceById(order.getMaDichVu());
             if (order.getSoLuong() % selectedRooms != 0) {
                 JOptionPane.showMessageDialog(this,
-                    "Số lượng dịch vụ '" + service.getTenDichVu() + "' phải chia hết cho số phòng đã chọn (" + selectedRooms + " phòng).",
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+                                              "Số lượng dịch vụ '" + service.getTenDichVu() +
+                                              "' phải chia hết cho số phòng đã chọn (" + selectedRooms + " phòng).",
+                                              "Lỗi",
+                                              JOptionPane.ERROR_MESSAGE);
                 return;
             }
         }
     }
 
+    private void handleResetBtn() {
+        resetAllSelections();
+        JOptionPane.showMessageDialog(this,
+                                      "Đã xóa tất cả dịch vụ đã chọn",
+                                      "Hoàn tác",
+                                      JOptionPane.INFORMATION_MESSAGE);
+    }
+
     private ThongTinDichVu findServiceById(String serviceId) {
         return allServices.stream()
-            .filter(service -> service.getMaDichVu().equals(serviceId))
-            .findFirst()
-            .orElse(null);
+                          .filter(service -> service.getMaDichVu().equals(serviceId))
+                          .findFirst()
+                          .orElse(null);
     }
 
     private void filterServices() {
@@ -529,11 +610,11 @@ public class ServiceSelectionPanel extends JPanel {
             filteredServices = new ArrayList<>(allServices);
         } else {
             filteredServices = allServices.stream()
-                .filter(service ->
-                    service.getTenDichVu().toLowerCase().contains(searchText) ||
-                    service.getTenLoaiDichVu().toLowerCase().contains(searchText)
-                )
-                .collect(java.util.stream.Collectors.toList());
+                                          .filter(service ->
+                                                          service.getTenDichVu().toLowerCase().contains(searchText) ||
+                                                          service.getTenLoaiDichVu().toLowerCase().contains(searchText)
+                                          )
+                                          .collect(java.util.stream.Collectors.toList());
         }
 
         updateServiceTable();
@@ -560,7 +641,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
-                boolean isSelected, boolean hasFocus, int row, int column) {
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
 
             boolean isGift = (Boolean) value;
             giftCheckBox.setSelected(isGift);
@@ -618,16 +699,17 @@ public class ServiceSelectionPanel extends JPanel {
                 // Show feedback message
                 if (currentGiftStatus) {
                     JOptionPane.showMessageDialog(panel,
-                        "Dịch vụ '" + service.getTenDichVu() + "' đã được đánh dấu là quà tặng (miễn phí)",
-                        "Quà tặng",
-                        JOptionPane.INFORMATION_MESSAGE);
+                                                  "Dịch vụ '" + service.getTenDichVu() +
+                                                  "' đã được đánh dấu là quà tặng (miễn phí)",
+                                                  "Quà tặng",
+                                                  JOptionPane.INFORMATION_MESSAGE);
                 }
             }
         }
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
-                boolean isSelected, int row, int column) {
+                                                     boolean isSelected, int row, int column) {
 
             currentGiftStatus = (Boolean) value;
             currentRow = row;
@@ -678,7 +760,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
-                boolean isSelected, boolean hasFocus, int row, int column) {
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
 
             int quantity = (Integer) value;
             quantityField.setText(String.valueOf(quantity));
@@ -885,15 +967,15 @@ public class ServiceSelectionPanel extends JPanel {
         private void showStockLimitWarning(ThongTinDichVu service) {
             int maxPossible = getMaxPossibleQuantity(service);
             String message = String.format(
-                "Không đủ tồn kho!\n" +
-                "Tồn kho hiện tại: %d\n" +
-                "Số lượng tối đa có thể đặt: %d\n" +
-                "(%d phòng × %d = %d)",
-                service.getTonKho(),
-                maxPossible,
-                selectedRooms,
-                maxPossible / selectedRooms,
-                maxPossible
+                    "Không đủ tồn kho!\n" +
+                    "Tồn kho hiện tại: %d\n" +
+                    "Số lượng tối đa có thể đặt: %d\n" +
+                    "(%d phòng × %d = %d)",
+                    service.getTonKho(),
+                    maxPossible,
+                    selectedRooms,
+                    maxPossible / selectedRooms,
+                    maxPossible
             );
 
             JOptionPane.showMessageDialog(panel, message, "Thông báo", JOptionPane.WARNING_MESSAGE);
@@ -920,9 +1002,9 @@ public class ServiceSelectionPanel extends JPanel {
                 // Reset to current valid value if invalid input
                 quantityField.setText(String.valueOf(currentQuantity));
                 JOptionPane.showMessageDialog(panel,
-                    "Vui lòng nhập số hợp lệ!",
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+                                              "Vui lòng nhập số hợp lệ!",
+                                              "Lỗi",
+                                              JOptionPane.ERROR_MESSAGE);
             }
         }
 
@@ -934,43 +1016,46 @@ public class ServiceSelectionPanel extends JPanel {
                 newQuantity = 0;
                 quantityField.setText("0");
                 JOptionPane.showMessageDialog(panel,
-                    "Số lượng không thể âm!",
-                    "Thông báo",
-                    JOptionPane.WARNING_MESSAGE);
-            } else if (newQuantity > service.getTonKho()) {
-                int maxPossible = getMaxPossibleQuantity(service);
-                newQuantity = maxPossible;
-                quantityField.setText(String.valueOf(newQuantity));
-                showStockLimitWarning(service);
-            } else if (newQuantity % selectedRooms != 0) {
-                // Provide smart suggestions for quantity adjustment
-                int roundedDown = (newQuantity / selectedRooms) * selectedRooms;
-                int roundedUp = roundedDown + selectedRooms;
+                                              "Số lượng không thể âm!",
+                                              "Thông báo",
+                                              JOptionPane.WARNING_MESSAGE);
+            } else
+                if (newQuantity > service.getTonKho()) {
+                    int maxPossible = getMaxPossibleQuantity(service);
+                    newQuantity = maxPossible;
+                    quantityField.setText(String.valueOf(newQuantity));
+                    showStockLimitWarning(service);
+                } else
+                    if (newQuantity % selectedRooms != 0) {
+                        // Provide smart suggestions for quantity adjustment
+                        int roundedDown = (newQuantity / selectedRooms) * selectedRooms;
+                        int roundedUp = roundedDown + selectedRooms;
 
-                // Choose the closer valid value, but don't exceed stock
-                int maxPossible = getMaxPossibleQuantity(service);
-                int suggestion;
+                        // Choose the closer valid value, but don't exceed stock
+                        int maxPossible = getMaxPossibleQuantity(service);
+                        int suggestion;
 
-                if (roundedUp <= maxPossible && (newQuantity - roundedDown) > (roundedUp - newQuantity)) {
-                    suggestion = roundedUp;
-                } else {
-                    suggestion = roundedDown;
-                }
+                        if (roundedUp <= maxPossible && (newQuantity - roundedDown) > (roundedUp - newQuantity)) {
+                            suggestion = roundedUp;
+                        } else {
+                            suggestion = roundedDown;
+                        }
 
-                newQuantity = suggestion;
-                quantityField.setText(String.valueOf(newQuantity));
+                        newQuantity = suggestion;
+                        quantityField.setText(String.valueOf(newQuantity));
 
-                String message = String.format(
-                    "Số lượng dịch vụ phải chia hết cho số phòng đã chọn (%d).\n" +
-                    "Đã điều chỉnh thành: %d\n" +
-                    "(Mỗi phòng sẽ nhận: %d)",
-                    selectedRooms,
-                    suggestion,
-                    suggestion / selectedRooms
-                );
+                        String message = String.format(
+                                "Số lượng dịch vụ phải chia hết cho số phòng đã chọn (%d).\n" +
+                                "Đã điều chỉnh thành: %d\n" +
+                                "(Mỗi phòng sẽ nhận: %d)",
+                                selectedRooms,
+                                suggestion,
+                                suggestion / selectedRooms
+                        );
 
-                JOptionPane.showMessageDialog(panel, message, "Điều chỉnh số lượng", JOptionPane.INFORMATION_MESSAGE);
-            }
+                        JOptionPane.showMessageDialog(panel, message, "Điều chỉnh số lượng",
+                                                      JOptionPane.INFORMATION_MESSAGE);
+                    }
             return newQuantity;
         }
 
@@ -991,7 +1076,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
-                boolean isSelected, int row, int column) {
+                                                     boolean isSelected, int row, int column) {
 
             currentQuantity = (Integer) value;
             currentRow = row;
@@ -1009,7 +1094,8 @@ public class ServiceSelectionPanel extends JPanel {
     // Custom renderer for service table with alternating row colors and proper styling
     private class ServiceTableRenderer extends DefaultTableCellRenderer {
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
             Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             // Set font to non-bold for data
@@ -1043,7 +1129,8 @@ public class ServiceSelectionPanel extends JPanel {
     // Custom renderer for selected services table with alternating row colors and proper styling
     private class SelectedServicesTableRenderer extends DefaultTableCellRenderer {
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
             Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             // Set font to non-bold for data
@@ -1114,16 +1201,16 @@ public class ServiceSelectionPanel extends JPanel {
 
             // Apply blur using convolution
             float[] blurKernel = {
-                1f/16f, 2f/16f, 1f/16f,
-                2f/16f, 4f/16f, 2f/16f,
-                1f/16f, 2f/16f, 1f/16f
+                    1f / 16f, 2f / 16f, 1f / 16f,
+                    2f / 16f, 4f / 16f, 2f / 16f,
+                    1f / 16f, 2f / 16f, 1f / 16f
             };
 
             try {
                 java.awt.image.ConvolveOp blurOp = new java.awt.image.ConvolveOp(
-                    new java.awt.image.Kernel(3, 3, blurKernel),
-                    java.awt.image.ConvolveOp.EDGE_NO_OP,
-                    null
+                        new java.awt.image.Kernel(3, 3, blurKernel),
+                        java.awt.image.ConvolveOp.EDGE_NO_OP,
+                        null
                 );
 
                 // Apply blur effect multiple times for stronger blur
@@ -1149,9 +1236,9 @@ public class ServiceSelectionPanel extends JPanel {
         private void createFallbackOverlay() {
             // Simple fallback - semi-transparent dark overlay
             blurBuffer = new BufferedImage(
-                parentFrame.getWidth(),
-                parentFrame.getHeight(),
-                BufferedImage.TYPE_INT_ARGB
+                    parentFrame.getWidth(),
+                    parentFrame.getHeight(),
+                    BufferedImage.TYPE_INT_ARGB
             );
 
             Graphics2D g2d = blurBuffer.createGraphics();

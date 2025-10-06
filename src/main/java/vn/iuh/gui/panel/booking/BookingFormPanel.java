@@ -101,12 +101,15 @@ public class BookingFormPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
+                serviceOrdered.clear();
+                serviceOrdered.addAll(services);
+                updateTotalServicePrice(); // Update service price when services are selected
+            });
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(1, (services) -> {
-            serviceOrdered.clear();
-            serviceOrdered.addAll(services);
-            updateTotalServicePrice(); // Update service price when services are selected
-        });
+
+
         Main.addCard(servicePanel, SERVICE_ORDER.getName());
 
         // Room Information Labels
@@ -1045,7 +1048,7 @@ public class BookingFormPanel extends JPanel {
         boolean daDatTruoc = chkIsAdvanced.isSelected();
         List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
 
-        String maPhienDangNhap = "PN00000002"; // TODO - get actual shift assignment ID
+        String maPhienDangNhap = Main.getCurrentLoginSession(); // TODO - get actual shift assignment ID
 
         return new BookingCreationEvent(tenKhachHang, soDienThoai, cccd, moTa,
                                         ngayNhanPhong, ngayTraPhong, tongTienDuTinh, tienDatCoc, daDatTruoc,

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GoiDichVuServiceImpl implements GoiDichVuService {
-    GoiDichVuDao goiDichVuDao;
+    private final GoiDichVuDao goiDichVuDao;
 
     public GoiDichVuServiceImpl() {
         this.goiDichVuDao = new GoiDichVuDao();
@@ -33,32 +33,47 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
         return danhSachThongTinDichVu;
     }
 
-    // TODO: implement method
     @Override
     public boolean goiDichVu(String maChiTietDatPhong, List<DonGoiDichVu> danhSachDichVu, String maPhienDangNhap) {
-        // 2.5. Create RoomUsageServiceEntity & insert to DB
-        List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+
+        // 1. Tạo danh sách phòng dùng dịch vụ từ danh sách đơn gọi dịch vụ
         PhongDungDichVu phongDungDichVuMoiNhat = goiDichVuDao.timPhongDungDichVuMoiNhat();
-        String maPhongDungDichVuMoiNhat =
-                phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
-
-        for (DonGoiDichVu donGoiDichVu : danhSachDichVu) {
-            PhongDungDichVu phongDungDichVu = createRoomUsageServiceEntity(
-                    maPhongDungDichVuMoiNhat,
-                    maChiTietDatPhong,
-                    donGoiDichVu,
-                    maPhienDangNhap
-            );
-
-            danhSachPhongDungDichVu.add(phongDungDichVu);
-            maPhongDungDichVuMoiNhat = phongDungDichVu.getMaPhongDungDichVu();
+        if (danhSachDichVu.isEmpty()) {
+            System.out.println("Danh sách dịch vụ trống. Vui lòng kiểm tra lại.");
+            return false;
         }
 
         try {
+            goiDichVuDao.khoiTaoGiaoTac();
+            String maPhongDungDichVuMoiNhat =
+                    phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
+
+            // 2. Update Service Quantity
+            for (DonGoiDichVu dichVu : danhSachDichVu) {
+                goiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), dichVu.getSoLuong());
+            }
+
+            List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+            for (DonGoiDichVu donGoiDichVu : danhSachDichVu) {
+                PhongDungDichVu phongDungDichVu = createRoomUsageServiceEntity(
+                        maPhongDungDichVuMoiNhat,
+                        maChiTietDatPhong,
+                        donGoiDichVu,
+                        maPhienDangNhap
+                );
+
+                danhSachPhongDungDichVu.add(phongDungDichVu);
+                maPhongDungDichVuMoiNhat = phongDungDichVu.getMaPhongDungDichVu();
+            }
+
+            // 3. Thêm mới phòng dùng dịch vụ
             goiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
+
+            goiDichVuDao.thucHienGiaoTac();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Lỗi gọi dịch vụ: " + e.getMessage());
+            goiDichVuDao.hoanTacGiaoTac();
             return false;
         }
     }

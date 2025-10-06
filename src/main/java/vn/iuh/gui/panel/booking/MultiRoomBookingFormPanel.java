@@ -90,7 +90,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(selectedRooms.size(), (services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(selectedRooms.size(), null, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
             updateTotalServicePrice(); // Update service price when services are selected

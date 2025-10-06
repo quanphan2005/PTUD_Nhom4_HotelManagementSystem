@@ -24,6 +24,36 @@ public class GoiDichVuDao {
         this.connection = connection;
     }
 
+    public void khoiTaoGiaoTac() {
+        DatabaseUtil.enableTransaction(connection);
+    }
+
+    public void thucHienGiaoTac() {
+        try {
+            if (connection != null && !connection.getAutoCommit()) {
+                connection.commit();
+                DatabaseUtil.disableTransaction(connection);
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi commit transaction: " + e.getMessage());
+            DatabaseUtil.closeConnection(connection);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void hoanTacGiaoTac() {
+        try {
+            if (connection != null && !connection.getAutoCommit()) {
+                connection.rollback();
+                DatabaseUtil.disableTransaction(connection);
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi rollback transaction: " + e.getMessage());
+            DatabaseUtil.closeConnection(connection);
+            throw new RuntimeException(e);
+        }
+    }
+
     public void themPhongDungDichVu(List<PhongDungDichVu> danhSachPhongDungDichVu) {
         String query = "INSERT INTO PhongDungDichVu" +
                        " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
