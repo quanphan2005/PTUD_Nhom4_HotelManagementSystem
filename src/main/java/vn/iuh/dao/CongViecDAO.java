@@ -194,11 +194,11 @@ public class CongViecDAO {
 
     public List<RoomJob> findAllRoomJobNow(){
         String query = "select cv.ma_cong_viec, p.ma_phong,cv.ten_trang_thai ,cv.tg_bat_dau, cv.tg_ket_thuc, cv.da_xoa from Phong p\n" +
-                "outer apply (\n" +
-                "\tselect top 1 * from CongViec cv\n" +
-                "\twhere p.ma_phong = cv.ma_phong AND getdate() >= cv.tg_bat_dau and cv.da_xoa = 0\n" +
-                "\torder by cv.thoi_gian_tao\n" +
-                ") as cv";
+                        "outer apply (\n" +
+                        "\tselect top 1 * from CongViec cv\n" +
+                        "\twhere p.ma_phong = cv.ma_phong AND getdate() >= cv.tg_bat_dau and cv.da_xoa = 0\n" +
+                        "\torder by cv.thoi_gian_tao\n" +
+                        ") as cv";
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 

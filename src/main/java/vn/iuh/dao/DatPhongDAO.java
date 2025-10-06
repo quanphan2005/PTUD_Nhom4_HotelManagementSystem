@@ -144,7 +144,7 @@ public class DatPhongDAO {
                         "OUTER APPLY ( " +
                         "    SELECT TOP 1 cv.ten_trang_thai " +
                         "    FROM CongViec cv " +
-                        "    WHERE cv.ma_phong = p.ma_phong AND (GETDATE() BETWEEN cv.tg_bat_dau AND cv.tg_ket_thuc) and da_xoa = 0" +
+                        "    WHERE cv.ma_phong = p.ma_phong AND (GETDATE() >= cv.tg_bat_dau) and da_xoa = 0" +
                         ") AS cv";
         List<ThongTinPhong> thongTinPhongs = new ArrayList<>();
 
