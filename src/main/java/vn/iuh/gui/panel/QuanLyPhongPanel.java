@@ -478,8 +478,8 @@ public class QuanLyPhongPanel extends JPanel {
 
         Dimension btnSize = new Dimension(35, 35);
 
-        JButton editBtn = createIconOnlyButton("/icons/edit.png", btnSize, "arc: 10; background: #2563EB; foreground: white;");
-        JButton deleteBtn = createIconOnlyButton("/icons/delete.png", btnSize, "arc: 10; background: #DC2626; foreground: white;");
+        JButton editBtn = createIconOnlyButton("/icons/edit.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
+        JButton deleteBtn = createIconOnlyButton("/icons/delete.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
 
         buttonPanel.add(editBtn);
         buttonPanel.add(deleteBtn);
