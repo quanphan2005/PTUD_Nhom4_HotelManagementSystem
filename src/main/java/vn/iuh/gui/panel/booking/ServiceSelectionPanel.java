@@ -501,8 +501,6 @@ public class ServiceSelectionPanel extends JPanel {
                                           JOptionPane.INFORMATION_MESSAGE);
         }
 
-        resetPanel();
-
         String cardName = selectedRooms > 1 ? PanelName.MULTI_BOOKING.getName() : PanelName.BOOKING.getName();
         Main.showCard(cardName);
     }
