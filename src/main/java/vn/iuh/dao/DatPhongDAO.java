@@ -86,8 +86,6 @@ public class DatPhongDAO {
             PreparedStatement ps = connection.prepareStatement(query);
 
             for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                System.out.println(chiTietDatPhong.getMaPhong());
-
                 ps.setString(1, chiTietDatPhong.getMaChiTietDatPhong());
                 ps.setTimestamp(2, chiTietDatPhong.getTgNhanPhong());
                 ps.setTimestamp(3, chiTietDatPhong.getTgTraPhong());
@@ -133,14 +131,21 @@ public class DatPhongDAO {
     }
 
     public List<ThongTinPhong> timTatCaThongTinPhong() {
-        String query = "SELECT p.ma_phong, p.ten_phong, p.dang_hoat_dong, cv.ten_trang_thai, lp.phan_loai, lp.so_luong_khach" +
-                       ", gp.gia_ngay_moi, gp.gia_gio_moi" +
-                       " FROM Phong p" +
-                       " LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong" +
-                       " JOIN LoaiPhong lp ON lp.ma_loai_phong = p.ma_loai_phong" +
-                       " JOIN GiaPhong gp ON gp.ma_loai_phong = lp.ma_loai_phong" +
-                       " WHERE p.da_xoa = 0" +
-                       " ORDER BY gp.thoi_gian_tao DESC, p.ma_phong ASC";
+        String query = "SELECT p.ma_phong, p.ten_phong, p.dang_hoat_dong, cv.ten_trang_thai, " +
+                        "lp.phan_loai, lp.so_luong_khach, gp.gia_ngay_moi, gp.gia_gio_moi " +
+                        "FROM Phong p " +
+                        "LEFT JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong " +
+                        "OUTER APPLY ( " +
+                        "    SELECT TOP 1 gp.gia_ngay_moi, gp.gia_gio_moi " +
+                        "    FROM GiaPhong gp " +
+                        "    WHERE gp.ma_loai_phong = lp.ma_loai_phong " +
+                        "    ORDER BY gp.thoi_gian_tao DESC " +
+                        ") AS gp " +
+                        "OUTER APPLY ( " +
+                        "    SELECT TOP 1 cv.ten_trang_thai " +
+                        "    FROM CongViec cv " +
+                        "    WHERE cv.ma_phong = p.ma_phong AND (GETDATE() >= cv.tg_bat_dau) and da_xoa = 0" +
+                        ") AS cv";
         List<ThongTinPhong> thongTinPhongs = new ArrayList<>();
 
         try {
@@ -159,12 +164,13 @@ public class DatPhongDAO {
         return thongTinPhongs;
     }
 
+
     public List<ThongTinDatPhong> timTatCaThongTinDatPhong(List<String> phongKhongKhaDungs) {
         if (phongKhongKhaDungs.isEmpty())
             return new ArrayList<>();
 
         StringBuilder query = new StringBuilder(
-                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
                 " FROM Phong p" +
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
@@ -201,12 +207,14 @@ public class DatPhongDAO {
         return thongTinDatPhongs;
     }
 
+
+
     public List<ThongTinDatPhong> timThongTinDatPhongTrongKhoang(Timestamp tgNhanPhong, Timestamp tgTraPhong, List<String> danhSachMaPhong) {
         if (danhSachMaPhong.isEmpty())
             return new ArrayList<>();
 
         StringBuilder query = new StringBuilder(
-                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
                 " FROM Phong p" +
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
@@ -290,23 +298,6 @@ public class DatPhongDAO {
         }
     }
 
-    public LichSuDiVao timLichSuDiVaoMoiNhat() {
-        String query = "SELECT TOP 1 * FROM LichSuDiVao ORDER BY ma_lich_su_di_vao DESC";
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-
-            var rs = ps.executeQuery();
-            if (rs.next())
-                return chuyenKetQuaThanhLichSuDiVao(rs);
-            else
-                return null;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private ThongTinPhong chuyenKetQuaThanhThongTinPhong(ResultSet rs) {
         try {
             return new ThongTinPhong(
@@ -329,6 +320,7 @@ public class DatPhongDAO {
             return new ThongTinDatPhong(
                     rs.getString("ma_phong"),
                     rs.getString("ten_khach_hang"),
+                    rs.getString("ma_chi_tiet_dat_phong"),
                     rs.getTimestamp("tg_nhan_phong"),
                     rs.getTimestamp("tg_tra_phong")
             );
@@ -373,16 +365,50 @@ public class DatPhongDAO {
         }
     }
 
-    private LichSuDiVao chuyenKetQuaThanhLichSuDiVao(ResultSet rs) {
+    public ThongTinDatPhong timDonDatPhongChoCheckInCuaPhong(String maPhong, Timestamp tgBatDau, Timestamp tgKetThuc) {
+        String query = "SELECT p.ma_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong " +
+                        "FROM Phong p " +
+                        "LEFT JOIN ChiTietDatPhong ctdp ON ctdp.ma_phong = p.ma_phong " +
+                        "LEFT JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong " +
+                        "LEFT JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
+                        "WHERE  p.ma_phong = ? and ctdp.tg_nhan_phong BETWEEN dateadd(second, -10 , ?) AND ?";
         try {
-            return new LichSuDiVao(
-                    rs.getString("ma_lich_su_di_vao"),
-                    rs.getBoolean("la_lan_dau_tien"),
-                    rs.getString("ma_chi_tiet_dat_phong"),
-                    rs.getTimestamp("thoi_gian_tao")
-            );
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maPhong);
+            ps.setTimestamp(2, tgBatDau);
+            ps.setTimestamp(3, tgKetThuc);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhThongTinDatPhong(rs);
+            else
+                return null;
+
         } catch (SQLException e) {
-            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành LichSuDiVao: " + e.getMessage());
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
+    }
+
+    public DonDatPhong getDonDatPhongById(String maDonDatPhong) {
+        String query = "SELECT * FROM DonDatPhong WHERE ma_don_dat_phong = ? AND da_xoa = 0";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhDonDatPhong(rs);
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
         }
     }
 }

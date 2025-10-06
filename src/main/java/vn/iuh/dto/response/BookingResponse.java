@@ -13,6 +13,7 @@ public class BookingResponse {
     private double dailyPrice;
     private double hourlyPrice;
     private String customerName;
+    private String maChiTietDatPhong;
     private Timestamp timeIn;
     private Timestamp timeOut;
 
@@ -26,6 +27,23 @@ public class BookingResponse {
         this.numberOfCustomers = numberOfCustomers;
         this.dailyPrice = dailyPrice;
         this.hourlyPrice = hourlyPrice;
+    }
+
+    public BookingResponse(String roomId, String roomName, boolean isActive, String roomStatus, String roomType,
+                           String numberOfCustomers, double dailyPrice, double hourlyPrice, String customerName,
+                           String maChiTietDatPhong, Timestamp timeIn, Timestamp timeOut) {
+        this.roomId = roomId;
+        this.roomName = roomName;
+        this.isActive = isActive;
+        this.roomStatus = roomStatus;
+        this.roomType = roomType;
+        this.numberOfCustomers = numberOfCustomers;
+        this.dailyPrice = dailyPrice;
+        this.hourlyPrice = hourlyPrice;
+        this.customerName = customerName;
+        this.maChiTietDatPhong = maChiTietDatPhong;
+        this.timeIn = timeIn;
+        this.timeOut = timeOut;
     }
 
     @Override
@@ -60,8 +78,9 @@ public class BookingResponse {
                             customerName, timeIn, timeOut);
     }
 
-    public void updateBookingInfo(String customerName, Timestamp timeIn, Timestamp timeOut) {
+    public void updateBookingInfo(String customerName, String maChiTietDatPhong, Timestamp timeIn, Timestamp timeOut) {
         this.customerName = customerName;
+        this.maChiTietDatPhong = maChiTietDatPhong;
         this.timeIn = timeIn;
         this.timeOut = timeOut;
     }
@@ -104,6 +123,10 @@ public class BookingResponse {
 
     public String getCustomerName() {
         return customerName;
+    }
+
+    public String getMaChiTietDatPhong() {
+        return maChiTietDatPhong;
     }
 
     public Timestamp getTimeIn() {

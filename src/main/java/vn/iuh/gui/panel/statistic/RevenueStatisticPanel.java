@@ -23,6 +23,7 @@ public class RevenueStatisticPanel extends JPanel {
     private JScrollPane scrollTable;
     private JPanel pnlVisualDisplay;
     private CardLayout cardLayout;
+    private JPanel pnlTextDisplay;
 
     private void init(){
         createTopPanel();
@@ -57,7 +58,7 @@ public class RevenueStatisticPanel extends JPanel {
 
         // Ô [0,0] StartTime
         JPanel pnlStartTime = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblStartTime = new JLabel("Thời gian bắt đầu:");
+        JLabel lblStartTime = new JLabel("Thời gian bắt đầu: ");
         lblStartTime.setFont(CustomUI.smallFont);
         datePickerStart = new DateChooser();
 
@@ -76,7 +77,7 @@ public class RevenueStatisticPanel extends JPanel {
 
         // Ô [0,1] Employee + Button
         JPanel pnlEmployee = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        lblEmployee = new JLabel("Chọn nhân viên");
+        lblEmployee = new JLabel("Chọn nhân viên     ");
         lblEmployee.setFont(CustomUI.smallFont);
         lblEmployee.setForeground(CustomUI.black);
         JComboBox<String> cmbEmployee = new JComboBox<>(new String[]{"Alice", "Bob", "Charlie"});
@@ -111,6 +112,11 @@ public class RevenueStatisticPanel extends JPanel {
         pnlRadio.add(radTable);
         pnlRadio.setBackground(CustomUI.white);
 
+        // Thêm ActionListener để chuyển đổi giữa hai card panel
+        radGraph.addActionListener(e -> cardLayout.show(pnlVisualDisplay, "chart"));
+        radTable.addActionListener(e -> cardLayout.show(pnlVisualDisplay, "table"));
+        radTable.setSelected(true); // Mặc định hiển thị bảng
+
         // Thêm tất cả vào pnlFilter
         pnlFilter.add(pnlStartTime);   // [0,0]
         pnlFilter.add(pnlEmployee);    // [0,1]
@@ -121,14 +127,107 @@ public class RevenueStatisticPanel extends JPanel {
         pnlMain.add(pnlFilter);
     }
     private void createResultPanel(){
-//        pnlMain.add(Box.createVerticalStrut(600));
-        pnlResult = new JPanel();
-
-
+        pnlResult = new JPanel(new BorderLayout());
         pnlVisualDisplay = new JPanel();
         cardLayout = new CardLayout();
         pnlVisualDisplay.setLayout(cardLayout);
-//        pnlVisualDisplay.add(scrollTable, "table");
+        createTableResult();
+        createCharPanel();
+        pnlResult.add(pnlVisualDisplay, BorderLayout.CENTER);
+
+        // Tạo panel text display với GridBagLayout, 2 hàng 3 cột
+        pnlTextDisplay = new JPanel(new GridBagLayout());
+        pnlTextDisplay.setBackground(CustomUI.lightGray);
+        pnlTextDisplay.setPreferredSize(new Dimension(0, 120));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 30, 5, 30);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+
+        // Hàng 1
+        gbc.gridy = 0;
+        gbc.gridx = 0;
+        JLabel lblTotalInvoice = new JLabel("Tổng số hóa đơn:");
+        lblTotalInvoice.setFont(CustomUI.smallFont);
+        lblTotalInvoice.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblTotalInvoice, gbc);
+        gbc.gridx = 1;
+        JLabel lblDeposit = new JLabel("Tiền cọc:");
+        lblDeposit.setFont(CustomUI.smallFont);
+        lblDeposit.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblDeposit, gbc);
+        gbc.gridx = 2;
+        JLabel lblTotalRevenue = new JLabel("Tổng doanh thu:");
+        lblTotalRevenue.setFont(CustomUI.smallFont);
+        lblTotalRevenue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblTotalRevenue, gbc);
+
+        // Hàng 2
+        gbc.insets = new Insets(25, 30, 5, 30);
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        JLabel lblService = new JLabel("Doanh thu dịch vụ:");
+        lblService.setFont(CustomUI.smallFont);
+        lblService.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblService, gbc);
+        gbc.gridx = 1;
+        JLabel lblRoom = new JLabel("Tiền phòng:");
+        lblRoom.setFont(CustomUI.smallFont);
+        lblRoom.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblRoom, gbc);
+        gbc.gridx = 2;
+        JLabel lblTax = new JLabel("Tổng thu thuế:");
+        lblTax.setFont(CustomUI.smallFont);
+        lblTax.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblTax, gbc);
+
+        // Hàng 1 - Giá trị
+        gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(5, 200, 5, 30);
+        gbc.weightx = 1.0;
+        JLabel lblTotalInvoiceValue = new JLabel("30");
+        lblTotalInvoiceValue.setFont(CustomUI.smallFont);
+        lblTotalInvoiceValue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblTotalInvoiceValue, gbc); // Tổng số hóa đơn
+        gbc.gridx = 1;
+        gbc.insets = new Insets(5, 180, 5, 30);
+        JLabel lblDepositValue = new JLabel("25.380.000");
+        lblDepositValue.setFont(CustomUI.smallFont);
+        lblDepositValue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblDepositValue, gbc); // Tiền cọc
+        gbc.gridx = 2;
+        gbc.insets = new Insets(5, 200, 5, 30);
+        JLabel lblTotalRevenueValue = new JLabel("1.153.570");
+        lblTotalRevenueValue.setFont(CustomUI.smallFont);
+        lblTotalRevenueValue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblTotalRevenueValue, gbc); // Tổng doanh thu
+
+        // Hàng 2 - Giá trị
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(25, 200, 5, 30);
+        gbc.weightx = 1.0;
+        JLabel lblServiceValue = new JLabel("396.200");
+        lblServiceValue.setFont(CustomUI.smallFont);
+        lblServiceValue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblServiceValue, gbc); // Dịch vụ
+        gbc.gridx = 1;
+        gbc.insets = new Insets(25, 180, 5, 30);
+        JLabel lblRoomValue = new JLabel("652.500");
+        lblRoomValue.setFont(CustomUI.smallFont);
+        lblRoomValue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblRoomValue, gbc); // Tiền phòng
+        gbc.gridx = 2;
+        gbc.insets = new Insets(25, 200, 5, 30);
+        JLabel lblTaxValue = new JLabel("0");
+        lblTaxValue.setFont(CustomUI.smallFont);
+        lblTaxValue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblTaxValue, gbc); // Thuế
+
+        pnlResult.add(pnlTextDisplay, BorderLayout.SOUTH);
+        pnlMain.add(pnlResult);
     }
 
     private void createTableResult(){
@@ -136,11 +235,16 @@ public class RevenueStatisticPanel extends JPanel {
         model = new DefaultTableModel(null, cols);
         table = new JTable(model);
         scrollTable = new JScrollPane(table);
-        cardLayout.show(scrollTable, "table");
+        pnlVisualDisplay.add(scrollTable, "table");
     }
 
     private void createCharPanel(){
-
+        JPanel chartPanel = new JPanel();
+        chartPanel.setLayout(new BorderLayout());
+        JLabel lblChart = new JLabel("Biểu đồ doanh thu", SwingConstants.CENTER);
+        lblChart.setFont(CustomUI.normalFont);
+        chartPanel.add(lblChart, BorderLayout.CENTER);
+        pnlVisualDisplay.add(chartPanel, "chart");
     }
 
 

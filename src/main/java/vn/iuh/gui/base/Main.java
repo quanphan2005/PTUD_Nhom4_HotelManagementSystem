@@ -7,7 +7,8 @@ package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import vn.iuh.gui.panel.QuanLyPhongPanel;
-import vn.iuh.gui.panel.ReservationManagementPanel;
+import vn.iuh.gui.panel.booking.ReservationFormManagementPanel;
+import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 
 import javax.swing.*;
@@ -29,6 +30,8 @@ public class Main extends JFrame {
     private JButton btnLogOut;
     private JPanel pnlCenterWrapper;
     private RoundedWrapperPanel pnlWrapperCenter;
+
+    private static String maPhienDangNhap = "PN00000002";
 
     public void init() {
         //Set hiển thị mặc định toàn màn hình
@@ -139,6 +142,10 @@ public class Main extends JFrame {
         pnlCenter.add(panel, name);
     }
 
+    public static String getCurrentLoginSession() {
+        return maPhienDangNhap;
+    }
+
     //Tạo các màn hình con cho cardLayout (màn hình chức năng)
     public void initializeMainPanels(){
         JPanel pink = new JPanel();
@@ -146,12 +153,14 @@ public class Main extends JFrame {
         JPanel blue = new JPanel();
         blue.setBackground(Color.blue);
         QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
-        ReservationManagementPanel tmp = new ReservationManagementPanel();
+        ReservationManagementPanel reservationManagementPanel = new ReservationManagementPanel();
+        ReservationFormManagementPanel reservationFormManagementPanel = new ReservationFormManagementPanel();
         RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
         pnlCenter.add(pink, "dsadsa");
         pnlCenter.add(blue, "Inbox");
-        pnlCenter.add(tmp, "Quản lý đặt phòng");
         pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
+        pnlCenter.add(reservationManagementPanel, "Quản lý đặt phòng");
+        pnlCenter.add(reservationFormManagementPanel, "Quản lý phiếu đặt phòng");
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
         showCard("Quản lý đặt phòng");
     }

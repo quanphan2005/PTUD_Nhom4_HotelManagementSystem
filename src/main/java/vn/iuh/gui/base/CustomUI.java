@@ -17,9 +17,22 @@ public class CustomUI {
     public static final Color purple = new Color(166, 103, 239);
     public static final Color gray = new Color(200, 200, 200);
     public static final Color cyan = new Color(0, 206, 209);
+
     public static final Font verySmallFont = new Font("Arial", Font.BOLD, 13);
     public static final Font smallFont = new Font("Arial", Font.BOLD, 16);
     public static final Font normalFont = new Font("Arial", Font.BOLD, 20);
     public static final Font bigFont = new Font("Arial", Font.BOLD, 24);
     public static final Font veryBigFont = new Font("Arial", Font.BOLD, 30);
+
+
+    public static final Font tableHeaderFont = new Font("Arial", Font.BOLD, 16);
+    public static final Font tableDataFont = new Font("Arial", Font.PLAIN, 13); // Non-bold for data
+
+    public static final Color tableHeaderBackground = new Color(52, 152, 219); // Professional blue
+    public static final Color tableHeaderForeground = Color.WHITE;
+    public static final Color tableBorder = new Color(189, 195, 199); // Light gray border
+    public static final Color tableRowEven = new Color(248, 249, 250); // Very light gray for alternating rows
+    public static final Color tableRowOdd = Color.WHITE;
+    public static final Color tableSelection = new Color(174, 214, 241); // Light blue selection
+
 }

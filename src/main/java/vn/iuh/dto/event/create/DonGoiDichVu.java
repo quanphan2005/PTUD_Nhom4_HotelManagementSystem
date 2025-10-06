@@ -28,6 +28,10 @@ public class DonGoiDichVu {
         return soLuong;
     }
 
+    public void setSoLuong(int soLuong) {
+        this.soLuong = soLuong;
+    }
+
     public boolean isDuocTang() {
         return duocTang;
     }

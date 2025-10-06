@@ -2,7 +2,7 @@ package vn.iuh.gui.base;
 
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
-import vn.iuh.gui.panel.BookingFormPanel;
+import vn.iuh.gui.panel.booking.BookingFormPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,9 +13,36 @@ import java.util.Objects;
 
 public class RoomItem extends JPanel {
     private BookingResponse bookingResponse;
+    private boolean isSelected = false;
+    private boolean isMultiBookingMode = false;
+    private MultiRoomSelectionCallback selectionCallback;
+    private JPanel overlayPanel;
+
+    // Interface for multi-room selection callback
+    public interface MultiRoomSelectionCallback {
+        void onRoomSelectionChanged(BookingResponse room, boolean selected);
+    }
 
     public BookingResponse getBookingResponse() {
         return bookingResponse;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.isSelected = selected;
+        updateVisualState();
+    }
+
+    public void setMultiBookingMode(boolean multiBookingMode) {
+        this.isMultiBookingMode = multiBookingMode;
+        updateVisualState();
+    }
+
+    public void setSelectionCallback(MultiRoomSelectionCallback callback) {
+        this.selectionCallback = callback;
     }
 
     public RoomItem(BookingResponse bookingResponse) {
@@ -29,26 +56,145 @@ public class RoomItem extends JPanel {
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                String cardName = "Đặt phòng";
-                BookingFormPanel bookingFormPanel = new BookingFormPanel(bookingResponse);
+                if (isMultiBookingMode) {
+                    // Toggle selection in multi-booking mode
+                    isSelected = !isSelected;
+                    updateVisualState();
 
-                Main.addCard(bookingFormPanel, cardName);
-                Main.showCard(cardName);
+                    if (selectionCallback != null) {
+                        selectionCallback.onRoomSelectionChanged(bookingResponse, isSelected);
+                    }
+                } else {
+                    // Original single room booking behavior
+                    String cardName = "Đặt phòng";
+                    BookingFormPanel bookingFormPanel = new BookingFormPanel(bookingResponse);
+
+                    Main.addCard(bookingFormPanel, cardName);
+                    Main.showCard(cardName);
+                }
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
                 setCursor(new Cursor(Cursor.HAND_CURSOR));
-                // Add subtle hover effect
-                setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
+                if (!isMultiBookingMode || !isSelected) {
+                    setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
+                }
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+                if (!isMultiBookingMode || !isSelected) {
+                    setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+                }
             }
         });
+    }
+
+    private void updateVisualState() {
+        if (isMultiBookingMode && isSelected) {
+            // Apply blur effect and show check icon
+            applySelectionEffect();
+        } else {
+            // Remove selection effects
+            removeSelectionEffect();
+        }
+        repaint();
+    }
+
+    private void applySelectionEffect() {
+        // Create overlay panel if it doesn't exist
+        if (overlayPanel == null) {
+            overlayPanel = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+
+                    // Create blur effect
+                    Graphics2D g2d = (Graphics2D) g.create();
+                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+                    g2d.setColor(new Color(100, 149, 237, 150)); // Semi-transparent blue
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
+                    g2d.dispose();
+                }
+            };
+            overlayPanel.setOpaque(false);
+            overlayPanel.setLayout(new BorderLayout());
+
+            // Add big check icon
+            JLabel checkIcon = createBigCheckIcon();
+            overlayPanel.add(checkIcon, BorderLayout.CENTER);
+        }
+
+        // Add overlay if not already added (preserve original BorderLayout)
+        if (overlayPanel.getParent() != this) {
+            // Add overlay panel to this component
+            add(overlayPanel, BorderLayout.CENTER, 0); // Add as first component (on top)
+
+            // Ensure proper layering by validating the component hierarchy
+//            validate();
+        }
+
+        // Set overlay bounds to cover the entire component area
+        SwingUtilities.invokeLater(() -> {
+            overlayPanel.setBounds(0, 0, getWidth(), getHeight());
+            overlayPanel.setVisible(true);
+
+            // Ensure the overlay is on top
+            if (overlayPanel.getParent() == this) {
+                setComponentZOrder(overlayPanel, 0);
+            }
+
+            repaint();
+        });
+
+        setBorder(BorderFactory.createLineBorder(new Color(0, 123, 255), 3)); // Blue selection border
+    }
+
+    private void removeSelectionEffect() {
+        if (overlayPanel != null) {
+            SwingUtilities.invokeLater(() -> {
+                overlayPanel.setVisible(false);
+                // Remove overlay from parent to avoid layout issues
+                if (overlayPanel.getParent() == this) {
+                    remove(overlayPanel);
+                    revalidate();
+                    repaint();
+                }
+            });
+        }
+        setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+    }
+
+    private JLabel createBigCheckIcon() {
+        // Try to load check icon from resources first
+        try {
+            ImageIcon checkIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/checked.png")));
+            checkIcon = new ImageIcon(checkIcon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH));
+
+            JLabel iconLabel = new JLabel(checkIcon, SwingConstants.CENTER);
+            iconLabel.setOpaque(false);
+            return iconLabel;
+        } catch (Exception e) {
+            // Fallback to text-based check icon
+            return createTextCheckIcon();
+        }
+    }
+
+    private JLabel createTextCheckIcon() {
+        JLabel checkLabel = new JLabel("✓", SwingConstants.CENTER);
+        checkLabel.setFont(new Font("Arial", Font.BOLD, 48));
+        checkLabel.setForeground(Color.WHITE);
+        checkLabel.setOpaque(false);
+
+        // Add shadow effect
+        checkLabel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK, 2),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+
+        return checkLabel;
     }
 
     private void createUI() {
@@ -159,17 +305,17 @@ public class RoomItem extends JPanel {
         }
 
         if (Objects.isNull(roomStatus)) {
-            roomStatus = RoomStatus.ROOM_AVAILABLE_STATUS; // Default to available if unknown
+            roomStatus = RoomStatus.ROOM_EMPTY_STATUS; // Default to available if unknown
         }
 
         return switch (roomStatus) {
-            case ROOM_AVAILABLE_STATUS -> "/icons/checked.png";
-            case ROOM_USING_STATUS -> "/icons/checkin.png";
+            case ROOM_EMPTY_STATUS -> "/icons/checked.png";
+            case ROOM_USING_STATUS -> "/icons/using.png";
             case ROOM_BOOKED_STATUS -> "/icons/calendar.png";
-            case ROOM_CHECKING_STATUS -> "/icons/room.png";
-            case ROOM_CHECKOUT_LATE_STATUS -> "/icons/error.png";
-            case ROOM_MAINTENANCE_STATUS -> "/icons/transfer.png";
-            case ROOM_CLEANING_STATUS -> "/icons/room.png";
+            case ROOM_CHECKING_STATUS -> "/icons/checking.png";
+            case ROOM_CHECKOUT_LATE_STATUS -> "/icons/warning.png";
+            case ROOM_MAINTENANCE_STATUS -> "/icons/maintainance.png";
+            case ROOM_CLEANING_STATUS -> "/icons/cleaning.png";
         };
     }
 
@@ -180,12 +326,12 @@ public class RoomItem extends JPanel {
             roomStatus = RoomStatus.valueOf(status.toUpperCase().replace(" ", "_"));
         } catch (IllegalArgumentException e) {
             System.out.println("Unknown room status: " + status);
-            roomStatus = RoomStatus.ROOM_AVAILABLE_STATUS; // Default to available if unknown
+            roomStatus = RoomStatus.ROOM_EMPTY_STATUS; // Default to available if unknown
         }
 
 
         String emoji = switch (roomStatus) {
-            case ROOM_AVAILABLE_STATUS -> "✅";
+            case ROOM_EMPTY_STATUS -> "✅";
             case ROOM_USING_STATUS -> "🏠";
             case ROOM_BOOKED_STATUS -> "📅";
             case ROOM_CHECKING_STATUS -> "🛏️";
@@ -235,12 +381,14 @@ public class RoomItem extends JPanel {
     }
 
     private boolean isEmptyRoom(String status) {
-        return status.equals("còn trống") || status.equals("đang hoạt động");
+        return status.equalsIgnoreCase(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
     }
 
     private boolean isOccupiedRoom(String status) {
-        return status.equals("đang sử dụng") || status.equals("đặt trước") ||
-                status.equals("đang kiểm tra") || status.equals("trả phòng trễ");
+        return status.equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())
+               || status.equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus())
+               || status.equalsIgnoreCase(RoomStatus.ROOM_CHECKING_STATUS.getStatus())
+               || status.equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
     }
 
     private JPanel createEmptyRoomPanel() {
@@ -313,7 +461,11 @@ public class RoomItem extends JPanel {
 
     private JPanel createOccupiedRoomPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(new Color(17, 216, 230)); // Light blue background
+        if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
+            panel.setBackground(CustomUI.red);
+        }
+        else
+            panel.setBackground(new Color(17, 216, 230)); // Light blue background
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
@@ -447,5 +599,13 @@ public class RoomItem extends JPanel {
 
     public Object getCapacity() {
         return bookingResponse.getNumberOfCustomers();
+    }
+
+    public boolean setBookingResponseStatus(String status){
+        if(!status.equalsIgnoreCase(this.getBookingResponse().getRoomStatus())){
+            this.bookingResponse.setRoomStatus(status);
+            return true;
+        }
+        return false;
     }
 }

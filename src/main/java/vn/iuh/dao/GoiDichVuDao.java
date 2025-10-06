@@ -24,8 +24,37 @@ public class GoiDichVuDao {
         this.connection = connection;
     }
 
-    public void themPhongDungDichVu(String maPhienDangNhap,
-                                       List<PhongDungDichVu> phongDungDichVus) {
+    public void khoiTaoGiaoTac() {
+        DatabaseUtil.enableTransaction(connection);
+    }
+
+    public void thucHienGiaoTac() {
+        try {
+            if (connection != null && !connection.getAutoCommit()) {
+                connection.commit();
+                DatabaseUtil.disableTransaction(connection);
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi commit transaction: " + e.getMessage());
+            DatabaseUtil.closeConnection(connection);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void hoanTacGiaoTac() {
+        try {
+            if (connection != null && !connection.getAutoCommit()) {
+                connection.rollback();
+                DatabaseUtil.disableTransaction(connection);
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi rollback transaction: " + e.getMessage());
+            DatabaseUtil.closeConnection(connection);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void themPhongDungDichVu(List<PhongDungDichVu> danhSachPhongDungDichVu) {
         String query = "INSERT INTO PhongDungDichVu" +
                        " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
                        " VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -33,14 +62,14 @@ public class GoiDichVuDao {
         try {
             PreparedStatement ps = connection.prepareStatement(query);
 
-            for (PhongDungDichVu phongDungDichVu : phongDungDichVus) {
+            for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu) {
                 ps.setString(1, phongDungDichVu.getMaPhongDungDichVu());
                 ps.setInt(2, phongDungDichVu.getSoLuong());
                 ps.setDouble(3, phongDungDichVu.getGiaThoiDiemDo());
                 ps.setBoolean(4, phongDungDichVu.getDuocTang());
                 ps.setString(5, phongDungDichVu.getMaChiTietDatPhong());
                 ps.setString(6, phongDungDichVu.getMaDichVu());
-                ps.setString(7, maPhienDangNhap);
+                ps.setString(7, phongDungDichVu.getMaPhienDangNhap());
 
                 ps.addBatch();
             }

@@ -88,6 +88,15 @@ public class IconUtil {
         }
     }
 
+    public static ImageIcon createCalculateIcon() {
+        try {
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource("/icons/calculate.png")));
+            return new ImageIcon(icon.getImage().getScaledInstance(128, 128, Image.SCALE_SMOOTH));
+        } catch (Exception e) {
+            return createColoredIcon(new Color(255, 193, 7), "🧮"); // Amber for calculate
+        }
+    }
+
     public static ImageIcon createColoredIcon(Color bgColor, String emoji) {
         int size = 48;
         java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB);
@@ -117,6 +126,4 @@ public class IconUtil {
         g2d.dispose();
         return new ImageIcon(image);
     }
-
-
 }
