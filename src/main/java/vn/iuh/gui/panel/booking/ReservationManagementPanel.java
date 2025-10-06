@@ -529,6 +529,7 @@ public class ReservationManagementPanel extends JPanel {
 
             // Apply all filters
             if (passesAllFilters(bookingResponse)) {
+                System.out.println("room_id: " + bookingResponse.getRoomId());
                 filteredRooms.add(roomItem);
             }
         }
@@ -610,6 +611,36 @@ public class ReservationManagementPanel extends JPanel {
         long diffInHours = diffInMillis / (1000 * 60 * 60);
 
         return diffInHours >= 1;
+    }
+
+    public void refreshPanel() {
+
+        // Reset RoomItem data
+        initData();
+
+        // Reset filter form to defaults
+        Date today = new Date();
+        Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
+        roomFilter = new RoomFilter("TẤT CẢ", 1, today, tomorrow, "Tất cả");
+
+        cmbRoomType.setSelectedIndex(0);
+        cmbCapacity.setSelectedIndex(0);
+        spnCheckInDate.setValue(today);
+        spnCheckOutDate.setValue(tomorrow);
+
+        search();
+        refreshFilterBtn();
+    }
+
+    private void refreshFilterBtn() {
+//        totalRooms = allRoomItems != null ? allRoomItems.size() : 0;
+//        availableCount = getStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
+//        bookedCount = getStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
+//        checkingCount = getStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
+//        usingCount = getStatusCount(RoomStatus.ROOM_USING_STATUS.getStatus());
+//        lateCount = getStatusCount(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+//        cleaningCount = getStatusCount(RoomStatus.ROOM_CLEANING_STATUS.getStatus());
+//        maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
     }
 
     // Internal class to hold current filter state

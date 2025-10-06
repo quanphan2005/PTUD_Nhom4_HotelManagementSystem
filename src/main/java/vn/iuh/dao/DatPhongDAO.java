@@ -214,7 +214,7 @@ public class DatPhongDAO {
             return new ArrayList<>();
 
         StringBuilder query = new StringBuilder(
-                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
                 " FROM Phong p" +
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +

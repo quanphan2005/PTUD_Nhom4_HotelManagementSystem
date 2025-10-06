@@ -29,9 +29,7 @@ public class RefreshManager {
 
     // Individual refresh methods
     public static void refreshReservationManagementPanel() {
-        Main.removeCard(reservationManagementPanel);
-        reservationManagementPanel = new ReservationManagementPanel();
-        Main.addCard(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
+        reservationManagementPanel.refreshPanel();
     }
 
     public static void refreshReservationFormManagementPanel() {

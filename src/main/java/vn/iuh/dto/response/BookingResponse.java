@@ -125,6 +125,10 @@ public class BookingResponse {
         return customerName;
     }
 
+    public String getMaChiTietDatPhong() {
+        return maChiTietDatPhong;
+    }
+
     public Timestamp getTimeIn() {
         return timeIn;
     }

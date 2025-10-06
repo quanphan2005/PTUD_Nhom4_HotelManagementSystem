@@ -64,7 +64,6 @@ public class BookingServiceImpl implements BookingService {
                 bookingCreationEvent.getDanhSachMaPhong()
         );
 
-
         // 1.2 If any room is already booked in the given time range, return false
         if (!danhSachThongTinDatPhong.isEmpty()) {
             System.out.println("Có phòng đã được đặt trong khoảng thời gian này: ");
