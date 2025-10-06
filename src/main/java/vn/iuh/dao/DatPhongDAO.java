@@ -144,7 +144,7 @@ public class DatPhongDAO {
                         "OUTER APPLY ( " +
                         "    SELECT TOP 1 cv.ten_trang_thai " +
                         "    FROM CongViec cv " +
-                        "    WHERE cv.ma_phong = p.ma_phong AND (GETDATE() BETWEEN cv.tg_bat_dau AND cv.tg_ket_thuc) and da_xoa = 0" +
+                        "    WHERE cv.ma_phong = p.ma_phong AND (GETDATE() >= cv.tg_bat_dau) and da_xoa = 0" +
                         ") AS cv";
         List<ThongTinPhong> thongTinPhongs = new ArrayList<>();
 
@@ -366,7 +366,7 @@ public class DatPhongDAO {
     }
 
     public ThongTinDatPhong timDonDatPhongChoCheckInCuaPhong(String maPhong, Timestamp tgBatDau, Timestamp tgKetThuc) {
-        String query = "SELECT p.ma_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, kh.ten_khach_hang " +
+        String query = "SELECT p.ma_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong " +
                         "FROM Phong p " +
                         "LEFT JOIN ChiTietDatPhong ctdp ON ctdp.ma_phong = p.ma_phong " +
                         "LEFT JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong " +

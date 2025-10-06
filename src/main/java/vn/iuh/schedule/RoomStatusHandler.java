@@ -108,7 +108,6 @@ public class RoomStatusHandler implements Job {
     }
 
     private String handleCheckingRoomSuccess(RoomJob rj,BookingResponse res) {
-        System.out.println("Xử lý chuyển trạng thái phòng " + rj.getRoomId() + " từ đang check-in sang đang sử dụng");
         if (res == null) {
             System.out.println("lỗi thêm công việc cho phòng" + rj.getRoomId());
             return null;
