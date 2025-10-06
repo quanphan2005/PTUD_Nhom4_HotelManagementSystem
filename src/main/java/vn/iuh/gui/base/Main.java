@@ -6,6 +6,7 @@
 package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import vn.iuh.gui.panel.QuanLyPhongPanel;
 import vn.iuh.gui.panel.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 
@@ -144,11 +145,13 @@ public class Main extends JFrame {
         pink.setBackground(Color.cyan);
         JPanel blue = new JPanel();
         blue.setBackground(Color.blue);
+        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
         ReservationManagementPanel tmp = new ReservationManagementPanel();
         RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
         pnlCenter.add(pink, "dsadsa");
         pnlCenter.add(blue, "Inbox");
         pnlCenter.add(tmp, "Quản lý đặt phòng");
+        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
         showCard("Quản lý đặt phòng");
     }
