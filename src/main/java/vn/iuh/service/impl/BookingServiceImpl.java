@@ -9,6 +9,7 @@ import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.entity.*;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
@@ -214,6 +215,25 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public List<ReservationFormResponse> getAllReservationForms() {
+        System.out.println("Fetching all reservation forms...");
+        List<ThongTinDatPhong> danhSachThongTinDatPhong = datPhongDAO.timTatCaThongTinDatPhong();
+
+        List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
+        for (ThongTinDatPhong thongTinDatPhong : danhSachThongTinDatPhong) {
+            reservationFormResponses.add(new ReservationFormResponse(
+                    thongTinDatPhong.getTenKhachHang(),
+                    thongTinDatPhong.getMaDonDatPhong(),
+                    thongTinDatPhong.getMaPhong(),
+                    thongTinDatPhong.getTgNhanPhong(),
+                    thongTinDatPhong.getTgTraPhong()
+            ));
+        }
+
+        return reservationFormResponses;
+    }
+
+    @Override
     public List<BookingResponse> getAllBookingInfo() {
         // Get All Room Info
         List<ThongTinPhong> thongTinPhongs = datPhongDAO.timTatCaThongTinPhong();
@@ -246,7 +266,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // Find all Booking Info for non-available rooms
-        List<ThongTinDatPhong> thongTinDatPhongs = datPhongDAO.timTatCaThongTinDatPhong(nonAvailableRoomIds);
+        List<ThongTinDatPhong> thongTinDatPhongs = datPhongDAO.timTatCaThongTinDatPhongTrongKhoang(nonAvailableRoomIds);
 
         // Update BookingResponse with Booking Info
         for (ThongTinDatPhong thongTinDatPhong : thongTinDatPhongs) {

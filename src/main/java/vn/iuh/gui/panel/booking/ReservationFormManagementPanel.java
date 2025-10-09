@@ -3,6 +3,7 @@ package vn.iuh.gui.panel.booking;
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
@@ -35,8 +36,8 @@ public class ReservationFormManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
     
     // Data
-    private List<BookingResponse> allReservations;
-    private List<BookingResponse> filteredReservations;
+    private List<ReservationFormResponse> allReservations;
+    private List<ReservationFormResponse> filteredReservations;
     
     // Filter state
     private ReservationFilter reservationFilter;
@@ -54,19 +55,7 @@ public class ReservationFormManagementPanel extends JPanel {
     }
     
     private void loadReservationData() {
-        allReservations = new ArrayList<>();
-        
-        // Get all booking responses from service
-        List<BookingResponse> bookingResponses = bookingService.getAllBookingInfo();
-        
-        // Filter only reserved/booked rooms
-        for (BookingResponse booking : bookingResponses) {
-            if (booking.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
-                booking.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())) {
-                allReservations.add(booking);
-            }
-        }
-        
+        allReservations = bookingService.getAllReservationForms();
         filteredReservations = new ArrayList<>(allReservations);
     }
     
@@ -173,11 +162,11 @@ public class ReservationFormManagementPanel extends JPanel {
     
     private void createTablePanel() {
         // Create table model
-        String[] columnNames = {"Khách hàng", "Phòng", "Checkin", "Checkout", "Thao tác"};
+        String[] columnNames = {"Khách hàng", "Đơn đặt phòng", "Phòng", "Checkin", "Checkout", "Thao tác"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4; // Only action column is editable
+                return column == 5; // Only action column is editable
             }
         };
         
@@ -204,11 +193,12 @@ public class ReservationFormManagementPanel extends JPanel {
         TableColumnModel columnModel = reservationTable.getColumnModel();
         reservationTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
-        columnModel.getColumn(0).setPreferredWidth(200); // Khách hàng - 20%
-        columnModel.getColumn(1).setPreferredWidth(150); // Phòng - 15%
-        columnModel.getColumn(2).setPreferredWidth(150); // Checkin - 10%
-        columnModel.getColumn(3).setPreferredWidth(150); // Checkout - 10%
-        columnModel.getColumn(4).setPreferredWidth(350); // Thao tác - 45%
+        columnModel.getColumn(0).setPreferredWidth(150); // Khách hàng - 15%
+        columnModel.getColumn(1).setPreferredWidth(150); // Đơn đặt phòng - 10%
+        columnModel.getColumn(2).setPreferredWidth(100); // Phòng - 10%
+        columnModel.getColumn(3).setPreferredWidth(150); // Checkin - 15%
+        columnModel.getColumn(4).setPreferredWidth(150); // Checkout - 15%
+        columnModel.getColumn(5).setPreferredWidth(300); // Thao tác - 30%
 
         // Set cell renderer for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
@@ -293,7 +283,7 @@ public class ReservationFormManagementPanel extends JPanel {
         
         filteredReservations.clear();
         
-        for (BookingResponse reservation : allReservations) {
+        for (ReservationFormResponse reservation : allReservations) {
             if (passesAllFilters(reservation)) {
                 filteredReservations.add(reservation);
             }
@@ -302,7 +292,7 @@ public class ReservationFormManagementPanel extends JPanel {
         populateTable();
     }
     
-    private boolean passesAllFilters(BookingResponse reservation) {
+    private boolean passesAllFilters(ReservationFormResponse reservation) {
         // Room name filter
         if (reservationFilter.roomName != null && !reservationFilter.roomName.isEmpty()) {
             if (!reservation.getRoomName().toLowerCase().contains(reservationFilter.roomName.toLowerCase())) {
@@ -356,13 +346,14 @@ public class ReservationFormManagementPanel extends JPanel {
         });
 
         // Add filtered reservations to table
-        for (BookingResponse reservation : filteredReservations) {
-            Object[] rowData = new Object[5];
+        for (ReservationFormResponse reservation : filteredReservations) {
+            Object[] rowData = new Object[6];
             rowData[0] = reservation.getCustomerName();
-            rowData[1] = reservation.getRoomName();
-            rowData[2] = reservation.getTimeIn() != null ? dateFormat.format(reservation.getTimeIn()) : "N/A";
-            rowData[3] = reservation.getTimeOut() != null ? dateFormat.format(reservation.getTimeOut()) : "N/A";
-            rowData[4] = reservation; // Store the reservation object for action buttons
+            rowData[1] = reservation.getMaDonDatPhong();
+            rowData[2] = reservation.getRoomName();
+            rowData[3] = reservation.getTimeIn() != null ? dateFormat.format(reservation.getTimeIn()) : "N/A";
+            rowData[4] = reservation.getTimeOut() != null ? dateFormat.format(reservation.getTimeOut()) : "N/A";
+            rowData[5] = reservation; // Store the reservation object for action buttons
             
             tableModel.addRow(rowData);
         }

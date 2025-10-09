@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.entity.LichSuDiVao;
@@ -165,12 +166,41 @@ public class DatPhongDAO {
     }
 
 
-    public List<ThongTinDatPhong> timTatCaThongTinDatPhong(List<String> phongKhongKhaDungs) {
+    public List<ThongTinDatPhong> timTatCaThongTinDatPhong() {
+        String query = "SELECT p.ma_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                       " FROM Phong p" +
+                       " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
+                       " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
+                       " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
+                       " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
+                       " AND cv.tg_bat_dau > GETDATE()" +
+                       " AND cv.ten_trang_thai = ?";
+
+        List<ThongTinDatPhong> thongTinDatPhongs = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, RoomStatus.ROOM_BOOKED_STATUS.getStatus());
+
+            var rs = ps.executeQuery();
+
+            while (rs.next())
+                thongTinDatPhongs.add(chuyenKetQuaThanhThongTinDatPhong(rs));
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return thongTinDatPhongs;
+    }
+
+    public List<ThongTinDatPhong> timTatCaThongTinDatPhongTrongKhoang(List<String> phongKhongKhaDungs) {
         if (phongKhongKhaDungs.isEmpty())
             return new ArrayList<>();
 
         StringBuilder query = new StringBuilder(
-                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                "SELECT p.ma_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
                 " FROM Phong p" +
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
@@ -207,14 +237,12 @@ public class DatPhongDAO {
         return thongTinDatPhongs;
     }
 
-
-
     public List<ThongTinDatPhong> timThongTinDatPhongTrongKhoang(Timestamp tgNhanPhong, Timestamp tgTraPhong, List<String> danhSachMaPhong) {
         if (danhSachMaPhong.isEmpty())
             return new ArrayList<>();
 
         StringBuilder query = new StringBuilder(
-                "SELECT p.ma_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                "SELECT p.ma_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
                 " FROM Phong p" +
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
@@ -320,6 +348,7 @@ public class DatPhongDAO {
             return new ThongTinDatPhong(
                     rs.getString("ma_phong"),
                     rs.getString("ten_khach_hang"),
+                    rs.getString("ma_don_dat_phong"),
                     rs.getString("ma_chi_tiet_dat_phong"),
                     rs.getTimestamp("tg_nhan_phong"),
                     rs.getTimestamp("tg_tra_phong")
@@ -366,7 +395,7 @@ public class DatPhongDAO {
     }
 
     public ThongTinDatPhong timDonDatPhongChoCheckInCuaPhong(String maPhong, Timestamp tgBatDau, Timestamp tgKetThuc) {
-        String query = "SELECT p.ma_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, kh.ten_khach_hang, ctdp.ma_chi_tiet_dat_phong " +
+        String query = "SELECT p.ma_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong " +
                         "FROM Phong p " +
                         "LEFT JOIN ChiTietDatPhong ctdp ON ctdp.ma_phong = p.ma_phong " +
                         "LEFT JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong " +
