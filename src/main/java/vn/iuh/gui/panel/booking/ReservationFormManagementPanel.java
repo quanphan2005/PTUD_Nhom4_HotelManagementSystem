@@ -200,14 +200,16 @@ public class ReservationFormManagementPanel extends JPanel {
         // Set alternating row colors
         reservationTable.setDefaultRenderer(Object.class, new AlternatingRowRenderer());
 
-        // Set column widths
+        // Set column widths using relative proportions
         TableColumnModel columnModel = reservationTable.getColumnModel();
-        columnModel.getColumn(0).setPreferredWidth(180); // Khách hàng
-        columnModel.getColumn(1).setPreferredWidth(100); // Phòng
-        columnModel.getColumn(2).setPreferredWidth(100); // Checkin
-        columnModel.getColumn(3).setPreferredWidth(100); // Checkout
-        columnModel.getColumn(4).setPreferredWidth(250); // Thao tác
-        
+        reservationTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        columnModel.getColumn(0).setPreferredWidth(200); // Khách hàng - 20%
+        columnModel.getColumn(1).setPreferredWidth(150); // Phòng - 15%
+        columnModel.getColumn(2).setPreferredWidth(150); // Checkin - 10%
+        columnModel.getColumn(3).setPreferredWidth(150); // Checkout - 10%
+        columnModel.getColumn(4).setPreferredWidth(350); // Thao tác - 45%
+
         // Set cell renderer for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
         reservationTable.getColumn("Thao tác").setCellEditor(new ActionButtonEditor());
