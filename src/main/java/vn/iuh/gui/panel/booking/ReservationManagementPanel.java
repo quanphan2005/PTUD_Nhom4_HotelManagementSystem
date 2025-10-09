@@ -665,7 +665,6 @@ public class ReservationManagementPanel extends JPanel {
     private void refreshFilterBtn() {
         if (statusButtons == null) return;
 
-        int totalRooms = filteredRooms != null ? filteredRooms.size() : 0;
         int availableCount = getStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
         int bookedCount = getStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
         int checkingCount = getStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
@@ -674,8 +673,6 @@ public class ReservationManagementPanel extends JPanel {
         int cleaningCount = getStatusCount(RoomStatus.ROOM_CLEANING_STATUS.getStatus());
         int maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
 
-        // Update status button texts with current counts
-        statusButtons[0].setText("Tất cả (" + totalRooms + ")");
         statusButtons[1].setText(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")");
         statusButtons[2].setText(RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")");
         statusButtons[3].setText(RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")");
