@@ -598,6 +598,9 @@ public class RoomUsageFormPanel extends JPanel {
         ActionItem checkInItem =
                 new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
+        ActionItem completeItem = new ActionItem("Hoàn Tất Dọn Phòng", IconUtil.createCompleteIcon(), CustomUI.green,
+                                                     this::handleCompleteCleaning);
+
         if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {
             items.add(callServiceItem);
             items.add(cancelReservationItem);
@@ -627,9 +630,18 @@ public class RoomUsageFormPanel extends JPanel {
                     // Disable some event when status is late
 
                 } else
-                    if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {
-                        items.add(checkInItem);
-                        items.add(cancelReservationItem);
+                    if (roomStatus.equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
+                        callServiceItem.setBackgroundColor(CustomUI.gray);
+                        callServiceItem.setAction(null);
+                        transferRoomItem.setBackgroundColor(CustomUI.gray);
+                        transferRoomItem.setAction(null);
+                        extendBookingItem.setBackgroundColor(CustomUI.gray);
+                        extendBookingItem.setAction(null);
+
+                        items.add(callServiceItem);
+                        items.add(completeItem);
+                        items.add(transferRoomItem);
+                        items.add(extendBookingItem);
                     }
 
         return items;
@@ -952,6 +964,18 @@ public class RoomUsageFormPanel extends JPanel {
         if (result == JOptionPane.YES_OPTION) {
             JOptionPane.showMessageDialog(this,
                                           "Đã hủy đặt phòng " + selectedRoom.getRoomName(),
+                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void handleCompleteCleaning() {
+        int result = JOptionPane.showConfirmDialog(this,
+                                                   "Xác nhận hoàn tất dọn phòng " + selectedRoom.getRoomName() + "?",
+                                                   "Hoàn tất dọn phòng", JOptionPane.YES_NO_OPTION);
+
+        if (result == JOptionPane.YES_OPTION) {
+            JOptionPane.showMessageDialog(this,
+                                          "Đã hoàn tất dọn phòng " + selectedRoom.getRoomName(),
                                           "Thành công", JOptionPane.INFORMATION_MESSAGE);
         }
     }

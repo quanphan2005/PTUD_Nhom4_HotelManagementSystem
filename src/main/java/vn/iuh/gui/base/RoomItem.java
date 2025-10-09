@@ -480,11 +480,20 @@ public class RoomItem extends JPanel {
 
     private JPanel createOccupiedRoomPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
+
+        if (RoomStatus.ROOM_BOOKED_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+            panel.setBackground(CustomUI.cyan);
+        } else if(RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
+            panel.setBackground(CustomUI.lightBlue);
+        } else if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+            panel.setBackground(CustomUI.orange);
+        } else if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
             panel.setBackground(CustomUI.red);
+        } else if (RoomStatus.ROOM_CLEANING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+            panel.setBackground(CustomUI.lightGreen);
+        } else {
+            panel.setBackground(new Color(255, 255, 224)); // Default light yellow
         }
-        else
-            panel.setBackground(new Color(17, 216, 230)); // Light blue background
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);

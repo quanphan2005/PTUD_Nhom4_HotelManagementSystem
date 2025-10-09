@@ -226,7 +226,7 @@ public class ReservationManagementPanel extends JPanel {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomUI.lightGreen, 2),
+                BorderFactory.createLineBorder(CustomUI.green, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
         panel.setPreferredSize(new Dimension(600, 80));
@@ -245,11 +245,11 @@ public class ReservationManagementPanel extends JPanel {
         int maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
 
         // Create status buttons with actual quantities and proper colors
-        JButton btnAll = createStatusButton("Tất cả (" + totalRooms + ")", CustomUI.lightGreen, "Tất cả");
+        JButton btnAll = createStatusButton("Tất cả (" + totalRooms + ")", CustomUI.green, "Tất cả");
         gbc.gridx = 0; gbc.gridy = 0; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         panel.add(btnAll, gbc);
 
-        JButton btnAvailable = createStatusButton(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")", CustomUI.lightGreen, RoomStatus.ROOM_EMPTY_STATUS.getStatus());
+        JButton btnAvailable = createStatusButton(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")", CustomUI.green, RoomStatus.ROOM_EMPTY_STATUS.getStatus());
         gbc.gridx = 1; gbc.gridy = 0;
         panel.add(btnAvailable, gbc);
 
@@ -261,15 +261,15 @@ public class ReservationManagementPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 1;
         panel.add(btnChecking, gbc);
 
-        JButton btnUsing = createStatusButton(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")", Color.ORANGE, RoomStatus.ROOM_USING_STATUS.getStatus());
+        JButton btnUsing = createStatusButton(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")", CustomUI.orange, RoomStatus.ROOM_USING_STATUS.getStatus());
         gbc.gridx = 1; gbc.gridy = 1;
         panel.add(btnUsing, gbc);
 
-        JButton btnLate = createStatusButton(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus() + " (" + lateCount + ")", Color.RED, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+        JButton btnLate = createStatusButton(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus() + " (" + lateCount + ")", CustomUI.red, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
         gbc.gridx = 2; gbc.gridy = 1;
         panel.add(btnLate, gbc);
 
-        JButton btnCleaning = createStatusButton(RoomStatus.ROOM_CLEANING_STATUS.getStatus() + " (" + cleaningCount + ")", new Color(144, 238, 144), RoomStatus.ROOM_CLEANING_STATUS.getStatus());
+        JButton btnCleaning = createStatusButton(RoomStatus.ROOM_CLEANING_STATUS.getStatus() + " (" + cleaningCount + ")", CustomUI.lightGreen, RoomStatus.ROOM_CLEANING_STATUS.getStatus());
         gbc.gridx = 0; gbc.gridy = 2;
         panel.add(btnCleaning, gbc);
 
@@ -642,8 +642,8 @@ public class ReservationManagementPanel extends JPanel {
         Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
         cmbRoomType.setSelectedIndex(0);
         cmbCapacity.setSelectedIndex(0);
-        spnCheckInDate.setValue(today);
         spnCheckOutDate.setValue(tomorrow);
+        spnCheckInDate.setValue(today);
 
         // Reset room filter
         roomFilter = new RoomFilter(null, null, today, tomorrow, null);
