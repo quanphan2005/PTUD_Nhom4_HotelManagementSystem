@@ -104,7 +104,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private void createTopPanel() {
         JPanel pnlTop = new JPanel();
-        JLabel lblTop = new JLabel("Quản lý đặt phòng", SwingConstants.CENTER);
+        JLabel lblTop = new JLabel("QUẢN LÝ ĐẶT PHÒNG", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.normalFont);
 
