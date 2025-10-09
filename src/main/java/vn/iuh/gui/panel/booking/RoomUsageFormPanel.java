@@ -95,7 +95,7 @@ public class RoomUsageFormPanel extends JPanel {
 
 
         ServiceSelectionPanel servicePanel =
-                new ServiceSelectionPanel(1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
+                new ServiceSelectionPanel(PanelName.ROOM_USING.getName(), 1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
                     serviceOrdered.clear();
                     serviceOrdered.addAll(services);
                     updateTotalServicePrice(); // Update service price when services are selected
@@ -981,10 +981,20 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void handleCreateReservationForm() {
-
-        // Copy selectedRoom to BookingResponse and set status to ROOM_EMPTY_STATUS
-        BookingResponse bookingResponse = new BookingResponse(selectedRoom);
-        bookingResponse.setRoomStatus(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
+        BookingResponse bookingResponse = new BookingResponse(
+                selectedRoom.getRoomId(),
+                selectedRoom.getRoomName(),
+                selectedRoom.isActive(),
+                RoomStatus.ROOM_EMPTY_STATUS.getStatus(),
+                selectedRoom.getRoomType(),
+                selectedRoom.getNumberOfCustomers(),
+                selectedRoom.getDailyPrice(),
+                selectedRoom.getHourlyPrice(),
+                selectedRoom.getCustomerName(),
+                null,
+                selectedRoom.getTimeIn(),
+                selectedRoom.getTimeOut()
+        );
 
         BookingFormPanel bookingFormPanel = new BookingFormPanel(bookingResponse, PanelName.ROOM_USING.getName());
         String panelName = PanelName.BOOKING.getName();

@@ -24,6 +24,8 @@ import java.util.*;
 import java.util.List;
 
 public class ServiceSelectionPanel extends JPanel {
+    private String parentName;
+
     private GoiDichVuService goiDichVuService;
 
     // Components
@@ -61,26 +63,15 @@ public class ServiceSelectionPanel extends JPanel {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
 
-    public ServiceSelectionPanel(int selectedRooms, String maChiTietDatPhong, ServiceSelectionCallback callback) {
+    public ServiceSelectionPanel(String parentName, int selectedRooms, String maChiTietDatPhong, ServiceSelectionCallback callback) {
+        this.parentName = parentName;
+
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
         this.giftServicesMap = new HashMap<>();
 
         this.selectedRooms = selectedRooms;
-        this.maChiTietDatPhong = maChiTietDatPhong;
-
-        initializeComponents();
-        loadServices();
-        setupLayout();
-        setupEventHandlers();
-    }
-
-    public ServiceSelectionPanel(String maChiTietDatPhong) {
-        this.goiDichVuService = new GoiDichVuServiceImpl();
-        this.selectedServicesMap = new HashMap<>();
-        this.giftServicesMap = new HashMap<>();
-
         this.maChiTietDatPhong = maChiTietDatPhong;
 
         initializeComponents();
@@ -388,13 +379,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         btnConfirm.addActionListener(e -> confirmSelection());
 
-        btnUndo.addActionListener(e -> {
-            if (selectedRooms > 1) {
-                Main.showCard(PanelName.MULTI_BOOKING.getName());
-            } else {
-                Main.showCard(PanelName.BOOKING.getName());
-            }
-        });
+        btnUndo.addActionListener(e -> {Main.showCard(parentName);});
     }
 
     private void resetPanel() {
@@ -469,11 +454,11 @@ public class ServiceSelectionPanel extends JPanel {
                                                          Main.getCurrentLoginSession());
             if (success) {
                 JOptionPane.showMessageDialog(this,
-                                              "Gọi dịch vụ thành công.",
+                                              "Gọi thêm " + serviceOrdered.size() + " dịch vụ thành công.",
                                               "Thành công",
                                               JOptionPane.INFORMATION_MESSAGE);
                 resetPanel();
-                Main.showCard(PanelName.BOOKING.getName());
+                Main.showCard(parentName);
             } else {
                 JOptionPane.showMessageDialog(this,
                                               "Gọi dịch vụ thất bại. Vui lòng thử lại.",
@@ -490,19 +475,18 @@ public class ServiceSelectionPanel extends JPanel {
         // Show dialog base on selected rooms
         if (selectedRooms > 1) {
             JOptionPane.showMessageDialog(this,
-                                          "Đã thêm dịch vụ cho " + selectedRooms + " phòng\n" +
+                                          "Đã thêm " + serviceOrdered.size() + " dịch vụ cho " + selectedRooms + " phòng\n" +
                                           "Số lượng dịch vụ đã gọi sẽ được chia đều cho (" + selectedRooms + " phòng)",
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                                          "Đã thêm dịch vụ cho phòng",
+                                          "Đã thêm " + serviceOrdered.size() + " dịch vụ cho phòng",
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         }
 
-        String cardName = selectedRooms > 1 ? PanelName.MULTI_BOOKING.getName() : PanelName.BOOKING.getName();
-        Main.showCard(cardName);
+        Main.showCard(parentName);
     }
 
     private void updateServiceTable() {

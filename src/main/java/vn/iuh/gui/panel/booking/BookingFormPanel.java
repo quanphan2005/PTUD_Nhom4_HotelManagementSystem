@@ -1,6 +1,7 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
@@ -102,7 +103,7 @@ public class BookingFormPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
 
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.BOOKING.getName(), 1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
                 serviceOrdered.clear();
                 serviceOrdered.addAll(services);
                 updateTotalServicePrice(); // Update service price when services are selected

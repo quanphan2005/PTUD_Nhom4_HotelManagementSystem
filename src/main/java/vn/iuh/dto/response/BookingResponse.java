@@ -46,21 +46,6 @@ public class BookingResponse {
         this.timeOut = timeOut;
     }
 
-    public BookingResponse(BookingResponse bookingResponse) {
-        this.roomId = bookingResponse.roomId;
-        this.roomName = bookingResponse.roomName;
-        this.isActive = bookingResponse.isActive;
-        this.roomStatus = bookingResponse.roomStatus;
-        this.roomType = bookingResponse.roomType;
-        this.numberOfCustomers = bookingResponse.numberOfCustomers;
-        this.dailyPrice = bookingResponse.dailyPrice;
-        this.hourlyPrice = bookingResponse.hourlyPrice;
-        this.customerName = bookingResponse.customerName;
-        this.maChiTietDatPhong = bookingResponse.maChiTietDatPhong;
-        this.timeIn = bookingResponse.timeIn;
-        this.timeOut = bookingResponse.timeOut;
-    }
-
     @Override
     public String toString() {
         return "BookingResponse{" +
