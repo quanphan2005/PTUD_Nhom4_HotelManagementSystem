@@ -12,6 +12,8 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class QuanLyKhachHangPanel extends JPanel {
@@ -30,8 +32,16 @@ public class QuanLyKhachHangPanel extends JPanel {
     // Top panel height
     private static final int TOP_PANEL_HEIGHT = 40;
 
+    // Fonts & Colors tái sử dụng (tránh tạo mới trong render loop)
     private static final Font FONT_LABEL  = new Font("Arial", Font.BOLD, 14);
     private static final Font FONT_ACTION = new Font("Arial", Font.BOLD, 18);
+    private static final Font TABLE_FONT = FONT_LABEL;
+    private static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 15);
+    private static final Color ROW_ALT_COLOR = new Color(247, 249, 250);
+    private static final Color ROW_SELECTED_COLOR = new Color(210, 230, 255);
+
+    // Simple in-memory cache cho icons (key = path + size)
+    private static final Map<String, ImageIcon> ICON_CACHE = new HashMap<>();
 
     private final JTextField searchTextField = new JTextField();
     private final JButton searchButton = new JButton("TÌM");
@@ -58,6 +68,7 @@ public class QuanLyKhachHangPanel extends JPanel {
         configureSearchTextField(searchTextField, SEARCH_TEXT_SIZE, "Tên khách hàng");
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
+        // Tạo button mà **không** block UI để load icon
         addButton    = createActionButton("Thêm khách hàng", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
         editButton   = createActionButton("Sửa khách hàng", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
         deleteButton = createActionButton("Xóa khách hàng", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
@@ -106,15 +117,27 @@ public class QuanLyKhachHangPanel extends JPanel {
         btn.setAlignmentY(Component.CENTER_ALIGNMENT);
     }
 
-    // Hàm đẻ tạo các nút thêm/xóa/sửa khách hàng
+    // Hàm đẻ tạo các nút thêm/xóa/sửa khách hàng (không block EDT khi load icon)
     private JButton createActionButton(String text, String iconPath, Dimension size, String bgHex, String borderHex) {
-        JButton button = new JButton(text, loadScaledIcon(iconPath, 20, 20));
+        JButton button = new JButton(text);
         button.setPreferredSize(size);
         button.setFont(FONT_ACTION);
         button.setBackground(Color.decode(bgHex));
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.putClientProperty(FlatClientProperties.STYLE, "arc: 18; borderWidth: 2; borderColor:" + borderHex);
+
+        // Nếu đã cache icon thì dùng ngay, còn không load async (không block)
+        String key = iconCacheKey(iconPath, 20, 20);
+        ImageIcon cached = getCachedIcon(key);
+        if (cached != null) {
+            button.setIcon(cached);
+        } else {
+            // placeholder (null) -> tải ảnh trong background rồi setIcon
+            loadIconAsync(iconPath, 20, 20, icon -> {
+                if (icon != null) button.setIcon(icon);
+            });
+        }
         return button;
     }
 
@@ -232,16 +255,57 @@ public class QuanLyKhachHangPanel extends JPanel {
         return searchPanel;
     }
 
-    private ImageIcon loadScaledIcon(String path, int width, int height) {
-        try (InputStream is = getClass().getResourceAsStream(path)) {
+    // Synchronous loader có cache (dùng bởi SwingWorker)
+    private static synchronized ImageIcon loadScaledIconSync(String path, int width, int height) {
+        String key = iconCacheKey(path, width, height);
+        ImageIcon cached = ICON_CACHE.get(key);
+        if (cached != null) return cached;
+
+        try (InputStream is = QuanLyKhachHangPanel.class.getResourceAsStream(path)) {
             if (is == null) return null;
             BufferedImage img = ImageIO.read(is);
             if (img == null) return null;
             Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaled);
+            ImageIcon ic = new ImageIcon(scaled);
+            ICON_CACHE.put(key, ic);
+            return ic;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private static synchronized ImageIcon getCachedIcon(String key) {
+        return ICON_CACHE.get(key);
+    }
+
+    private static String iconCacheKey(String path, int w, int h) {
+        return path + "|" + w + "x" + h;
+    }
+
+    // Load icon bất đồng bộ rồi gọi callback trên EDT
+    private static void loadIconAsync(String path, int w, int h, java.util.function.Consumer<ImageIcon> callback) {
+        // nếu đã cache -> trả về ngay trên EDT
+        String key = iconCacheKey(path, w, h);
+        ImageIcon cached = getCachedIcon(key);
+        if (cached != null) {
+            SwingUtilities.invokeLater(() -> callback.accept(cached));
+            return;
+        }
+
+        SwingWorker<ImageIcon, Void> worker = new SwingWorker<>() {
+            @Override
+            protected ImageIcon doInBackground() {
+                return loadScaledIconSync(path, w, h);
+            }
+            @Override
+            protected void done() {
+                try {
+                    ImageIcon ic = get();
+                    if (ic != null) callback.accept(ic);
+                } catch (Exception ignored) {}
+            }
+        };
+        worker.execute();
     }
 
     private void createListCustomerPanel() {
@@ -278,30 +342,23 @@ public class QuanLyKhachHangPanel extends JPanel {
             @Override
             public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
                 // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
-
                 Component c = super.prepareRenderer(renderer, row, column);
-                // Gọi method của lớp cha để lấy component renderer mặc định cho ô (đã được chuẩn bị sẵn
-                // với giá trị, alignment, v.v.). Phải gọi super để giữ behavior mặc định rồi mới thay đổi.
 
-                c.setFont(new Font("Arial", Font.BOLD, 14)); // in đậm
-                // Thiết lập font cho component (ở đây dùng font Arial, kiểu BOLD, size 14).
+                // reuse font constant (không new font mỗi cell)
+                c.setFont(TABLE_FONT);
 
-                if (!isRowSelected(row))
-                    // Nếu hàng hiện tại **không** đang được chọn
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(247, 249, 250));
-                    // - Nếu row chẵn: nền trắng
-                    // - Nếu row lẻ: nền xám rất nhạt (tạo hiệu ứng "zebra striping" để dễ đọc)
-                else
-                    // Đặt màu nền cho hàng được chọn (màu xanh nhạt)
-                    c.setBackground(new Color(210, 230, 255));
+                if (!isRowSelected(row)) {
+                    // reuse color constant
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : ROW_ALT_COLOR);
+                } else {
+                    c.setBackground(ROW_SELECTED_COLOR);
+                }
                 return c;
-                // Trả về component đã tùy chỉnh để JTable vẽ ô đó.
             }
         };
 
-
         table.setRowHeight(48);
-        table.setFont(new Font("Arial", Font.BOLD, 14));
+        table.setFont(TABLE_FONT);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setFillsViewportHeight(true);
@@ -311,7 +368,7 @@ public class QuanLyKhachHangPanel extends JPanel {
         header.setPreferredSize(new Dimension(header.getPreferredSize().width, 42));
         header.setBackground(CustomUI.blue);
         header.setForeground(CustomUI.white);
-        header.setFont(new Font("Arial", Font.BOLD, 15));
+        header.setFont(HEADER_FONT);
         header.setReorderingAllowed(false);
 
         // Căn giữa cho thông tin trong các cột

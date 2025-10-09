@@ -11,8 +11,9 @@ import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
-import java.util.Objects;
-
+import java.util.*;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class QuanLyPhongPanel extends JPanel {
 
@@ -22,14 +23,23 @@ public class QuanLyPhongPanel extends JPanel {
     private static final Dimension ACTION_BUTTON_SIZE = new Dimension(290, 55);
     private static final Dimension CATEGORY_BUTTON_SIZE = new Dimension(190, 52);
 
+    // Fonts tái sử dụng (tránh tạo nhiều lần)
     private static final Font FONT_LABEL      = new Font("Arial", Font.BOLD, 15);
     private static final Font FONT_ACTION     = new Font("Arial", Font.BOLD, 20);
     private static final Font FONT_CATEGORY   = new Font("Arial", Font.BOLD, 18);
+
+    // Fonts cho thẻ phòng
+    private static final Font FONT_ROOM_NAME  = new Font("Arial", Font.BOLD, 30);
+    private static final Font FONT_ROOM_SUB   = new Font("Arial", Font.BOLD, 23);
 
     // Kích thước thẻ phòng
     private static final int ROOM_PANEL_WIDTH  = 1300;
     private static final int ROOM_PANEL_HEIGHT = 150;
     private static final int ROOM_PANEL_ARC    = 20; // bán kính bo góc cho FlatLaf
+
+    // Cache cho icons/ảnh scale+rounded
+    // key = path + "|" + w + "x" + h + "|arc:" + arc
+    private static final Map<String, ImageIcon> ICON_CACHE = new HashMap<>();
 
     // Các thành phần sẽ được khởi tạo/tái dùng trong nhiều hàm
     // Các thành phần trong panel tìm kiếm
@@ -49,6 +59,9 @@ public class QuanLyPhongPanel extends JPanel {
     private JButton allRoomButton;
     private JButton emptyRoomButton;
 
+    // Container cho danh sách phòng (để populate incremental)
+    private final JPanel listRoomPanelContainer = new JPanel();
+
     // Constructor: cấu hình layout chính và gọi init
     public QuanLyPhongPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -64,7 +77,7 @@ public class QuanLyPhongPanel extends JPanel {
         add(Box.createVerticalStrut(10));
         createSearchAndCategoryPanel(); // Panel chứa khung tìm kiếm và khung loại phòng
         add(Box.createVerticalStrut(10));
-        createListRoomPanel(); // Panel chứa danh sách phòng
+        createListRoomPanel(); // Panel chứa danh sách phòng (populate incremental)
     }
 
     // Tạo và cấu hình các nút/ô nhập dùng chung
@@ -75,10 +88,10 @@ public class QuanLyPhongPanel extends JPanel {
         // cấu hình nút tìm
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
-        // Các nút hành động (thêm/sửa/xóa) — gọi helper tạo action button
-        addButton    = createActionButton("Thêm phòng", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
-        editButton   = createActionButton("Sửa phòng", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
-        deleteButton = createActionButton("Xóa phòng", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
+        // Các nút hành động (thêm/sửa/xóa) — tạo ngay nhưng icon load async
+        addButton    = createActionButtonAsync("Thêm phòng", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
+        editButton   = createActionButtonAsync("Sửa phòng", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
+        deleteButton = createActionButtonAsync("Xóa phòng", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
 
         // Các nút category (1 người, 2 người... VIP...)
         onePeopleButton   = createCategoryButton("1 người (10)", "#1BA1E2", CATEGORY_BUTTON_SIZE);
@@ -151,10 +164,9 @@ public class QuanLyPhongPanel extends JPanel {
         return button;
     }
 
-    // Helper tạo nút hành động lớn (có icon + text) — dùng lại cho Thêm/Sửa/Xóa
-    private JButton createActionButton(String text, String iconPath, Dimension size, String bgHex, String borderHex) {
-        ImageIcon icon = loadScaledIcon(iconPath, 20, 20); // load icon và scale
-        JButton button = new JButton(text, icon);
+    // Helper tạo nút hành động lớn (có icon + text) — async (không block EDT)
+    private JButton createActionButtonAsync(String text, String iconPath, Dimension size, String bgHex, String borderHex) {
+        JButton button = new JButton(text);
         button.setPreferredSize(size);
         button.setMinimumSize(size);
         button.setMaximumSize(size);
@@ -166,6 +178,12 @@ public class QuanLyPhongPanel extends JPanel {
 
         // FlatLaf style: bo góc và viền màu
         button.putClientProperty(FlatClientProperties.STYLE, "arc: 20; borderWidth: 2; borderColor:" + borderHex);
+
+        // Load icon async (if cached then set immediately)
+        loadIconAsync(iconPath, 20, 20, icon -> {
+            if (icon != null) button.setIcon(icon);
+        });
+
         return button;
     }
 
@@ -174,7 +192,7 @@ public class QuanLyPhongPanel extends JPanel {
         JPanel pnlTop = new JPanel(new BorderLayout());
         JLabel lblTop = new JLabel("Quản lý phòng", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
-        lblTop.setFont(CustomUI.normalFont);
+        lblTop.setFont(CustomUI.normalFont != null ? CustomUI.normalFont : FONT_ROOM_NAME);
 
         pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop, BorderLayout.CENTER);
@@ -332,65 +350,128 @@ public class QuanLyPhongPanel extends JPanel {
         add(searchAndCategoryPanel);
     }
 
-    // Hàm load và scale icon từ resource, dùng try-with-resources để đóng stream an toàn
-    private ImageIcon loadScaledIcon(String path, int width, int height) {
-        try (InputStream is = getClass().getResourceAsStream(path)) {
-            if (is == null) return null; // không tìm thấy resource -> trả về null để không crash
-            BufferedImage img = ImageIO.read(is);
-            if (img == null) return null;
+    // ------------- IMAGE / ICON UTILITIES (cache + async) -------------
 
-            BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = resized.createGraphics();
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.drawImage(img, 0, 0, width, height, null);
-            g2.dispose();
+    private static String iconCacheKey(String path, int w, int h, int arc) {
+        return path + "|" + w + "x" + h + "|arc:" + arc;
+    }
 
-            return new ImageIcon(resized);
-        } catch (Exception ignore) {
-            // UI sẽ hiển thị không có icon
+    private static ImageIcon loadRoundedIconSync(Class<?> cls, String path, int width, int height, int arc) {
+        String key = iconCacheKey(path, width, height, arc);
+        synchronized (ICON_CACHE) {
+            if (ICON_CACHE.containsKey(key)) return ICON_CACHE.get(key);
+        }
+        try (InputStream is = cls.getResourceAsStream(path)) {
+            if (is == null) return null;
+            BufferedImage orig = ImageIO.read(is);
+            if (orig == null) return null;
+
+            BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = scaled.createGraphics();
+            try {
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g.drawImage(orig, 0, 0, width, height, null);
+            } finally {
+                g.dispose();
+            }
+
+            BufferedImage rounded = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = rounded.createGraphics();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Shape clip = new RoundRectangle2D.Float(0, 0, width, height, arc, arc);
+                g2.setClip(clip);
+                g2.drawImage(scaled, 0, 0, null);
+            } finally {
+                g2.dispose();
+            }
+
+            ImageIcon ic = new ImageIcon(rounded);
+            synchronized (ICON_CACHE) {
+                ICON_CACHE.put(key, ic);
+            }
+            return ic;
+        } catch (Exception e) {
             return null;
         }
     }
 
-    // Tạo ImageIcon bo góc (rounded) từ Image input
-    private ImageIcon createRoundedImageIcon(Image src, int width, int height, int arc) {
-        if (src == null) return null;
-
-        // Scale vào một BufferedImage trước
-        BufferedImage scaledBuf = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = scaledBuf.createGraphics();
-        try {
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g.drawImage(src, 0, 0, width, height, null);
-        } finally {
-            g.dispose();
+    // load small icon (non-rounded) async
+    private static void loadIconAsync(String path, int w, int h, Consumer<ImageIcon> callback) {
+        String key = iconCacheKey(path, w, h, 0);
+        synchronized (ICON_CACHE) {
+            ImageIcon cached = ICON_CACHE.get(key);
+            if (cached != null) {
+                SwingUtilities.invokeLater(() -> callback.accept(cached));
+                return;
+            }
         }
 
-        // Vẽ lại ảnh vào buffer khác với clip là RoundRectangle2D để tạo bo góc
-        BufferedImage buf = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = buf.createGraphics();
-        try {
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            Shape clip = new RoundRectangle2D.Float(0, 0, width, height, arc, arc);
-            g2.setClip(clip);
-            g2.drawImage(scaledBuf, 0, 0, null);
-        } finally {
-            g2.dispose();
-        }
+        SwingWorker<ImageIcon, Void> wk = new SwingWorker<>() {
+            @Override
+            protected ImageIcon doInBackground() {
+                try (InputStream is = QuanLyPhongPanel.class.getResourceAsStream(path)) {
+                    if (is == null) return null;
+                    BufferedImage img = ImageIO.read(is);
+                    if (img == null) return null;
+                    Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+                    ImageIcon ic = new ImageIcon(scaled);
+                    synchronized (ICON_CACHE) {
+                        ICON_CACHE.put(iconCacheKey(path, w, h, 0), ic);
+                    }
+                    return ic;
+                } catch (Exception ex) {
+                    return null;
+                }
+            }
 
-        return new ImageIcon(buf);
+            @Override
+            protected void done() {
+                try {
+                    ImageIcon ic = get();
+                    if (ic != null) callback.accept(ic);
+                } catch (Exception ignored) {}
+            }
+        };
+        wk.execute();
     }
 
-    // Tạo một panel mô tả 1 phòng (ảnh trái, thông tin giữa, nút sửa/xóa nằm bên phải)
+    // load rounded main images async
+    private static void loadRoundedIconAsync(String path, int w, int h, int arc, Consumer<ImageIcon> callback) {
+        String key = iconCacheKey(path, w, h, arc);
+        synchronized (ICON_CACHE) {
+            ImageIcon cached = ICON_CACHE.get(key);
+            if (cached != null) {
+                SwingUtilities.invokeLater(() -> callback.accept(cached));
+                return;
+            }
+        }
+
+        SwingWorker<ImageIcon, Void> wk = new SwingWorker<>() {
+            @Override
+            protected ImageIcon doInBackground() {
+                return loadRoundedIconSync(QuanLyPhongPanel.class, path, w, h, arc);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    ImageIcon ic = get();
+                    if (ic != null) callback.accept(ic);
+                } catch (Exception ignored) {}
+            }
+        };
+        wk.execute();
+    }
+
+    // ------------- ROOM CARD CREATION (giữ nguyên bố cục) ----------------
+
     private JPanel createRoomPanel(String tenPhong, int soNguoi, String loaiPhong,
                                    String giaGio, String giaNgay, String trangThai, String anhPhong) {
 
         String backgroundColor;
-
-        // Set màu nền cho thẻ phòng theo số người tối đa của phòng
         switch (soNguoi) {
             case 1: backgroundColor = "#1BA1E2"; break;
             case 2: backgroundColor = "#34D399"; break;
@@ -399,8 +480,8 @@ public class QuanLyPhongPanel extends JPanel {
             default: backgroundColor = "#647687"; break;
         }
 
-        // Chọn ảnh theo loại phòng (VIP hoặc Thường) — override tham số vừa nhận để đồng nhất resource
-        anhPhong = "VIP".equalsIgnoreCase(loaiPhong) ? "/images/vip_room.jpg" : "/images/normal_room.jpg";
+        // Chọn ảnh theo loại phòng (VIP hoặc Thường)
+        String resolvedAnh = "VIP".equalsIgnoreCase(loaiPhong) ? "/images/vip_room.jpg" : "/images/normal_room.jpg";
 
         JPanel roomPanel = new JPanel(new BorderLayout());
         // đặt style FlatLaf (background và bo góc)
@@ -409,10 +490,24 @@ public class QuanLyPhongPanel extends JPanel {
         roomPanel.setPreferredSize(new Dimension(ROOM_PANEL_WIDTH, ROOM_PANEL_HEIGHT));
         roomPanel.setMaximumSize(new Dimension(ROOM_PANEL_WIDTH, ROOM_PANEL_HEIGHT));
 
-        // Image (bên trái): tạo JLabel chứa ảnh bo góc hoặc "No Image" fallback
+        // Image (bên trái): tạo JLabel placeholder, load ảnh async
         final int imgW = 160;
         final int imgH = ROOM_PANEL_HEIGHT - 4;
-        JLabel imgLabel = createRoomImageLabel(anhPhong, imgW, imgH, ROOM_PANEL_ARC);
+        JLabel imgLabel = new JLabel("Loading...", SwingConstants.CENTER);
+        imgLabel.setPreferredSize(new Dimension(imgW, imgH));
+        imgLabel.setOpaque(true);
+        imgLabel.setBackground(new Color(0xdddddd));
+        imgLabel.setForeground(Color.BLACK);
+
+        // Load rounded room image async và set icon khi xong
+        loadRoundedIconAsync(resolvedAnh, imgW, imgH, ROOM_PANEL_ARC, icon -> {
+            SwingUtilities.invokeLater(() -> {
+                imgLabel.setText(null);
+                imgLabel.setIcon(icon);
+                imgLabel.setOpaque(false);
+                imgLabel.setBackground(null);
+            });
+        });
 
         JPanel imagePanel = new JPanel(new BorderLayout());
         imagePanel.setOpaque(false);
@@ -430,16 +525,20 @@ public class QuanLyPhongPanel extends JPanel {
         midPanel.setLayout(new BoxLayout(midPanel, BoxLayout.Y_AXIS));
         midPanel.setOpaque(false);
 
-        // Tên phòng — nếu VIP thì thêm icon ngôi sao (nếu resource có)
-        JLabel lblName = createWhiteLabel(tenPhong, 30, true);
+        // Tên phòng — nếu VIP thì thêm icon ngôi sao (tải star async)
+        JLabel lblName = createWhiteLabel(tenPhong, FONT_ROOM_NAME);
         if ("VIP".equalsIgnoreCase(loaiPhong)) {
-            ImageIcon starIcon = loadScaledIcon("/icons/star.png", 24, 24);
-            if (starIcon != null) lblName.setIcon(starIcon);
+            // set star async to avoid blocking
+            loadIconAsync("/icons/star.png", 24, 24, icon -> {
+                if (icon != null) {
+                    SwingUtilities.invokeLater(() -> lblName.setIcon(icon));
+                }
+            });
             lblName.setIconTextGap(10);
         }
 
-        JLabel lblPeople = createWhiteLabel("Số người: " + soNguoi, 23, true);
-        JLabel lblType   = createWhiteLabel("Loại phòng: " + loaiPhong, 23, true);
+        JLabel lblPeople = createWhiteLabel("Số người: " + soNguoi, FONT_ROOM_SUB);
+        JLabel lblType   = createWhiteLabel("Loại phòng: " + loaiPhong, FONT_ROOM_SUB);
 
         midPanel.add(lblName);
         midPanel.add(Box.createVerticalStrut(14));
@@ -452,15 +551,15 @@ public class QuanLyPhongPanel extends JPanel {
         pricePanel.setLayout(new BoxLayout(pricePanel, BoxLayout.Y_AXIS));
         pricePanel.setOpaque(false);
         pricePanel.add(Box.createVerticalStrut(lblName.getPreferredSize().height + 14));
-        pricePanel.add(createWhiteLabel("Giá theo giờ: " + giaGio, 23, true));
+        pricePanel.add(createWhiteLabel("Giá theo giờ: " + giaGio, FONT_ROOM_SUB));
         pricePanel.add(Box.createVerticalStrut(14));
-        pricePanel.add(createWhiteLabel("Giá theo ngày: " + giaNgay, 23, true));
+        pricePanel.add(createWhiteLabel("Giá theo ngày: " + giaNgay, FONT_ROOM_SUB));
 
         // Panel trạng thái
         JPanel statusPanel = new JPanel();
         statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.Y_AXIS));
         statusPanel.setOpaque(false);
-        statusPanel.add(createWhiteLabel("Trạng thái: " + trangThai, 23, true));
+        statusPanel.add(createWhiteLabel("Trạng thái: " + trangThai, FONT_ROOM_SUB));
 
         // Ghép các phần vào contentRow
         contentRow.add(midPanel);
@@ -471,15 +570,15 @@ public class QuanLyPhongPanel extends JPanel {
 
         roomPanel.add(contentRow, BorderLayout.CENTER);
 
-        // Buttons (phía phải): nút sửa và xóa dạng icon-only
+        // Buttons (phía phải): nút sửa và xóa dạng icon-only (async icon)
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         buttonPanel.setOpaque(false);
 
         Dimension btnSize = new Dimension(35, 35);
 
-        JButton editBtn = createIconOnlyButton("/icons/edit.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
-        JButton deleteBtn = createIconOnlyButton("/icons/delete.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
+        JButton editBtn = createIconOnlyButtonAsync("/icons/edit.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
+        JButton deleteBtn = createIconOnlyButtonAsync("/icons/delete.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
 
         buttonPanel.add(editBtn);
         buttonPanel.add(deleteBtn);
@@ -489,80 +588,47 @@ public class QuanLyPhongPanel extends JPanel {
         return roomPanel;
     }
 
-    // Tạo JLabel chứa ảnh phòng, nếu không tìm thấy file ảnh sẽ trả về JLabel "No Image"
-    private JLabel createRoomImageLabel(String resourcePath, int width, int height, int arc) {
-        try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
-            if (is == null) throw new Exception("Image not found: " + resourcePath);
-            BufferedImage orig = ImageIO.read(is);
-            if (orig == null) throw new Exception("Cannot read image: " + resourcePath);
-
-            BufferedImage scaledBuf = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = scaledBuf.createGraphics();
-            try {
-                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                g.drawImage(orig, 0, 0, width, height, null);
-            } finally {
-                g.dispose();
-            }
-
-            ImageIcon rounded = createRoundedImageIcon(scaledBuf, width, height, arc);
-            JLabel imgLabel = new JLabel(rounded);
-            imgLabel.setPreferredSize(new Dimension(width, height));
-            imgLabel.setOpaque(false);
-            return imgLabel;
-        } catch (Exception e) {
-            // Trường hợp không tìm được ảnh: trả về label mặc định để không làm lỗi UI
-            JLabel imgLabel = new JLabel("No Image", SwingConstants.CENTER);
-            imgLabel.setForeground(Color.BLACK);
-            imgLabel.setPreferredSize(new Dimension(width, height));
-            imgLabel.setOpaque(true);
-            imgLabel.setBackground(Color.LIGHT_GRAY);
-            return imgLabel;
-        }
-    }
-
-    // Tạo nút chỉ chứa icon (dùng cho hàng nút sửa/xóa ở từng thẻ phòng)
-    private JButton createIconOnlyButton(String iconPath, Dimension size, String flatStyle) {
-        ImageIcon icon = loadScaledIcon(iconPath, 20, 20);
-        JButton btn = new JButton(icon);
+    // create icon-only button async
+    private JButton createIconOnlyButtonAsync(String iconPath, Dimension size, String flatStyle) {
+        JButton btn = new JButton();
         btn.setPreferredSize(size);
         btn.putClientProperty(FlatClientProperties.STYLE, flatStyle);
         btn.setFocusPainted(false);
+
+        loadIconAsync(iconPath, 20, 20, icon -> {
+            if (icon != null) btn.setIcon(icon);
+        });
+
         return btn;
     }
 
-    // Trả về JLabel với font trắng — dùng nhiều lần trong thẻ phòng
-    private JLabel createWhiteLabel(String text, int size, boolean bold) {
+    // create white label using provided Font (avoid creating new Font inside)
+    private JLabel createWhiteLabel(String text, Font font) {
         JLabel l = new JLabel(text);
-        l.setFont(new Font("Arial", bold ? Font.BOLD : Font.PLAIN, size));
+        l.setFont(font);
         l.setForeground(Color.WHITE);
         l.setOpaque(false);
         return l;
     }
 
-    // Tạo danh sách các thẻ phòng và gói vào JScrollPane để cuộn được
+    // ------------- LIST POPULATION (incremental) ----------------
+
     private void createListRoomPanel() {
-        JPanel listRoomPanel = new JPanel();
-        listRoomPanel.setLayout(new BoxLayout(listRoomPanel, BoxLayout.Y_AXIS));
-        listRoomPanel.setBackground(CustomUI.white);
-        listRoomPanel.setOpaque(true);
-        listRoomPanel.setBorder(BorderFactory.createCompoundBorder(
+        listRoomPanelContainer.setLayout(new BoxLayout(listRoomPanelContainer, BoxLayout.Y_AXIS));
+        listRoomPanelContainer.setBackground(CustomUI.white);
+        listRoomPanelContainer.setOpaque(true);
+        listRoomPanelContainer.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.decode("#E5E7EB"), 2, true),
                 BorderFactory.createEmptyBorder(8, 8, 8, 8)
         ));
 
-        listRoomPanel.add(createRoomPanel("T001", 1, "VIP", "50.000 VND", "300.000 VND", "Đang chờ", "/images/vip_room.jpg"));
-        listRoomPanel.add(Box.createVerticalStrut(12));
-        listRoomPanel.add(createRoomPanel("T002", 2, "Thường", "40.000 VND", "250.000 VND", "Đã đặt", "/images/normal_room.jpg"));
-        listRoomPanel.add(Box.createVerticalStrut(12));
-        listRoomPanel.add(createRoomPanel("T003", 3, "VIP", "40.000 VND", "250.000 VND", "Đã đặt", "/images/normal_room.jpg"));
-        listRoomPanel.add(Box.createVerticalStrut(12));
-        listRoomPanel.add(createRoomPanel("T002", 4, "Thường", "40.000 VND", "250.000 VND", "Đã đặt", "/images/normal_room.jpg"));
-        listRoomPanel.add(Box.createVerticalGlue());
+        // add small placeholder so scroll area appears immediately
+        JPanel placeholder = new JPanel();
+        placeholder.setPreferredSize(new Dimension(0, 40));
+        placeholder.setOpaque(false);
+        listRoomPanelContainer.add(placeholder);
 
-        JScrollPane scrollPane = new JScrollPane(listRoomPanel,
+        JScrollPane scrollPane = new JScrollPane(listRoomPanelContainer,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(null);
@@ -570,6 +636,47 @@ public class QuanLyPhongPanel extends JPanel {
         scrollPane.getViewport().setBackground(CustomUI.white);
         scrollPane.setPreferredSize(new Dimension(0, 500));
         this.add(scrollPane);
+
+        // Data (in real app fetch from DB)
+        List<RoomData> dataset = new ArrayList<>();
+        dataset.add(new RoomData("T001", 1, "VIP", "50.000 VND", "300.000 VND", "Đang chờ", "/images/vip_room.jpg"));
+        dataset.add(new RoomData("T002", 2, "Thường", "40.000 VND", "250.000 VND", "Đã đặt", "/images/normal_room.jpg"));
+        dataset.add(new RoomData("T003", 3, "VIP", "40.000 VND", "250.000 VND", "Đã đặt", "/images/normal_room.jpg"));
+        dataset.add(new RoomData("T004", 4, "Thường", "40.000 VND", "250.000 VND", "Đã đặt", "/images/normal_room.jpg"));
+        // add more if needed...
+
+        // Use SwingWorker to publish items incrementally (keeps EDT responsive)
+        SwingWorker<Void, RoomData> wk = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                for (RoomData r : dataset) {
+                    publish(r);
+                    // small yield to allow UI painting (adjustable)
+                    try { Thread.sleep(15); } catch (InterruptedException ignored) {}
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<RoomData> chunks) {
+                for (RoomData r : chunks) {
+                    listRoomPanelContainer.add(createRoomPanel(r.name, r.people, r.type, r.priceHour, r.priceDay, r.status, r.image));
+                    listRoomPanelContainer.add(Box.createVerticalStrut(12));
+                }
+                listRoomPanelContainer.add(Box.createVerticalGlue());
+                listRoomPanelContainer.revalidate();
+                listRoomPanelContainer.repaint();
+            }
+        };
+        wk.execute();
     }
 
+    // small holder for room data
+    private static class RoomData {
+        final String name, priceHour, priceDay, status, image, type;
+        final int people;
+        RoomData(String name, int people, String type, String priceHour, String priceDay, String status, String image) {
+            this.name = name; this.people = people; this.type = type; this.priceHour = priceHour; this.priceDay = priceDay; this.status = status; this.image = image;
+        }
+    }
 }
