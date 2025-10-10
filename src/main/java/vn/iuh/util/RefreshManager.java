@@ -36,15 +36,18 @@ public class RefreshManager {
 
     // Individual refresh methods
     public static void refreshReservationManagementPanel() {
-        reservationManagementPanel.refreshPanel();
+        if (reservationManagementPanel != null)
+            reservationManagementPanel.refreshPanel();
     }
 
     public static void refreshReservationFormManagementPanel() {
-        reservationFormManagementPanel.refreshPanel();
+        if (reservationFormManagementPanel != null)
+            reservationFormManagementPanel.refreshPanel();
     }
 
     public static void refreshReservationFormSearchPanel() {
-        reservationFormSearchPanel.refreshPanel();
+        if (reservationFormSearchPanel != null)
+            reservationFormSearchPanel.refreshPanel();
     }
 
     // Comprehensive refresh method

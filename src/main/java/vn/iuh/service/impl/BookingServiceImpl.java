@@ -104,19 +104,21 @@ public class BookingServiceImpl implements BookingService {
             datPhongDAO.themChiTietDatPhong(donDatPhong, chiTietDatPhongs);
 
             // 2.3. Create HistoryCheckInEntity & insert to DB
-            List<LichSuDiVao> historyCheckIns = new ArrayList<>();
-            LichSuDiVao lichSuDiVaoMoiNhat = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
-            String maLichSuDiVaoMoiNhat = lichSuDiVaoMoiNhat == null ? null : lichSuDiVaoMoiNhat.getMaLichSuDiVao();
+            if (!bookingCreationEvent.isDaDatTruoc()) {
+                List<LichSuDiVao> historyCheckIns = new ArrayList<>();
+                LichSuDiVao lichSuDiVaoMoiNhat = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
+                String maLichSuDiVaoMoiNhat = lichSuDiVaoMoiNhat == null ? null : lichSuDiVaoMoiNhat.getMaLichSuDiVao();
 
-            for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                LichSuDiVao lichSuDiVao =
-                        createHistoryCheckInEntity(maLichSuDiVaoMoiNhat, chiTietDatPhong.getMaChiTietDatPhong());
+                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
+                    LichSuDiVao lichSuDiVao =
+                            createHistoryCheckInEntity(maLichSuDiVaoMoiNhat, chiTietDatPhong.getMaChiTietDatPhong());
 
-                historyCheckIns.add(lichSuDiVao);
-                maLichSuDiVaoMoiNhat = lichSuDiVao.getMaLichSuDiVao();
+                    historyCheckIns.add(lichSuDiVao);
+                    maLichSuDiVaoMoiNhat = lichSuDiVao.getMaLichSuDiVao();
+                }
+
+                datPhongDAO.themLichSuDiVao(historyCheckIns);
             }
-
-            datPhongDAO.themLichSuDiVao(historyCheckIns);
 
             // 2.4 Update Service Quantity
             for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
