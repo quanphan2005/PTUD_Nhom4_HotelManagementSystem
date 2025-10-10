@@ -1018,9 +1018,16 @@ public class BookingFormPanel extends JPanel {
         btnCancel.addActionListener(e -> handleCloseReservation());
         btnCalculatePrice.addActionListener(e -> calculatePrice());
         closeButton.addActionListener(e -> handleCloseReservation());
-
-        // Add event listener for chkIsAdvanced
         chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
+        reservationButton.addActionListener(e -> handleShowReservationManagement());
+    }
+
+    private void handleShowReservationManagement() {
+        ReservationFormSearchPanel reservationFormManagementPanel =
+                new ReservationFormSearchPanel(PanelName.BOOKING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
+
+        Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_SEARCH.getName());
+        Main.showCard(PanelName.RESERVATION_FORM_SEARCH.getName());
     }
 
     private void handleCalculateDeposit() {

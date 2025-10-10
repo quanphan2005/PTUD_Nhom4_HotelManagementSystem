@@ -54,6 +54,7 @@ public class ReservationFormSearchPanel extends JPanel {
         // Initialize services and data
         bookingService = new BookingServiceImpl();
         reservationFilter = new ReservationFilter(null, null, null);
+        RefreshManager.setReservationFormSearchPanel(this);
 
         // Load data
         loadReservationData();

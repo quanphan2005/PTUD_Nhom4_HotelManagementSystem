@@ -4,11 +4,13 @@ import vn.iuh.constraint.PanelName;
 import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.panel.booking.ReservationFormManagementPanel;
+import vn.iuh.gui.panel.booking.ReservationFormSearchPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 
 public class RefreshManager {
     private static ReservationManagementPanel reservationManagementPanel;
     private static ReservationFormManagementPanel reservationFormManagementPanel;
+    private static ReservationFormSearchPanel reservationFormSearchPanel;
     private static GridRoomPanel gridRoomPanel;
 
     // Registration methods
@@ -22,6 +24,11 @@ public class RefreshManager {
         System.out.println("RefreshManager: ReservationFormManagementPanel registered");
     }
 
+    public static void setReservationFormSearchPanel(ReservationFormSearchPanel panel) {
+        reservationFormSearchPanel = panel;
+        System.out.println("RefreshManager: ReservationFormSearchPanel registered");
+    }
+
     public static void setGridRoomPanel(GridRoomPanel panel) {
         gridRoomPanel = panel;
         System.out.println("RefreshManager: GridRoomPanel registered");
@@ -32,19 +39,12 @@ public class RefreshManager {
         reservationManagementPanel.refreshPanel();
     }
 
-    // TODO - implement later
     public static void refreshReservationFormManagementPanel() {
         reservationFormManagementPanel.refreshPanel();
     }
 
-    public static void refreshGridRoomPanel() {
-        if (gridRoomPanel != null) {
-            System.out.println("RefreshManager: Refreshing GridRoomPanel");
-            // Trigger refresh through reservation management panel since it manages the grid
-            refreshReservationManagementPanel();
-        } else {
-            System.out.println("RefreshManager: GridRoomPanel is null - not registered properly");
-        }
+    public static void refreshReservationFormSearchPanel() {
+        reservationFormSearchPanel.refreshPanel();
     }
 
     // Comprehensive refresh method
@@ -59,11 +59,13 @@ public class RefreshManager {
         System.out.println("RefreshManager: Refreshing after booking operation...");
         refreshReservationManagementPanel();
         refreshReservationFormManagementPanel();
+        refreshReservationFormSearchPanel();
     }
 
     public static void refreshAfterCancelReservation() {
         System.out.println("RefreshManager: Refreshing after cancel reservation...");
         refreshReservationManagementPanel();
         refreshReservationFormManagementPanel();
+        refreshReservationFormSearchPanel();
     }
 }
