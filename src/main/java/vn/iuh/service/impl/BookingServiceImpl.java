@@ -6,6 +6,7 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
+import vn.iuh.dto.repository.PhieuDatPhong;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
@@ -103,19 +104,21 @@ public class BookingServiceImpl implements BookingService {
             datPhongDAO.themChiTietDatPhong(donDatPhong, chiTietDatPhongs);
 
             // 2.3. Create HistoryCheckInEntity & insert to DB
-            List<LichSuDiVao> historyCheckIns = new ArrayList<>();
-            LichSuDiVao lichSuDiVaoMoiNhat = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
-            String maLichSuDiVaoMoiNhat = lichSuDiVaoMoiNhat == null ? null : lichSuDiVaoMoiNhat.getMaLichSuDiVao();
+            if (!bookingCreationEvent.isDaDatTruoc()) {
+                List<LichSuDiVao> historyCheckIns = new ArrayList<>();
+                LichSuDiVao lichSuDiVaoMoiNhat = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
+                String maLichSuDiVaoMoiNhat = lichSuDiVaoMoiNhat == null ? null : lichSuDiVaoMoiNhat.getMaLichSuDiVao();
 
-            for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                LichSuDiVao lichSuDiVao =
-                        createHistoryCheckInEntity(maLichSuDiVaoMoiNhat, chiTietDatPhong.getMaChiTietDatPhong());
+                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
+                    LichSuDiVao lichSuDiVao =
+                            createHistoryCheckInEntity(maLichSuDiVaoMoiNhat, chiTietDatPhong.getMaChiTietDatPhong());
 
-                historyCheckIns.add(lichSuDiVao);
-                maLichSuDiVaoMoiNhat = lichSuDiVao.getMaLichSuDiVao();
+                    historyCheckIns.add(lichSuDiVao);
+                    maLichSuDiVaoMoiNhat = lichSuDiVao.getMaLichSuDiVao();
+                }
+
+                datPhongDAO.themLichSuDiVao(historyCheckIns);
             }
-
-            datPhongDAO.themLichSuDiVao(historyCheckIns);
 
             // 2.4 Update Service Quantity
             for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
@@ -208,16 +211,35 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<ReservationFormResponse> getAllReservationForms() {
         System.out.println("Fetching all reservation forms...");
-        List<ThongTinDatPhong> danhSachThongTinDatPhong = datPhongDAO.timTatCaThongTinDatPhong();
+        List<PhieuDatPhong> danhSachPhieuDatPhong = datPhongDAO.timTatCaPhieuDatPhong();
 
         List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
-        for (ThongTinDatPhong thongTinDatPhong : danhSachThongTinDatPhong) {
+        for (PhieuDatPhong phieuDatPhong : danhSachPhieuDatPhong) {
             reservationFormResponses.add(new ReservationFormResponse(
-                    thongTinDatPhong.getTenKhachHang(),
-                    thongTinDatPhong.getMaDonDatPhong(),
-                    thongTinDatPhong.getMaPhong(),
-                    thongTinDatPhong.getTgNhanPhong(),
-                    thongTinDatPhong.getTgTraPhong()
+                    phieuDatPhong.getTenKhachHang(),
+                    phieuDatPhong.getMaDonDatPhong(),
+                    phieuDatPhong.getTenPhong(),
+                    phieuDatPhong.getTgNhanPhong(),
+                    phieuDatPhong.getTgTraPhong()
+            ));
+        }
+
+        return reservationFormResponses;
+    }
+
+    @Override
+    public List<ReservationFormResponse> getReseravtionFormByRoomId(String id) {
+        System.out.println("Fetching reservation forms for room ID: " + id);
+        List<PhieuDatPhong> danhSachPhieuDatPhong = datPhongDAO.timThongTinDatPhongBangMaPhong(id);
+
+        List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
+        for (PhieuDatPhong phieuDatPhong : danhSachPhieuDatPhong) {
+            reservationFormResponses.add(new ReservationFormResponse(
+                    phieuDatPhong.getTenKhachHang(),
+                    phieuDatPhong.getMaDonDatPhong(),
+                    phieuDatPhong.getTenPhong(),
+                    phieuDatPhong.getTgNhanPhong(),
+                    phieuDatPhong.getTgTraPhong()
             ));
         }
 

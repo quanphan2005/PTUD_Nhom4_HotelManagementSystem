@@ -159,18 +159,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         titleLabel.setForeground(CustomUI.white);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
-        // Check-in and Check-out icons
-        ImageIcon checkinIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/checkin.png")));
-        checkinIcon = new ImageIcon(checkinIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
-        JButton checkInButton = new JButton(checkinIcon);
-
-        ImageIcon checkoutIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/leaving.png")));
-        checkoutIcon = new ImageIcon(checkoutIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
-        JButton checkoutButton = new JButton(checkoutIcon);
-
-        titlePanel.add(checkInButton);
         titlePanel.add(titleLabel);
-        titlePanel.add(checkoutButton);
 
         closeButton = new JButton("x");
         closeButton.setFont(CustomUI.veryBigFont);
@@ -488,25 +477,23 @@ public class MultiRoomBookingFormPanel extends JPanel {
         ImageIcon menuIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/action.png")));
         menuIcon = new ImageIcon(menuIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
+        // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(menuIcon, "BẢNG THAO TÁC",
                                                      new Color(70, 130, 180), CustomUI.white, () -> {
                     isActionMenuCollapsed = !isActionMenuCollapsed;
                     togglePanelVisibility(actionMenuContent, isActionMenuCollapsed);
                 });
 
-        actionMenuContent = new JPanel(new GridLayout(2, 1, 10, 10));
+        // Create content panel - flexible grid based on number of actions
+        actionMenuContent = new JPanel();
         actionMenuContent.setBackground(Color.WHITE);
         actionMenuContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
-        // Create action buttons for multi-room booking
-        JButton callServiceButton = createActionButton("Gọi Dịch Vụ", IconUtil.createServiceIcon(), CustomUI.bluePurple, this::handleCallService);
-        JButton confirmBookingButton = createActionButton("Xác Nhận Đặt", IconUtil.createBookingIcon(), CustomUI.darkGreen, this::handleConfirmBooking);
-
-        actionMenuContent.add(callServiceButton);
-        actionMenuContent.add(confirmBookingButton);
+        // Populate action items based on room status
+        populateActionItems();
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(actionMenuContent, BorderLayout.CENTER);
@@ -514,11 +501,10 @@ public class MultiRoomBookingFormPanel extends JPanel {
         return mainPanel;
     }
 
-    // Helper methods (similar to BookingFormPanel)
-    private JButton createActionButton(String text, ImageIcon icon, Color backgroundColor, Runnable action) {
+    private JButton createActionButton(ActionItem item) {
         JButton button = new JButton();
         button.setLayout(new BorderLayout());
-        button.setBackground(backgroundColor);
+        button.setBackground(item.getBackgroundColor());
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createRaisedBevelBorder(),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -526,10 +512,12 @@ public class MultiRoomBookingFormPanel extends JPanel {
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        JLabel iconLabel = new JLabel(icon, SwingConstants.CENTER);
+        // Icon label - now using ImageIcon instead of emoji string
+        JLabel iconLabel = new JLabel(item.getIcon(), SwingConstants.CENTER);
         iconLabel.setOpaque(false);
 
-        JLabel textLabel = new JLabel(text, SwingConstants.CENTER);
+        // Text label
+        JLabel textLabel = new JLabel(item.getText(), SwingConstants.CENTER);
         textLabel.setFont(CustomUI.normalFont);
         textLabel.setForeground(Color.WHITE);
         textLabel.setOpaque(false);
@@ -537,21 +525,56 @@ public class MultiRoomBookingFormPanel extends JPanel {
         button.add(iconLabel, BorderLayout.CENTER);
         button.add(textLabel, BorderLayout.SOUTH);
 
+        // Add hover effects
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                button.setBackground(backgroundColor.brighter());
+                button.setBackground(item.getBackgroundColor().brighter());
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                button.setBackground(backgroundColor);
+                button.setBackground(item.getBackgroundColor());
             }
         });
 
-        button.addActionListener(e -> action.run());
+        // Add click action
+        button.addActionListener(e -> item.getAction().run());
 
         return button;
+    }
+    
+    private void populateActionItems() {
+        List<ActionItem> actionItems = getActionItems();
+
+        // Set grid layout based on number of items
+        int itemCount = actionItems.size();
+        int cols = Math.min(itemCount, 2); // Max 2 columns
+        int rows = Math.max((int) Math.ceil((double) itemCount / 2), 2);
+        actionMenuContent.setLayout(new GridLayout(rows, cols, 10, 10));
+
+        // Create and add action buttons
+        for (ActionItem item : actionItems) {
+            JButton actionButton = createActionButton(item);
+            actionMenuContent.add(actionButton);
+        }
+
+        // Refresh the panel
+        actionMenuContent.revalidate();
+        actionMenuContent.repaint();
+    }
+
+    // Get action items based on room status
+    private List<ActionItem> getActionItems() {
+        List<ActionItem> items = new ArrayList<>();
+
+        ActionItem callServiceItem = new ActionItem("Gọi Dịch Vụ", IconUtil.createServiceIcon(), CustomUI.bluePurple, this::handleCallService);
+        ActionItem bookRoomItem = new ActionItem("Đặt Phòng", IconUtil.createBookingIcon(), CustomUI.bluePurple, this::handleConfirmBooking);
+
+        items.add(callServiceItem);
+        items.add(bookRoomItem);
+
+        return items;
     }
 
     private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, String labelText, JComponent component) {
@@ -617,7 +640,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
                 dropdownButton.setText(isCustomerInfoCollapsed ? "►" : "▼");
             } else if (title.contains("ĐẶT PHÒNG")) {
                 dropdownButton.setText(isBookingInfoCollapsed ? "►" : "▼");
-            } else if (title.contains("PHÒNG ĐÃ CHỌN")) {
+            } else if (title.contains("DANH SÁCH PHÒNG")) {
                 dropdownButton.setText(isRoomListCollapsed ? "►" : "▼");
             } else if (title.contains("BẢNG THAO TÁC")) {
                 dropdownButton.setText(isActionMenuCollapsed ? "►" : "▼");
@@ -659,44 +682,70 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
     }
 
+    private void handleCheckinDateChange() {
+        Date now = new Date();
+        Date checkInDate = (Date) spnCheckInDate.getValue();
+        Date currentCheckOutDate = (Date) spnCheckOutDate.getValue();
+
+        // Handle past check-in date
+        if (checkInDate.before(Date.from(now.toInstant().minus(1, ChronoUnit.MINUTES)))) {
+            JOptionPane.showMessageDialog(this,
+                                          "Ngày check-in không được trước ngày hiện tại!",
+                                          "Lỗi ngày tháng",
+                                          JOptionPane.ERROR_MESSAGE);
+            spnCheckInDate.setValue(now);
+            spnCheckOutDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.DAYS)));
+            return;
+        }
+
+        // Auto increase check-out date if it's not after check-in or less than 1 hour after check-in
+        if (!currentCheckOutDate.after(checkInDate) ||
+            (currentCheckOutDate.getTime() - checkInDate.getTime()) < (60 * 60 * 1000)) {
+            // Set checkout to be 1 day after checkin
+            spnCheckOutDate.setValue(Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS)));
+        }
+
+        // Auto on isAdvanced if check-in is in the future
+        chkIsAdvanced.setSelected(checkInDate.after(now));
+
+        calculatePrice();
+    }
+
+    private void handleCheckoutDateChange() {
+        Date checkInDate = (Date) spnCheckInDate.getValue();
+        Date checkOutDate = (Date) spnCheckOutDate.getValue();
+
+        // Auto increase check-out date if it's not after check-in or less than 1 hour after check-in
+        if (!checkOutDate.after(checkInDate) ||
+            (checkOutDate.getTime() - checkInDate.getTime()) < (60 * 60 * 1000)) {
+
+            JOptionPane.showMessageDialog(this,
+                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
+                                          "Lỗi ngày tháng",
+                                          JOptionPane.ERROR_MESSAGE);
+
+            // Set checkout to be 1 day after checkin
+            spnCheckOutDate.setValue(Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS)));
+            return;
+        }
+
+        calculatePrice();
+    }
+
     private void setDefaultValues() {
-        // Calculate and set total initial price
+        // Calculate total price for all rooms
         double totalPrice = selectedRooms.stream()
-                                         .mapToDouble(BookingResponse::getDailyPrice)
-                                         .sum();
+                .mapToDouble(BookingResponse::getDailyPrice)
+                .sum();
+
         txtTotalInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
         txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
-        calculateTotalInitialPrice();
+        calculatePrice();
 
         // Set default check-in date to today
-        java.util.Date today = new java.util.Date();
+        java.util.Date today = new Date();
+        spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
         spnCheckInDate.setValue(today);
-
-        // Set default check-out date to tomorrow
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.setTime(today);
-        cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
-        spnCheckOutDate.setValue(cal.getTime());
-    }
-
-    private void setupEventHandlers() {
-        closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
-        chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
-    }
-
-    private void handleCalculateDeposit() {
-        boolean isSelected = chkIsAdvanced.isSelected();
-        txtDepositPrice.setEnabled(isSelected);
-        if (!isSelected) {
-            txtDepositPrice.setText("0");
-        }
-        calculateDepositPrice();
-    }
-
-
-    // Action handlers
-    private void handleCallService() {
-        Main.showCard(SERVICE_ORDER.getName());
     }
 
     private void updateTotalServicePrice() {
@@ -733,85 +782,86 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
     }
 
-    private void handleConfirmBooking() {
-        // Implement multi-room booking logic here
+    private void calculatePrice() {
         try {
+            java.util.Date checkIn = (java.util.Date) spnCheckInDate.getValue();
+            java.util.Date checkOut = (java.util.Date) spnCheckOutDate.getValue();
+
+            if (checkOut.before(checkIn)) {
+                JOptionPane.showMessageDialog(this, "Ngày trả phòng phải sau ngày nhận phòng!",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            long diffInMillis = checkOut.getTime() - checkIn.getTime();
+            long tempDiffInDays = diffInMillis / (24 * 60 * 60 * 1000);
+
+            if (tempDiffInDays == 0) tempDiffInDays = 1; // Minimum 1 day
+            final long diffInDaysFinal = tempDiffInDays;
+
+            double totalPrice = selectedRooms.stream()
+                                             .mapToDouble(room -> diffInDaysFinal * room.getDailyPrice())
+                                             .sum();
+
+            txtTotalInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
+            calculateDepositPrice(); // Recalculate deposit when initial price changes
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tính giá: " + e.getMessage(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void setupEventHandlers() {
+        closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
+
+        // Add event listener for chkIsAdvanced
+        chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
+    }
+
+    private void handleCalculateDeposit() {
+        boolean isSelected = chkIsAdvanced.isSelected();
+        txtDepositPrice.setEnabled(isSelected);
+        if (!isSelected) {
+            spnCheckInDate.setValue(new java.util.Date());
+            txtDepositPrice.setText("0");
+        }
+        calculateDepositPrice();
+    }
+
+    private void handleCallService() {
+        Main.showCard(SERVICE_ORDER.getName());
+    }
+
+    private void handleConfirmBooking() {
+        try {
+            // Validate input
             if (!validateInput()) {
                 return;
             }
 
-            // Create booking events for each room
-            List<String> roomIds = selectedRooms.stream()
-                    .map(BookingResponse::getRoomId)
-                    .toList();
+            // Create booking event for multiple rooms
+            BookingCreationEvent bookingEvent = createMultiRoomBookingEvent();
 
-            BookingCreationEvent bookingEvent = createMultiRoomBookingEvent(roomIds);
+            // Call booking service
             boolean success = bookingService.createBooking(bookingEvent);
 
             if (success) {
-                JOptionPane.showMessageDialog(this,
-                    "Đặt " + selectedRooms.size() + " phòng thành công!",
+                JOptionPane.showMessageDialog(this, "Đặt " + selectedRooms.size() + " phòng thành công!",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
+                // Refresh reservation management panel
                 RefreshManager.refreshAfterBooking();
-                handleCancel();
+                Main.showCard("Quản lý đặt phòng"); // Return to previous screen
             } else {
-                JOptionPane.showMessageDialog(this,
-                    "Đặt phòng thất bại! Vui lòng thử lại.",
+                JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Vui lòng thử lại.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (Exception e) {
             System.out.println("Error during multi-room booking: " + e.getMessage());
-            JOptionPane.showMessageDialog(this,
-                "Lỗi khi đặt phòng: " + e.getMessage(),
+            JOptionPane.showMessageDialog(this, "Lỗi khi đặt phòng: " + e.getMessage(),
                 "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private void handleCancel() {
-        Main.showCard("Quản lý đặt phòng");
-    }
-
-    private void handleCheckinDateChange() {
-        if (!validateDateRangeWithMinimumHours()) {
-            JOptionPane.showMessageDialog(this,
-                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
-                                          "Lỗi ngày tháng",
-                                          JOptionPane.ERROR_MESSAGE);
-
-            Date checkOutDate = (Date) spnCheckOutDate.getValue();
-            spnCheckInDate.setValue(Date.from(checkOutDate.toInstant().minus(1, ChronoUnit.DAYS)));
-            return;
-        }
-        
-        calculateTotalInitialPrice();
-    }
-
-    private void handleCheckoutDateChange() {
-        if (!validateDateRangeWithMinimumHours()) {
-            JOptionPane.showMessageDialog(this,
-                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
-                                          "Lỗi ngày tháng",
-                                          JOptionPane.ERROR_MESSAGE);
-
-            Date checkInDate = (Date) spnCheckInDate.getValue();
-            spnCheckOutDate.setValue(Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS)));
-            return;
-        }
-
-        calculateTotalInitialPrice();
-    }
-
-    private boolean validateDateRangeWithMinimumHours() {
-        Date checkIn = (Date) spnCheckInDate.getValue();
-        Date checkOut = (Date) spnCheckOutDate.getValue();
-
-        // Allow check-in to be in the past, but ensure check-out is at least 1 hour after check-in
-        long diffInMillis = checkOut.getTime() - checkIn.getTime();
-        long diffInHours = diffInMillis / (1000 * 60 * 60);
-
-        return diffInHours >= 1;
     }
 
     private boolean validateInput() {
@@ -845,8 +895,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
             return false;
         }
 
-        Date checkIn = (Date) spnCheckInDate.getValue();
-        Date checkOut = (Date) spnCheckOutDate.getValue();
+        java.util.Date checkIn = (java.util.Date) spnCheckInDate.getValue();
+        java.util.Date checkOut = (java.util.Date) spnCheckOutDate.getValue();
 
         if (checkOut.before(checkIn)) {
             JOptionPane.showMessageDialog(this, "Ngày trả phòng phải sau ngày nhận phòng!",
@@ -857,43 +907,27 @@ public class MultiRoomBookingFormPanel extends JPanel {
         return true;
     }
 
-    private void calculateTotalInitialPrice() {
-        Date checkIn = (Date) spnCheckInDate.getValue();
-        Date checkOut = (Date) spnCheckOutDate.getValue();
-
-        long diffInMillies = checkOut.getTime() - checkIn.getTime();
-        long diffInHours = TimeUnit.MILLISECONDS.toHours(diffInMillies);
-        long days = diffInHours / 24;
-        long hours = diffInHours % 24;
-
-        double totalDailyPrice = selectedRooms.stream()
-                .mapToDouble(BookingResponse::getDailyPrice)
-                .sum() * days;
-
-        double totalHourlyPrice = selectedRooms.stream()
-                .mapToDouble(BookingResponse::getDailyPrice)
-                .sum() * hours;
-        txtTotalInitialPrice.setText(priceFormatter.format(totalDailyPrice + totalHourlyPrice) + " VNĐ");
-
-        calculateDepositPrice();
-    }
-
-    private BookingCreationEvent createMultiRoomBookingEvent(List<String> roomIds) {
+    private BookingCreationEvent createMultiRoomBookingEvent() {
         String tenKhachHang = txtCustomerName.getText().trim();
         String soDienThoai = txtPhoneNumber.getText().trim();
         String cccd = txtCCCD.getText().trim();
         String moTa = txtNote.getText().trim();
-        Timestamp ngayNhanPhong = new Timestamp(((Date) spnCheckInDate.getValue()).getTime());
-        Timestamp ngayTraPhong = new Timestamp(((Date) spnCheckOutDate.getValue()).getTime());
-        Timestamp thoiGianTao = new Timestamp(System.currentTimeMillis());
+        java.sql.Timestamp ngayNhanPhong = new java.sql.Timestamp(((java.util.Date) spnCheckInDate.getValue()).getTime());
+        java.sql.Timestamp ngayTraPhong = new java.sql.Timestamp(((java.util.Date) spnCheckOutDate.getValue()).getTime());
+        java.sql.Timestamp thoiGianTao = new java.sql.Timestamp(System.currentTimeMillis());
         double tongTienDuTinh = Double.parseDouble(txtTotalInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
         double tienDatCoc = Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         boolean daDatTruoc = chkIsAdvanced.isSelected();
 
-        String maPhienDangNhap = "PN00000002"; // TODO - get actual shift assignment ID
+        // Collect all room IDs for multi-room booking
+        List<String> danhSachMaPhong = selectedRooms.stream()
+                .map(BookingResponse::getRoomId)
+                .toList();;
+
+        String maPhienDangNhap = Main.getCurrentLoginSession();
 
         return new BookingCreationEvent(tenKhachHang, soDienThoai, cccd, moTa,
                                         ngayNhanPhong, ngayTraPhong, tongTienDuTinh, tienDatCoc, daDatTruoc,
-                                        roomIds, serviceOrdered, maPhienDangNhap, thoiGianTao);
+                                        danhSachMaPhong, serviceOrdered, maPhienDangNhap, thoiGianTao);
     }
 }

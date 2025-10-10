@@ -53,6 +53,8 @@ public class RoomUsageFormPanel extends JPanel {
     private JTextField txtInitialPrice;
     private JTextField txtTotalServicePrice;
     private JTextField txtDepositPrice;
+
+    private JButton reservationButton;
     private JButton btnCreateReservationForm;
 
     // Service Components - simplified to use dialog
@@ -141,6 +143,7 @@ public class RoomUsageFormPanel extends JPanel {
         txtNote.setLineWrap(true);
         txtNote.setWrapStyleWord(true);
 
+        reservationButton = new JButton(" Xem lịch đặt phòng");
         btnCreateReservationForm = new JButton("Tạo đơn đặt phòng mới");
 
         // Buttons
@@ -179,7 +182,7 @@ public class RoomUsageFormPanel extends JPanel {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
         // Check-in and Check-out icons
-        ImageIcon checkinIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/checkin.png")));
+        ImageIcon checkinIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/get_in.png")));
         checkinIcon = new ImageIcon(checkinIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
         JButton checkInButton = new JButton(checkinIcon);
 
@@ -407,22 +410,35 @@ public class RoomUsageFormPanel extends JPanel {
         addFormRow(bookingInfoContent, gbc, 3, "Tổng tiền dịch vụ:", txtTotalServicePrice);
         addFormRow(bookingInfoContent, gbc, 4, "Tiền đặt cọc:", txtDepositPrice);
 
-        // Advanced booking checkbox
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        gbc.gridheight = 1;
+        // Create new reservation form
+        gbc.gridx = 0; gbc.gridy = 5;
+        gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         btnCreateReservationForm.setFont(CustomUI.smallFont);
         btnCreateReservationForm.setForeground(CustomUI.white);
-        btnCreateReservationForm.setBackground(CustomUI.purple);
+        btnCreateReservationForm.setBackground(CustomUI.blue);
+
+        // Add calendar icon to reservation button
+        ImageIcon createReservationForm = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/create_reservation.png")));
+        createReservationForm = new ImageIcon(createReservationForm.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
+        btnCreateReservationForm.setIcon(createReservationForm);
+
+        bookingInfoContent.add(btnCreateReservationForm, gbc);
+
+        // Reservation button
+        gbc.gridx = 1; gbc.gridy = 5;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        reservationButton.setFont(CustomUI.smallFont);
+        reservationButton.setForeground(CustomUI.white);
+        reservationButton.setBackground(CustomUI.purple);
 
         // Add calendar icon to reservation button
         ImageIcon calendar = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/calendar.png")));
         calendar = new ImageIcon(calendar.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
-        btnCreateReservationForm.setIcon(calendar);
+        reservationButton.setIcon(calendar);
 
-        bookingInfoContent.add(btnCreateReservationForm, gbc);
+        bookingInfoContent.add(reservationButton, gbc);
 
         // Note area
         gbc.gridx = 0;
@@ -595,8 +611,6 @@ public class RoomUsageFormPanel extends JPanel {
                                                      this::handleTransferRoom);
         ActionItem extendBookingItem = new ActionItem("Book Thêm Giờ", IconUtil.createExtendIcon(), CustomUI.bluePurple,
                                                       this::handleExtendBooking);
-        ActionItem cancelReservationItem = new ActionItem("Hủy Đặt Phòng", IconUtil.createCancelIcon(), CustomUI.red,
-                                                          this::handleCancelReservation);
         ActionItem checkInItem =
                 new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
@@ -605,7 +619,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {
             items.add(callServiceItem);
-            items.add(cancelReservationItem);
+            items.add(checkInItem);
             items.add(transferRoomItem);
             items.add(extendBookingItem);
         } else
@@ -898,6 +912,15 @@ public class RoomUsageFormPanel extends JPanel {
         btnCancel.addActionListener(e -> handleCancel());
         closeButton.addActionListener(e -> Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName()));
         btnCreateReservationForm.addActionListener(e -> handleCreateReservationForm());
+        reservationButton.addActionListener(e -> handleShowReservationManagement());
+    }
+
+    private void handleShowReservationManagement() {
+        ReservationFormSearchPanel reservationFormManagementPanel =
+                new ReservationFormSearchPanel(PanelName.ROOM_USING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
+
+        Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_SEARCH.getName());
+        Main.showCard(PanelName.RESERVATION_FORM_SEARCH.getName());
     }
 
     // Handler methods for action buttons
@@ -965,19 +988,6 @@ public class RoomUsageFormPanel extends JPanel {
         if (result == JOptionPane.YES_OPTION) {
             JOptionPane.showMessageDialog(this,
                                           "Khách đã nhận phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void handleCancelReservation() {
-        int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận hủy đặt phòng " + selectedRoom.getRoomName() + "?",
-                                                   "Hủy đặt phòng", JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.WARNING_MESSAGE);
-
-        if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã hủy đặt phòng " + selectedRoom.getRoomName(),
                                           "Thành công", JOptionPane.INFORMATION_MESSAGE);
         }
     }

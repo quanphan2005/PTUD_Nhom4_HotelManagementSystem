@@ -49,6 +49,8 @@ public class ReservationManagementPanel extends JPanel {
     // Status buttons for refresh functionality
     private JButton[] statusButtons;
 
+    private final String ALL_STATUS = "TẤT CẢ";
+
     public ReservationManagementPanel() {
         init();
         setupMultiBookingCallbacks();
@@ -167,16 +169,17 @@ public class ReservationManagementPanel extends JPanel {
     private void initializeSearchComponents() {
         // Room type dropdown - populate with actual room categories
         cmbRoomType = new JComboBox<>();
-        cmbRoomType.addItem("TẤT CẢ");
+        cmbRoomType.addItem(ALL_STATUS);
         cmbRoomType.addItem("VIP");
         cmbRoomType.addItem("THƯỜNG");
         cmbRoomType.setPreferredSize(new Dimension(200, 35));
         cmbRoomType.setFont(CustomUI.smallFont);
 
-        cmbRoomType.setSelectedIndex(0); // Default to "TẤT CẢ"
+        cmbRoomType.setSelectedIndex(0); // Default to ALL_STATUS
         cmbRoomType.addActionListener(e -> {
             roomFilter.roomType = (String) cmbRoomType.getSelectedItem();
             search();
+            refreshFilterBtn();
         });
 
         // Capacity dropdown
@@ -191,6 +194,7 @@ public class ReservationManagementPanel extends JPanel {
         cmbCapacity.addActionListener(e -> {
             roomFilter.capacity = (Integer) cmbCapacity.getSelectedItem();
             search();
+            refreshFilterBtn();
         });
 
         // Check-in date spinner following BookingFormPanel style
@@ -201,7 +205,6 @@ public class ReservationManagementPanel extends JPanel {
         // Initialize with today's date
         Date today = new Date();
         spnCheckInDate.setValue(today);
-        roomFilter.checkInDate = today; // Initialize filter too
 
         spnCheckInDate.setPreferredSize(new Dimension(200, 35));
         spnCheckInDate.setFont(CustomUI.smallFont);
@@ -215,7 +218,6 @@ public class ReservationManagementPanel extends JPanel {
         // Initialize with tomorrow's date
         Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
         spnCheckOutDate.setValue(tomorrow);
-        roomFilter.checkOutDate = tomorrow; // Initialize filter too
 
         spnCheckOutDate.setPreferredSize(new Dimension(200, 35));
         spnCheckOutDate.setFont(CustomUI.smallFont);
@@ -245,7 +247,7 @@ public class ReservationManagementPanel extends JPanel {
         int maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
 
         // Create status buttons with actual quantities and proper colors
-        JButton btnAll = createStatusButton("Tất cả (" + totalRooms + ")", CustomUI.green, "Tất cả");
+        JButton btnAll = createStatusButton(ALL_STATUS + " (" + totalRooms + ")", CustomUI.green, ALL_STATUS);
         gbc.gridx = 0; gbc.gridy = 0; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         panel.add(btnAll, gbc);
 
@@ -292,8 +294,20 @@ public class ReservationManagementPanel extends JPanel {
         if (filteredRooms == null) return 0;
 
         int count = 0;
+        for (RoomItem roomItem : allRoomItems) {
+            if (roomItem.getRoomStatus().equalsIgnoreCase(status)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getFilteredStatusCount(String status) {
+        if (filteredRooms == null) return 0;
+
+        int count = 0;
         for (RoomItem roomItem : filteredRooms) {
-            if (roomItem.getBookingResponse().getRoomStatus().equalsIgnoreCase(status)) {
+            if (roomItem.getRoomStatus().equalsIgnoreCase(status)) {
                 count++;
             }
         }
@@ -326,7 +340,7 @@ public class ReservationManagementPanel extends JPanel {
         modePanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CustomUI.lightGray, 2),
                 BorderFactory.createEmptyBorder(5, 15, 5, 15
-        )));
+                )));
 
         // Left panel with toggle button
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -439,18 +453,18 @@ public class ReservationManagementPanel extends JPanel {
     private void confirmMultiRoomSelection() {
         if (selectedRooms.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                "Vui lòng chọn ít nhất một phòng!",
-                "Thông báo",
-                JOptionPane.WARNING_MESSAGE);
+                                          "Vui lòng chọn ít nhất một phòng!",
+                                          "Thông báo",
+                                          JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         // Show confirmation dialog
         int result = JOptionPane.showConfirmDialog(this,
-            "Bạn đã chọn " + selectedRooms.size() + " phòng. Tiếp tục đặt phòng?",
-            "Xác nhận",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE);
+                                                   "Bạn đã chọn " + selectedRooms.size() + " phòng. Tiếp tục đặt phòng?",
+                                                   "Xác nhận",
+                                                   JOptionPane.YES_NO_OPTION,
+                                                   JOptionPane.QUESTION_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
             String cardName = PanelName.MULTI_BOOKING.getName();
@@ -476,38 +490,74 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void handleStatusFilter(String status) {
-        roomFilter.roomStatus = status;
+        if (status == null || status.equals(ALL_STATUS)) {
+            roomFilter.roomStatus = null;
+        } else {
+            roomFilter.roomStatus = status;
+        }
+
         search();
     }
 
     private void handleCheckinDateChange() {
-        roomFilter.checkInDate = (java.util.Date) spnCheckInDate.getValue();
-        if (!validateDateRangeWithMinimumHours()) {
+        Date now = new Date();
+        Date checkInDate = (Date) spnCheckInDate.getValue();
+        Date currentCheckOutDate = (Date) spnCheckOutDate.getValue();
+
+        // Handle past check-in date
+        if (checkInDate.before(Date.from(now.toInstant().minus(1, ChronoUnit.MINUTES)))) {
             JOptionPane.showMessageDialog(this,
-                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
+                                          "Ngày check-in không được trước ngày hiện tại!",
                                           "Lỗi ngày tháng",
                                           JOptionPane.ERROR_MESSAGE);
-
-            roomFilter.checkInDate = Date.from(roomFilter.checkOutDate.toInstant().minus(1, ChronoUnit.DAYS));
-            spnCheckInDate.setValue(roomFilter.checkInDate);
+            spnCheckInDate.setValue(now);
+            spnCheckOutDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.DAYS)));
+            roomFilter.checkInDate = now;
+            roomFilter.checkOutDate = Date.from(now.toInstant().plus(1, ChronoUnit.DAYS));
+            search();
+            refreshFilterBtn();
             return;
         }
+
+        // Auto increase check-out date if it's not after check-in or less than 1 hour after check-in
+        if (!currentCheckOutDate.after(checkInDate) ||
+            (currentCheckOutDate.getTime() - checkInDate.getTime()) < (60 * 60 * 1000)) {
+            // Set checkout to be 1 day after checkin
+            Date newCheckOutDate = Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
+            spnCheckOutDate.setValue(newCheckOutDate);
+            roomFilter.checkOutDate = newCheckOutDate;
+        }
+
+        roomFilter.checkInDate = checkInDate;
         search();
+        refreshFilterBtn();
     }
 
     private void handleCheckoutDateChange() {
-        roomFilter.checkOutDate = (java.util.Date) spnCheckOutDate.getValue();
-        if (!validateDateRangeWithMinimumHours()) {
+        Date checkInDate = (Date) spnCheckInDate.getValue();
+        Date checkOutDate = (Date) spnCheckOutDate.getValue();
+
+        // Auto increase check-out date if it's not after check-in or less than 1 hour after check-in
+        if (!checkOutDate.after(checkInDate) ||
+            (checkOutDate.getTime() - checkInDate.getTime()) < (60 * 60 * 1000)) {
+
             JOptionPane.showMessageDialog(this,
                                           "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
                                           "Lỗi ngày tháng",
                                           JOptionPane.ERROR_MESSAGE);
 
-            roomFilter.checkOutDate = Date.from(roomFilter.checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
-            spnCheckOutDate.setValue(roomFilter.checkOutDate);
+            // Set checkout to be 1 day after checkin
+            Date newCheckOutDate = Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
+            spnCheckOutDate.setValue(newCheckOutDate);
+            roomFilter.checkOutDate = newCheckOutDate;
+            search();
+            refreshFilterBtn();
             return;
         }
+
+        roomFilter.checkOutDate = checkOutDate;
         search();
+        refreshFilterBtn();
     }
 
     private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, int col, String labelText, JComponent component) {
@@ -556,7 +606,6 @@ public class ReservationManagementPanel extends JPanel {
             }
         }
 
-        refreshFilterBtn();
         gridRoomPanels.setRoomItems(filteredRooms);
         gridRoomPanels.revalidate();
         gridRoomPanels.repaint();
@@ -565,7 +614,7 @@ public class ReservationManagementPanel extends JPanel {
     // Consolidated filter method - all filtering logic in one place
     private boolean passesAllFilters(BookingResponse bookingResponse) {
         // Room type filter
-        if (roomFilter.roomType != null && !roomFilter.roomType.equals("TẤT CẢ")) {
+        if (roomFilter.roomType != null && !roomFilter.roomType.equals(ALL_STATUS)) {
             if (!bookingResponse.getRoomType().equalsIgnoreCase(roomFilter.roomType)) {
                 return false;
             }
@@ -584,7 +633,7 @@ public class ReservationManagementPanel extends JPanel {
         }
 
         // Date filters
-        if (roomFilter.checkInDate != null || roomFilter.checkOutDate != null) {
+        if (roomFilter.checkInDate != null && roomFilter.checkOutDate != null) {
             java.sql.Timestamp roomTimeIn = bookingResponse.getTimeIn();
             java.sql.Timestamp roomTimeOut = bookingResponse.getTimeOut();
 
@@ -614,7 +663,7 @@ public class ReservationManagementPanel extends JPanel {
         }
 
         // Status filter
-        if (roomFilter.roomStatus != null && !roomFilter.roomStatus.equals("Tất cả")) {
+        if (roomFilter.roomStatus != null && !roomFilter.roomStatus.equals(ALL_STATUS)) {
             if (!bookingResponse.getRoomStatus().equalsIgnoreCase(roomFilter.roomStatus)) {
                 return false;
             }
@@ -639,14 +688,15 @@ public class ReservationManagementPanel extends JPanel {
     public void refreshPanel() {
         // Reset filter form to defaults
         Date today = new Date();
+        Date pivot = Date.from(today.toInstant().plus(99999999, ChronoUnit.DAYS)); // Far future pivot
         Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
+
         cmbRoomType.setSelectedIndex(0);
         cmbCapacity.setSelectedIndex(0);
-        spnCheckOutDate.setValue(tomorrow);
-        spnCheckInDate.setValue(today);
 
-        // Reset room filter
-        roomFilter = new RoomFilter(null, null, today, tomorrow, null);
+        spnCheckOutDate.setValue(pivot);
+        spnCheckInDate.setValue(today);
+        spnCheckOutDate.setValue(tomorrow);
 
         // Exit multi-booking mode if active
         if (isMultiBookingMode) {
@@ -665,13 +715,13 @@ public class ReservationManagementPanel extends JPanel {
     private void refreshFilterBtn() {
         if (statusButtons == null) return;
 
-        int availableCount = getStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
-        int bookedCount = getStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
-        int checkingCount = getStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
-        int usingCount = getStatusCount(RoomStatus.ROOM_USING_STATUS.getStatus());
-        int lateCount = getStatusCount(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
-        int cleaningCount = getStatusCount(RoomStatus.ROOM_CLEANING_STATUS.getStatus());
-        int maintenanceCount = getStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+        int availableCount = getFilteredStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
+        int bookedCount = getFilteredStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
+        int checkingCount = getFilteredStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
+        int usingCount = getFilteredStatusCount(RoomStatus.ROOM_USING_STATUS.getStatus());
+        int lateCount = getFilteredStatusCount(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+        int cleaningCount = getFilteredStatusCount(RoomStatus.ROOM_CLEANING_STATUS.getStatus());
+        int maintenanceCount = getFilteredStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
 
         statusButtons[1].setText(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")");
         statusButtons[2].setText(RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")");
@@ -707,16 +757,16 @@ public class ReservationManagementPanel extends JPanel {
             jobDataMap.put("gridRoomPanel", gridRoomPanel);
 
             JobDetail jobDetail = JobBuilder.newJob(RoomStatusHandler.class)
-                    .withIdentity("roomStatusUpdateJob", "group1")
-                    .usingJobData(jobDataMap)
-                    .build();
+                                            .withIdentity("roomStatusUpdateJob", "group1")
+                                            .usingJobData(jobDataMap)
+                                            .build();
 
             Trigger trigger = org.quartz.TriggerBuilder.newTrigger()
-                    .withIdentity("roomStatusUpdateTrigger", "group1")
-                    .withSchedule(org.quartz.SimpleScheduleBuilder.simpleSchedule()
-                            .withIntervalInSeconds(30)
-                            .repeatForever())
-                    .build();
+                                                       .withIdentity("roomStatusUpdateTrigger", "group1")
+                                                       .withSchedule(org.quartz.SimpleScheduleBuilder.simpleSchedule()
+                                                                                                     .withIntervalInSeconds(30)
+                                                                                                     .repeatForever())
+                                                       .build();
 
             scheduler.start();
             scheduler.scheduleJob(jobDetail, trigger);
