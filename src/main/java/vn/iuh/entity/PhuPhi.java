@@ -1,5 +1,6 @@
 package vn.iuh.entity;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 
@@ -40,4 +41,5 @@ public class PhuPhi {
     public void setThoiGianTao(Timestamp thoiGianTao) {
         this.thoiGianTao = thoiGianTao;
     }
+
 }

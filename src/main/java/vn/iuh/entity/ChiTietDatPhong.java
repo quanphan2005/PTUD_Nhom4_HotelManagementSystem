@@ -1,6 +1,7 @@
 package vn.iuh.entity;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class ChiTietDatPhong {
     private String maChiTietDatPhong;
@@ -11,6 +12,9 @@ public class ChiTietDatPhong {
     private String maPhong;
     private String maPhienDangNhap;
     private Timestamp thoiGianTao;
+
+    private List<PhongDungDichVu> dichVuDaSuDung;
+    private List<PhongTinhPhuPhi> danhSachPhuPhi;
 
     public ChiTietDatPhong() {
     }
@@ -89,5 +93,21 @@ public class ChiTietDatPhong {
 
     public void setThoiGianTao(Timestamp thoiGianTao) {
         this.thoiGianTao = thoiGianTao;
+    }
+
+    public List<PhongDungDichVu> getDichVuDaSuDung() {
+        return dichVuDaSuDung;
+    }
+
+    public void setDichVuDaSuDung(List<PhongDungDichVu> dichVuDaSuDung) {
+        this.dichVuDaSuDung = dichVuDaSuDung;
+    }
+
+    public List<PhongTinhPhuPhi> getDanhSachPhuPhi() {
+        return danhSachPhuPhi;
+    }
+
+    public void setDanhSachPhuPhi(List<PhongTinhPhuPhi> danhSachPhuPhi) {
+        this.danhSachPhuPhi = danhSachPhuPhi;
     }
 }

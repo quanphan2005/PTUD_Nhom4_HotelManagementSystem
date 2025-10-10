@@ -1,6 +1,7 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.PanelName;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
@@ -87,10 +88,9 @@ public class MultiRoomBookingFormPanel extends JPanel {
     private void initializeComponents() {
         setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(selectedRooms.size(), null, (services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.MULTI_BOOKING.getName(), selectedRooms.size(), null, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
             updateTotalServicePrice(); // Update service price when services are selected

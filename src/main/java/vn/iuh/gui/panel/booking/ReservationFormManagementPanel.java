@@ -1,8 +1,7 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import vn.iuh.constraint.RoomStatus;
-import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
@@ -35,8 +34,8 @@ public class ReservationFormManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
     
     // Data
-    private List<BookingResponse> allReservations;
-    private List<BookingResponse> filteredReservations;
+    private List<ReservationFormResponse> allReservations;
+    private List<ReservationFormResponse> filteredReservations;
     
     // Filter state
     private ReservationFilter reservationFilter;
@@ -54,19 +53,7 @@ public class ReservationFormManagementPanel extends JPanel {
     }
     
     private void loadReservationData() {
-        allReservations = new ArrayList<>();
-        
-        // Get all booking responses from service
-        List<BookingResponse> bookingResponses = bookingService.getAllBookingInfo();
-        
-        // Filter only reserved/booked rooms
-        for (BookingResponse booking : bookingResponses) {
-            if (booking.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
-                booking.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())) {
-                allReservations.add(booking);
-            }
-        }
-        
+        allReservations = bookingService.getAllReservationForms();
         filteredReservations = new ArrayList<>(allReservations);
     }
     
@@ -173,11 +160,11 @@ public class ReservationFormManagementPanel extends JPanel {
     
     private void createTablePanel() {
         // Create table model
-        String[] columnNames = {"Khách hàng", "Phòng", "Checkin", "Checkout", "Thao tác"};
+        String[] columnNames = {"Khách hàng", "Đơn đặt phòng", "Phòng", "Checkin", "Checkout", "Thao tác"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4; // Only action column is editable
+                return column == 5; // Only action column is editable
             }
         };
         
@@ -200,14 +187,17 @@ public class ReservationFormManagementPanel extends JPanel {
         // Set alternating row colors
         reservationTable.setDefaultRenderer(Object.class, new AlternatingRowRenderer());
 
-        // Set column widths
+        // Set column widths using relative proportions
         TableColumnModel columnModel = reservationTable.getColumnModel();
-        columnModel.getColumn(0).setPreferredWidth(180); // Khách hàng
-        columnModel.getColumn(1).setPreferredWidth(100); // Phòng
-        columnModel.getColumn(2).setPreferredWidth(100); // Checkin
-        columnModel.getColumn(3).setPreferredWidth(100); // Checkout
-        columnModel.getColumn(4).setPreferredWidth(250); // Thao tác
-        
+        reservationTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        columnModel.getColumn(0).setPreferredWidth(150); // Khách hàng - 15%
+        columnModel.getColumn(1).setPreferredWidth(150); // Đơn đặt phòng - 10%
+        columnModel.getColumn(2).setPreferredWidth(100); // Phòng - 10%
+        columnModel.getColumn(3).setPreferredWidth(150); // Checkin - 15%
+        columnModel.getColumn(4).setPreferredWidth(150); // Checkout - 15%
+        columnModel.getColumn(5).setPreferredWidth(300); // Thao tác - 30%
+
         // Set cell renderer for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
         reservationTable.getColumn("Thao tác").setCellEditor(new ActionButtonEditor());
@@ -221,11 +211,6 @@ public class ReservationFormManagementPanel extends JPanel {
 
         // Populate table with initial data
         populateTable();
-    }
-
-    public void refreshData() {
-        loadReservationData();
-        applyFilters();
     }
 
     // Custom renderer for alternating row colors and proper styling
@@ -291,7 +276,7 @@ public class ReservationFormManagementPanel extends JPanel {
         
         filteredReservations.clear();
         
-        for (BookingResponse reservation : allReservations) {
+        for (ReservationFormResponse reservation : allReservations) {
             if (passesAllFilters(reservation)) {
                 filteredReservations.add(reservation);
             }
@@ -300,7 +285,7 @@ public class ReservationFormManagementPanel extends JPanel {
         populateTable();
     }
     
-    private boolean passesAllFilters(BookingResponse reservation) {
+    private boolean passesAllFilters(ReservationFormResponse reservation) {
         // Room name filter
         if (reservationFilter.roomName != null && !reservationFilter.roomName.isEmpty()) {
             if (!reservation.getRoomName().toLowerCase().contains(reservationFilter.roomName.toLowerCase())) {
@@ -354,19 +339,20 @@ public class ReservationFormManagementPanel extends JPanel {
         });
 
         // Add filtered reservations to table
-        for (BookingResponse reservation : filteredReservations) {
-            Object[] rowData = new Object[5];
+        for (ReservationFormResponse reservation : filteredReservations) {
+            Object[] rowData = new Object[6];
             rowData[0] = reservation.getCustomerName();
-            rowData[1] = reservation.getRoomName();
-            rowData[2] = reservation.getTimeIn() != null ? dateFormat.format(reservation.getTimeIn()) : "N/A";
-            rowData[3] = reservation.getTimeOut() != null ? dateFormat.format(reservation.getTimeOut()) : "N/A";
-            rowData[4] = reservation; // Store the reservation object for action buttons
+            rowData[1] = reservation.getMaDonDatPhong();
+            rowData[2] = reservation.getRoomName();
+            rowData[3] = reservation.getTimeIn() != null ? dateFormat.format(reservation.getTimeIn()) : "N/A";
+            rowData[4] = reservation.getTimeOut() != null ? dateFormat.format(reservation.getTimeOut()) : "N/A";
+            rowData[5] = reservation; // Store the reservation object for action buttons
             
             tableModel.addRow(rowData);
         }
     }
     
-    private void handleCheckIn(BookingResponse reservation) {
+    private void handleCheckIn(ReservationFormResponse reservation) {
         int result = JOptionPane.showConfirmDialog(this,
             "Xác nhận check-in cho khách " + reservation.getCustomerName() + " vào phòng " + reservation.getRoomName() + "?",
             "Xác nhận check-in", JOptionPane.YES_NO_OPTION);
@@ -379,13 +365,11 @@ public class ReservationFormManagementPanel extends JPanel {
             // TODO: Implement actual check-in logic
             // bookingService.checkInReservation(reservation.getId());
 
-            // Refresh data
-            loadReservationData();
-            applyFilters();
+            refreshPanel();
         }
     }
 
-    private void handleChangeRoom(BookingResponse reservation) {
+    private void handleChangeRoom(ReservationFormResponse reservation) {
         String newRoom = JOptionPane.showInputDialog(this,
             "Nhập số phòng muốn chuyển đến:",
             "Đổi phòng", JOptionPane.QUESTION_MESSAGE);
@@ -403,30 +387,36 @@ public class ReservationFormManagementPanel extends JPanel {
                 // TODO: Implement actual room change logic
                 // bookingService.changeRoom(reservation.getId(), newRoom);
                 
-                // Refresh data
-                loadReservationData();
-                applyFilters();
+                refreshPanel();
             }
         }
     }
     
-    private void handleCancelReservation(BookingResponse reservation) {
+    private void handleCancelReservation(ReservationFormResponse reservation) {
         int result = JOptionPane.showConfirmDialog(this,
             "Xác nhận hủy đơn đặt phòng " + reservation.getRoomName() + " của khách " + reservation.getCustomerName() + "?",
             "Hủy đơn đặt phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         
         if (result == JOptionPane.YES_OPTION) {
+            boolean isSuccess = bookingService.cancelReservation(reservation.getMaDonDatPhong());
+            if (!isSuccess) {
+                JOptionPane.showMessageDialog(this,
+                    "Hủy đơn đặt phòng thất bại. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             JOptionPane.showMessageDialog(this,
                 "Đã hủy đơn đặt phòng " + reservation.getRoomName() + " thành công",
                 "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            
-            // TODO: Implement actual cancellation logic
-            // bookingService.cancelReservation(reservation.getId());
 
-            // Refresh data
-            loadReservationData();
-            applyFilters();
+            refreshPanel();
         }
+    }
+
+    public void refreshPanel() {
+        loadReservationData();
+        resetFilters();
     }
     
     // Custom cell renderer for action buttons
@@ -490,7 +480,7 @@ public class ReservationFormManagementPanel extends JPanel {
         private JButton btnCheckIn;
         private JButton btnChangeRoom;
         private JButton btnCancel;
-        private BookingResponse currentReservation;
+        private ReservationFormResponse currentReservation;
         
         public ActionButtonEditor() {
             super(new JCheckBox());
@@ -545,7 +535,7 @@ public class ReservationFormManagementPanel extends JPanel {
         
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            currentReservation = (BookingResponse) value;
+            currentReservation = (ReservationFormResponse) value;
             return panel;
         }
         

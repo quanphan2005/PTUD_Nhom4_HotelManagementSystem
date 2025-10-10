@@ -1,8 +1,10 @@
 package vn.iuh.gui.base;
 
+import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.panel.booking.BookingFormPanel;
+import vn.iuh.gui.panel.booking.RoomUsageFormPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -66,10 +68,28 @@ public class RoomItem extends JPanel {
                     }
                 } else {
                     // Original single room booking behavior
-                    String cardName = "Đặt phòng";
-                    BookingFormPanel bookingFormPanel = new BookingFormPanel(bookingResponse);
+                    String cardName = PanelName.BOOKING.getName();
+                    if (bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_EMPTY_STATUS.getStatus())) {
+                        Main.addCard(new BookingFormPanel(bookingResponse, PanelName.RESERVATION_MANAGEMENT.getName()), cardName);
+                    } else if (
+                                bookingResponse.getRoomStatus()
+                                               .equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus())
+                                || bookingResponse.getRoomStatus()
+                                                  .equalsIgnoreCase(RoomStatus.ROOM_CHECKING_STATUS.getStatus())
+                                || bookingResponse.getRoomStatus()
+                                                  .equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())
+                                || bookingResponse.getRoomStatus()
+                                                  .equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
+                        ) {
+                        cardName = PanelName.ROOM_USING.getName();
+                        System.out.println(bookingResponse.getTimeIn());
+                        Main.addCard(new RoomUsageFormPanel(bookingResponse), cardName);
+                        }
 
-                    Main.addCard(bookingFormPanel, cardName);
+                    // TODO later
+                    else if (bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
+                            System.out.println("Room is being cleaned. Cannot proceed to booking or usage form.");
+                    }
                     Main.showCard(cardName);
                 }
             }
@@ -461,11 +481,20 @@ public class RoomItem extends JPanel {
 
     private JPanel createOccupiedRoomPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
+
+        if (RoomStatus.ROOM_BOOKED_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+            panel.setBackground(CustomUI.cyan);
+        } else if(RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
+            panel.setBackground(CustomUI.lightBlue);
+        } else if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+            panel.setBackground(CustomUI.orange);
+        } else if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
             panel.setBackground(CustomUI.red);
+        } else if (RoomStatus.ROOM_CLEANING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+            panel.setBackground(CustomUI.lightGreen);
+        } else {
+            panel.setBackground(new Color(255, 255, 224)); // Default light yellow
         }
-        else
-            panel.setBackground(new Color(17, 216, 230)); // Light blue background
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);

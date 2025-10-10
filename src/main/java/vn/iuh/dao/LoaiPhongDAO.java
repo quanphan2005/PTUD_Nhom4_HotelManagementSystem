@@ -1,10 +1,13 @@
 package vn.iuh.dao;
 
+import com.github.lgooddatepicker.zinternaltools.Pair;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoaiPhongDAO {
     private final Connection connection;
@@ -140,6 +143,30 @@ public class LoaiPhongDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành LoaiPhong" + e.getMessage());
         }
+    }
+
+    public Map<String, Double> layGiaLoaiPhongTheoId(String loaiPhongId){
+        String query =  "select gia_gio_moi as gia_gio, gia_ngay_moi as gia_ngay from GiaPhong gp\n" +
+                "where\tgp.ma_loai_phong = ?\n" +
+                "order by thoi_gian_tao desc\n";
+        Map<String, Double> listPrice = new HashMap<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, loaiPhongId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                listPrice.put("gia_ngay", rs.getDouble("gia_ngay"));
+                listPrice.put("gia_gio", rs.getDouble("gia_gio"));
+            }
+
+            return listPrice;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+        return null;
     }
 }
 

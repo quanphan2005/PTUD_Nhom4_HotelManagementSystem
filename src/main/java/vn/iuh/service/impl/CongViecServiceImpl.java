@@ -24,11 +24,11 @@ public class CongViecServiceImpl implements CongViecService {
     public CongViec themCongViec(String tenTrangThai, Timestamp tgBatDau, Timestamp tgKetThuc, String maPhong) {
         tgBatDau = new Timestamp(tgBatDau.getTime() + 1);
         System.out.println("Thêm công việc " + tenTrangThai + " cho phòng " + maPhong + " từ " + tgBatDau + " đến " + tgKetThuc);
-        var isOverlap = jobDAO.kiemTraThoiGianCVTaiPhong(maPhong, tgBatDau, tgKetThuc);
-        if (isOverlap) {
-            throw new RuntimeException("Đã có công việc tại phòng này và tại thời gian này");
-        }
-        else {
+//        var isOverlap = jobDAO.kiemTraThoiGianCVTaiPhong(maPhong, tgBatDau, tgKetThuc);
+//        if (isOverlap) {
+//            throw new RuntimeException("Đã có công việc tại phòng này và tại thời gian này");
+//        }
+//        else {
             String id = taoMaCongViecMoi();
             var congViecHientai = jobDAO.layCongViecHienTaiCuaPhong(maPhong);
             if(RoomStatus.ROOM_BOOKED_STATUS.getStatus().equalsIgnoreCase(tenTrangThai)){
@@ -66,15 +66,6 @@ public class CongViecServiceImpl implements CongViecService {
             }
             else if (RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(tenTrangThai)){
                 if(RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(congViecHientai.getTenTrangThai())){
-//            ChiTietDatPhong theLastest = bookingDetailDAO.findLastestByRoom(maPhong);
-//            int thoiGianTreTruocKhiGuiThongBao = 30; //phút
-//            double soGioChoToiNguoiTiepTheo = tinhKhoangCachGio(theLastest.getTgNhanPhong());
-//            if(soGioChoToiNguoiTiepTheo > 8){
-////                nếu không có ai đặt phòng sau đó thì cho trễ 6 tiếng và 2 tiếng tiếp theo để dọn dẹp;
-//                return jobDAO.themCongViec(new CongViec(id, tenTrangThai, tgBatDau, tgKetThuc, maPhong, null));
-//            }
-//            else {
-//                nếu có thì chỉ cho trễ 30p trước khi gửi thông báo cho nhân viên
                     var isFinished = jobDAO.capNhatThoiGianKetThuc(congViecHientai.getMaCongViec(), new Timestamp(System.currentTimeMillis()), true);
                     if(isFinished) {
                         return jobDAO.themCongViec(new CongViec(id, tenTrangThai, tgBatDau, tgKetThuc, maPhong, null));
@@ -90,7 +81,8 @@ public class CongViecServiceImpl implements CongViecService {
                 }
             }else if(RoomStatus.ROOM_CLEANING_STATUS.getStatus().equalsIgnoreCase(tenTrangThai)){
                 if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(congViecHientai.getTenTrangThai())
-                        || RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(congViecHientai.getTenTrangThai())){
+                        || RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(congViecHientai.getTenTrangThai())
+                        || RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(congViecHientai.getTenTrangThai())){
                     var isFinished = jobDAO.capNhatThoiGianKetThuc(congViecHientai.getMaCongViec(), new Timestamp(System.currentTimeMillis()), true);
                     if(isFinished){
                         return jobDAO.themCongViec(new CongViec(id, tenTrangThai, tgBatDau, tgKetThuc, maPhong, null));
@@ -106,7 +98,7 @@ public class CongViecServiceImpl implements CongViecService {
             else {
                 throw new RuntimeException("Trạng thái công việc không hợp lệ");
             }
-        }
+//        }
     }
 
     public boolean giaHanCheckOutTre(String roomId){

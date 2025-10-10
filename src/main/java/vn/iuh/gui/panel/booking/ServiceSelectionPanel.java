@@ -11,10 +11,7 @@ import vn.iuh.service.impl.GoiDichVuServiceImpl;
 
 import javax.swing.*;
 import javax.swing.Timer;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableCellEditor;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -24,6 +21,8 @@ import java.util.*;
 import java.util.List;
 
 public class ServiceSelectionPanel extends JPanel {
+    private String parentName;
+
     private GoiDichVuService goiDichVuService;
 
     // Components
@@ -61,26 +60,15 @@ public class ServiceSelectionPanel extends JPanel {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
 
-    public ServiceSelectionPanel(int selectedRooms, String maChiTietDatPhong, ServiceSelectionCallback callback) {
+    public ServiceSelectionPanel(String parentName, int selectedRooms, String maChiTietDatPhong, ServiceSelectionCallback callback) {
+        this.parentName = parentName;
+
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
         this.giftServicesMap = new HashMap<>();
 
         this.selectedRooms = selectedRooms;
-        this.maChiTietDatPhong = maChiTietDatPhong;
-
-        initializeComponents();
-        loadServices();
-        setupLayout();
-        setupEventHandlers();
-    }
-
-    public ServiceSelectionPanel(String maChiTietDatPhong) {
-        this.goiDichVuService = new GoiDichVuServiceImpl();
-        this.selectedServicesMap = new HashMap<>();
-        this.giftServicesMap = new HashMap<>();
-
         this.maChiTietDatPhong = maChiTietDatPhong;
 
         initializeComponents();
@@ -150,35 +138,16 @@ public class ServiceSelectionPanel extends JPanel {
         // Set alternating row colors for regular columns (not gift and quantity)
         serviceTable.setDefaultRenderer(Object.class, new ServiceTableRenderer());
 
+        TableColumnModel serviceColumnModel = serviceTable.getColumnModel();
+        serviceTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
         // Set fixed column widths to prevent resizing
-        serviceTable.getColumnModel().getColumn(0).setPreferredWidth(150); // Tên
-        serviceTable.getColumnModel().getColumn(1).setPreferredWidth(120); // Loại
-        serviceTable.getColumnModel().getColumn(2).setPreferredWidth(120);  // Giá
-        serviceTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Tồn kho
-        serviceTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Quà tặng
-        serviceTable.getColumnModel().getColumn(5).setPreferredWidth(140); // Đã chọn
-
-        // Lock column widths - set min and max to same as preferred
-        serviceTable.getColumnModel().getColumn(0).setMinWidth(150);
-        serviceTable.getColumnModel().getColumn(0).setMaxWidth(150);
-        serviceTable.getColumnModel().getColumn(1).setMinWidth(120);
-        serviceTable.getColumnModel().getColumn(1).setMaxWidth(120);
-        serviceTable.getColumnModel().getColumn(2).setMinWidth(120);
-        serviceTable.getColumnModel().getColumn(2).setMaxWidth(120);
-        serviceTable.getColumnModel().getColumn(3).setMinWidth(100);
-        serviceTable.getColumnModel().getColumn(3).setMaxWidth(100);
-        serviceTable.getColumnModel().getColumn(4).setMinWidth(80);
-        serviceTable.getColumnModel().getColumn(4).setMaxWidth(80);
-        serviceTable.getColumnModel().getColumn(5).setMinWidth(140);
-        serviceTable.getColumnModel().getColumn(5).setMaxWidth(140);
-
-        // Disable auto-resize to maintain fixed column widths
-        serviceTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
-        // Disable column selection and reordering to prevent movement
-        serviceTable.setColumnSelectionAllowed(false);
-        serviceTable.getTableHeader().setReorderingAllowed(false);
-        serviceTable.getTableHeader().setResizingAllowed(false);
+        serviceColumnModel.getColumn(0).setPreferredWidth(200); // Tên
+        serviceColumnModel.getColumn(1).setPreferredWidth(250); // Loại
+        serviceColumnModel.getColumn(2).setPreferredWidth(150);  // Giá
+        serviceColumnModel.getColumn(3).setPreferredWidth(100);  // Tồn kho
+        serviceColumnModel.getColumn(4).setPreferredWidth(100);  // Quà tặng
+        serviceColumnModel.getColumn(5).setPreferredWidth(200); // Đã chọn
 
         // Custom renderer and editor for gift column (column 4)
         serviceTable.getColumnModel().getColumn(4).setCellRenderer(new GiftRenderer());
@@ -216,10 +185,12 @@ public class ServiceSelectionPanel extends JPanel {
         selectedServicesTable.setDefaultRenderer(Object.class, new SelectedServicesTableRenderer());
 
         // Set fixed column widths for selected services table
-        selectedServicesTable.getColumnModel().getColumn(0).setPreferredWidth(100); // Tên
-        selectedServicesTable.getColumnModel().getColumn(1).setPreferredWidth(50);  // SL
-        selectedServicesTable.getColumnModel().getColumn(2).setPreferredWidth(140); // Thành tiền
-        selectedServicesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        TableColumnModel selectedServiceColumnModel = selectedServicesTable.getColumnModel();
+        selectedServicesTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        selectedServiceColumnModel.getColumn(0).setPreferredWidth(400); // Tên dịch vụ
+        selectedServiceColumnModel.getColumn(1).setPreferredWidth(100); // Số lượng
+        selectedServiceColumnModel.getColumn(2).setPreferredWidth(500); // Thành tiền
 
         // Action buttons with fixed sizes
         btnReset = new JButton("Hoàn Tác");
@@ -299,11 +270,11 @@ public class ServiceSelectionPanel extends JPanel {
         // Info labels
         gbc.gridy = 1;
         gbc.gridwidth = 1;
-        gbc.weightx = 0.35;
+        gbc.weightx = 0.2;
         mainPanel.add(lblTotalServices, gbc);
 
         gbc.gridx = 1;
-        gbc.weightx = 0.35;
+        gbc.weightx = 0.2;
         mainPanel.add(lblAvailableServices, gbc);
 
         // Service table
@@ -388,13 +359,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         btnConfirm.addActionListener(e -> confirmSelection());
 
-        btnUndo.addActionListener(e -> {
-            if (selectedRooms > 1) {
-                Main.showCard(PanelName.MULTI_BOOKING.getName());
-            } else {
-                Main.showCard(PanelName.BOOKING.getName());
-            }
-        });
+        btnUndo.addActionListener(e -> {Main.showCard(parentName);});
     }
 
     private void resetPanel() {
@@ -469,11 +434,11 @@ public class ServiceSelectionPanel extends JPanel {
                                                          Main.getCurrentLoginSession());
             if (success) {
                 JOptionPane.showMessageDialog(this,
-                                              "Gọi dịch vụ thành công.",
+                                              "Gọi thêm " + serviceOrdered.size() + " dịch vụ thành công.",
                                               "Thành công",
                                               JOptionPane.INFORMATION_MESSAGE);
                 resetPanel();
-                Main.showCard(PanelName.BOOKING.getName());
+                Main.showCard(parentName);
             } else {
                 JOptionPane.showMessageDialog(this,
                                               "Gọi dịch vụ thất bại. Vui lòng thử lại.",
@@ -490,19 +455,18 @@ public class ServiceSelectionPanel extends JPanel {
         // Show dialog base on selected rooms
         if (selectedRooms > 1) {
             JOptionPane.showMessageDialog(this,
-                                          "Đã thêm dịch vụ cho " + selectedRooms + " phòng\n" +
+                                          "Đã thêm " + serviceOrdered.size() + " dịch vụ cho " + selectedRooms + " phòng\n" +
                                           "Số lượng dịch vụ đã gọi sẽ được chia đều cho (" + selectedRooms + " phòng)",
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                                          "Đã thêm dịch vụ cho phòng",
+                                          "Đã thêm " + serviceOrdered.size() + " dịch vụ cho phòng",
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         }
 
-        String cardName = selectedRooms > 1 ? PanelName.MULTI_BOOKING.getName() : PanelName.BOOKING.getName();
-        Main.showCard(cardName);
+        Main.showCard(parentName);
     }
 
     private void updateServiceTable() {

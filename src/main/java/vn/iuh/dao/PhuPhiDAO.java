@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.entity.PhuPhi;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -133,4 +134,42 @@ public class PhuPhiDAO {
             throw new TableEntityMismatch("Không thể chuyển kết quả thành PhuPhi: " + e.getMessage());
         }
     }
+    private ThongTinPhuPhi chuyenKetQuaThanhThongTinPhuPhi(ResultSet rs) {
+        ThongTinPhuPhi phuPhi = new ThongTinPhuPhi();
+        try {
+            phuPhi.setMaPhuPhi(rs.getString("ma_phu_phi"));
+            phuPhi.setTenPhuPhi(rs.getString("ten_phu_phi"));
+            phuPhi.setLaPhanTram(rs.getBoolean("la_phan_tram"));
+            phuPhi.setGiaHienTai(rs.getBigDecimal("gia_hien_tai"));
+            return phuPhi;
+        } catch (SQLException e) {
+            throw new TableEntityMismatch("Không thể chuyển kết quả thành PhuPhi: " + e.getMessage());
+        }
+    }
+
+    public ThongTinPhuPhi getThongTinPhuPhiByName(String name){
+        String query =  "select pp.ma_phu_phi, pp.ten_phu_phi, gpp.la_phan_tram, gpp.gia_hien_tai from PhuPhi pp\n" +
+                "left join GiaPhuPhi gpp on pp.ma_phu_phi = gpp.ma_phu_phi\n" +
+                "where pp.da_xoa = 0 and gpp.da_xoa = 0 and pp.ten_phu_phi = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, name);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhThongTinPhuPhi(rs);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
+
+
 }

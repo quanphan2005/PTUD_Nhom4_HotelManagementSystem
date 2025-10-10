@@ -90,7 +90,7 @@ public class RevenueStatisticPanel extends JPanel {
         btnSearch.setFont(CustomUI.smallFont);
         btnSearch.setSize(new Dimension(20, 10));
         btnSearch.setForeground(CustomUI.white);
-        btnSearch.setBackground(CustomUI.lightGreen);
+        btnSearch.setBackground(CustomUI.green);
         pnlEmployee.add(lblEmployee);
         pnlEmployee.add(cmbEmployee);
         pnlEmployee.add(btnReLoad);

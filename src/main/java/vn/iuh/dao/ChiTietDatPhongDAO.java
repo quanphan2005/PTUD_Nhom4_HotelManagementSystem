@@ -1,6 +1,9 @@
 package vn.iuh.dao;
 
+import vn.iuh.constraint.RoomEndType;
+import vn.iuh.dto.repository.ThongTinSuDungPhong;
 import vn.iuh.entity.ChiTietDatPhong;
+import vn.iuh.entity.DonDatPhong;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.Connection;
@@ -15,40 +18,15 @@ public class ChiTietDatPhongDAO {
     public ChiTietDatPhongDAO() {
         this.connection = DatabaseUtil.getConnect();
     }
-    public void thucHienGiaoTac() {
-        try {
-            if (connection != null && !connection.getAutoCommit()) {
-                connection.commit();
-                DatabaseUtil.disableTransaction(connection);
-            }
-        } catch (SQLException e) {
-            System.out.println("Lỗi commit transaction: " + e.getMessage());
-            DatabaseUtil.closeConnection(connection);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void hoanTacGiaoTac() {
-        try {
-            if (connection != null && !connection.getAutoCommit()) {
-                connection.rollback();
-                DatabaseUtil.disableTransaction(connection);
-            }
-        } catch (SQLException e) {
-            System.out.println("Lỗi rollback transaction: " + e.getMessage());
-            DatabaseUtil.closeConnection(connection);
-            throw new RuntimeException(e);
-        }
-    }
 
     public ChiTietDatPhongDAO(Connection connection) {
         this.connection = connection;
     }
 
-    public int capNhatKetThucCTDP(List<ChiTietDatPhong> chiTietDatPhongs) {
+    public int capNhatKetThucCTDP(List<String> chiTietDatPhongs) {
         if (chiTietDatPhongs == null || chiTietDatPhongs.isEmpty()) return 0;
 
-        StringBuilder query = new StringBuilder("UPDATE ChiTietDatPhong SET kieu_ket_thuc = ? WHERE kieu_ket_thuc is not null ma_chi_tiet_dat_phong IN (");
+        StringBuilder query = new StringBuilder("UPDATE ChiTietDatPhong SET kieu_ket_thuc = ? WHERE ma_chi_tiet_dat_phong IN (");
         for (int i = 0; i < chiTietDatPhongs.size(); i++) {
             query.append("?");
             if (i < chiTietDatPhongs.size() - 1) query.append(",");
@@ -57,10 +35,10 @@ public class ChiTietDatPhongDAO {
 
         try (var ps = connection.prepareStatement(query.toString())) {
             // Set kieu_ket_thuc parameter
-            ps.setString(1, "Trả phòng");
+            ps.setString(1, RoomEndType.TRA_PHONG.getStatus());
             // Set ma_chi_tiet_dat_phong parameters
             for (int i = 0; i < chiTietDatPhongs.size(); i++) {
-                ps.setString(i + 2, chiTietDatPhongs.get(i).getMaChiTietDatPhong());
+                ps.setString(i + 2, chiTietDatPhongs.get(i));
             }
             return ps.executeUpdate();
         } catch (SQLException e) {
@@ -114,5 +92,55 @@ public class ChiTietDatPhongDAO {
             throw new RuntimeException(e);
         }
         return chiTietDatPhongs;
+    }
+
+    public List<ThongTinSuDungPhong> layThongTinSuDungPhong(String maDonDatPhong) {
+        String query = "select ddp.ma_don_dat_phong , ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, dv.thoi_gian_tao as gio_check_in, \n" +
+                "p.ma_phong, ctdp.kieu_ket_thuc, lp.ma_loai_phong  from DonDatPhong ddp\n" +
+                "left join ChiTietDatPhong ctdp on ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong\n" +
+                "left join LichSuDiVao dv on dv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong\n" +
+                "left join Phong p on p.ma_phong = ctdp.ma_phong\n" +
+                "left join LoaiPhong lp on lp.ma_loai_phong = p.ma_loai_phong\n" +
+                "where dv.la_lan_dau_tien is not null and ddp.ma_don_dat_phong = ?";
+
+        List<ThongTinSuDungPhong> thongTinSuDungPhongList = new ArrayList<>();
+        try {
+            var ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+
+            var rs = ps.executeQuery();
+            while (rs.next()) {
+                ThongTinSuDungPhong thongTin = new ThongTinSuDungPhong();
+                thongTin.setMaPhong(rs.getString("ma_phong"));
+                thongTin.setTgNhanPhong(rs.getTimestamp("tg_nhan_phong"));
+                thongTin.setTgTraPhong(rs.getTimestamp("tg_tra_phong"));
+                thongTin.setGioCheckIn(rs.getTimestamp("gio_check_in"));
+                thongTin.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
+                thongTin.setMaDonDatPhong(rs.getString("ma_don_dat_phong"));
+                thongTin.setKieuKetThuc(rs.getString("kieu_ket_thuc"));
+                thongTin.setMaLoaiPhong(rs.getString("ma_loai_phong"));
+                thongTinSuDungPhongList.add(thongTin);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return thongTinSuDungPhongList;
+    }
+
+    public String findFormIDByDetail(String maChiTietDatPhong){
+        String sql = "select ma_don_dat_phong from ChiTietDatPhong where ma_chi_tiet_dat_phong = ?";
+        try {
+            var ps = connection.prepareStatement(sql);
+            ps.setString(1, maChiTietDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("ma_don_dat_phong");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
     }
 }

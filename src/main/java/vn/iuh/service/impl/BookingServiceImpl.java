@@ -9,6 +9,7 @@ import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.entity.*;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
@@ -20,7 +21,7 @@ import java.util.Objects;
 
 public class BookingServiceImpl implements BookingService {
     private final DatPhongDAO datPhongDAO;
-    private final GoiDichVuDao goiDichVuDao;
+    private final DonGoiDichVuDao donGoiDichVuDao;
     private final KhachHangDAO khachHangDAO;
     private final LichSuDiVaoDAO lichSuDiVaoDAO;
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
@@ -28,7 +29,7 @@ public class BookingServiceImpl implements BookingService {
 
     public BookingServiceImpl() {
         this.datPhongDAO = new DatPhongDAO();
-        this.goiDichVuDao = new GoiDichVuDao();
+        this.donGoiDichVuDao = new DonGoiDichVuDao();
         this.khachHangDAO = new KhachHangDAO();
         this.lichSuDiVaoDAO = new LichSuDiVaoDAO();
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
@@ -118,12 +119,12 @@ public class BookingServiceImpl implements BookingService {
 
             // 2.4 Update Service Quantity
             for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
-                goiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), dichVu.getSoLuong());
+                donGoiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), -dichVu.getSoLuong());
             }
 
             // 2.5. Create RoomUsageServiceEntity & insert to DB
             List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
-            PhongDungDichVu phongDungDichVuMoiNhat = goiDichVuDao.timPhongDungDichVuMoiNhat();
+            PhongDungDichVu phongDungDichVuMoiNhat = donGoiDichVuDao.timPhongDungDichVuMoiNhat();
             String maPhongDungDichVuMoiNhat =
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
@@ -143,7 +144,7 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
 
-            goiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
+            donGoiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
 
             // 2.6. Create Job for each booked room
             List<CongViec> congViecs = new ArrayList<>();
@@ -154,28 +155,17 @@ public class BookingServiceImpl implements BookingService {
                 String newId = EntityUtil.increaseEntityID(jobId,
                                                            EntityIDSymbol.JOB_PREFIX.getPrefix(),
                                                            EntityIDSymbol.JOB_PREFIX.getLength());
-
-//                String statusName = bookingCreationEvent.isDaDatTruoc()
-//                        ? RoomStatus.ROOM_BOOKED_STATUS.getStatus()
-//                        : RoomStatus.ROOM_CHECKING_STATUS.getStatus();
-//
-//                congViecs.add(new CongViec(newId,
-//                                           statusName,
-//                                           bookingCreationEvent.getTgNhanPhong(),
-//                                           bookingCreationEvent.getTgTraPhong(),
-//                                           roomId,
-//                                           null
-//                ));
                 int thoiGianKiemTra = 30; //phút
-                if(bookingCreationEvent.isDaDatTruoc()){
+                if (bookingCreationEvent.isDaDatTruoc()) {
                     congViecs.add(new CongViec(newId, RoomStatus.ROOM_BOOKED_STATUS.getStatus(),
-                            bookingCreationEvent.getTgNhanPhong(), bookingCreationEvent.getTgTraPhong(),
-                            roomId, null));
-                }
-                else{
+                                               bookingCreationEvent.getTgNhanPhong(),
+                                               bookingCreationEvent.getTgTraPhong(),
+                                               roomId, null));
+                } else {
                     congViecs.add(new CongViec(newId, RoomStatus.ROOM_CHECKING_STATUS.getStatus(),
-                            bookingCreationEvent.getTgNhanPhong(), new Timestamp(bookingCreationEvent.getTgNhanPhong().getTime() + thoiGianKiemTra * 60 * 1000),
-                            roomId, null));
+                                               bookingCreationEvent.getTgNhanPhong(), new Timestamp(
+                            bookingCreationEvent.getTgNhanPhong().getTime() + thoiGianKiemTra * 60 * 1000),
+                                               roomId, null));
                 }
                 jobId = newId;
             }
@@ -209,19 +199,40 @@ public class BookingServiceImpl implements BookingService {
         }
 
         datPhongDAO.thucHienGiaoTac();
-        System.out.println("Đặt phòng thành công!");
+        System.out.println("Đặt phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString() +
+                           " cho khách hàng: " + bookingCreationEvent.getTenKhachHang()
+                           + " thành công!");
         return true;
     }
 
     @Override
+    public List<ReservationFormResponse> getAllReservationForms() {
+        System.out.println("Fetching all reservation forms...");
+        List<ThongTinDatPhong> danhSachThongTinDatPhong = datPhongDAO.timTatCaThongTinDatPhong();
+
+        List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
+        for (ThongTinDatPhong thongTinDatPhong : danhSachThongTinDatPhong) {
+            reservationFormResponses.add(new ReservationFormResponse(
+                    thongTinDatPhong.getTenKhachHang(),
+                    thongTinDatPhong.getMaDonDatPhong(),
+                    thongTinDatPhong.getMaPhong(),
+                    thongTinDatPhong.getTgNhanPhong(),
+                    thongTinDatPhong.getTgTraPhong()
+            ));
+        }
+
+        return reservationFormResponses;
+    }
+
+    @Override
     public List<BookingResponse> getAllBookingInfo() {
-        // Get All Room Info
+        // 1.Get All Room Info
         List<ThongTinPhong> thongTinPhongs = datPhongDAO.timTatCaThongTinPhong();
 
-        // Get All non-available Room Ids
+        // 2. Get All non-available Room Ids
         List<String> nonAvailableRoomIds = new ArrayList<>();
 
-        // Create BookingResponse each Room info
+        // 3. Create BookingResponse each Room info
         List<BookingResponse> bookingResponses = new ArrayList<>();
         for (ThongTinPhong thongTinPhong : thongTinPhongs) {
 
@@ -245,10 +256,10 @@ public class BookingServiceImpl implements BookingService {
             bookingResponses.add(createBookingResponse(thongTinPhong));
         }
 
-        // Find all Booking Info for non-available rooms
-        List<ThongTinDatPhong> thongTinDatPhongs = datPhongDAO.timTatCaThongTinDatPhong(nonAvailableRoomIds);
+        // 4. Find all Booking Info for non-available rooms
+        List<ThongTinDatPhong> thongTinDatPhongs = datPhongDAO.timTatCaThongTinDatPhongTrongKhoang(nonAvailableRoomIds);
 
-        // Update BookingResponse with Booking Info
+        // 5. Update BookingResponse with Booking Info
         for (ThongTinDatPhong thongTinDatPhong : thongTinDatPhongs) {
             for (BookingResponse bookingResponse : bookingResponses) {
                 if (Objects.equals(bookingResponse.getRoomId(), thongTinDatPhong.getMaPhong())) {
@@ -264,9 +275,83 @@ public class BookingServiceImpl implements BookingService {
         return bookingResponses;
     }
 
-    // TODO Implement cancelBooking
-    private boolean cancelBooking(String maDatPhong) {
-        return false;
+    public boolean cancelReservation(String maDatPhong) {
+        // 1. Find ReservationForm by id
+        DonDatPhong donDatPhong = datPhongDAO.timDonDatPhong(maDatPhong);
+        if (Objects.isNull(donDatPhong)) {
+            System.out.println("Không tìm thấy đơn đặt phòng, mã: " + maDatPhong);
+            return false;
+        }
+
+        // 2. Find all RoomReservationDetail by ReservationForm id
+        List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangMaDatPhong(maDatPhong);
+        try {
+            datPhongDAO.khoiTaoGiaoTac();
+            for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu) {
+                // 3. Update Service Quantity
+                donGoiDichVuDao.capNhatSoLuongTonKhoDichVu(phongDungDichVu.getMaDichVu(), phongDungDichVu.getSoLuong());
+            }
+
+            // 4. Delete RoomUsageService by ReservationForm id
+            List<String> dvIDs = danhSachPhongDungDichVu.stream().map(PhongDungDichVu::getMaPhongDungDichVu).toList();
+            donGoiDichVuDao.huyDanhSachPhongDungDichVu(dvIDs);
+
+            // 5. Delete all reservavtionDetail
+            List<ChiTietDatPhong> danhSachChiTietDatPhong = datPhongDAO.timChiTietDatPhongBangMaDatPhong(maDatPhong);
+            List<String> danhSachChiTietMaDatPhong = danhSachChiTietDatPhong.stream().map(ChiTietDatPhong::getMaChiTietDatPhong).toList();
+            datPhongDAO.huyDanhSachChiTietDatPhong(danhSachChiTietMaDatPhong);
+
+            // 6. Delete ReservationForm
+            datPhongDAO.huyDonDatPhong(maDatPhong);
+
+            // 7. Update WorkingHistory
+            LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
+            String workingHistoryId = lichSuThaoTacMoiNhat == null ? null :
+                    lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
+            String actionDescription = "Hủy đặt phòng cho khách hàng " + donDatPhong.getMaKhachHang()
+                                       + " - Mã đặt phòng: " + donDatPhong.getMaDonDatPhong();
+            lichSuThaoTacDAO.themLichSuThaoTac(new LichSuThaoTac(
+                    EntityUtil.increaseEntityID(workingHistoryId,
+                                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength()),
+                    ActionType.CANCEL_RESERVATION.getActionName(),
+                    actionDescription,
+                    donDatPhong.getMaPhienDangNhap(),
+                    null
+            ));
+
+            // 8. Remove related Jobs
+            // 8.1 Find related Jobs ()
+            List<String> danhSachMaPhong = danhSachChiTietDatPhong.stream().map(ChiTietDatPhong::getMaPhong).toList();
+            List<CongViec> danhSachCongViec = congViecDAO.layCongViecHienTaiCuaCacPhong(danhSachMaPhong);
+
+            // 8.2 Prepare list of Job IDs need to be deleted
+            List<String> danhSachMaCongViecCanXoa = new ArrayList<>();
+            for (CongViec congViec : danhSachCongViec) {
+                for (ChiTietDatPhong chiTietDatPhong : danhSachChiTietDatPhong) {
+                    if (Objects.equals(congViec.getMaPhong(), chiTietDatPhong.getMaPhong())
+                        && Objects.equals(congViec.getTgBatDau(), chiTietDatPhong.getTgNhanPhong())
+                        && Objects.equals(congViec.getTgKetThuc(), chiTietDatPhong.getTgTraPhong())
+                    ) {
+                        danhSachMaCongViecCanXoa.add(congViec.getMaCongViec());
+                    }
+                }
+            }
+
+            // 8.3 Delete related Jobs
+            congViecDAO.xoaDanhSachCongViec(danhSachMaCongViecCanXoa);
+
+            datPhongDAO.thucHienGiaoTac();
+            System.out.println("Hủy đặt phòng thành công, mã: " + maDatPhong + "thành công!");
+            return true;
+
+        } catch (Exception e) {
+            System.out.println("Lỗi khi hủy đặt phòng, mã: " + maDatPhong + " " + e.getMessage());
+            System.out.println("Rollback transaction");
+            e.printStackTrace();
+            datPhongDAO.hoanTacGiaoTac();
+            return false;
+        }
     }
 
     private DonDatPhong createReservationFormEntity(BookingCreationEvent bookingCreationEvent,

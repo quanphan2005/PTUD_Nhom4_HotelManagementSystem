@@ -5,14 +5,16 @@ import java.sql.Timestamp;
 public class ThongTinDatPhong {
     private final String maPhong;
     private final String tenKhachHang;
+    private final String maDonDatPhong;
     private final String maChiTietDatPhong;
     private final Timestamp tgNhanPhong;
     private final Timestamp tgTraPhong;
 
-    public ThongTinDatPhong(String maPhong, String tenKhachHang, String maChiTietDatPhong, Timestamp tgNhanPhong,
-                            Timestamp tgTraPhong) {
+    public ThongTinDatPhong(String maPhong, String tenKhachHang, String maDonDatPhong, String maChiTietDatPhong,
+                            Timestamp tgNhanPhong, Timestamp tgTraPhong) {
         this.maPhong = maPhong;
         this.tenKhachHang = tenKhachHang;
+        this.maDonDatPhong = maDonDatPhong;
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.tgNhanPhong = tgNhanPhong;
         this.tgTraPhong = tgTraPhong;
@@ -36,15 +38,19 @@ public class ThongTinDatPhong {
         return tenKhachHang;
     }
 
+    public String getMaDonDatPhong() {
+        return maDonDatPhong;
+    }
+
+    public String getMaChiTietDatPhong() {
+        return maChiTietDatPhong;
+    }
+
     public Timestamp getTgNhanPhong() {
         return tgNhanPhong;
     }
 
     public Timestamp getTgTraPhong() {
         return tgTraPhong;
-    }
-
-    public String getMaChiTietDatPhong() {
-        return maChiTietDatPhong;
     }
 }

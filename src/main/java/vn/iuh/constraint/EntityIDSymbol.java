@@ -11,7 +11,11 @@ public enum EntityIDSymbol {
     CUSTOMER_PREFIX("KH", 8),
     JOB_PREFIX("CV", 8),
     WORKING_HISTORY_PREFIX("LT", 8),
-    HISTORY_CHECKOUT_PREFIX("LN", 8);
+    HISTORY_CHECKOUT_PREFIX("LN", 8),
+    INVOICE_DETAIL_PREFIX("CD", 8),
+    INVOICE_PREFIX("HD", 8),
+    ROOM_FEE("PP", 8)
+    ;
 //................... Other here
 
 

@@ -1,7 +1,6 @@
 package vn.iuh.dao;
 
 import vn.iuh.dto.repository.ThongTinDichVu;
-import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -13,14 +12,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GoiDichVuDao {
+public class DonGoiDichVuDao {
     private final Connection connection;
 
-    public GoiDichVuDao() {
+    public DonGoiDichVuDao() {
         this.connection = DatabaseUtil.getConnect();
     }
 
-    public GoiDichVuDao(Connection connection) {
+    public DonGoiDichVuDao(Connection connection) {
         this.connection = connection;
     }
 
@@ -125,8 +124,29 @@ public class GoiDichVuDao {
         }
     }
 
+    public List<PhongDungDichVu> timDonGoiDichVuBangMaDatPhong(String maDatPhong) {
+        String query = "SELECT * FROM ChiTietDatPhong ctdp" +
+                       " JOIN PhongDungDichVu pddv" +
+                       " ON ctdp.ma_chi_tiet_dat_phong = pddv.ma_chi_tiet_dat_phong" +
+                       " WHERE ctdp.ma_don_dat_phong = ?";
+
+        List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDatPhong);
+            var rs = ps.executeQuery();
+            while (rs.next())
+                danhSachPhongDungDichVu.add(chuyenKetQuaThanhPhongDungDichVu(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+        return danhSachPhongDungDichVu;
+    }
+
     public void capNhatSoLuongTonKhoDichVu(String maDichVu, int soLuong) {
-        String query = "UPDATE DichVu SET ton_kho = ton_kho - ? WHERE ma_dich_vu = ?";
+        String query = "UPDATE DichVu SET ton_kho = ton_kho + ? WHERE ma_dich_vu = ?";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -136,6 +156,33 @@ public class GoiDichVuDao {
             int rowsAffected = ps.executeUpdate();
 
         } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void huyDanhSachPhongDungDichVu(List<String> ids) {
+        StringBuilder string = new StringBuilder(
+                "UPDATE PhongDungDichVu SET da_xoa = 1 WHERE ma_phong_dung_dich_vu IN ("
+        );
+
+        for (int i = 0; i < ids.size(); i++) {
+            string.append("?");
+            if (i < ids.size() - 1)
+                string.append(", ");
+        }
+        string.append(")");
+
+        String query = string.toString();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            for (int i = 0; i < ids.size(); i++)
+                ps.setString(i + 1, ids.get(i));
+
+            ps.executeBatch();
+
+        } catch (SQLException e) {
+            System.out.println("Lỗi xóa danh sách phòng dùng dịch vụ: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }

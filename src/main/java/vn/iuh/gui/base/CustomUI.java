@@ -9,7 +9,8 @@ public class CustomUI {
     public static final Color blue = new Color(30, 144, 255);
     public static final Color white = Color.WHITE;
     public static final Color black = Color.BLACK;
-    public static final Color lightGreen = new Color(100, 220, 100);
+    public static final Color lightGreen = new Color(144, 238, 144);
+    public static final Color green = new Color(100, 220, 100);
     public static final Color darkGreen = new Color(34, 139, 34);
     public static final Color red = new Color(220, 35, 35);
     public static final Color orange = new Color(255, 170, 71);

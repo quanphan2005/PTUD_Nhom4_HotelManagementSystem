@@ -1,8 +1,7 @@
 package vn.iuh.service.impl;
 
 import vn.iuh.constraint.EntityIDSymbol;
-import vn.iuh.dao.GoiDichVuDao;
-import vn.iuh.dto.event.create.BookingCreationEvent;
+import vn.iuh.dao.DonGoiDichVuDao;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
 import vn.iuh.entity.PhongDungDichVu;
@@ -13,19 +12,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GoiDichVuServiceImpl implements GoiDichVuService {
-    private final GoiDichVuDao goiDichVuDao;
+    private final DonGoiDichVuDao donGoiDichVuDao;
 
     public GoiDichVuServiceImpl() {
-        this.goiDichVuDao = new GoiDichVuDao();
+        this.donGoiDichVuDao = new DonGoiDichVuDao();
     }
 
-    public GoiDichVuServiceImpl(GoiDichVuDao goiDichVuDao) {
-        this.goiDichVuDao = goiDichVuDao;
+    public GoiDichVuServiceImpl(DonGoiDichVuDao donGoiDichVuDao) {
+        this.donGoiDichVuDao = donGoiDichVuDao;
     }
 
     @Override
     public List<ThongTinDichVu> timTatCaThongTinDichVu() {
-        List<ThongTinDichVu> danhSachThongTinDichVu = goiDichVuDao.timTatCaThongTinDichVu();
+        List<ThongTinDichVu> danhSachThongTinDichVu = donGoiDichVuDao.timTatCaThongTinDichVu();
 
         if (danhSachThongTinDichVu.isEmpty())
             System.out.println("Không tìm thấy dịch vụ nào trong hệ thống.");
@@ -37,20 +36,20 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
     public boolean goiDichVu(String maChiTietDatPhong, List<DonGoiDichVu> danhSachDichVu, String maPhienDangNhap) {
 
         // 1. Tạo danh sách phòng dùng dịch vụ từ danh sách đơn gọi dịch vụ
-        PhongDungDichVu phongDungDichVuMoiNhat = goiDichVuDao.timPhongDungDichVuMoiNhat();
+        PhongDungDichVu phongDungDichVuMoiNhat = donGoiDichVuDao.timPhongDungDichVuMoiNhat();
         if (danhSachDichVu.isEmpty()) {
             System.out.println("Danh sách dịch vụ trống. Vui lòng kiểm tra lại.");
             return false;
         }
 
         try {
-            goiDichVuDao.khoiTaoGiaoTac();
+            donGoiDichVuDao.khoiTaoGiaoTac();
             String maPhongDungDichVuMoiNhat =
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
             // 2. Update Service Quantity
             for (DonGoiDichVu dichVu : danhSachDichVu) {
-                goiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), dichVu.getSoLuong());
+                donGoiDichVuDao.capNhatSoLuongTonKhoDichVu(dichVu.getMaDichVu(), -dichVu.getSoLuong());
             }
 
             List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
@@ -67,13 +66,13 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
             }
 
             // 3. Thêm mới phòng dùng dịch vụ
-            goiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
+            donGoiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
 
-            goiDichVuDao.thucHienGiaoTac();
+            donGoiDichVuDao.thucHienGiaoTac();
             return true;
         } catch (Exception e) {
             System.out.println("Lỗi gọi dịch vụ: " + e.getMessage());
-            goiDichVuDao.hoanTacGiaoTac();
+            donGoiDichVuDao.hoanTacGiaoTac();
             return false;
         }
     }

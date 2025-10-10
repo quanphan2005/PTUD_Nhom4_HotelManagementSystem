@@ -1,33 +1,29 @@
 package vn.iuh.entity;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class HoaDon {
     private String maHoaDon;
     private String phuongThucThanhToan;
-    private double tienThue;
-    private double tongHoaDon;
     private String kieuHoaDon;
     private String tinhTrangThanhToan;
     private String maPhienDangNhap;
     private String maDonDatPhong;
     private String maKhachHang;
     private Timestamp thoiGianTao;
+    private List<ChiTietHoaDon> chiTietHoaDonList;
 
     public HoaDon() {
     }
 
-    public HoaDon(String maHoaDon, String phuongThucThanhToan, double tienThue, double tongHoaDon, String kieuHoaDon, String tinhTrangThanhToan, String maPhienDangNhap, String maDonDatPhong, String maKhachHang, Timestamp thoiGianTao) {
+    public HoaDon(String maHoaDon, String kieuHoaDon, String maPhienDangNhap, String maDonDatPhong, String maKhachHang) {
         this.maHoaDon = maHoaDon;
-        this.phuongThucThanhToan = phuongThucThanhToan;
-        this.tienThue = tienThue;
-        this.tongHoaDon = tongHoaDon;
         this.kieuHoaDon = kieuHoaDon;
-        this.tinhTrangThanhToan = tinhTrangThanhToan;
         this.maPhienDangNhap = maPhienDangNhap;
         this.maDonDatPhong = maDonDatPhong;
         this.maKhachHang = maKhachHang;
-        this.thoiGianTao = thoiGianTao;
     }
 
     // Getters and Setters
@@ -45,22 +41,6 @@ public class HoaDon {
 
     public void setPhuongThucThanhToan(String phuongThucThanhToan) {
         this.phuongThucThanhToan = phuongThucThanhToan;
-    }
-
-    public double getTienThue() {
-        return tienThue;
-    }
-
-    public void setTienThue(double tienThue) {
-        this.tienThue = tienThue;
-    }
-
-    public double getTongHoaDon() {
-        return tongHoaDon;
-    }
-
-    public void setTongHoaDon(double tongHoaDon) {
-        this.tongHoaDon = tongHoaDon;
     }
 
     public String getKieuHoaDon() {
@@ -110,4 +90,12 @@ public class HoaDon {
     public void setThoiGianTao(Timestamp thoiGianTao) {
         this.thoiGianTao = thoiGianTao;
     }
+    public BigDecimal getTongTien(){
+        BigDecimal tongTien = new BigDecimal(0);
+        for(ChiTietHoaDon ct : this.chiTietHoaDonList){
+            tongTien = tongTien.add(ct.tinhThanhTien());
+        }
+        return tongTien;
+    }
+
 }

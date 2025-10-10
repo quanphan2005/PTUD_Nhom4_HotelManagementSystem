@@ -162,6 +162,41 @@ public class CongViecDAO {
         return null;
     }
 
+    public List<CongViec> layCongViecHienTaiCuaCacPhong(List<String> danhSachMaPhong) {
+        StringBuilder string = new StringBuilder(
+                "SELECT * FROM CongViec WHERE ma_phong IN ("
+        );
+        for (int i = 0; i < danhSachMaPhong.size(); i++) {
+            string.append("?");
+            if (i < danhSachMaPhong.size() - 1) {
+                string.append(", ");
+            }
+        }
+        string.append(")");
+        String query = string.toString();
+
+        List<CongViec> danhSachCongViec = new java.util.ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            for (int i = 0; i < danhSachMaPhong.size(); i++) {
+                ps.setString(i + 1, danhSachMaPhong.get(i));
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                danhSachCongViec.add(chuyenKetQuaThanhCongViec(rs));
+            }
+            return danhSachCongViec;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return danhSachCongViec;
+    }
 
     public CongViec chuyenKetQuaThanhCongViec(ResultSet rs) throws SQLException, TableEntityMismatch {
         try {
@@ -231,5 +266,30 @@ public class CongViecDAO {
         return false;
     }
 
+    public void xoaDanhSachCongViec(List<String> danhSacMaCongViec) {
+        StringBuilder string = new StringBuilder(
+                "UPDATE CongViec SET da_xoa = 1 WHERE ma_cong_viec IN ("
+        );
+        for (int i = 0; i < danhSacMaCongViec.size(); i++) {
+            string.append("?");
+            if (i < danhSacMaCongViec.size() - 1) {
+                string.append(", ");
+            }
+        }
+        string.append(")");
+        String query = string.toString();
 
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            for (int i = 0; i < danhSacMaCongViec.size(); i++) {
+                ps.setString(i + 1, danhSacMaCongViec.get(i));
+            }
+
+            ps.executeBatch();
+
+        } catch (SQLException e) {
+            System.out.println("Lỗi xóa danh sách công việc: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 }
