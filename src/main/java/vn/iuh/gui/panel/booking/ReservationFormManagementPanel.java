@@ -1,8 +1,6 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import vn.iuh.constraint.RoomStatus;
-import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.service.BookingService;
@@ -215,11 +213,6 @@ public class ReservationFormManagementPanel extends JPanel {
         populateTable();
     }
 
-    public void refreshData() {
-        loadReservationData();
-        applyFilters();
-    }
-
     // Custom renderer for alternating row colors and proper styling
     private class AlternatingRowRenderer extends DefaultTableCellRenderer {
         @Override
@@ -359,7 +352,7 @@ public class ReservationFormManagementPanel extends JPanel {
         }
     }
     
-    private void handleCheckIn(BookingResponse reservation) {
+    private void handleCheckIn(ReservationFormResponse reservation) {
         int result = JOptionPane.showConfirmDialog(this,
             "Xác nhận check-in cho khách " + reservation.getCustomerName() + " vào phòng " + reservation.getRoomName() + "?",
             "Xác nhận check-in", JOptionPane.YES_NO_OPTION);
@@ -372,13 +365,11 @@ public class ReservationFormManagementPanel extends JPanel {
             // TODO: Implement actual check-in logic
             // bookingService.checkInReservation(reservation.getId());
 
-            // Refresh data
-            loadReservationData();
-            applyFilters();
+            refreshPanel();
         }
     }
 
-    private void handleChangeRoom(BookingResponse reservation) {
+    private void handleChangeRoom(ReservationFormResponse reservation) {
         String newRoom = JOptionPane.showInputDialog(this,
             "Nhập số phòng muốn chuyển đến:",
             "Đổi phòng", JOptionPane.QUESTION_MESSAGE);
@@ -396,30 +387,36 @@ public class ReservationFormManagementPanel extends JPanel {
                 // TODO: Implement actual room change logic
                 // bookingService.changeRoom(reservation.getId(), newRoom);
                 
-                // Refresh data
-                loadReservationData();
-                applyFilters();
+                refreshPanel();
             }
         }
     }
     
-    private void handleCancelReservation(BookingResponse reservation) {
+    private void handleCancelReservation(ReservationFormResponse reservation) {
         int result = JOptionPane.showConfirmDialog(this,
             "Xác nhận hủy đơn đặt phòng " + reservation.getRoomName() + " của khách " + reservation.getCustomerName() + "?",
             "Hủy đơn đặt phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         
         if (result == JOptionPane.YES_OPTION) {
+            boolean isSuccess = bookingService.cancelReservation(reservation.getMaDonDatPhong());
+            if (!isSuccess) {
+                JOptionPane.showMessageDialog(this,
+                    "Hủy đơn đặt phòng thất bại. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             JOptionPane.showMessageDialog(this,
                 "Đã hủy đơn đặt phòng " + reservation.getRoomName() + " thành công",
                 "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            
-            // TODO: Implement actual cancellation logic
-            // bookingService.cancelReservation(reservation.getId());
 
-            // Refresh data
-            loadReservationData();
-            applyFilters();
+            refreshPanel();
         }
+    }
+
+    public void refreshPanel() {
+        loadReservationData();
+        resetFilters();
     }
     
     // Custom cell renderer for action buttons
@@ -483,7 +480,7 @@ public class ReservationFormManagementPanel extends JPanel {
         private JButton btnCheckIn;
         private JButton btnChangeRoom;
         private JButton btnCancel;
-        private BookingResponse currentReservation;
+        private ReservationFormResponse currentReservation;
         
         public ActionButtonEditor() {
             super(new JCheckBox());
@@ -538,7 +535,7 @@ public class ReservationFormManagementPanel extends JPanel {
         
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            currentReservation = (BookingResponse) value;
+            currentReservation = (ReservationFormResponse) value;
             return panel;
         }
         

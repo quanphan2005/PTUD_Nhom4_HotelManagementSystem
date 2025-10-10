@@ -88,7 +88,6 @@ public class MultiRoomBookingFormPanel extends JPanel {
     private void initializeComponents() {
         setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Initialize service selection
         ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.MULTI_BOOKING.getName(), selectedRooms.size(), null, (services) -> {

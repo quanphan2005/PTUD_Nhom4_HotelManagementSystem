@@ -10,4 +10,5 @@ public interface BookingService {
     boolean createBooking(BookingCreationEvent bookingCreationEvent);
     List<ReservationFormResponse> getAllReservationForms();
     List<BookingResponse> getAllBookingInfo();
+    boolean cancelReservation(String maDatPhong);
 }

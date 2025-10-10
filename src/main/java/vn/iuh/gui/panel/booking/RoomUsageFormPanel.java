@@ -91,7 +91,6 @@ public class RoomUsageFormPanel extends JPanel {
     private void initializeComponents() {
         setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
 
         ServiceSelectionPanel servicePanel =
