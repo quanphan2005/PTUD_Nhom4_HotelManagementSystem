@@ -34,6 +34,7 @@ public class RefreshManager {
 
     // TODO - implement later
     public static void refreshReservationFormManagementPanel() {
+        reservationFormManagementPanel.refreshPanel();
     }
 
     public static void refreshGridRoomPanel() {
@@ -56,6 +57,12 @@ public class RefreshManager {
     // Method specifically for after booking operations
     public static void refreshAfterBooking() {
         System.out.println("RefreshManager: Refreshing after booking operation...");
+        refreshReservationManagementPanel();
+        refreshReservationFormManagementPanel();
+    }
+
+    public static void refreshAfterCancelReservation() {
+        System.out.println("RefreshManager: Refreshing after cancel reservation...");
         refreshReservationManagementPanel();
         refreshReservationFormManagementPanel();
     }

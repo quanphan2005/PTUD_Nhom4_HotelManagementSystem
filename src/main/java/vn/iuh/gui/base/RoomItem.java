@@ -607,6 +607,10 @@ public class RoomItem extends JPanel {
         return bookingResponse.getRoomId();
     }
 
+    public String getRoomStatus() {
+        return bookingResponse.getRoomStatus();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof String)

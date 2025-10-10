@@ -241,22 +241,6 @@ public class DatPhongDAO {
         }
         query.append(") ORDER by ctdp.tg_nhan_phong");
 
-//        StringBuilder query = new StringBuilder(
-//                "SELECT p.ma_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
-//                " FROM Phong p" +
-//                " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
-//                " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
-//                " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
-//                " WHERE p.ma_phong IN (");
-//
-//        for (int i = 0; i < phongKhongKhaDungs.size(); i++) {
-//            query.append("?");
-//            if (i < phongKhongKhaDungs.size() - 1) {
-//                query.append(", ");
-//            }
-//        }
-//        query.append(")");
-
         List<ThongTinDatPhong> thongTinDatPhongs = new ArrayList<>();
         try {
             PreparedStatement ps = connection.prepareStatement(query.toString());
@@ -343,7 +327,8 @@ public class DatPhongDAO {
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
                 " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
-                " WHERE p.ma_phong IN (");
+                " WHERE ddp.da_xoa = 0" +
+                " AND p.ma_phong IN (");
 
         for (int i = 0; i < danhSachMaPhong.size(); i++) {
             query.append("?");
@@ -447,7 +432,7 @@ public class DatPhongDAO {
     }
 
     public DonDatPhong timDonDatPhongMoiNhat() {
-        String query = "SELECT TOP 1 * FROM DonDatPhong WHERE da_xoa = 0 ORDER BY ma_don_dat_phong DESC";
+        String query = "SELECT TOP 1 * FROM DonDatPhong ORDER BY ma_don_dat_phong DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);

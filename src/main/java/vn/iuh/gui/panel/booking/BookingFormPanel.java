@@ -812,14 +812,9 @@ public class BookingFormPanel extends JPanel {
         calculatePrice();
 
         // Set default check-in date to today
-        java.util.Date today = new java.util.Date();
+        java.util.Date today = new Date();
+        spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
         spnCheckInDate.setValue(today);
-
-        // Set default check-out date to tomorrow
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.setTime(today);
-        cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
-        spnCheckOutDate.setValue(cal.getTime());
     }
 
     // Method to update total service price from ServiceSelectionPanel
@@ -933,28 +928,48 @@ public class BookingFormPanel extends JPanel {
     }
 
     private void handleCheckinDateChange() {
-        if (!validateDateRangeWithMinimumHours()) {
+        Date now = new Date();
+        Date checkInDate = (Date) spnCheckInDate.getValue();
+        Date currentCheckOutDate = (Date) spnCheckOutDate.getValue();
+
+        // Handle past check-in date
+        if (checkInDate.before(Date.from(now.toInstant().minus(1, ChronoUnit.MINUTES)))) {
             JOptionPane.showMessageDialog(this,
-                                          "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
+                                          "Ngày check-in không được trước ngày hiện tại!",
                                           "Lỗi ngày tháng",
                                           JOptionPane.ERROR_MESSAGE);
-
-            Date checkOutDate = (Date) spnCheckOutDate.getValue();
-            spnCheckInDate.setValue(Date.from(checkOutDate.toInstant().minus(1, ChronoUnit.DAYS)));
+            spnCheckInDate.setValue(now);
+            spnCheckOutDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.DAYS)));
             return;
         }
+
+        // Auto increase check-out date if it's not after check-in or less than 1 hour after check-in
+        if (!currentCheckOutDate.after(checkInDate) ||
+            (currentCheckOutDate.getTime() - checkInDate.getTime()) < (60 * 60 * 1000)) {
+            // Set checkout to be 1 day after checkin
+            spnCheckOutDate.setValue(Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS)));
+        }
+
+        // Auto on isAdvanced if check-in is in the future
+        chkIsAdvanced.setSelected(checkInDate.after(now));
 
         calculatePrice();
     }
 
     private void handleCheckoutDateChange() {
-        if (!validateDateRangeWithMinimumHours()) {
+        Date checkInDate = (Date) spnCheckInDate.getValue();
+        Date checkOutDate = (Date) spnCheckOutDate.getValue();
+
+        // Auto increase check-out date if it's not after check-in or less than 1 hour after check-in
+        if (!checkOutDate.after(checkInDate) ||
+            (checkOutDate.getTime() - checkInDate.getTime()) < (60 * 60 * 1000)) {
+
             JOptionPane.showMessageDialog(this,
                                           "Ngày check-out phải sau ngày check-in ít nhất 1 giờ!",
                                           "Lỗi ngày tháng",
                                           JOptionPane.ERROR_MESSAGE);
 
-            Date checkInDate = (Date) spnCheckInDate.getValue();
+            // Set checkout to be 1 day after checkin
             spnCheckOutDate.setValue(Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS)));
             return;
         }
@@ -962,22 +977,6 @@ public class BookingFormPanel extends JPanel {
         calculatePrice();
     }
 
-    private boolean validateDateRange() {
-        Date checkIn = (Date) spnCheckInDate.getValue();
-        Date checkOut = (Date) spnCheckOutDate.getValue();
-        return !checkIn.after(checkOut);
-    }
-
-    private boolean validateDateRangeWithMinimumHours() {
-        Date checkIn = (Date) spnCheckInDate.getValue();
-        Date checkOut = (Date) spnCheckOutDate.getValue();
-
-        // Allow check-in to be in the past, but ensure check-out is at least 1 hour after check-in
-        long diffInMillis = checkOut.getTime() - checkIn.getTime();
-        long diffInHours = diffInMillis / (1000 * 60 * 60);
-
-        return diffInHours >= 1;
-    }
 
     private boolean validateInput() {
         if (txtCustomerName.getText().trim().isEmpty()) {
@@ -1058,6 +1057,7 @@ public class BookingFormPanel extends JPanel {
         boolean isSelected = chkIsAdvanced.isSelected();
         txtDepositPrice.setEnabled(isSelected);
         if (!isSelected) {
+            spnCheckInDate.setValue(new java.util.Date());
             txtDepositPrice.setText("0");
         }
         calculateDepositPrice();

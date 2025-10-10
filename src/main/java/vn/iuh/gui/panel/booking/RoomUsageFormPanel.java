@@ -50,6 +50,8 @@ public class RoomUsageFormPanel extends JPanel {
     private JTextField txtInitialPrice;
     private JTextField txtTotalServicePrice;
     private JTextField txtDepositPrice;
+
+    private JButton reservationButton;
     private JButton btnCreateReservationForm;
 
     // Service Components - simplified to use dialog
@@ -138,6 +140,7 @@ public class RoomUsageFormPanel extends JPanel {
         txtNote.setLineWrap(true);
         txtNote.setWrapStyleWord(true);
 
+        reservationButton = new JButton(" Xem lịch đặt phòng");
         btnCreateReservationForm = new JButton("Tạo đơn đặt phòng mới");
 
         // Buttons
@@ -404,22 +407,35 @@ public class RoomUsageFormPanel extends JPanel {
         addFormRow(bookingInfoContent, gbc, 3, "Tổng tiền dịch vụ:", txtTotalServicePrice);
         addFormRow(bookingInfoContent, gbc, 4, "Tiền đặt cọc:", txtDepositPrice);
 
-        // Advanced booking checkbox
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        gbc.gridheight = 1;
+        // Create new reservation form
+        gbc.gridx = 0; gbc.gridy = 5;
+        gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         btnCreateReservationForm.setFont(CustomUI.smallFont);
         btnCreateReservationForm.setForeground(CustomUI.white);
-        btnCreateReservationForm.setBackground(CustomUI.purple);
+        btnCreateReservationForm.setBackground(CustomUI.blue);
+
+        // Add calendar icon to reservation button
+        ImageIcon createReservationForm = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/create_reservation.png")));
+        createReservationForm = new ImageIcon(createReservationForm.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
+        btnCreateReservationForm.setIcon(createReservationForm);
+
+        bookingInfoContent.add(btnCreateReservationForm, gbc);
+
+        // Reservation button
+        gbc.gridx = 1; gbc.gridy = 5;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        reservationButton.setFont(CustomUI.smallFont);
+        reservationButton.setForeground(CustomUI.white);
+        reservationButton.setBackground(CustomUI.purple);
 
         // Add calendar icon to reservation button
         ImageIcon calendar = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/calendar.png")));
         calendar = new ImageIcon(calendar.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
-        btnCreateReservationForm.setIcon(calendar);
+        reservationButton.setIcon(calendar);
 
-        bookingInfoContent.add(btnCreateReservationForm, gbc);
+        bookingInfoContent.add(reservationButton, gbc);
 
         // Note area
         gbc.gridx = 0;
