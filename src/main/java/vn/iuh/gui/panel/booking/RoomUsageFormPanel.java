@@ -179,7 +179,7 @@ public class RoomUsageFormPanel extends JPanel {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
         // Check-in and Check-out icons
-        ImageIcon checkinIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/checkin.png")));
+        ImageIcon checkinIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/get_in.png")));
         checkinIcon = new ImageIcon(checkinIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
         JButton checkInButton = new JButton(checkinIcon);
 
@@ -608,8 +608,6 @@ public class RoomUsageFormPanel extends JPanel {
                                                      this::handleTransferRoom);
         ActionItem extendBookingItem = new ActionItem("Book Thêm Giờ", IconUtil.createExtendIcon(), CustomUI.bluePurple,
                                                       this::handleExtendBooking);
-        ActionItem cancelReservationItem = new ActionItem("Hủy Đặt Phòng", IconUtil.createCancelIcon(), CustomUI.red,
-                                                          this::handleCancelReservation);
         ActionItem checkInItem =
                 new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
@@ -618,7 +616,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {
             items.add(callServiceItem);
-            items.add(cancelReservationItem);
+            items.add(checkInItem);
             items.add(transferRoomItem);
             items.add(extendBookingItem);
         } else
@@ -911,6 +909,15 @@ public class RoomUsageFormPanel extends JPanel {
         btnCancel.addActionListener(e -> handleCancel());
         closeButton.addActionListener(e -> Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName()));
         btnCreateReservationForm.addActionListener(e -> handleCreateReservationForm());
+        reservationButton.addActionListener(e -> handleShowReservationManagement());
+    }
+
+    private void handleShowReservationManagement() {
+        ReservationFormSearchPanel reservationFormManagementPanel =
+                new ReservationFormSearchPanel(PanelName.ROOM_USING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
+
+        Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_SEARCH.getName());
+        Main.showCard(PanelName.RESERVATION_FORM_SEARCH.getName());
     }
 
     // Handler methods for action buttons
@@ -966,19 +973,6 @@ public class RoomUsageFormPanel extends JPanel {
         if (result == JOptionPane.YES_OPTION) {
             JOptionPane.showMessageDialog(this,
                                           "Khách đã nhận phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void handleCancelReservation() {
-        int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận hủy đặt phòng " + selectedRoom.getRoomName() + "?",
-                                                   "Hủy đặt phòng", JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.WARNING_MESSAGE);
-
-        if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã hủy đặt phòng " + selectedRoom.getRoomName(),
                                           "Thành công", JOptionPane.INFORMATION_MESSAGE);
         }
     }

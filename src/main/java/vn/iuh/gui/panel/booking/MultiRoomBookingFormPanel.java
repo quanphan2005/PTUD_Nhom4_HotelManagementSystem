@@ -477,25 +477,23 @@ public class MultiRoomBookingFormPanel extends JPanel {
         ImageIcon menuIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/action.png")));
         menuIcon = new ImageIcon(menuIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
+        // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(menuIcon, "BẢNG THAO TÁC",
                                                      new Color(70, 130, 180), CustomUI.white, () -> {
                     isActionMenuCollapsed = !isActionMenuCollapsed;
                     togglePanelVisibility(actionMenuContent, isActionMenuCollapsed);
                 });
 
-        actionMenuContent = new JPanel(new GridLayout(2, 1, 10, 10));
+        // Create content panel - flexible grid based on number of actions
+        actionMenuContent = new JPanel();
         actionMenuContent.setBackground(Color.WHITE);
         actionMenuContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
-        // Create action buttons for multi-room booking
-        JButton callServiceButton = createActionButton("Gọi Dịch Vụ", IconUtil.createServiceIcon(), CustomUI.bluePurple, this::handleCallService);
-        JButton confirmBookingButton = createActionButton("Xác Nhận Đặt", IconUtil.createBookingIcon(), CustomUI.darkGreen, this::handleConfirmBooking);
-
-        actionMenuContent.add(callServiceButton);
-        actionMenuContent.add(confirmBookingButton);
+        // Populate action items based on room status
+        populateActionItems();
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(actionMenuContent, BorderLayout.CENTER);
@@ -503,10 +501,10 @@ public class MultiRoomBookingFormPanel extends JPanel {
         return mainPanel;
     }
 
-    private JButton createActionButton(String text, ImageIcon icon, Color backgroundColor, Runnable action) {
+    private JButton createActionButton(ActionItem item) {
         JButton button = new JButton();
         button.setLayout(new BorderLayout());
-        button.setBackground(backgroundColor);
+        button.setBackground(item.getBackgroundColor());
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createRaisedBevelBorder(),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -514,10 +512,12 @@ public class MultiRoomBookingFormPanel extends JPanel {
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        JLabel iconLabel = new JLabel(icon, SwingConstants.CENTER);
+        // Icon label - now using ImageIcon instead of emoji string
+        JLabel iconLabel = new JLabel(item.getIcon(), SwingConstants.CENTER);
         iconLabel.setOpaque(false);
 
-        JLabel textLabel = new JLabel(text, SwingConstants.CENTER);
+        // Text label
+        JLabel textLabel = new JLabel(item.getText(), SwingConstants.CENTER);
         textLabel.setFont(CustomUI.normalFont);
         textLabel.setForeground(Color.WHITE);
         textLabel.setOpaque(false);
@@ -525,21 +525,56 @@ public class MultiRoomBookingFormPanel extends JPanel {
         button.add(iconLabel, BorderLayout.CENTER);
         button.add(textLabel, BorderLayout.SOUTH);
 
+        // Add hover effects
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                button.setBackground(backgroundColor.brighter());
+                button.setBackground(item.getBackgroundColor().brighter());
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                button.setBackground(backgroundColor);
+                button.setBackground(item.getBackgroundColor());
             }
         });
 
-        button.addActionListener(e -> action.run());
+        // Add click action
+        button.addActionListener(e -> item.getAction().run());
 
         return button;
+    }
+    
+    private void populateActionItems() {
+        List<ActionItem> actionItems = getActionItems();
+
+        // Set grid layout based on number of items
+        int itemCount = actionItems.size();
+        int cols = Math.min(itemCount, 2); // Max 2 columns
+        int rows = Math.max((int) Math.ceil((double) itemCount / 2), 2);
+        actionMenuContent.setLayout(new GridLayout(rows, cols, 10, 10));
+
+        // Create and add action buttons
+        for (ActionItem item : actionItems) {
+            JButton actionButton = createActionButton(item);
+            actionMenuContent.add(actionButton);
+        }
+
+        // Refresh the panel
+        actionMenuContent.revalidate();
+        actionMenuContent.repaint();
+    }
+
+    // Get action items based on room status
+    private List<ActionItem> getActionItems() {
+        List<ActionItem> items = new ArrayList<>();
+
+        ActionItem callServiceItem = new ActionItem("Gọi Dịch Vụ", IconUtil.createServiceIcon(), CustomUI.bluePurple, this::handleCallService);
+        ActionItem bookRoomItem = new ActionItem("Đặt Phòng", IconUtil.createBookingIcon(), CustomUI.bluePurple, this::handleConfirmBooking);
+
+        items.add(callServiceItem);
+        items.add(bookRoomItem);
+
+        return items;
     }
 
     private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, String labelText, JComponent component) {
@@ -887,7 +922,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         // Collect all room IDs for multi-room booking
         List<String> danhSachMaPhong = selectedRooms.stream()
                 .map(BookingResponse::getRoomId)
-                .toList();
+                .toList();;
 
         String maPhienDangNhap = Main.getCurrentLoginSession();
 

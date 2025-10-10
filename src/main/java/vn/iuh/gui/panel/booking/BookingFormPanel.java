@@ -532,10 +532,7 @@ public class BookingFormPanel extends JPanel {
     }
 
     private void populateActionItems() {
-        actionMenuContent.removeAll(); // Clear existing items
-
-        String roomStatus = selectedRoom.getRoomStatus();
-        List<ActionItem> actionItems = getActionItemsForStatus(roomStatus);
+        List<ActionItem> actionItems = getActionItems();
 
         // Set grid layout based on number of items
         int itemCount = actionItems.size();
@@ -555,41 +552,14 @@ public class BookingFormPanel extends JPanel {
     }
 
     // Get action items based on room status
-    private List<ActionItem> getActionItemsForStatus(String roomStatus) {
+    private List<ActionItem> getActionItems() {
         List<ActionItem> items = new ArrayList<>();
 
         ActionItem callServiceItem = new ActionItem("Gọi Dịch Vụ", IconUtil.createServiceIcon(), CustomUI.bluePurple, this::handleCallService);
         ActionItem bookRoomItem = new ActionItem("Đặt Phòng", IconUtil.createBookingIcon(), CustomUI.bluePurple, this::handleBookRoom);
-        ActionItem checkOutItem = new ActionItem("Trả Phòng", IconUtil.createCheckOutIcon(), CustomUI.bluePurple, this::handleCheckOut);
-        ActionItem transferRoomItem = new ActionItem("Chuyển Phòng", IconUtil.createTransferIcon(), CustomUI.bluePurple, this::handleTransferRoom);
-        ActionItem extendBookingItem = new ActionItem("Book Thêm Giờ", IconUtil.createExtendIcon(), CustomUI.bluePurple, this::handleExtendBooking);
-        ActionItem cancelReservationItem = new ActionItem("Hủy Đặt Phòng", IconUtil.createCancelIcon(), CustomUI.red, this::handleCancelReservation);
-        ActionItem checkInItem = new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
-        if (roomStatus.equals(RoomStatus.ROOM_EMPTY_STATUS.getStatus())) {
-            items.add(callServiceItem);
-            items.add(bookRoomItem);
-        }
-        else if (roomStatus.equals(RoomStatus.ROOM_USING_STATUS.getStatus())) {
-            items.add(callServiceItem);
-            items.add(checkOutItem);
-            items.add(transferRoomItem);
-            items.add(extendBookingItem);
-        }
-        else if (roomStatus.equals(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus())) {
-            items.add(new ActionItem("Hoàn Thành Bảo Trì", IconUtil.createCompleteIcon(), CustomUI.lightBlue, this::handleCompleteMaintenance));
-            items.add(new ActionItem("Cập Nhật Tiến Độ", IconUtil.createProgressIcon(), CustomUI.lightBlue, this::handleUpdateProgress));
-        }
-        else if (roomStatus.equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
-            items.add(new ActionItem("Hoàn Thành Dọn Dẹp", IconUtil.createCompleteIcon(), CustomUI.lightBlue, this::handleCompleteCleaning));
-        }
-        else if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {
-            items.add(checkInItem);
-            items.add(cancelReservationItem);
-        } else {
-            items.add(callServiceItem);
-            items.add(bookRoomItem);
-        }
+        items.add(callServiceItem);
+        items.add(bookRoomItem);
 
         return items;
     }

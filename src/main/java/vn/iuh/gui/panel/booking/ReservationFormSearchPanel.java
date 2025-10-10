@@ -9,9 +9,9 @@ import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -21,42 +21,49 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-public class ReservationFormManagementPanel extends JPanel {
+public class ReservationFormSearchPanel extends JPanel {
+    private String parentPanelName;
+    private String roomName;
+    private String roomId;
+
     private final BookingService bookingService;
-    
+
     // Filter components
     private JTextField txtRoomName;
     private JTextField txtCustomerName;
     private JSpinner spnCheckinDate;
     private JButton btnReset;
     private JButton btnUndo;
-    
+
     // Table components
     private JTable reservationTable;
     private DefaultTableModel tableModel;
-    
+
     // Data
     private List<ReservationFormResponse> allReservations;
     private List<ReservationFormResponse> filteredReservations;
-    
+
     // Filter state
     private ReservationFilter reservationFilter;
 
-    public ReservationFormManagementPanel() {
+    public ReservationFormSearchPanel(String parentPanelName, String roomName, String roomId) {
+        this.parentPanelName = parentPanelName;
+        this.roomName = roomName;
+        this.roomId = roomId;
+
         // Initialize services and data
         bookingService = new BookingServiceImpl();
         reservationFilter = new ReservationFilter(null, null, null);
-        RefreshManager.setReservationFormManagementPanel(this);
 
         // Load data
         loadReservationData();
-
+        
         setLayout(new BorderLayout());
         init();
     }
     
     private void loadReservationData() {
-        allReservations = bookingService.getAllReservationForms();
+        allReservations = bookingService.getReseravtionFormByRoomId(roomId);
         filteredReservations = new ArrayList<>(allReservations);
     }
     
@@ -67,18 +74,36 @@ public class ReservationFormManagementPanel extends JPanel {
     }
     
     private void createTopPanel() {
-        JPanel pnlTop = new JPanel();
+        JPanel pnlTop = new JPanel(new BorderLayout());
         JLabel lblTop = new JLabel("Quản lí đơn đặt phòng", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.bigFont);
         
         pnlTop.setBackground(CustomUI.blue);
+        
         pnlTop.setPreferredSize(new Dimension(0, 50));
         pnlTop.setMinimumSize(new Dimension(0, 50));
         pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
 
+        ImageIcon undoIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/undo.png")));
+        undoIcon = new ImageIcon(undoIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
+
+        btnUndo = new JButton();
+        btnUndo.setBackground(CustomUI.red);
+        btnUndo.setIcon(undoIcon);
+        btnUndo.setForeground(Color.WHITE);
+        btnUndo.setFont(CustomUI.normalFont);
+        btnUndo.setPreferredSize(new Dimension(60, 40));
+        btnUndo.setFocusPainted(false);
+        btnUndo.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
+        btnUndo.addActionListener(e -> {
+            Main.showCard(parentPanelName);
+        });
+
+        pnlTop.add(btnUndo, BorderLayout.WEST);
         pnlTop.add(lblTop, BorderLayout.CENTER);
+        
         add(pnlTop, BorderLayout.NORTH);
     }
     
@@ -125,12 +150,9 @@ public class ReservationFormManagementPanel extends JPanel {
         // Room name text field with auto-filtering
         txtRoomName = new JTextField(15);
         txtRoomName.setFont(CustomUI.smallFont);
-        txtRoomName.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent e) {
-                applyFilters(); // Auto-filter on every key release
-            }
-        });
+        txtRoomName.setText(roomName);
+        reservationFilter.roomName = roomName;
+        txtRoomName.setEditable(false); // Make it read-only if initialized with a room name
 
         // Customer name text field with auto-filtering
         txtCustomerName = new JTextField(15);
@@ -317,7 +339,6 @@ public class ReservationFormManagementPanel extends JPanel {
     }
     
     private void resetFilters() {
-        txtRoomName.setText("");
         txtCustomerName.setText("");
         spnCheckinDate.setValue(new Date());
         

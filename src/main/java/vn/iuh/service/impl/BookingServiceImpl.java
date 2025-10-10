@@ -6,6 +6,7 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
+import vn.iuh.dto.repository.PhieuDatPhong;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
@@ -208,16 +209,35 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<ReservationFormResponse> getAllReservationForms() {
         System.out.println("Fetching all reservation forms...");
-        List<ThongTinDatPhong> danhSachThongTinDatPhong = datPhongDAO.timTatCaThongTinDatPhong();
+        List<PhieuDatPhong> danhSachPhieuDatPhong = datPhongDAO.timTatCaPhieuDatPhong();
 
         List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
-        for (ThongTinDatPhong thongTinDatPhong : danhSachThongTinDatPhong) {
+        for (PhieuDatPhong phieuDatPhong : danhSachPhieuDatPhong) {
             reservationFormResponses.add(new ReservationFormResponse(
-                    thongTinDatPhong.getTenKhachHang(),
-                    thongTinDatPhong.getMaDonDatPhong(),
-                    thongTinDatPhong.getMaPhong(),
-                    thongTinDatPhong.getTgNhanPhong(),
-                    thongTinDatPhong.getTgTraPhong()
+                    phieuDatPhong.getTenKhachHang(),
+                    phieuDatPhong.getMaDonDatPhong(),
+                    phieuDatPhong.getTenPhong(),
+                    phieuDatPhong.getTgNhanPhong(),
+                    phieuDatPhong.getTgTraPhong()
+            ));
+        }
+
+        return reservationFormResponses;
+    }
+
+    @Override
+    public List<ReservationFormResponse> getReseravtionFormByRoomId(String id) {
+        System.out.println("Fetching reservation forms for room ID: " + id);
+        List<PhieuDatPhong> danhSachPhieuDatPhong = datPhongDAO.timThongTinDatPhongBangMaPhong(id);
+
+        List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
+        for (PhieuDatPhong phieuDatPhong : danhSachPhieuDatPhong) {
+            reservationFormResponses.add(new ReservationFormResponse(
+                    phieuDatPhong.getTenKhachHang(),
+                    phieuDatPhong.getMaDonDatPhong(),
+                    phieuDatPhong.getTenPhong(),
+                    phieuDatPhong.getTgNhanPhong(),
+                    phieuDatPhong.getTgTraPhong()
             ));
         }
 
