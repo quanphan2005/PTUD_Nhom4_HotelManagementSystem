@@ -752,14 +752,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
     }
 
     private void setDefaultValues() {
-        // Calculate total price for all rooms
-        double totalPrice = selectedRooms.stream()
-                .mapToDouble(BookingResponse::getDailyPrice)
-                .sum();
-
-        txtTotalInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
         txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
-        calculatePrice();
 
         // Set default check-in date to today
         if (TimeFilterHelper.getCheckinTime() != null
@@ -772,6 +765,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
             spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
             spnCheckInDate.setValue(today);
         }
+
+        calculatePrice();
     }
 
     private void updateTotalServicePrice() {
@@ -820,14 +815,25 @@ public class MultiRoomBookingFormPanel extends JPanel {
             }
 
             long diffInMillis = checkOut.getTime() - checkIn.getTime();
-            long tempDiffInDays = diffInMillis / (24 * 60 * 60 * 1000);
 
-            if (tempDiffInDays == 0) tempDiffInDays = 1; // Minimum 1 day
-            final long diffInDaysFinal = tempDiffInDays;
+            long diffInDays = diffInMillis / (24 * 60 * 60 * 1000);
+            long diffInHours = (diffInMillis % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
 
-            double totalPrice = selectedRooms.stream()
-                                             .mapToDouble(room -> diffInDaysFinal * room.getDailyPrice())
-                                             .sum();
+            // If hours exceed 12, round up to next day
+            if (diffInHours > 12) {
+                diffInDays += 1;
+                diffInHours = 0;
+            } else if (diffInHours > 0) {
+                // Round up to next hour if there are remaining minutes
+                diffInHours += 1;
+            }
+
+            // Calculate total price based on days and hours
+            double totalPrice = 0.0;
+            for (BookingResponse room : selectedRooms) {
+                totalPrice += (diffInDays * room.getDailyPrice()) +
+                              (diffInHours * room.getHourlyPrice());
+            }
 
             txtTotalInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
             calculateDepositPrice(); // Recalculate deposit when initial price changes
@@ -953,6 +959,19 @@ public class MultiRoomBookingFormPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Ngày trả phòng phải sau ngày nhận phòng!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
             return false;
+        }
+
+        // Ensure pre-booking at least 1 hour in advance
+        if (chkIsAdvanced.isSelected()) {
+            Date now = new Date();
+            if (checkIn.before(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS)))) {
+                JOptionPane.showMessageDialog(this,
+                                              "Thời gian đặt trước phải ít nhất 1 giờ so với hiện tại!",
+                                              "Lỗi thời gian",
+                                              JOptionPane.WARNING_MESSAGE);
+                spnCheckInDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS)));
+                return false;
+            }
         }
 
         return true;

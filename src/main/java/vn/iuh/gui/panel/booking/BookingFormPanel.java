@@ -779,7 +779,6 @@ public class BookingFormPanel extends JPanel {
         // Set initial price based on daily rate
         txtInitialPrice.setText(priceFormatter.format(selectedRoom.getDailyPrice()) + " VNĐ");
         txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
-        calculatePrice();
 
         // Set default check-in date to today
         if (TimeFilterHelper.getCheckinTime() != null
@@ -792,6 +791,8 @@ public class BookingFormPanel extends JPanel {
             spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
             spnCheckInDate.setValue(today);
         }
+
+        calculatePrice();
     }
 
     // Method to update total service price from ServiceSelectionPanel
@@ -842,11 +843,23 @@ public class BookingFormPanel extends JPanel {
             }
 
             long diffInMillis = checkOut.getTime() - checkIn.getTime();
+
             long diffInDays = diffInMillis / (24 * 60 * 60 * 1000);
+            long diffInHours = (diffInMillis % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
 
-            if (diffInDays == 0) diffInDays = 1; // Minimum 1 day
+            // If hours exceed 12, round up to next day
+            if (diffInHours > 12) {
+                diffInDays += 1;
+                diffInHours = 0;
+            } else if (diffInHours > 0) {
+                // Round up to next hour if there are remaining minutes
+                diffInHours += 1;
+            }
 
-            double totalPrice = diffInDays * selectedRoom.getDailyPrice();
+            // Total = days * dailyPrice + hours * hourlyPrice
+            double totalPrice = (diffInDays * selectedRoom.getDailyPrice()) +
+                                (diffInHours * selectedRoom.getHourlyPrice());
+
             txtInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
             calculateDepositPrice(); // Recalculate deposit when initial price changes
         } catch (Exception e) {
@@ -993,6 +1006,19 @@ public class BookingFormPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Ngày trả phòng phải sau ngày nhận phòng!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
             return false;
+        }
+
+        // Ensure pre-booking at least 1 hour in advance
+        if (chkIsAdvanced.isSelected()) {
+            Date now = new Date();
+            if (checkIn.before(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS)))) {
+                JOptionPane.showMessageDialog(this,
+                                              "Thời gian đặt trước phải ít nhất 1 giờ so với hiện tại!",
+                                              "Lỗi thời gian",
+                                              JOptionPane.WARNING_MESSAGE);
+                spnCheckInDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS)));
+                return false;
+            }
         }
 
         return true;
