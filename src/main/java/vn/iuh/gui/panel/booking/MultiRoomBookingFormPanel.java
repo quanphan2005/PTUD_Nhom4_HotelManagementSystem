@@ -5,12 +5,16 @@ import vn.iuh.constraint.PanelName;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.entity.KhachHang;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.CustomerService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.CustomerServiceImpl;
 import vn.iuh.util.IconUtil;
 import vn.iuh.util.RefreshManager;
+import vn.iuh.util.TimeFilterHelper;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -29,11 +33,13 @@ import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 public class MultiRoomBookingFormPanel extends JPanel {
     private List<BookingResponse> selectedRooms;
     private BookingService bookingService;
+    private CustomerService customerService;
 
     // Customer Information Components
     private JTextField txtCustomerName;
     private JTextField txtPhoneNumber;
     private JTextField txtCCCD;
+    private JButton btnFindCustomer;
 
     // Booking Information Components
     private JSpinner spnCheckInDate;
@@ -77,12 +83,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
     public MultiRoomBookingFormPanel(List<BookingResponse> selectedRooms) {
         this.selectedRooms = selectedRooms;
         this.bookingService = new BookingServiceImpl();
+        this.customerService = new CustomerServiceImpl();
 
         initializeComponents();
         setupLayout();
-        setupEventHandlers();
         populateRoomList();
         setDefaultValues();
+        setupEventHandlers();
     }
 
     private void initializeComponents() {
@@ -101,6 +108,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         txtCustomerName = new JTextField(12);
         txtPhoneNumber = new JTextField(12);
         txtCCCD = new JTextField(12);
+        btnFindCustomer = new JButton("Tìm kiếm bằng CCCD");
 
         // Booking Information Fields
         spnCheckInDate = new JSpinner(new SpinnerDateModel());
@@ -111,9 +119,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         JSpinner.DateEditor createAtEditor = new JSpinner.DateEditor(spnCreateAt, "dd/MM/yyyy HH:mm");
         spnCheckInDate.setEditor(checkInEditor);
         spnCheckOutDate.setEditor(checkOutEditor);
-        spnCheckOutDate.setValue(Date.from(((Date) spnCheckInDate.getValue()).toInstant().plus(1, ChronoUnit.DAYS)));
-        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
-        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
+
         spnCreateAt.setEditor(createAtEditor);
 
         txtNote = new JTextArea(4, 25);
@@ -127,7 +133,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         reservationButton = new JButton(" Xem lịch đặt phòng");
 
         // Room list table
-        String[] roomColumns = {"Phòng", "Loại", "Giá/ngày", "Sức chứa"};
+        String[] roomColumns = {"Phòng", "Loại", "Giá/ngày", "Giá/giờ", "Sức chứa"};
         roomListTableModel = new DefaultTableModel(roomColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -352,6 +358,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
                 room.getRoomName(),
                 room.getRoomType(),
                 priceFormatter.format(room.getDailyPrice()) + " VNĐ",
+                priceFormatter.format(room.getHourlyPrice()) + " VNĐ",
                 room.getNumberOfCustomers(),
             };
             roomListTableModel.addRow(row);
@@ -383,9 +390,22 @@ public class MultiRoomBookingFormPanel extends JPanel {
         gbc.insets = new Insets(8, 10, 8, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
-        addFormRow(customerInfoContent, gbc, 0, "Tên khách hàng:", txtCustomerName);
-        addFormRow(customerInfoContent, gbc, 1, "Số điện thoại:", txtPhoneNumber);
-        addFormRow(customerInfoContent, gbc, 2, "CCCD/CMND:", txtCCCD);
+        // Add form rows
+        addFormRow(customerInfoContent, gbc, 0, "CCCD/CMND:", txtCCCD);
+        addFormRow(customerInfoContent, gbc, 1, "Tên khách hàng:", txtCustomerName);
+        addFormRow(customerInfoContent, gbc, 2, "Số điện thoại:", txtPhoneNumber);
+
+        // Add search customer by CCCD button
+        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        btnFindCustomer.setFont(CustomUI.smallFont);
+        btnFindCustomer.setBackground(CustomUI.blue);
+        btnFindCustomer.setForeground(Color.WHITE);
+        btnFindCustomer.setFocusPainted(false);
+        btnFindCustomer.setPreferredSize(new Dimension(80, 35));
+
+        customerInfoContent.add(btnFindCustomer, gbc);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(customerInfoContent, BorderLayout.CENTER);
@@ -733,19 +753,21 @@ public class MultiRoomBookingFormPanel extends JPanel {
     }
 
     private void setDefaultValues() {
-        // Calculate total price for all rooms
-        double totalPrice = selectedRooms.stream()
-                .mapToDouble(BookingResponse::getDailyPrice)
-                .sum();
-
-        txtTotalInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
         txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
-        calculatePrice();
 
         // Set default check-in date to today
-        java.util.Date today = new Date();
-        spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
-        spnCheckInDate.setValue(today);
+        if (TimeFilterHelper.getCheckinTime() != null
+            && TimeFilterHelper.getCheckoutTime() != null
+            && TimeFilterHelper.getCheckinTime().after(new Date())) {
+            spnCheckOutDate.setValue(TimeFilterHelper.getCheckoutTime());
+            spnCheckInDate.setValue(TimeFilterHelper.getCheckinTime());
+        } else {
+            java.util.Date today = new Date();
+            spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
+            spnCheckInDate.setValue(today);
+        }
+
+        calculatePrice();
     }
 
     private void updateTotalServicePrice() {
@@ -794,14 +816,25 @@ public class MultiRoomBookingFormPanel extends JPanel {
             }
 
             long diffInMillis = checkOut.getTime() - checkIn.getTime();
-            long tempDiffInDays = diffInMillis / (24 * 60 * 60 * 1000);
 
-            if (tempDiffInDays == 0) tempDiffInDays = 1; // Minimum 1 day
-            final long diffInDaysFinal = tempDiffInDays;
+            long diffInDays = diffInMillis / (24 * 60 * 60 * 1000);
+            long diffInHours = (diffInMillis % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
 
-            double totalPrice = selectedRooms.stream()
-                                             .mapToDouble(room -> diffInDaysFinal * room.getDailyPrice())
-                                             .sum();
+            // If hours exceed 12, round up to next day
+            if (diffInHours > 12) {
+                diffInDays += 1;
+                diffInHours = 0;
+            } else if (diffInHours > 0) {
+                // Round up to next hour if there are remaining minutes
+                diffInHours += 1;
+            }
+
+            // Calculate total price based on days and hours
+            double totalPrice = 0.0;
+            for (BookingResponse room : selectedRooms) {
+                totalPrice += (diffInDays * room.getDailyPrice()) +
+                              (diffInHours * room.getHourlyPrice());
+            }
 
             txtTotalInitialPrice.setText(priceFormatter.format(totalPrice) + " VNĐ");
             calculateDepositPrice(); // Recalculate deposit when initial price changes
@@ -812,10 +845,35 @@ public class MultiRoomBookingFormPanel extends JPanel {
     }
 
     private void setupEventHandlers() {
+        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
+        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
+
+        btnFindCustomer.addActionListener(e -> handleFindCustomer());
         closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
 
         // Add event listener for chkIsAdvanced
         chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
+    }
+
+    private void handleFindCustomer() {
+        String cccd = txtCCCD.getText().trim();
+        if (cccd.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND để tìm kiếm!",
+                                          "Lỗi", JOptionPane.WARNING_MESSAGE);
+            txtCCCD.requestFocus();
+            return;
+        }
+
+        KhachHang khachHang = customerService.getCustomerByCCCD(cccd);
+        if (khachHang != null) {
+            txtCustomerName.setText(khachHang.getTenKhachHang());
+            txtPhoneNumber.setText(khachHang.getSoDienThoai());
+            JOptionPane.showMessageDialog(this, "Tìm thấy khách hàng: " + khachHang.getTenKhachHang(),
+                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy khách hàng với CCCD/CMND: " + cccd,
+                                          "Không tìm thấy", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void handleCalculateDeposit() {
@@ -902,6 +960,19 @@ public class MultiRoomBookingFormPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Ngày trả phòng phải sau ngày nhận phòng!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
             return false;
+        }
+
+        // Ensure pre-booking at least 1 hour in advance
+        if (chkIsAdvanced.isSelected()) {
+            Date now = new Date();
+            if (checkIn.before(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS).plus(1, ChronoUnit.MINUTES)))) {
+                JOptionPane.showMessageDialog(this,
+                                              "Thời gian đặt trước phải ít nhất 1 giờ so với hiện tại!",
+                                              "Lỗi thời gian",
+                                              JOptionPane.WARNING_MESSAGE);
+                spnCheckInDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS).plus(1, ChronoUnit.MINUTES)));
+                return false;
+            }
         }
 
         return true;

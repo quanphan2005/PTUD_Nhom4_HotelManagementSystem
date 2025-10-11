@@ -6,10 +6,12 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
+import vn.iuh.dto.repository.CustomerInfo;
 import vn.iuh.dto.repository.PhieuDatPhong;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.entity.*;
 import vn.iuh.service.BookingService;
@@ -295,6 +297,22 @@ public class BookingServiceImpl implements BookingService {
             }
         }
         return bookingResponses;
+    }
+
+    @Override
+    public CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong) {
+        CustomerInfo customerInfo = datPhongDAO.timThongTinKhachHangBangMaChiTietDatPhong(maChiTietDatPhong);
+        if (Objects.isNull(customerInfo)) {
+            System.out.println("Không tìm thấy thông tin khách hàng cho mã chi tiết đặt phòng: " + maChiTietDatPhong);
+            return null;
+        }
+
+        return new CustomerInfoResponse(
+                customerInfo.getMaKhachHang(),
+                customerInfo.getCCCD(),
+                customerInfo.getTenKhachHang(),
+                customerInfo.getSoDienThoai()
+        );
     }
 
     public boolean cancelReservation(String maDatPhong) {
