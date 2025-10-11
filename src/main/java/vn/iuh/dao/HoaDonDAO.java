@@ -38,21 +38,17 @@ public class HoaDonDAO {
     }
 
     public HoaDon createInvoice(HoaDon hoaDon) {
-        String query = "INSERT INTO HoaDon (ma_hoa_don, phuong_thuc_thanh_toan, tien_thue, tong_hoa_don, " +
-                "kieu_hoa_don, tinh_trang_thanh_toan, ma_phien_dang_nhap, ma_don_dat_phong, ma_khach_hang) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO HoaDon (ma_hoa_don, " +
+                "kieu_hoa_don, ma_phien_dang_nhap, ma_don_dat_phong, ma_khach_hang) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, hoaDon.getMaHoaDon());
-            ps.setString(2, hoaDon.getPhuongThucThanhToan());
-            ps.setDouble(3, hoaDon.getTienThue());
-            ps.setDouble(4, hoaDon.getTongHoaDon());
-            ps.setString(5, hoaDon.getKieuHoaDon());
-            ps.setString(6, hoaDon.getTinhTrangThanhToan());
-            ps.setString(7, hoaDon.getMaPhienDangNhap());
-            ps.setString(8, hoaDon.getMaDonDatPhong());
-            ps.setString(9, hoaDon.getMaKhachHang());
+            ps.setString(2, hoaDon.getKieuHoaDon());
+            ps.setString(3, hoaDon.getMaPhienDangNhap());
+            ps.setString(4, hoaDon.getMaDonDatPhong());
+            ps.setString(5, hoaDon.getMaKhachHang());
 
             ps.executeUpdate();
             return hoaDon;
@@ -87,8 +83,6 @@ public class HoaDonDAO {
         try {
             hoaDon.setMaHoaDon(rs.getString("ma_hoa_don"));
             hoaDon.setPhuongThucThanhToan(rs.getString("phuong_thuc_thanh_toan"));
-            hoaDon.setTienThue(rs.getDouble("tien_thue"));
-            hoaDon.setTongHoaDon(rs.getDouble("tong_hoa_don"));
             hoaDon.setKieuHoaDon(rs.getString("kieu_hoa_don"));
             hoaDon.setTinhTrangThanhToan(rs.getString("tinh_trang_thanh_toan"));
             hoaDon.setMaPhienDangNhap(rs.getString("ma_phien_dang_nhap"));
@@ -100,5 +94,22 @@ public class HoaDonDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Can't map ResultSet to Invoice: " + e);
         }
+    }
+
+    public HoaDon findInvoiceForReservation(String reservationId){
+        String query = "Select * from HoaDon where ma_don_dat_phong = ?";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, reservationId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhHoaDon(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+        return null;
     }
 }

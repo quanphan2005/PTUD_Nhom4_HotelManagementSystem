@@ -1,7 +1,6 @@
 package vn.iuh.constraint;
 
 public enum WorkTimeCost {
-
     // in minutes
     CHECKING_WAITING_TIME(30),
     CHECKOUT_LATE_MIN(60),
