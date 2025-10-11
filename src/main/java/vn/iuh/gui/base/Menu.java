@@ -12,12 +12,13 @@ public class Menu extends JComponent {
 
     private MigLayout migLayout;
     private String[][] menuItems = new String[][]{
-            {"Đặt phòng", "Quản lý đặt phòng", "Quản lý lưu trú", "Quản lý phiếu đặt phòng"},
-            {"Phòng", "Quản lý phòng", "Quản lý loại phòng", },
-            {"Dịch vụ", "Tìm kiếm dịch vụ","Quản lý dịch vụ", "Quản lý loại dịch vụ"},
-            {"Thống kê", "Thống kê doanh thu", "Quản lý hóa đơn"},
-            {"Nhân viên", "Quản lý nhân viên", "Quản lý tài khoản", "Quản lý hoạt động"},
-            {"Thiết lập nghiệp vụ", "Quản lý phụ phí", "Quản lý nghiệp vụ"}
+            {"Đơn đặt phòng", "Quản lý đặt phòng", "Quản lý lưu trú", "Quản lý phiếu đặt phòng"},
+            {"Phòng", "Quản lý phòng", "Quản lý loại phòng", "Tìm phòng", "Thống kê hiệu suất"},
+            {"Dịch vụ", "Tìm dịch vụ","Quản lý dịch vụ", "Quản lý loại dịch vụ"},
+            {"Hóa đơn", "Tìm hóa đơn", "Thống kê doanh thu"},
+            {"Nhân viên", "Quản lý nhân viên", "Quản lý tài khoản"},
+            {"Khách hàng", "Tìm khách hàng", "Quản lý khách hàng"},
+            {"Hệ thống", "Quản lý phụ phí", "Thiết lập nghiệp vụ", "Trợ giúp"}
     };
         public Menu(Main mainFrame) {
         init(mainFrame);
