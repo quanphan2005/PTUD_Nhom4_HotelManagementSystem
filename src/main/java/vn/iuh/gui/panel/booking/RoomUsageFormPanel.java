@@ -326,9 +326,9 @@ public class RoomUsageFormPanel extends JPanel {
         txtPhoneNumber.setEditable(false);
         txtCCCD.setEditable(false);
 
-        addFormRow(customerInfoContent, gbc, 0, "Tên khách hàng:", txtCustomerName);
-        addFormRow(customerInfoContent, gbc, 1, "Số điện thoại:", txtPhoneNumber);
-        addFormRow(customerInfoContent, gbc, 2, "CCCD/CMND:", txtCCCD);
+        addFormRow(customerInfoContent, gbc, 0, "CCCD/CMND:", txtCCCD);
+        addFormRow(customerInfoContent, gbc, 1, "Tên khách hàng:", txtCustomerName);
+        addFormRow(customerInfoContent, gbc, 2, "Số điện thoại:", txtPhoneNumber);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(customerInfoContent, BorderLayout.CENTER);

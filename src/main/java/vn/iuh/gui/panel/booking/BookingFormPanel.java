@@ -6,10 +6,15 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.CustomerInfoResponse;
+import vn.iuh.entity.KhachHang;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.CustomerService;
+import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.CustomerServiceImpl;
 import vn.iuh.util.IconUtil;
 import vn.iuh.util.RefreshManager;
 
@@ -31,6 +36,7 @@ public class BookingFormPanel extends JPanel {
 
     private BookingResponse selectedRoom;
     private BookingService bookingService;
+    private CustomerService customerService;
 
     // Formatters
     private DecimalFormat priceFormatter = new DecimalFormat("#,###");
@@ -47,6 +53,7 @@ public class BookingFormPanel extends JPanel {
     private JTextField txtCustomerName;
     private JTextField txtPhoneNumber;
     private JTextField txtCCCD;
+    private JButton btnFindCustomer;
 
     // Booking Information Components
     private JSpinner spnCheckInDate;
@@ -61,10 +68,6 @@ public class BookingFormPanel extends JPanel {
 
     // Service Components - simplified to use dialog
     private List<DonGoiDichVu> serviceOrdered = new ArrayList<>();
-
-    // Action Buttons
-    private JButton btnCancel;
-    private JButton btnCalculatePrice;
 
     // Main content components
     private JPanel mainContentPanel;
@@ -88,7 +91,8 @@ public class BookingFormPanel extends JPanel {
         this.parentName = parentName;
 
         this.selectedRoom = roomInfo;
-        this.bookingService = new vn.iuh.service.impl.BookingServiceImpl();
+        this.bookingService = new BookingServiceImpl();
+        this.customerService = new CustomerServiceImpl();
 
         initializeComponents();
         setupLayout();
@@ -124,6 +128,7 @@ public class BookingFormPanel extends JPanel {
         txtCustomerName = new JTextField(12);
         txtPhoneNumber = new JTextField(12);
         txtCCCD = new JTextField(12);
+        btnFindCustomer = new JButton("Tìm kiếm bằng CCCD");
 
         // Booking Information Fields
         spnCheckInDate = new JSpinner(new SpinnerDateModel());
@@ -150,23 +155,6 @@ public class BookingFormPanel extends JPanel {
 
         chkIsAdvanced = new JCheckBox("Đặt phòng trước");
         reservationButton = new JButton(" Xem lịch đặt phòng");
-
-        // Buttons
-        btnCancel = new JButton("Hủy");
-        btnCalculatePrice = new JButton("Tính giá");
-
-        // Style buttons
-        styleButton(btnCancel, CustomUI.red);
-        styleButton(btnCalculatePrice, CustomUI.lightBlue);
-    }
-
-    private void styleButton(JButton button, Color backgroundColor) {
-        button.setBackground(backgroundColor);
-        button.setForeground(Color.WHITE);
-        button.setFont(CustomUI.normalFont);
-        button.setFocusPainted(false);
-        button.setPreferredSize(new Dimension(150, 40));
-        button.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
     }
 
     private void setupLayout() {
@@ -300,9 +288,22 @@ public class BookingFormPanel extends JPanel {
         gbc.insets = new Insets(8, 10, 8, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
-        addFormRow(customerInfoContent, gbc, 0, "Tên khách hàng:", txtCustomerName);
-        addFormRow(customerInfoContent, gbc, 1, "Số điện thoại:", txtPhoneNumber);
-        addFormRow(customerInfoContent, gbc, 2, "CCCD/CMND:", txtCCCD);
+        // Add form rows
+        addFormRow(customerInfoContent, gbc, 0, "CCCD/CMND:", txtCCCD);
+        addFormRow(customerInfoContent, gbc, 1, "Tên khách hàng:", txtCustomerName);
+        addFormRow(customerInfoContent, gbc, 2, "Số điện thoại:", txtPhoneNumber);
+
+        // Add search customer by CCCD button
+        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        btnFindCustomer.setFont(CustomUI.smallFont);
+        btnFindCustomer.setBackground(CustomUI.blue);
+        btnFindCustomer.setForeground(Color.WHITE);
+        btnFindCustomer.setFocusPainted(false);
+        btnFindCustomer.setPreferredSize(new Dimension(80, 35));
+
+        customerInfoContent.add(btnFindCustomer, gbc);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(customerInfoContent, BorderLayout.CENTER);
@@ -1015,11 +1016,31 @@ public class BookingFormPanel extends JPanel {
 
     // Setup event handlers for buttons
     private void setupEventHandlers() {
-        btnCancel.addActionListener(e -> handleCloseReservation());
-        btnCalculatePrice.addActionListener(e -> calculatePrice());
+        btnFindCustomer.addActionListener(e -> handleFindCustomer());
         closeButton.addActionListener(e -> handleCloseReservation());
         chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
         reservationButton.addActionListener(e -> handleShowReservationManagement());
+    }
+
+    private void handleFindCustomer() {
+        String cccd = txtCCCD.getText().trim();
+        if (cccd.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND để tìm kiếm!",
+                "Lỗi", JOptionPane.WARNING_MESSAGE);
+            txtCCCD.requestFocus();
+            return;
+        }
+
+        KhachHang khachHang = customerService.getCustomerByCCCD(cccd);
+        if (khachHang != null) {
+            txtCustomerName.setText(khachHang.getTenKhachHang());
+            txtPhoneNumber.setText(khachHang.getSoDienThoai());
+            JOptionPane.showMessageDialog(this, "Tìm thấy khách hàng: " + khachHang.getTenKhachHang(),
+                "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy khách hàng với CCCD/CMND: " + cccd,
+                "Không tìm thấy", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void handleShowReservationManagement() {
