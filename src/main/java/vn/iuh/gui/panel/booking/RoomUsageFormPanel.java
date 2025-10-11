@@ -5,9 +5,11 @@ import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.util.IconUtil;
 
 import javax.swing.*;
@@ -25,6 +27,7 @@ import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 public class RoomUsageFormPanel extends JPanel {
     private BookingResponse selectedRoom;
     private BookingService bookingService;
+    private CustomerInfoResponse customerInfoResponse;
 
     // Formatters
     private DecimalFormat priceFormatter = new DecimalFormat("#,###");
@@ -81,7 +84,15 @@ public class RoomUsageFormPanel extends JPanel {
 
     public RoomUsageFormPanel(BookingResponse roomInfo) {
         this.selectedRoom = roomInfo;
-        this.bookingService = new vn.iuh.service.impl.BookingServiceImpl();
+        this.bookingService = new BookingServiceImpl();
+        this.customerInfoResponse = bookingService.getCustomerInfoByBookingId(roomInfo.getMaChiTietDatPhong());
+        if (customerInfoResponse == null) {
+            new JOptionPane().showMessageDialog(this,
+                                                 "Không tìm thấy thông tin khách hàng cho mã chi tiết đặt phòng: "
+                                                 + roomInfo.getMaChiTietDatPhong(),
+                                                 "Lỗi", JOptionPane.ERROR_MESSAGE);
+            customerInfoResponse = new CustomerInfoResponse("N/A", "N/A", "N/A", "N/A");
+        }
 
         initializeComponents();
         setupLayout();
@@ -888,9 +899,9 @@ public class RoomUsageFormPanel extends JPanel {
         txtInitialPrice.setText(priceFormatter.format(selectedRoom.getDailyPrice()) + " VNĐ");
         txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
 
-        txtCustomerName.setText(selectedRoom.getCustomerName());
-        txtPhoneNumber.setText("TEST");
-        txtCCCD.setText("TEST");
+        txtCustomerName.setText(customerInfoResponse.getCustomerName());
+        txtPhoneNumber.setText(customerInfoResponse.getCustomerPhone());
+        txtCCCD.setText(customerInfoResponse.getCCCD());
     }
 
     // Method to update total service price from ServiceSelectionPanel

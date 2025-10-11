@@ -2,6 +2,7 @@ package vn.iuh.dao;
 
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.constraint.WorkTimeCost;
+import vn.iuh.dto.repository.CustomerInfo;
 import vn.iuh.dto.repository.PhieuDatPhong;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
@@ -219,6 +220,36 @@ public class DatPhongDAO {
         return danhSachPhieuDatPhong;
     }
 
+    public CustomerInfo timThongTinKhachHangBangMaChiTietDatPhong(String maChiTietDatPhong) {
+        String query = "SELECT kh.ma_khach_hang, kh.CCCD, kh.ten_khach_hang, kh.so_dien_thoai" +
+                       " FROM ChiTietDatPhong ctdp" +
+                       " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
+                       " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
+                       " WHERE ctdp.ma_chi_tiet_dat_phong = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return new CustomerInfo(
+                        rs.getString("ma_khach_hang"),
+                        rs.getString("CCCD"),
+                        rs.getString("ten_khach_hang"),
+                        rs.getString("so_dien_thoai")
+                );
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
+    }
+
     public List<PhieuDatPhong> timThongTinDatPhongBangMaPhong(String id) {
         String query = "SELECT DISTINCT p.ma_phong, p.ten_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
                        " FROM Phong p" +
@@ -261,8 +292,9 @@ public class DatPhongDAO {
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
                 " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
+                " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
                 " AND ctdp.tg_nhan_phong <= GETDATE()" +
-                " AND GETDATE() <= DATEADD(MINUTE, ?, ctdp.tg_tra_phong)" +
+                " AND (GETDATE() <= DATEADD(MINUTE, ?, ctdp.tg_tra_phong) OR cv.ten_trang_thai = ?)" +
                 " AND ddp.da_xoa = 0" +
                 " WHERE p.ma_phong IN (");
 
@@ -280,6 +312,7 @@ public class DatPhongDAO {
 
             int i = 1;
             ps.setInt(i, WorkTimeCost.CHECKOUT_LATE_MIN.getMinutes()); i++;
+            ps.setString(i, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus()); i++;
 
             for (String maPhong : phongKhongKhaDungs) {
                 ps.setString(i, maPhong);
