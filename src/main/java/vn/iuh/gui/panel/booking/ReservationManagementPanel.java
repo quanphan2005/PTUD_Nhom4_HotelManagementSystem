@@ -14,6 +14,7 @@ import vn.iuh.schedule.RoomStatusHandler;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.util.RefreshManager;
+import vn.iuh.util.TimeFilterHelper;
 
 import javax.swing.*;
 import java.awt.*;
@@ -531,6 +532,10 @@ public class ReservationManagementPanel extends JPanel {
         roomFilter.checkInDate = checkInDate;
         search();
         refreshFilterBtn();
+
+        // Update global time filters
+        TimeFilterHelper.setCheckinTime(checkInDate);
+        TimeFilterHelper.setCheckoutTime(roomFilter.checkOutDate);
     }
 
     private void handleCheckoutDateChange() {
@@ -547,7 +552,13 @@ public class ReservationManagementPanel extends JPanel {
                                           JOptionPane.ERROR_MESSAGE);
 
             // Set checkout to be 1 day after checkin
-            Date newCheckOutDate = Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
+            Date now = new Date();
+            if (checkInDate.before(Date.from(now.toInstant().minus(1, ChronoUnit.MINUTES)))) {
+                // If check-in is in the past, reset both to now and tomorrow
+                spnCheckInDate.setValue(now);
+                roomFilter.checkInDate = now;
+            }
+            Date newCheckOutDate = Date.from(roomFilter.checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
             spnCheckOutDate.setValue(newCheckOutDate);
             roomFilter.checkOutDate = newCheckOutDate;
             search();
@@ -558,6 +569,10 @@ public class ReservationManagementPanel extends JPanel {
         roomFilter.checkOutDate = checkOutDate;
         search();
         refreshFilterBtn();
+
+        // Update global time filters
+        TimeFilterHelper.setCheckinTime(roomFilter.checkInDate);
+        TimeFilterHelper.setCheckoutTime(checkOutDate);
     }
 
     private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, int col, String labelText, JComponent component) {

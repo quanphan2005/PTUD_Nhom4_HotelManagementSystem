@@ -14,6 +14,7 @@ import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CustomerServiceImpl;
 import vn.iuh.util.IconUtil;
 import vn.iuh.util.RefreshManager;
+import vn.iuh.util.TimeFilterHelper;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -86,9 +87,9 @@ public class MultiRoomBookingFormPanel extends JPanel {
 
         initializeComponents();
         setupLayout();
-        setupEventHandlers();
         populateRoomList();
         setDefaultValues();
+        setupEventHandlers();
     }
 
     private void initializeComponents() {
@@ -118,9 +119,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         JSpinner.DateEditor createAtEditor = new JSpinner.DateEditor(spnCreateAt, "dd/MM/yyyy HH:mm");
         spnCheckInDate.setEditor(checkInEditor);
         spnCheckOutDate.setEditor(checkOutEditor);
-        spnCheckOutDate.setValue(Date.from(((Date) spnCheckInDate.getValue()).toInstant().plus(1, ChronoUnit.DAYS)));
-        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
-        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
+
         spnCreateAt.setEditor(createAtEditor);
 
         txtNote = new JTextArea(4, 25);
@@ -763,9 +762,16 @@ public class MultiRoomBookingFormPanel extends JPanel {
         calculatePrice();
 
         // Set default check-in date to today
-        java.util.Date today = new Date();
-        spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
-        spnCheckInDate.setValue(today);
+        if (TimeFilterHelper.getCheckinTime() != null
+            && TimeFilterHelper.getCheckoutTime() != null
+            && TimeFilterHelper.getCheckinTime().after(new Date())) {
+            spnCheckOutDate.setValue(TimeFilterHelper.getCheckoutTime());
+            spnCheckInDate.setValue(TimeFilterHelper.getCheckinTime());
+        } else {
+            java.util.Date today = new Date();
+            spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
+            spnCheckInDate.setValue(today);
+        }
     }
 
     private void updateTotalServicePrice() {
@@ -832,6 +838,9 @@ public class MultiRoomBookingFormPanel extends JPanel {
     }
 
     private void setupEventHandlers() {
+        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
+        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
+
         btnFindCustomer.addActionListener(e -> handleFindCustomer());
         closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
 

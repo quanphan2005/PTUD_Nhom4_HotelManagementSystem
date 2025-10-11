@@ -17,6 +17,7 @@ import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CustomerServiceImpl;
 import vn.iuh.util.IconUtil;
 import vn.iuh.util.RefreshManager;
+import vn.iuh.util.TimeFilterHelper;
 
 import javax.swing.*;
 import java.awt.*;
@@ -96,9 +97,9 @@ public class BookingFormPanel extends JPanel {
 
         initializeComponents();
         setupLayout();
-        setupEventHandlers();
         populateRoomInformation();
         setDefaultValues();
+        setupEventHandlers();
     }
 
     private void initializeComponents() {
@@ -142,19 +143,17 @@ public class BookingFormPanel extends JPanel {
         JSpinner.DateEditor checkInEditor = new JSpinner.DateEditor(spnCheckInDate, "dd/MM/yyyy HH:mm");
         JSpinner.DateEditor checkOutEditor = new JSpinner.DateEditor(spnCheckOutDate, "dd/MM/yyyy HH:mm");
         JSpinner.DateEditor createAtEditor = new JSpinner.DateEditor(spnCreateAt, "dd/MM/yyyy HH:mm");
+
         spnCheckInDate.setEditor(checkInEditor);
-        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
         spnCheckOutDate.setEditor(checkOutEditor);
-        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
-        spnCheckOutDate.setValue(Date.from(((Date) spnCheckInDate.getValue()).toInstant().plus(1, ChronoUnit.DAYS)));
         spnCreateAt.setEditor(createAtEditor);
+
+        chkIsAdvanced = new JCheckBox("Đặt phòng trước");
+        reservationButton = new JButton(" Xem lịch đặt phòng");
 
         txtNote = new JTextArea(4, 25);
         txtNote.setLineWrap(true);
         txtNote.setWrapStyleWord(true);
-
-        chkIsAdvanced = new JCheckBox("Đặt phòng trước");
-        reservationButton = new JButton(" Xem lịch đặt phòng");
     }
 
     private void setupLayout() {
@@ -783,9 +782,16 @@ public class BookingFormPanel extends JPanel {
         calculatePrice();
 
         // Set default check-in date to today
-        java.util.Date today = new Date();
-        spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
-        spnCheckInDate.setValue(today);
+        if (TimeFilterHelper.getCheckinTime() != null
+            && TimeFilterHelper.getCheckoutTime() != null
+            && TimeFilterHelper.getCheckinTime().after(new Date())) {
+            spnCheckOutDate.setValue(TimeFilterHelper.getCheckoutTime());
+            spnCheckInDate.setValue(TimeFilterHelper.getCheckinTime());
+        } else {
+            java.util.Date today = new Date();
+            spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
+            spnCheckInDate.setValue(today);
+        }
     }
 
     // Method to update total service price from ServiceSelectionPanel
@@ -1016,6 +1022,9 @@ public class BookingFormPanel extends JPanel {
 
     // Setup event handlers for buttons
     private void setupEventHandlers() {
+        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
+        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
+
         btnFindCustomer.addActionListener(e -> handleFindCustomer());
         closeButton.addActionListener(e -> handleCloseReservation());
         chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
@@ -1054,10 +1063,13 @@ public class BookingFormPanel extends JPanel {
     private void handleCalculateDeposit() {
         boolean isSelected = chkIsAdvanced.isSelected();
         txtDepositPrice.setEnabled(isSelected);
+
         if (!isSelected) {
-            spnCheckInDate.setValue(new java.util.Date());
+            // If unchecked, reset deposit to 0 and check-in date to today
+            spnCheckInDate.setValue(new Date());
             txtDepositPrice.setText("0");
         }
+
         calculateDepositPrice();
     }
 
@@ -1070,84 +1082,7 @@ public class BookingFormPanel extends JPanel {
         handleConfirmBooking();
     }
 
-    private void handleCheckOut() {
-        int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận trả phòng " + selectedRoom.getRoomName() + "?",
-                                                   "Trả phòng", JOptionPane.YES_NO_OPTION);
-
-        if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã hoàn thành trả phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void handleTransferRoom() {
-        String newRoom = JOptionPane.showInputDialog(this,
-                                                     "Nhập số phòng muốn chuyển đến:",
-                                                     "Chuyển phòng", JOptionPane.QUESTION_MESSAGE);
-
-        if (newRoom != null && !newRoom.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã chuyển khách từ phòng " + selectedRoom.getRoomName() + " đến phòng " + newRoom,
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void handleExtendBooking() {
-        String[] options = {"1 giờ", "2 giờ", "3 giờ", "Tùy chỉnh"};
-        String choice = (String) JOptionPane.showInputDialog(this,
-                                                             "Chọn thời gian gia hạn:",
-                                                             "Book thêm giờ",
-                                                             JOptionPane.QUESTION_MESSAGE,
-                                                             null, options, options[0]);
-
-        if (choice != null) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã gia hạn phòng " + selectedRoom.getRoomName() + " thêm " + choice,
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void handleCheckIn() {
-        int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận nhận phòng " + selectedRoom.getRoomName() + "?",
-                                                   "Nhận phòng", JOptionPane.YES_NO_OPTION);
-
-        if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Khách đã nhận phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void handleCancelReservation() {
-        int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận hủy đặt phòng " + selectedRoom.getRoomName() + "?",
-                                                   "Hủy đặt phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
-        if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã hủy đặt phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
     private void handleCloseReservation() {
         Main.showCard(parentName);
-    }
-
-    // TODO - Implement maintenance and cleaning handlers
-    private void handleCompleteCleaning() {
-    }
-
-    private void handleUpdateProgress() {
-    }
-
-    private void handleCompleteMaintenance() {
-    }
-
-    private void triggerUpdateRoomStatus(GridRoomPanel gridRoomPanel) {
-
     }
 }
