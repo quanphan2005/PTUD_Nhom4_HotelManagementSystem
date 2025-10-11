@@ -687,19 +687,6 @@ public class ReservationManagementPanel extends JPanel {
         return true;
     }
 
-    private boolean validateDateRangeWithMinimumHours() {
-        if (roomFilter.checkInDate == null)
-            roomFilter.checkInDate = new Date();
-        if (roomFilter.checkOutDate == null)
-            roomFilter.checkOutDate = Date.from(roomFilter.checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
-
-        // Allow check-in to be in the past, but ensure check-out is at least 1 hour after check-in
-        long diffInMillis = roomFilter.checkOutDate.getTime() - roomFilter.checkInDate.getTime();
-        long diffInHours = diffInMillis / (1000 * 60 * 60);
-
-        return diffInHours >= 1;
-    }
-
     public void refreshPanel() {
         // Reset filter form to defaults
         Date today = new Date();

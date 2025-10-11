@@ -1016,7 +1016,7 @@ public class BookingFormPanel extends JPanel {
                                               "Thời gian đặt trước phải ít nhất 1 giờ so với hiện tại!",
                                               "Lỗi thời gian",
                                               JOptionPane.WARNING_MESSAGE);
-                spnCheckInDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS)));
+                spnCheckInDate.setValue(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS).plus(1, ChronoUnit.MINUTES)));
                 return false;
             }
         }
