@@ -39,6 +39,26 @@ public class PhongDAO {
         return null;
     }
 
+    public Phong timPhongTheoTen(String tenPhong) {
+        String query = "SELECT * FROM Phong WHERE ten_phong = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, tenPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return mapResultSetToRoom(rs);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return null;
+    }
+
     public List<Phong> timTatCaPhong() {
         String query = "SELECT * FROM Phong";
         List<Phong> phongs = new ArrayList<>();

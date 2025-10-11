@@ -14,6 +14,7 @@ import vn.iuh.schedule.RoomStatusHandler;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.util.RefreshManager;
+import vn.iuh.util.SchedulerUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -751,7 +752,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private void createUpdateRoomStatusSchedule(GridRoomPanel gridRoomPanel) {
         try {
-            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            Scheduler scheduler = SchedulerUtil.getInstance();
 
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put("gridRoomPanel", gridRoomPanel);
