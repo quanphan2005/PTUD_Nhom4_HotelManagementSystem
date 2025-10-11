@@ -2,8 +2,6 @@ package vn.iuh.service.impl;
 
 import vn.iuh.constraint.*;
 import vn.iuh.dao.*;
-import vn.iuh.dto.event.create.InvoiceCreationEvent;
-import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.dto.repository.ThongTinSuDungPhong;
 import vn.iuh.entity.*;
@@ -11,18 +9,15 @@ import vn.iuh.exception.BusinessException;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.CheckOutService;
 import vn.iuh.service.CongViecService;
-import vn.iuh.service.HoaDonService;
 import vn.iuh.service.LoaiPhongService;
 import vn.iuh.util.EntityUtil;
 
 import java.math.BigDecimal;
-import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class CheckOutServiceImpl implements CheckOutService {
     private final DatPhongDAO datPhongDAO;
@@ -34,10 +29,13 @@ public class CheckOutServiceImpl implements CheckOutService {
     private final PhongTinhPhuPhiDAO phongTinhPhuPhiDAO;
     private final PhuPhiDAO phuPhiDAO;
     private final CongViecService congViecService;
-
+    private final LichSuThaoTacDAO lichSuThaoTacDAO;
+    private final CongViecDAO congViecDAO;
     public CheckOutServiceImpl() {
         this.datPhongDAO = new DatPhongDAO();
         this.hoaDonDAO = new HoaDonDAO();
+        this.congViecDAO = new CongViecDAO();
+        this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecService = new CongViecServiceImpl();
         this.phuPhiDAO = new PhuPhiDAO();
         this.phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO();
@@ -60,16 +58,16 @@ public class CheckOutServiceImpl implements CheckOutService {
         return reservation;
     }
 
-    private List<ThongTinSuDungPhong> filterPricingRoom(String reservationId){
+    private List<ThongTinSuDungPhong> filterUsageRoom(String reservationId){
         List<ThongTinSuDungPhong> chiTietSuDungList = chiTietDatPhongDAO.layThongTinSuDungPhong(reservationId);
         //Lọc những phòng cần phải tính tiền
-        List<ThongTinSuDungPhong> usageRoom = new ArrayList<>();
+        List<ThongTinSuDungPhong> noneUsageRoom = new ArrayList<>();
         for(ThongTinSuDungPhong tt : chiTietSuDungList){
-            if(tt.getGioCheckIn() == null){
-                usageRoom.add(tt);
+            if(tt.getGioCheckIn() == null || RoomEndType.TRA_PHONG_LOI.getStatus().equalsIgnoreCase(tt.getKieuKetThuc())){
+                noneUsageRoom.add(tt);
             }
         }
-        chiTietSuDungList.removeAll(usageRoom);
+        chiTietSuDungList.removeAll(noneUsageRoom);
         return chiTietSuDungList;
     }
 
@@ -80,91 +78,149 @@ public class CheckOutServiceImpl implements CheckOutService {
         var reservation = validateDonDatPhong(reservationId);
 
 //        Lấy tất cả chi tiết thông tin sử dụng phòng của đơn đặt phòng
-        List<ThongTinSuDungPhong> chiTietSuDungList = filterPricingRoom(reservationId);
+        List<ThongTinSuDungPhong> chiTietSuDungList = filterUsageRoom(reservationId);
+        if(chiTietSuDungList.isEmpty()){
+            throw new BusinessException("Không tìm thấy thông tin sử dụng của đơn đặt phòng này");
+        }
+
         List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
-        List<String> maPhongDangSuDung = new ArrayList<>();
-        List<String> maChiTietDatPhongSuDung = new ArrayList<>();
+        List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
+        List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
+
         try {
             datPhongDAO.khoiTaoGiaoTac();
+
+            //Tạo hóa đơn thanh toán
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
             hoaDonDAO.createInvoice(hoaDonThanhToan);
+
             String maChiTietHoaDonMoiNhat = null;
+            boolean isCheckOutTre = false;
+
+
             for (ThongTinSuDungPhong ct : chiTietSuDungList) {
                 Timestamp tgBatDau;
-                if (ct.getGioCheckIn().after(ct.getTgNhanPhong())) {
+                if (ct.getGioCheckIn().after(ct.getTgNhanPhong()))
                     tgBatDau = ct.getTgNhanPhong();
-                } else tgBatDau = ct.getGioCheckIn();
+                else
+                    tgBatDau = ct.getGioCheckIn();
+
+                //tính thời gian sử dụng theo giờ
                 double thoiGianSuDung = tinhKhoangCachGio(tgBatDau, ct.getTgTraPhong());
 
+                //Lấy giá theo giờ hay theo ngày
                 boolean isDatTheoNgay = thoiGianSuDung > 12;
                 BigDecimal donGia = loaiPhongService.layGiaTheoLoaiPhong(ct.getMaLoaiPhong(), isDatTheoNgay);
 
+
+                //Chưa có kiểu kết thúc tức đang sử dung
                 if (ct.getKieuKetThuc() == null) {
-                    maPhongDangSuDung.add(ct.getMaPhong());
-                    maChiTietDatPhongSuDung.add(ct.getMaChiTietDatPhong());
+                    danhSachMaPhongDangSuDung.add(ct.getMaPhong());
+                    danhSachMaChiTietDatPhong.add(ct.getMaChiTietDatPhong());
                     Timestamp thoiDiemHienTai = new Timestamp(System.currentTimeMillis());
                     if (thoiDiemHienTai.after(ct.getTgTraPhong())) {
-                        PhongTinhPhuPhi ptpp = createLateCheckOutFeeForRoom(ct.getMaChiTietDatPhong());
-                        phongTinhPhuPhiDAO.insert(ptpp);
+                        isCheckOutTre = true;
                     }
                 }
                 ChiTietHoaDon chiTietHoaDon = createInvoiceDetailFromEntity(ct, hoaDonThanhToan.getMaHoaDon(), donGia, thoiGianSuDung, maChiTietHoaDonMoiNhat);
-                maChiTietHoaDonMoiNhat = chiTietHoaDon.getMaChiTietHoaDon();
                 danhSachChiTietHoaDon.add(chiTietHoaDon);
+                maChiTietHoaDonMoiNhat = chiTietHoaDon.getMaChiTietHoaDon();
             }
 
-            System.out.println("Trả phòng");
+            //Thêm phụ phí check-out trễ nếu có
+            if(isCheckOutTre){
+                List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhiMoi = createLateCheckOutFee(danhSachMaChiTietDatPhong);
+                phongTinhPhuPhiDAO.themDanhSachPhuPhiChoCacPhong(danhSachPhongTinhPhuPhiMoi);
+            }
+
             //Thêm danh sách ra ngoài lần cuối cùng
-            themLichSuRaNgoai(maChiTietDatPhongSuDung);
-            System.out.println("Hoàn tất thêm lịch sử ra ngoài");
+            List<LichSuRaNgoai> danhSachLichSuRaNgoaiLanCuoi = taoDanhSachRaNgoaiLanCuoi(danhSachMaChiTietDatPhong);
+            lichSuRaNgoaiDAO.themDanhSachLichSuRaNgoai(danhSachLichSuRaNgoaiLanCuoi);
 
             //Cập nhật ChiTietDatPhong thành trả phòng
-            chiTietDatPhongDAO.capNhatKetThucCTDP(maChiTietDatPhongSuDung);
-
+            chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
 
             //Chèn danh sách chi tiết hóa đơn đã tạo
             chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
 
             //tạo các job dọn dẹp cho phòng vừa sử dụng
-            createCleaningJobForRoom(maPhongDangSuDung);
+            List<CongViec> danhSachCongViecMoi = createCleaningJobForRoom(danhSachMaPhongDangSuDung);
+            if(danhSachCongViecMoi != null){
+                congViecDAO.themDanhSachCongViec(danhSachCongViecMoi);
+            }
 
-        }catch (Exception e){
+            //Thêm lịch sử thao tác
+            LichSuThaoTac lichSuCheckOut = createWorkingHistory(reservationId, danhSachMaPhongDangSuDung);
+            lichSuThaoTacDAO.themLichSuThaoTac(lichSuCheckOut);
+
+        }catch (BusinessException e){
             System.out.println(e.getMessage());
             datPhongDAO.hoanTacGiaoTac();
             System.out.println("Lỗi khi check out");
             return false;
+        } catch (Exception e){
+            e.printStackTrace();
         }
         datPhongDAO.thucHienGiaoTac();
         return true;
     }
 
-    private void createCleaningJobForRoom(List<String> danhSachPhongDangSuDung){
+    private LichSuThaoTac createWorkingHistory(String maDonDatPhong, List<String> maPhongSuDung){
         try {
-            for(String maPhong : danhSachPhongDangSuDung){
-                congViecService.themCongViec(RoomStatus.ROOM_CLEANING_STATUS.getStatus(),
-                                                Timestamp.valueOf(LocalDateTime.now()),
-                                                Timestamp.valueOf(LocalDateTime.now().plusHours(1)), maPhong);
-            }
+            LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
+            String workingHistoryId = lichSuThaoTacMoiNhat == null ? null : lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
+
+            String listStringRoomId = maPhongSuDung.stream().map(String::toString).collect(Collectors.joining(", "));
+            String actionDescription = "Check-out đơn đặt phòng - " + maDonDatPhong + " - Phòng: [" + listStringRoomId + "]";
+            return new LichSuThaoTac(
+                    EntityUtil.increaseEntityID(workingHistoryId,
+                            EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                            EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength()),
+                    ActionType.CHECKOUT.getActionName(),
+                    actionDescription,
+                    Main.getCurrentLoginSession(),
+                    new Timestamp(System.currentTimeMillis())
+            );
         }catch (RuntimeException e){
+            throw new BusinessException("Lỗi khi thêm lịch sử thao tác");
+        }
+    }
+
+    private List<CongViec> createCleaningJobForRoom(List<String> danhSachPhongDangSuDung){
+        try {
+            Timestamp tgBatDau = Timestamp.valueOf(LocalDateTime.now());
+            Timestamp tgKetThuc = Timestamp.valueOf(LocalDateTime.now().plusMinutes(WorkTimeCost.CLEANING_TIME.getMinutes()));
+            return congViecService.taoDanhSachCongViec(
+                     RoomStatus.ROOM_CLEANING_STATUS.getStatus(),
+                     tgBatDau,
+                     tgKetThuc,
+                     danhSachPhongDangSuDung
+                     );
+        }catch (BusinessException e){
             System.out.println(e.getMessage());
+            throw new BusinessException("Lỗi khi tạo công việc dọn dẹp cho các phòng");
         }
     }
 
 
-    private PhongTinhPhuPhi createLateCheckOutFeeForRoom(String maChiTietDatPhong){
-        var latest = phongTinhPhuPhiDAO.getLatest();
-        String maPhongTinhPhuPhiMoiNhat = (latest == null) ? null : latest.getMaPhongTinhPhuPhi();
-        String maPhongTinhPhuPhi = EntityUtil.increaseEntityID(
-                maPhongTinhPhuPhiMoiNhat,
-                EntityIDSymbol.ROOM_FEE.getPrefix(),
-                EntityIDSymbol.ROOM_FEE.getLength()
-        );
-        ThongTinPhuPhi pp = phuPhiDAO.getThongTinPhuPhiByName(Fee.CHECK_OUT_TRE.status);
-        return new PhongTinhPhuPhi(maPhongTinhPhuPhi,
-                maChiTietDatPhong,
-                pp.getMaPhuPhi(),
-                pp.getGiaHienTai());
-
+    private List<PhongTinhPhuPhi> createLateCheckOutFee(List<String> maChiTietDatPhong){
+        List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = new ArrayList<>();
+        try {
+            var latest = phongTinhPhuPhiDAO.getLatest();
+            String maPhongTinhPhuPhiMoiNhat = (latest == null) ? null : latest.getMaPhongTinhPhuPhi();
+            ThongTinPhuPhi pp = phuPhiDAO.getThongTinPhuPhiByName(Fee.CHECK_OUT_TRE.status);
+            for(String ct : maChiTietDatPhong){
+                maPhongTinhPhuPhiMoiNhat = EntityUtil.increaseEntityID(
+                        maPhongTinhPhuPhiMoiNhat,
+                        EntityIDSymbol.ROOM_FEE.getPrefix(),
+                        EntityIDSymbol.ROOM_FEE.getLength());
+                danhSachPhongTinhPhuPhi.add(new PhongTinhPhuPhi(maPhongTinhPhuPhiMoiNhat, ct, pp.getMaPhuPhi(), pp.getGiaHienTai()));
+            }
+        }catch (RuntimeException e){
+            System.out.println("Lỗi khi tính phụ phí cho phòng check-out trễ");
+            throw new BusinessException("Lỗi khi tạo danh sách phòng tính phụ phí mới");
+        }
+        return danhSachPhongTinhPhuPhi;
     }
 
 
@@ -193,18 +249,22 @@ public class CheckOutServiceImpl implements CheckOutService {
                 );
     }
 
-    private void themLichSuRaNgoai(List<String> danhSachMaChiTietDatPhong) {
-        List<LichSuRaNgoai> historyCheckOuts = new ArrayList<>();
-        LichSuRaNgoai lichSuRaNgoaiMoiNhat = lichSuRaNgoaiDAO.timLichSuRaNgoaiMoiNhat();
-        String maLichSuRaNgoaiMoiNhat = lichSuRaNgoaiMoiNhat == null ? null : lichSuRaNgoaiMoiNhat.getMaLichSuRaNgoai();
+    private List<LichSuRaNgoai> taoDanhSachRaNgoaiLanCuoi(List<String> danhSachMaChiTietDatPhong) {
+        List<LichSuRaNgoai> historyCheckOuts = null;
+        try {
+            historyCheckOuts = new ArrayList<>();
+            LichSuRaNgoai lichSuRaNgoaiMoiNhat = lichSuRaNgoaiDAO.timLichSuRaNgoaiMoiNhat();
+            String maLichSuRaNgoaiMoiNhat = lichSuRaNgoaiMoiNhat == null ? null : lichSuRaNgoaiMoiNhat.getMaLichSuRaNgoai();
 
-        for (String ct : danhSachMaChiTietDatPhong) {
-            LichSuRaNgoai lichSuRaNgoai = createHistoryCheckOutEntity(maLichSuRaNgoaiMoiNhat, ct, true);
-            maLichSuRaNgoaiMoiNhat = lichSuRaNgoai.getMaLichSuRaNgoai();
-            historyCheckOuts.add(lichSuRaNgoai);
+            for (String ct : danhSachMaChiTietDatPhong) {
+                LichSuRaNgoai lichSuRaNgoai = createHistoryCheckOutEntity(maLichSuRaNgoaiMoiNhat, ct, true);
+                maLichSuRaNgoaiMoiNhat = lichSuRaNgoai.getMaLichSuRaNgoai();
+                historyCheckOuts.add(lichSuRaNgoai);
+            }
+        } catch (RuntimeException e) {
+            throw new BusinessException("Lỗi khi tạo danh sách ra ngoài lần cuối");
         }
-
-        lichSuRaNgoaiDAO.themDanhSachLichSuRaNgoai(historyCheckOuts);
+        return historyCheckOuts;
     }
 
     private LichSuRaNgoai createHistoryCheckOutEntity(String maLichSuRaNgoaiMoiNhat, String maChiTietDatPhong, boolean isFinal) {
@@ -227,10 +287,6 @@ public class CheckOutServiceImpl implements CheckOutService {
     }
 
 
-    private HoaDon getInvoiceByID(String id) {
-        return hoaDonDAO.timHoaDon(id);
-    }
-
     private ChiTietHoaDon createInvoiceDetailFromEntity(ThongTinSuDungPhong thongTinSuDungPhong,String maHoaDon,BigDecimal donGia, double thoiGianSuDung, String maChiTietHoaDonMoiNhat){
         return new ChiTietHoaDon(
                 taoMaChiTietHoaDon(maChiTietHoaDonMoiNhat),
@@ -240,11 +296,6 @@ public class CheckOutServiceImpl implements CheckOutService {
                 donGia,
                 thoiGianSuDung
         );
-    }
-
-
-    private HoaDon getLatestInvoice() {
-        return this.hoaDonDAO.timHoaDonMoiNhat();
     }
 
     private String taoMaChiTietHoaDon(String maChiTietHoaDonMoiNhat){

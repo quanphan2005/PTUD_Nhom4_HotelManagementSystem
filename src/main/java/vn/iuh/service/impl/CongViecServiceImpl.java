@@ -6,14 +6,25 @@ import vn.iuh.dao.ChiTietDatPhongDAO;
 import vn.iuh.dao.CongViecDAO;
 import vn.iuh.entity.ChiTietDatPhong;
 import vn.iuh.entity.CongViec;
+import vn.iuh.exception.BusinessException;
 import vn.iuh.service.CongViecService;
 import vn.iuh.util.EntityUtil;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class CongViecServiceImpl implements CongViecService {
     private final CongViecDAO jobDAO;
     private final ChiTietDatPhongDAO bookingDetailDAO;
+    private final Map<String, List<String>> validTransitions = Map.of(
+            RoomStatus.ROOM_BOOKED_STATUS.getStatus(), List.of(RoomStatus.ROOM_CHECKING_STATUS.getStatus()),
+            RoomStatus.ROOM_CHECKING_STATUS.getStatus(), List.of(RoomStatus.ROOM_USING_STATUS.getStatus(), RoomStatus.ROOM_CLEANING_STATUS.getStatus()),
+            RoomStatus.ROOM_USING_STATUS.getStatus(), List.of(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus(), RoomStatus.ROOM_CLEANING_STATUS.getStatus()),
+            RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus(), List.of(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
+    );
+
     public CongViecServiceImpl() {
         this.jobDAO = new CongViecDAO();
         this.bookingDetailDAO = new ChiTietDatPhongDAO();
@@ -29,7 +40,7 @@ public class CongViecServiceImpl implements CongViecService {
 //            throw new RuntimeException("Đã có công việc tại phòng này và tại thời gian này");
 //        }
 //        else {
-            String id = taoMaCongViecMoi();
+            String id = taoMaCongViecMoi(null);
             var congViecHientai = jobDAO.layCongViecHienTaiCuaPhong(maPhong);
             if(RoomStatus.ROOM_BOOKED_STATUS.getStatus().equalsIgnoreCase(tenTrangThai)){
                 return jobDAO.themCongViec(new CongViec(id, tenTrangThai, tgBatDau, tgKetThuc, maPhong, null));
@@ -122,10 +133,11 @@ public class CongViecServiceImpl implements CongViecService {
     }
 
 
-    public String taoMaCongViecMoi(){
-        CongViec cv = jobDAO.timCongViecMoiNhat();
-        String maCV = (cv == null) ? null: cv.getMaCongViec();
-        return EntityUtil.increaseEntityID( maCV,
+    public String taoMaCongViecMoi(String maCongViecMoi){
+        if(maCongViecMoi == null){
+            maCongViecMoi = jobDAO.timCongViecMoiNhat().getMaCongViec();
+        }
+        return EntityUtil.increaseEntityID( maCongViecMoi,
                 EntityIDSymbol.JOB_PREFIX.getPrefix(),
                 EntityIDSymbol.JOB_PREFIX.getLength());
     }
@@ -146,6 +158,47 @@ public class CongViecServiceImpl implements CongViecService {
     @Override
     public boolean removeOutDateJob(String jobId){
         return jobDAO.removeJob(jobId);
+    }
+
+    public List<CongViec> taoDanhSachCongViec(String tenTrangThai, Timestamp tgBatDau, Timestamp tgKetThuc, List<String> danhSachMaPhong){
+        String maCongViecMoi = taoMaCongViecMoi(null);
+        List<CongViec> danhSachCongViecMoi = new ArrayList<>();
+        List<String> danhSachCongViecCanKetThuc = new ArrayList<>();
+        for(String maPhong : danhSachMaPhong){
+            tgBatDau = new Timestamp(tgBatDau.getTime() + 1);
+            var congViecHienTai = jobDAO.layCongViecHienTaiCuaPhong(maPhong);
+
+            // Nếu phòng chưa có công việc trước đó
+            if (congViecHienTai == null) {
+                if (RoomStatus.ROOM_BOOKED_STATUS.getStatus().equalsIgnoreCase(tenTrangThai) ||
+                        RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(tenTrangThai)) {
+                    danhSachCongViecMoi.add(new CongViec(maCongViecMoi, tenTrangThai, tgBatDau, tgKetThuc, maPhong, null));
+                    continue;
+                }
+                throw new BusinessException("Không thể thêm trạng thái " + tenTrangThai + " vì phòng chưa được đặt.");
+            }
+            String currentStatus = congViecHienTai.getTenTrangThai();
+
+            // Map các trạng thái cho phép chuyển tiếp
+            List<String> allowedNextStatuses = validTransitions.getOrDefault(currentStatus, List.of());
+
+            if (!allowedNextStatuses.contains(tenTrangThai)) {
+                System.out.printf("Không thể chuyển từ %s sang %s cho phòng %s%n", currentStatus, tenTrangThai, maPhong);
+                throw new BusinessException("Không thể thêm trạng trái " + tenTrangThai + " vì trạng thái trước đó là "+ currentStatus);
+            }
+            danhSachCongViecMoi.add(new CongViec(maCongViecMoi, tenTrangThai,tgBatDau, tgKetThuc, maPhong, null));
+            danhSachCongViecCanKetThuc.add(congViecHienTai.getMaCongViec());
+            maCongViecMoi = taoMaCongViecMoi(maCongViecMoi);
+        }
+        try {
+            int affectedRows = jobDAO.xoaDanhSachCongViec(danhSachCongViecCanKetThuc);
+            if(affectedRows != danhSachCongViecCanKetThuc.size()){
+                throw new RuntimeException();
+            }
+        }catch(RuntimeException e){
+            throw new BusinessException("Không thể xóa xóa trạng thái cũ của tất cả các phòng");
+        }
+        return danhSachCongViecMoi;
     }
 
 

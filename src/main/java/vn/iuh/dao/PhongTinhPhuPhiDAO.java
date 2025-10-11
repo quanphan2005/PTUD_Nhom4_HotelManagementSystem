@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.entity.CongViec;
 import vn.iuh.entity.Phong;
 import vn.iuh.entity.PhongTinhPhuPhi;
 import vn.iuh.exception.TableEntityMismatch;
@@ -10,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class PhongTinhPhuPhiDAO {
     private final Connection connection;
@@ -33,6 +35,23 @@ public class PhongTinhPhuPhiDAO {
             return ps.executeUpdate() > 1;
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public boolean themDanhSachPhuPhiChoCacPhong(List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi){
+        String query = "INSERT INTO PhongTinhPhuPhi (ma_phong_tinh_phu_phi, ma_chi_tiet_dat_phong, ma_phu_phi, don_gia_phu_phi) VALUES (?, ?, ?, ?)";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            for (PhongTinhPhuPhi congViec : danhSachPhongTinhPhuPhi) {
+                ps.setString(1, congViec.getMaPhongTinhPhuPhi());
+                ps.setString(2, congViec.getMaChiTietDatPhong());
+                ps.setString(3, congViec.getMaPhuPhi());
+                ps.setBigDecimal(4, congViec.getDonGiaPhuPhi());
+                ps.addBatch();
+            }
+            return ps.executeBatch().length > 1;
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi khi thêm danh sách phòng tính phụ phí");
         }
     }
 

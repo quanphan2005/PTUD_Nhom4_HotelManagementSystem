@@ -84,7 +84,6 @@ public class CongViecDAO {
 
     public void themDanhSachCongViec(List<CongViec> congViecs) {
         String query = "INSERT INTO CongViec (ma_cong_viec, ten_trang_thai, tg_bat_dau, tg_ket_thuc, ma_phong) VALUES (?, ?, ?, ?, ?)";
-
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             for (CongViec congViec : congViecs) {
@@ -97,7 +96,6 @@ public class CongViecDAO {
                 ps.addBatch();
             }
             ps.executeBatch();
-
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -266,7 +264,7 @@ public class CongViecDAO {
         return false;
     }
 
-    public void xoaDanhSachCongViec(List<String> danhSacMaCongViec) {
+    public int xoaDanhSachCongViec(List<String> danhSacMaCongViec) {
         StringBuilder string = new StringBuilder(
                 "UPDATE CongViec SET da_xoa = 1 WHERE ma_cong_viec IN ("
         );
@@ -285,7 +283,7 @@ public class CongViecDAO {
                 ps.setString(i + 1, danhSacMaCongViec.get(i));
             }
 
-            ps.executeBatch();
+             return ps.executeUpdate();
 
         } catch (SQLException e) {
             System.out.println("Lỗi xóa danh sách công việc: " + e.getMessage());
