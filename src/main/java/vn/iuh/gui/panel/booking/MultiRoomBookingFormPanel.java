@@ -133,7 +133,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         reservationButton = new JButton(" Xem lịch đặt phòng");
 
         // Room list table
-        String[] roomColumns = {"Phòng", "Loại", "Giá/ngày", "Sức chứa"};
+        String[] roomColumns = {"Phòng", "Loại", "Giá/ngày", "Giá/giờ", "Sức chứa"};
         roomListTableModel = new DefaultTableModel(roomColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -358,6 +358,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
                 room.getRoomName(),
                 room.getRoomType(),
                 priceFormatter.format(room.getDailyPrice()) + " VNĐ",
+                priceFormatter.format(room.getHourlyPrice()) + " VNĐ",
                 room.getNumberOfCustomers(),
             };
             roomListTableModel.addRow(row);
