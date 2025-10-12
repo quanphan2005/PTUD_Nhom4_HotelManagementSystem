@@ -39,7 +39,7 @@ public class ThongBaoDAO {
 
     public ThongBao themThongBao(ThongBao thongBao) {
         String query = "INSERT INTO ThongBao (ma_thong_bao, noi_dung, ma_phien_dang_nhap)" +
-                "VALUES (?, ?, ?, ?)";
+                "VALUES (?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
