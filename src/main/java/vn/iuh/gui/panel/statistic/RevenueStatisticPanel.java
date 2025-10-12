@@ -5,10 +5,20 @@ import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 
+
 public class RevenueStatisticPanel extends JPanel {
+    private static final Font FONT_LABEL  = new Font("Arial", Font.BOLD, 14);
+    private static final Font FONT_ACTION = new Font("Arial", Font.BOLD, 18);
+    private static final Font TABLE_FONT = FONT_LABEL;
+    private static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 15);
+    private static final Color ROW_ALT_COLOR = new Color(247, 249, 250);
+    private static final Color ROW_SELECTED_COLOR = new Color(210, 230, 255);
+
     private JPanel pnlTop;
     private JLabel lblTop;
     private JPanel pnlFilter;
@@ -24,6 +34,8 @@ public class RevenueStatisticPanel extends JPanel {
     private JPanel pnlVisualDisplay;
     private CardLayout cardLayout;
     private JPanel pnlTextDisplay;
+
+
 
     private void init(){
         createTopPanel();
@@ -232,10 +244,55 @@ public class RevenueStatisticPanel extends JPanel {
 
     private void createTableResult(){
         String[] cols = {"Mã hóa đơn", "Khách hàng", "Mã phòng", "Nhân viên", "Ngày lập", "Tiền phòng","Dịch vụ", "Thuế", "Tổng tiền"};
-        model = new DefaultTableModel(null, cols);
-        table = new JTable(model);
-        scrollTable = new JScrollPane(table);
-        pnlVisualDisplay.add(scrollTable, "table");
+        DefaultTableModel model = new DefaultTableModel(null, cols) {
+            @Override public boolean isCellEditable(int row, int column) { return false; } // Không cho phép chỉnh sửa thông tin trong các ô của table
+        };
+
+        JTable table = new JTable(model) { // Tạo JTable mới dựa trên model
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
+                Component c = super.prepareRenderer(renderer, row, column);
+
+                // reuse font constant (không new font mỗi cell)
+                c.setFont(TABLE_FONT);
+
+                if (!isRowSelected(row)) {
+                    // reuse color constant
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : ROW_ALT_COLOR);
+                } else {
+                    c.setBackground(ROW_SELECTED_COLOR);
+                }
+                return c;
+            }
+        };
+
+        table.setRowHeight(48);
+        table.setFont(TABLE_FONT);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setFillsViewportHeight(true);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JTableHeader header = table.getTableHeader();
+        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 42));
+        header.setBackground(CustomUI.blue);
+        header.setForeground(CustomUI.white);
+        header.setFont(HEADER_FONT);
+        header.setReorderingAllowed(false);
+
+        // Căn giữa cho thông tin trong các cột
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(CustomUI.white);
+
+        pnlVisualDisplay.add(scrollPane, "table");
     }
 
     private void createCharPanel(){

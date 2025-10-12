@@ -210,20 +210,7 @@ public class CongViecDAO {
             throw new TableEntityMismatch("Lỗi chuyển kết quả thành CongViec" + e.getMessage());
         }
     }
-    
-    public String taoMaCongViecMoi(){
-        CongViec congViecMoiNhat = timCongViecMoiNhat();
-        String maCongViecMoi;
-        if (congViecMoiNhat == null) {
-            maCongViecMoi = "CV00000001";
-        } else {
-            String maCongViecCu = congViecMoiNhat.getMaCongViec();
-            int soThuTu = Integer.parseInt(maCongViecCu.substring(2)); // Lấy phần số sau "CV"
-            soThuTu++; // Tăng số thứ tự lên 1
-            maCongViecMoi = String.format("CV%03d", soThuTu); // Định dạng lại thành CVxxx
-        }
-        return maCongViecMoi;
-    }
+
 
     public List<RoomJob> findAllRoomJobNow(){
         String query = "select cv.ma_cong_viec, p.ma_phong,cv.ten_trang_thai ,cv.tg_bat_dau, cv.tg_ket_thuc, cv.da_xoa from Phong p\n" +
@@ -257,7 +244,7 @@ public class CongViecDAO {
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maCongViec);
-            return  ps.executeUpdate() > 0;
+            return  ps.executeUpdate() > 1;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }

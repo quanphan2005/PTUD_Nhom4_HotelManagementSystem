@@ -15,6 +15,9 @@ import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
 
 public class Main extends JFrame {
     private JPanel pMain;
@@ -34,6 +37,9 @@ public class Main extends JFrame {
     private RoundedWrapperPanel pnlWrapperCenter;
 
     private static String maPhienDangNhap = "PN00000002";
+    private static BellButton btnBell;
+    private JPopupMenu notificationPopup;
+    private JPanel notificationPanel;
 
     public void init() {
         //Set hiển thị mặc định toàn màn hình
@@ -45,6 +51,11 @@ public class Main extends JFrame {
         this.setTitle("Hệ thống khách sạn Hai Quân Đức Thịnh");
 //        this.setIconImage();
     }
+
+    public static BellButton getBtnBell() {
+        return btnBell;
+    }
+
 
     public Main() {
         this.init();
@@ -113,16 +124,18 @@ public class Main extends JFrame {
         pnlCenterWrapper.add(lblSystemName);
         pnlCenterWrapper.setBackground(CustomUI.darkBlue);
 
-        btnLogOut  = new JButton("Đăng xuất");
-        btnLogOut.setBackground(CustomUI.red);
-        btnLogOut.setForeground(CustomUI.white);
-        btnLogOut.setFont(CustomUI.smallFont);
+
+        btnBell = new BellButton();
+//        btnLogOut  = new JButton("Đăng xuất");
+//        btnLogOut.setBackground(CustomUI.red);
+//        btnLogOut.setForeground(CustomUI.white);
+//        btnLogOut.setFont(CustomUI.smallFont);
 
 
 
         pnlTop.add(cmpTopHeading, BorderLayout.WEST);
         pnlTop.add(pnlCenterWrapper, BorderLayout.CENTER);
-        pnlTop.add(btnLogOut, BorderLayout.EAST);
+        pnlTop.add(btnBell, BorderLayout.EAST);
 
         this.pMain.add(pnlTop, BorderLayout.NORTH);
     }
