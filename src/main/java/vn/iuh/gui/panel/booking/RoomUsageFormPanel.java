@@ -9,8 +9,11 @@ import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.CheckOutService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.CheckOutServiceImpl;
 import vn.iuh.util.IconUtil;
+import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,6 +31,7 @@ public class RoomUsageFormPanel extends JPanel {
     private BookingResponse selectedRoom;
     private BookingService bookingService;
     private CustomerInfoResponse customerInfoResponse;
+    private CheckOutService checkOutService;
 
     // Formatters
     private DecimalFormat priceFormatter = new DecimalFormat("#,###");
@@ -83,6 +87,7 @@ public class RoomUsageFormPanel extends JPanel {
     private JButton closeButton;
 
     public RoomUsageFormPanel(BookingResponse roomInfo) {
+        this.checkOutService = new CheckOutServiceImpl();
         this.selectedRoom = roomInfo;
         this.bookingService = new BookingServiceImpl();
         this.customerInfoResponse = bookingService.getCustomerInfoByBookingId(roomInfo.getMaChiTietDatPhong());
@@ -937,14 +942,26 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void handleCheckOut() {
-        int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận trả phòng " + selectedRoom.getRoomName() + "?",
-                                                   "Trả phòng", JOptionPane.YES_NO_OPTION);
+        System.out.println("Check out");
+        int result = JOptionPane.showConfirmDialog(null,
+                "Xác nhận trả phòng " + selectedRoom.getRoomName() + "?",
+                "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã hoàn thành trả phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            System.out.println("Trả phòng...");
+            boolean success = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
+
+            if (success) {
+                JOptionPane.showMessageDialog(this,
+                        "Đã hoàn thành trả phòng " + selectedRoom.getRoomName(),
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                RefreshManager.refreshAfterBooking();
+                Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName());
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Trả phòng thất bại cho " + selectedRoom.getRoomName(),
+                        "Thất bại", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
