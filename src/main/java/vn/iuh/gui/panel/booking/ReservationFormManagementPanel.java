@@ -3,9 +3,10 @@ package vn.iuh.gui.panel.booking;
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.gui.base.CustomUI;
-import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.CheckinService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.CheckinServiceImpl;
 import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ import java.util.Objects;
 
 public class ReservationFormManagementPanel extends JPanel {
     private final BookingService bookingService;
+    private final CheckinService checkinService;
     
     // Filter components
     private JTextField txtRoomName;
@@ -45,6 +47,7 @@ public class ReservationFormManagementPanel extends JPanel {
     public ReservationFormManagementPanel() {
         // Initialize services and data
         bookingService = new BookingServiceImpl();
+        checkinService = new CheckinServiceImpl();
         reservationFilter = new ReservationFilter(null, null, null);
         RefreshManager.setReservationFormManagementPanel(this);
 
@@ -353,23 +356,53 @@ public class ReservationFormManagementPanel extends JPanel {
             tableModel.addRow(rowData);
         }
     }
-    
+
     private void handleCheckIn(ReservationFormResponse reservation) {
-        int result = JOptionPane.showConfirmDialog(this,
-            "Xác nhận check-in cho khách " + reservation.getCustomerName() + " vào phòng " + reservation.getRoomName() + "?",
-            "Xác nhận check-in", JOptionPane.YES_NO_OPTION);
+        if (reservation == null) return;
 
-        if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                "Đã check-in thành công cho khách " + reservation.getCustomerName() + " vào phòng " + reservation.getRoomName(),
-                "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Xác nhận check-in cho khách " + reservation.getCustomerName()
+                        + " vào phòng " + reservation.getRoomName() + "?",
+                "Xác nhận check-in", JOptionPane.YES_NO_OPTION);
 
-            // TODO: Implement actual check-in logic
-            // bookingService.checkInReservation(reservation.getId());
+        if (confirm != JOptionPane.YES_OPTION) return;
 
-            RefreshManager.refreshAfterCancelReservation();
+        try {
+            // Gọi hàm checkin
+            boolean success = checkinService.checkin(
+                    reservation.getMaDonDatPhong(),
+                    reservation.getRoomName()
+            );
+
+            // Nếu thành công thì thông báo
+            if (success) {
+                JOptionPane.showMessageDialog(ReservationFormManagementPanel.this,
+                        "Đã check-in thành công cho khách " + reservation.getCustomerName()
+                                + " vào phòng " + reservation.getRoomName(),
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+                // Làm mới UI
+                RefreshManager.refreshAfterCancelReservation();
+            } else {
+                // Lấy lỗi từ service nếu có
+                String err = null;
+                try { err = checkinService.getLastError(); } catch (Exception ignored) {}
+                if (err == null || err.trim().isEmpty()) err = "Check-in thất bại. Vui lòng kiểm tra log hoặc thử lại.";
+                JOptionPane.showMessageDialog(ReservationFormManagementPanel.this,
+                        err,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(ReservationFormManagementPanel.this,
+                    "Có lỗi khi thực hiện check-in: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+
+
+
 
     private void handleChangeRoom(ReservationFormResponse reservation) {
         String newRoom = JOptionPane.showInputDialog(this,
@@ -500,10 +533,32 @@ public class ReservationFormManagementPanel extends JPanel {
             btnCheckIn.setFocusPainted(false);
             btnCheckIn.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnCheckIn.addActionListener(e -> {
-                ReservationFormResponse freshReservation = (ReservationFormResponse) tableModel.getValueAt(currentRow, 5);
-                handleCheckIn(freshReservation);
-                fireEditingStopped();
+                try {
+                    // Lấy dữ liệu từ table
+                    int modelRow = reservationTable.convertRowIndexToModel(currentRow);
+
+                    Object cell = tableModel.getValueAt(modelRow, 5);
+                    if (!(cell instanceof ReservationFormResponse)) {
+                        JOptionPane.showMessageDialog(ReservationFormManagementPanel.this,
+                                "Dữ liệu hàng không hợp lệ. Vui lòng thử lại.",
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        fireEditingStopped();
+                        return;
+                    }
+
+                    ReservationFormResponse freshReservation = (ReservationFormResponse) cell;
+
+                    // Gọi handle checkin để xử lí
+                    ReservationFormManagementPanel.this.handleCheckIn(freshReservation);
+
+                } finally {
+                    // Đảm bảo editor đóng lại ngay lập tức
+                    fireEditingStopped();
+                }
             });
+
+
+
 
             // Change room button
             btnChangeRoom = new JButton("Đổi phòng");

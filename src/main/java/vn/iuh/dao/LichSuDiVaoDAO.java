@@ -65,4 +65,17 @@ public class LichSuDiVaoDAO {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành LichSuDiVao" + e.getMessage());
         }
     }
+
+    public boolean daTonTai(String maChiTietDatPhong) {
+        String q = "SELECT COUNT(1) AS cnt FROM LichSuDiVao WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
+        try (PreparedStatement ps = connection.prepareStatement(q)) {
+            ps.setString(1, maChiTietDatPhong);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("cnt") > 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
+    }
 }

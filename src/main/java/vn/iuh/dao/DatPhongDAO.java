@@ -23,6 +23,10 @@ public class DatPhongDAO {
         this.connection = DatabaseUtil.getConnect();
     }
 
+    public Connection getConnection() {
+        return this.connection;
+    }
+
     public void khoiTaoGiaoTac() {
         DatabaseUtil.enableTransaction(connection);
     }

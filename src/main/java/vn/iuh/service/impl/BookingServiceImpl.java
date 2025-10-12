@@ -259,7 +259,6 @@ public class BookingServiceImpl implements BookingService {
         // 3. Create BookingResponse each Room info
         List<BookingResponse> bookingResponses = new ArrayList<>();
         for (ThongTinPhong thongTinPhong : thongTinPhongs) {
-
             // Set default Room Status if null or empty
             if (Objects.isNull(thongTinPhong.getTenTrangThai()) || thongTinPhong.getTenTrangThai().isEmpty()) {
                 thongTinPhong.setTenTrangThai(thongTinPhong.isDangHoatDong()
@@ -286,10 +285,13 @@ public class BookingServiceImpl implements BookingService {
         // 5. Update BookingResponse with Booking Info
         for (ThongTinDatPhong thongTinDatPhong : thongTinDatPhongs) {
             for (BookingResponse bookingResponse : bookingResponses) {
-                if (Objects.equals(bookingResponse.getRoomId(), thongTinDatPhong.getMaPhong())) {
+                String respRoomId = bookingResponse.getRoomId();
+                String infoMaPhong = thongTinDatPhong.getMaPhong();
+                if (respRoomId != null && infoMaPhong != null &&
+                        respRoomId.trim().equalsIgnoreCase(infoMaPhong.trim())) {
                     bookingResponse.updateBookingInfo(
                             thongTinDatPhong.getTenKhachHang(),
-                            thongTinDatPhong.getMaChiTietDatPhong(),
+                            thongTinDatPhong.getMaChiTietDatPhong() == null ? null : thongTinDatPhong.getMaChiTietDatPhong().trim(),
                             thongTinDatPhong.getTgNhanPhong(),
                             thongTinDatPhong.getTgTraPhong()
                     );

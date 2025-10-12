@@ -210,7 +210,7 @@ public class CongViecDAO {
             throw new TableEntityMismatch("Lỗi chuyển kết quả thành CongViec" + e.getMessage());
         }
     }
-
+    
     public String taoMaCongViecMoi(){
         CongViec congViecMoiNhat = timCongViecMoiNhat();
         String maCongViecMoi;
@@ -257,7 +257,7 @@ public class CongViecDAO {
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maCongViec);
-            return  ps.executeUpdate() > 1;
+            return  ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
