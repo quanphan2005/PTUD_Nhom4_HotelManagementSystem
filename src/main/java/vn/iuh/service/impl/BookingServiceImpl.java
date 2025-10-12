@@ -285,13 +285,10 @@ public class BookingServiceImpl implements BookingService {
         // 5. Update BookingResponse with Booking Info
         for (ThongTinDatPhong thongTinDatPhong : thongTinDatPhongs) {
             for (BookingResponse bookingResponse : bookingResponses) {
-                String respRoomId = bookingResponse.getRoomId();
-                String infoMaPhong = thongTinDatPhong.getMaPhong();
-                if (respRoomId != null && infoMaPhong != null &&
-                        respRoomId.trim().equalsIgnoreCase(infoMaPhong.trim())) {
+                if (Objects.equals(bookingResponse.getRoomId(), thongTinDatPhong.getMaPhong())) {
                     bookingResponse.updateBookingInfo(
                             thongTinDatPhong.getTenKhachHang(),
-                            thongTinDatPhong.getMaChiTietDatPhong() == null ? null : thongTinDatPhong.getMaChiTietDatPhong().trim(),
+                            thongTinDatPhong.getMaChiTietDatPhong(),
                             thongTinDatPhong.getTgNhanPhong(),
                             thongTinDatPhong.getTgTraPhong()
                     );
