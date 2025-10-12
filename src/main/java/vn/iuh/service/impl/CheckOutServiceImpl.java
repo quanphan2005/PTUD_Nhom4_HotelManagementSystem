@@ -194,8 +194,7 @@ public class CheckOutServiceImpl implements CheckOutService {
                      RoomStatus.ROOM_CLEANING_STATUS.getStatus(),
                      tgBatDau,
                      tgKetThuc,
-                     danhSachPhongDangSuDung
-                     );
+                     danhSachPhongDangSuDung);
         }catch (BusinessException e){
             System.out.println(e.getMessage());
             throw new BusinessException("Lỗi khi tạo công việc dọn dẹp cho các phòng");

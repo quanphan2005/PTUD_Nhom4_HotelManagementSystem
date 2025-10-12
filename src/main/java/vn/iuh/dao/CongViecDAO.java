@@ -156,7 +156,6 @@ public class CongViecDAO {
         } catch (TableEntityMismatch et) {
             System.out.println(et.getMessage());
         }
-
         return null;
     }
 
