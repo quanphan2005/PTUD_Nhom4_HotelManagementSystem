@@ -7,6 +7,7 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.*;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.entity.*;
+import vn.iuh.gui.base.Main;
 import vn.iuh.service.CheckinService;
 import vn.iuh.util.EntityUtil;
 
@@ -182,7 +183,7 @@ public class CheckinServiceImpl implements CheckinService {
             lichSuDiVaoDAO.themLichSuDiVao(newLichSuDiVao);
 
             // 9) Kết thúc job hiện tại nếu có
-            CongViec jobCu = congViecDAO.layCongViecHienTaiCuaPhong(maPh);
+            CongViec jobCu = congViecDAO.layCongViecHienTaiCuaPhongChoCheckin(maPh);
             if (jobCu != null) {
                 boolean finished = congViecDAO.capNhatThoiGianKetThuc(jobCu.getMaCongViec(), now, true);
                 if (!finished) {

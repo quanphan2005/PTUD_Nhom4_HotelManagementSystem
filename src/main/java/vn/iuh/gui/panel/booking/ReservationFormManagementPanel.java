@@ -400,10 +400,6 @@ public class ReservationFormManagementPanel extends JPanel {
         }
     }
 
-
-
-
-
     private void handleChangeRoom(ReservationFormResponse reservation) {
         String newRoom = JOptionPane.showInputDialog(this,
             "Nhập số phòng muốn chuyển đến:",
