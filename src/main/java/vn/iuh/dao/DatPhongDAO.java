@@ -203,7 +203,9 @@ public class DatPhongDAO {
                        " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
                        " WHERE ctdp.tg_nhan_phong > GETDATE()" +
                        " AND cv.ten_trang_thai = ?" +
-                       " AND ddp.da_xoa = 0";
+                       " AND ddp.da_xoa = 0" +
+                       " AND cv.da_xoa = 0" +
+                       " ORDER BY ctdp.tg_nhan_phong";
 
         List<PhieuDatPhong> danhSachPhieuDatPhong = new ArrayList<>();
         try {
