@@ -349,7 +349,8 @@ public class DatPhongDAO {
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
                 " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
-                " WHERE ddp.da_xoa = 0" +
+                " WHERE ctdp.da_xoa = 0" +
+                " AND ctdp.kieu_ket_thuc is null" +
                 " AND p.ma_phong IN (");
 
         for (int i = 0; i < danhSachMaPhong.size(); i++) {

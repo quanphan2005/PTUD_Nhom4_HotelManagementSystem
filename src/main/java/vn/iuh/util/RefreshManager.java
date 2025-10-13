@@ -71,4 +71,11 @@ public class RefreshManager {
         refreshReservationFormManagementPanel();
         refreshReservationFormSearchPanel();
     }
+
+    public static void refreshAfterCleaning() {
+        System.out.println("RefreshManager: Refreshing after cleaning operation...");
+        refreshReservationManagementPanel();
+        refreshReservationFormManagementPanel();
+        refreshReservationFormSearchPanel();
+    }
 }
