@@ -276,4 +276,24 @@ public class CongViecDAO {
             throw new RuntimeException(e);
         }
     }
+
+    public CongViec layCongViecHienTaiCuaPhongChoCheckin(String maPhong) {
+        String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? and da_xoa = 0 ORDER BY tg_bat_dau DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maPhong);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhCongViec(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
 }

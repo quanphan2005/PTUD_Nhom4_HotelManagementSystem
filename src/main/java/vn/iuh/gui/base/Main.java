@@ -7,6 +7,7 @@ package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import vn.iuh.gui.panel.QuanLyKhachHangPanel;
+import vn.iuh.gui.panel.QuanLyLoaiPhongPanel;
 import vn.iuh.gui.panel.QuanLyPhongPanel;
 import vn.iuh.gui.panel.booking.ReservationFormManagementPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
@@ -162,15 +163,21 @@ public class Main extends JFrame {
 
     //Tạo các màn hình con cho cardLayout (màn hình chức năng)
     public void initializeMainPanels(){
-//        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
+        JPanel pink = new JPanel();
+        pink.setBackground(Color.cyan);
+        JPanel blue = new JPanel();
+        blue.setBackground(Color.blue);
         ReservationManagementPanel reservationManagementPanel = new ReservationManagementPanel();
         ReservationFormManagementPanel reservationFormManagementPanel = new ReservationFormManagementPanel();
         RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
-//        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
-//        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
-//        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
-//        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
-//        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
+        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
+        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
+        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
+        pnlCenter.add(pink, "dsadsa");
+        pnlCenter.add(blue, "Inbox");
+        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
+        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý lưu trú");
+        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
         pnlCenter.add(reservationManagementPanel, "Quản lý đặt phòng");
         pnlCenter.add(reservationFormManagementPanel, "Quản lý phiếu đặt phòng");
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");

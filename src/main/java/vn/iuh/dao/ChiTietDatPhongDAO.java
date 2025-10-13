@@ -7,6 +7,7 @@ import vn.iuh.entity.DonDatPhong;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -143,4 +144,37 @@ public class ChiTietDatPhongDAO {
 
         return null;
     }
+
+    public ChiTietDatPhong timChiTietDatPhongMoiNhat() {
+        String sql = "SELECT TOP 1 * FROM ChiTietDatPhong WHERE da_xoa = 0 ORDER BY ma_chi_tiet_dat_phong DESC";
+        try (var ps = connection.prepareStatement(sql)) {
+            var rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToChiTietDatPhong(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public boolean insert(ChiTietDatPhong ct) {
+        String sql = "INSERT INTO ChiTietDatPhong(" +
+                "ma_chi_tiet_dat_phong, tg_nhan_phong, tg_tra_phong, kieu_ket_thuc, " +
+                "ma_don_dat_phong, ma_phong, ma_phien_dang_nhap) " +
+                "VALUES (?,?,?,?,?,?,?)";
+        try (var ps = connection.prepareStatement(sql)) {
+            ps.setString(1, ct.getMaChiTietDatPhong());
+            ps.setTimestamp(2, ct.getTgNhanPhong());
+            ps.setTimestamp(3, ct.getTgTraPhong());
+            ps.setString(4, ct.getKieuKetThuc());
+            ps.setString(5, ct.getMaDonDatPhong());
+            ps.setString(6, ct.getMaPhong());
+            ps.setString(7, ct.getMaPhienDangNhap());
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

@@ -18,7 +18,7 @@ public class LichSuThaoTacDAO {
     }
 
     public LichSuThaoTac timLichSuThaoTac(String id) {
-        String query = "SELECT * FROM LichSuDiVao WHERE ma_lich_su_di_vao = ? AND da_xoa = 0";
+        String query = "SELECT * FROM LichSuThaoTac WHERE ma_lich_su_thao_tac = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);

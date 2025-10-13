@@ -259,7 +259,6 @@ public class BookingServiceImpl implements BookingService {
         // 3. Create BookingResponse each Room info
         List<BookingResponse> bookingResponses = new ArrayList<>();
         for (ThongTinPhong thongTinPhong : thongTinPhongs) {
-
             // Set default Room Status if null or empty
             if (Objects.isNull(thongTinPhong.getTenTrangThai()) || thongTinPhong.getTenTrangThai().isEmpty()) {
                 thongTinPhong.setTenTrangThai(thongTinPhong.isDangHoatDong()
