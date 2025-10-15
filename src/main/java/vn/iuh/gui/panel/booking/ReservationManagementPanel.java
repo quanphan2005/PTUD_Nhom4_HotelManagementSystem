@@ -6,13 +6,16 @@ import org.quartz.impl.StdSchedulerFactory;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.base.RoomItem;
 import vn.iuh.schedule.RoomStatusHandler;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.LoaiPhongService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.LoaiPhongServiceImpl;
 import vn.iuh.util.RefreshManager;
 import vn.iuh.util.SchedulerUtil;
 import vn.iuh.util.TimeFilterHelper;
@@ -21,17 +24,18 @@ import vn.iuh.util.TimeFilterHelper;
 import javax.swing.*;
 import java.awt.*;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ReservationManagementPanel extends JPanel {
     public static GridRoomPanel gridRoomPanels;
     private BookingService bookingService;
+    private LoaiPhongService loaiPhongService;
 
     private List<RoomItem> allRoomItems;
     private List<RoomItem> filteredRooms;
+    private List<RoomCategoryResponse> roomCategories;
 
     // Search panel components
     private JComboBox<String> cmbRoomType;
@@ -61,7 +65,9 @@ public class ReservationManagementPanel extends JPanel {
 
     public void initData() {
         this.bookingService = new BookingServiceImpl();
+        this.loaiPhongService = new LoaiPhongServiceImpl();
         List<BookingResponse> allBookingInfo = bookingService.getAllBookingInfo();
+        roomCategories = loaiPhongService.getAllRoomCategories();
 
         allRoomItems = new ArrayList<>();
         for (BookingResponse bookingResponse : allBookingInfo) {
@@ -173,8 +179,13 @@ public class ReservationManagementPanel extends JPanel {
         // Room type dropdown - populate with actual room categories
         cmbRoomType = new JComboBox<>();
         cmbRoomType.addItem(ALL_STATUS);
-        cmbRoomType.addItem("VIP");
-        cmbRoomType.addItem("THƯỜNG");
+
+        // map this to set of types
+        Set<String> types = roomCategories.stream().map(RoomCategoryResponse::getPhanLoai).collect(Collectors.toSet());
+        for (String type : types) {
+            cmbRoomType.addItem(type);
+        }
+
         cmbRoomType.setPreferredSize(new Dimension(200, 35));
         cmbRoomType.setFont(CustomUI.smallFont);
 
@@ -187,9 +198,11 @@ public class ReservationManagementPanel extends JPanel {
 
         // Capacity dropdown
         cmbCapacity = new JComboBox<>();
-        cmbCapacity.addItem(1);
-        cmbCapacity.addItem(2);
-        cmbCapacity.addItem(4);
+        Set<Integer> capacities = roomCategories.stream().map(RoomCategoryResponse::getSoLuongKhach).collect(Collectors.toSet());
+        for (Integer capacity : capacities) {
+            cmbCapacity.addItem(capacity);
+        }
+
         cmbCapacity.setPreferredSize(new Dimension(200, 35));
         cmbCapacity.setFont(CustomUI.smallFont);
 

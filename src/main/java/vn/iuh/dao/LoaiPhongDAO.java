@@ -7,6 +7,7 @@ import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LoaiPhongDAO {
@@ -38,6 +39,26 @@ public class LoaiPhongDAO {
         }
 
         return null;
+    }
+
+    public List<LoaiPhong> layTatCaLoaiPhong() {
+        String query = "SELECT * FROM LoaiPhong WHERE da_xoa = 0";
+        List<LoaiPhong> danhSachLoaiPhong = new java.util.ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                danhSachLoaiPhong.add(chuyenKetQuaThanhLoaiPhong(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+
+        return danhSachLoaiPhong;
     }
 
     public LoaiPhong themLoaiPhong(LoaiPhong loaiPhong) {
@@ -145,10 +166,10 @@ public class LoaiPhongDAO {
         }
     }
 
-    public Map<String, Double> layGiaLoaiPhongTheoId(String loaiPhongId){
-        String query =  "select gia_gio_moi as gia_gio, gia_ngay_moi as gia_ngay from GiaPhong gp\n" +
-                "where\tgp.ma_loai_phong = ?\n" +
-                "order by thoi_gian_tao desc\n";
+    public Map<String, Double> layGiaLoaiPhongTheoId(String loaiPhongId) {
+        String query = "select gia_gio_moi as gia_gio, gia_ngay_moi as gia_ngay from GiaPhong gp\n" +
+                       "where\tgp.ma_loai_phong = ?\n" +
+                       "order by thoi_gian_tao desc\n";
         Map<String, Double> listPrice = new HashMap<>();
 
         try {
