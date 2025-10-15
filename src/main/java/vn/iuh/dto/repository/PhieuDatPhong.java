@@ -3,16 +3,17 @@ package vn.iuh.dto.repository;
 import java.sql.Timestamp;
 
 public class PhieuDatPhong {
+    private final String maPhong;
     private final String tenPhong;
     private final String tenKhachHang;
     private final String maDonDatPhong;
     private final Timestamp tgNhanPhong;
     private final Timestamp tgTraPhong;
 
-
-    public PhieuDatPhong(String tenPhong, String tenKhachHang, String maDonDatPhong,
+    public PhieuDatPhong(String maPhong, String tenPhong, String tenKhachHang, String maDonDatPhong,
                          Timestamp tgNhanPhong,
                          Timestamp tgTraPhong) {
+        this.maPhong = maPhong;
         this.tenPhong = tenPhong;
         this.tenKhachHang = tenKhachHang;
         this.maDonDatPhong = maDonDatPhong;
@@ -29,6 +30,10 @@ public class PhieuDatPhong {
                ", tgNhanPhong=" + tgNhanPhong +
                ", tgTraPhong=" + tgTraPhong +
                '}';
+    }
+
+    public String getMaPhong() {
+        return maPhong;
     }
 
     public String getTenPhong() {

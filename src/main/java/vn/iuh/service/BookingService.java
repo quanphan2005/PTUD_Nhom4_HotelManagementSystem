@@ -14,5 +14,5 @@ public interface BookingService {
     List<BookingResponse> getAllBookingInfo();
     CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong);
     boolean cancelReservation(String maDatPhong);
-
+    boolean cancelRoomReservation(String maDatPhong, String maPhong);
 }

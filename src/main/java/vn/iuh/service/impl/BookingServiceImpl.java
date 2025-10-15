@@ -221,6 +221,7 @@ public class BookingServiceImpl implements BookingService {
             reservationFormResponses.add(new ReservationFormResponse(
                     phieuDatPhong.getTenKhachHang(),
                     phieuDatPhong.getMaDonDatPhong(),
+                    phieuDatPhong.getMaPhong(),
                     phieuDatPhong.getTenPhong(),
                     phieuDatPhong.getTgNhanPhong(),
                     phieuDatPhong.getTgTraPhong()
@@ -240,6 +241,7 @@ public class BookingServiceImpl implements BookingService {
             reservationFormResponses.add(new ReservationFormResponse(
                     phieuDatPhong.getTenKhachHang(),
                     phieuDatPhong.getMaDonDatPhong(),
+                    phieuDatPhong.getMaPhong(),
                     phieuDatPhong.getTenPhong(),
                     phieuDatPhong.getTgNhanPhong(),
                     phieuDatPhong.getTgTraPhong()
@@ -383,6 +385,72 @@ public class BookingServiceImpl implements BookingService {
 
             datPhongDAO.thucHienGiaoTac();
             System.out.println("Hủy đặt phòng thành công, mã: " + maDatPhong + "thành công!");
+            return true;
+
+        } catch (Exception e) {
+            System.out.println("Lỗi khi hủy đặt phòng, mã: " + maDatPhong + " " + e.getMessage());
+            System.out.println("Rollback transaction");
+            e.printStackTrace();
+            datPhongDAO.hoanTacGiaoTac();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean cancelRoomReservation(String maDatPhong, String maPhong) {
+        // 1. Find ReservationForm by id
+        DonDatPhong donDatPhong = datPhongDAO.timDonDatPhong(maDatPhong);
+        if (Objects.isNull(donDatPhong)) {
+            System.out.println("Không tìm thấy đơn đặt phòng, mã: " + maDatPhong);
+            return false;
+        }
+
+        // 2. Find reservationDetail by ReservationForm id and Room id
+        ChiTietDatPhong chiTietDatPhong = datPhongDAO.timChiTietDatPhongBangMaDatPhong(maDatPhong, maPhong);
+        if (Objects.isNull(chiTietDatPhong)) {
+            System.out.println("Không tìm thấy chi tiết đặt phòng cho mã đặt phòng: " + maDatPhong + " và mã phòng: " + maPhong);
+            return false;
+        }
+
+        try {
+            datPhongDAO.khoiTaoGiaoTac();
+
+            // 3. Delete specific reservavtionDetail
+            datPhongDAO.huyChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
+
+            // 4. Handle RoomUsageService
+            List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
+            if (!danhSachPhongDungDichVu.isEmpty()) {
+                for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu)
+//                  // 4.1 Update Service Quantity if any
+                    donGoiDichVuDao.capNhatSoLuongTonKhoDichVu(phongDungDichVu.getMaDichVu(), phongDungDichVu.getSoLuong());
+
+                // 4.2 Delete RoomUsageService by ReservationDetail id
+                List<String> danhSachMaDonGoiDichVu = danhSachPhongDungDichVu.stream().map(PhongDungDichVu::getMaPhongDungDichVu).toList();
+                donGoiDichVuDao.huyDanhSachPhongDungDichVu(danhSachMaDonGoiDichVu);
+            }
+
+            // 5. Update WorkingHistory
+            LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
+            String workingHistoryId = lichSuThaoTacMoiNhat == null ? null :
+                    lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
+            String actionDescription = "Hủy đơn đặt tại phòng " + maPhong + " cho khách hàng " + donDatPhong.getMaKhachHang()
+                                       + " - Mã đặt phòng: " + donDatPhong.getMaDonDatPhong();
+            lichSuThaoTacDAO.themLichSuThaoTac(new LichSuThaoTac(
+                    EntityUtil.increaseEntityID(workingHistoryId,
+                                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength()),
+                    ActionType.CANCEL_RESERVATION.getActionName(),
+                    actionDescription,
+                    donDatPhong.getMaPhienDangNhap(),
+                    null
+            ));
+
+            // 6. Remove room`s job
+            congViecDAO.xoaCongViecChoCheckIn(chiTietDatPhong.getMaChiTietDatPhong());
+
+            datPhongDAO.thucHienGiaoTac();
+            System.out.println("Hủy đặt phòng tại phòng " + maPhong + ", mã: " + maDatPhong + "thành công!");
             return true;
 
         } catch (Exception e) {

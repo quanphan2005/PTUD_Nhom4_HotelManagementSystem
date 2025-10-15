@@ -160,6 +160,25 @@ public class DonGoiDichVuDao {
         }
     }
 
+    public List<PhongDungDichVu> timDonGoiDichVuBangChiTietDatPhong(String maChiTietDatPhong) {
+        String query = "SELECT * FROM PhongDungDichVu WHERE ma_chi_tiet_dat_phong = ? ORDER BY ma_phong_dung_dich_vu DESC";
+
+        List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+            var rs = ps.executeQuery();
+            while (rs.next())
+                danhSachPhongDungDichVu.add(chuyenKetQuaThanhPhongDungDichVu(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return danhSachPhongDungDichVu;
+    }
+
     public void huyDanhSachPhongDungDichVu(List<String> ids) {
         StringBuilder string = new StringBuilder(
                 "UPDATE PhongDungDichVu SET da_xoa = 1 WHERE ma_phong_dung_dich_vu IN ("
