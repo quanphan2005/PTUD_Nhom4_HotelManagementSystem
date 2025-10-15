@@ -357,6 +357,19 @@ public class ReservationManagementPanel extends JPanel {
         btnMultiBookingToggle.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
         btnMultiBookingToggle.addActionListener(e -> toggleMultiBookingMode());
 
+        // Add hover effect
+        btnMultiBookingToggle.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnMultiBookingToggle.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                btnMultiBookingToggle.setBackground(btnMultiBookingToggle.isSelected() ? CustomUI.drakRed : CustomUI.blue);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnMultiBookingToggle.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                updateToggleButtonAppearance(btnMultiBookingToggle.isSelected());
+            }
+        });
+
         leftPanel.add(btnMultiBookingToggle);
 
         // Right panel with selection info and confirm button
