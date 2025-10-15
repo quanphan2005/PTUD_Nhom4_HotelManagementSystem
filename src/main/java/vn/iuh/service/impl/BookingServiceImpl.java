@@ -283,7 +283,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // 4. Find all Booking Info for non-available rooms
-        List<ThongTinDatPhong> thongTinDatPhongs = datPhongDAO.timTatCaThongTinDatPhongTrongKhoang(nonAvailableRoomIds);
+        List<ThongTinDatPhong> thongTinDatPhongs = datPhongDAO.timTatCaThongTinDatPhongTheoDanhSachMaPhong(nonAvailableRoomIds);
 
         // 5. Update BookingResponse with Booking Info
         for (ThongTinDatPhong thongTinDatPhong : thongTinDatPhongs) {
@@ -298,6 +298,20 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
         }
+        return bookingResponses;
+    }
+
+    @Override
+    public List<BookingResponse> getAllEmptyRoomInRange(Timestamp timeIn, Timestamp timeOut) {
+        // 1.Get All Room Info
+        List<ThongTinPhong> danhSachPhongTrong = datPhongDAO.timTatCaPhongTrongKhoangThoiGian(timeIn, timeOut);
+
+        // 2. Create BookingResponse each Room info
+        List<BookingResponse> bookingResponses = new ArrayList<>();
+        for (ThongTinPhong phongTrong : danhSachPhongTrong) {
+            bookingResponses.add(createBookingResponse(phongTrong));
+        }
+
         return bookingResponses;
     }
 

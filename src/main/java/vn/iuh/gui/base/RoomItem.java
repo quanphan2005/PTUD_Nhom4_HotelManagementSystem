@@ -60,6 +60,17 @@ public class RoomItem extends JPanel {
         createActionListener();
     }
 
+    public RoomItem(BookingResponse bookingResponse, boolean isEmptyRoom) {
+        this.bookingResponse = bookingResponse;
+
+        if (isEmptyRoom) {
+            createEmptyUI();
+        } else {
+            createUI();
+        }
+        createActionListener();
+    }
+
     private void createActionListener() {
         this.addMouseListener(new MouseAdapter() {
             @Override
@@ -220,6 +231,22 @@ public class RoomItem extends JPanel {
         return checkLabel;
     }
 
+    private void createEmptyUI() {
+        setLayout(new BorderLayout());
+        setPreferredSize(new Dimension(0, 120));
+        setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        setBackground(Color.WHITE);
+
+        // Left blue panel
+        JPanel leftPanel = createLeftPanelForEmptyRoom();
+
+        // Right panel with room details
+        JPanel rightPanel = createRightPanelForEmptyRoom();
+
+        add(leftPanel, BorderLayout.WEST);
+        add(rightPanel, BorderLayout.CENTER);
+    }
+
     private void createUI() {
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(0, 120));
@@ -281,6 +308,58 @@ public class RoomItem extends JPanel {
         leftPanel.add(capacityPanel);
         leftPanel.add(Box.createVerticalStrut(5));
         leftPanel.add(statusIcon);
+
+        return leftPanel;
+    }
+
+    private JPanel createLeftPanelForEmptyRoom() {
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setPreferredSize(new Dimension(100, 120));
+        leftPanel.setBackground(new Color(30, 144, 255)); // Blue color
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Room name
+        JLabel lblRoomName = new JLabel("PHÒNG");
+        lblRoomName.setFont(CustomUI.smallFont);
+        lblRoomName.setForeground(Color.WHITE);
+        lblRoomName.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblRoomNumber = new JLabel(bookingResponse.getRoomName().substring(6));
+        lblRoomNumber.setFont(CustomUI.smallFont);
+        lblRoomNumber.setForeground(Color.WHITE);
+        lblRoomNumber.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Capacity with icon
+        JPanel capacityPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        capacityPanel.setOpaque(false);
+
+        JLabel lblCapacity = new JLabel(String.valueOf(bookingResponse.getNumberOfCustomers()));
+        lblCapacity.setFont(CustomUI.normalFont);
+        lblCapacity.setForeground(Color.WHITE);
+
+        // Create person icon using ImageIcon
+        ImageIcon personIcon = createPersonIcon();
+        JLabel personIconLabel = new JLabel(personIcon);
+
+        capacityPanel.add(lblCapacity);
+        capacityPanel.add(personIconLabel);
+
+        // Status icon at bottom
+        JLabel iconLabel = new JLabel(getStatusImageIcon(RoomStatus.ROOM_EMPTY_STATUS.getStatus()));
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Add components with proper spacing
+        leftPanel.add(lblRoomName);
+        leftPanel.add(Box.createVerticalGlue());
+        leftPanel.add(lblRoomNumber);
+        leftPanel.add(Box.createVerticalStrut(5));
+        capacityPanel.add(lblCapacity);
+        capacityPanel.add(personIconLabel);
+        leftPanel.add(capacityPanel);
+        leftPanel.add(Box.createVerticalStrut(5));
+        leftPanel.add(iconLabel);
 
         return leftPanel;
     }
@@ -401,6 +480,12 @@ public class RoomItem extends JPanel {
         } else {
             return createEmptyRoomPanel();
         }
+    }
+
+    private JPanel createRightPanelForEmptyRoom() {
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        return createEmptyRoomPanel();
     }
 
     private boolean isEmptyRoom(String status) {
