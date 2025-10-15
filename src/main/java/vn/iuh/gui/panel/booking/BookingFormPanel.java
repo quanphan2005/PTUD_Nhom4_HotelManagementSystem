@@ -786,10 +786,12 @@ public class BookingFormPanel extends JPanel {
             && TimeFilterHelper.getCheckinTime().after(new Date())) {
             spnCheckOutDate.setValue(TimeFilterHelper.getCheckoutTime());
             spnCheckInDate.setValue(TimeFilterHelper.getCheckinTime());
+            chkIsAdvanced.setSelected(true);
         } else {
             java.util.Date today = new Date();
             spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
             spnCheckInDate.setValue(today);
+            chkIsAdvanced.setSelected(false);
         }
 
         calculatePrice();
@@ -895,7 +897,7 @@ public class BookingFormPanel extends JPanel {
                 RefreshManager.refreshAfterBooking();
                 handleCloseReservation(); // Return to previous screen
             } else {
-                JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Vui lòng thử lại.",
+                JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Đã có phòng được đặt trong thời gian này.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
