@@ -243,7 +243,7 @@ public class CongViecDAO {
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maCongViec);
-            return  ps.executeUpdate() > 1;
+            return  ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -275,5 +275,44 @@ public class CongViecDAO {
             System.out.println("Lỗi xóa danh sách công việc: " + e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+
+    public CongViec layCongViecHienTaiCuaPhongChoCheckin(String maPhong) {
+        String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? and da_xoa = 0 ORDER BY tg_bat_dau DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maPhong);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhCongViec(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
+    public boolean xoaCongViecChoCheckIn(String maChiTietDatPhong) {
+        String query = "UPDATE CongViec SET da_xoa = 1" +
+                       " WHERE tg_bat_dau = (SELECT TOP 1 tg_nhan_phong FROM ChiTietDatPhong Phong WHERE ma_chi_tiet_dat_phong = ? )" +
+                       " AND ma_phong = (SELECT TOP 1 ma_phong FROM ChiTietDatPhong Phong WHERE ma_chi_tiet_dat_phong = ? )" +
+                       " AND da_xoa = 0";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+
+            ps.setString(2, maChiTietDatPhong);
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return false;
     }
 }

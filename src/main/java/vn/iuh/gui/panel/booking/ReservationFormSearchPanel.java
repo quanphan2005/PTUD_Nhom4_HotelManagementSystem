@@ -58,30 +58,30 @@ public class ReservationFormSearchPanel extends JPanel {
 
         // Load data
         loadReservationData();
-        
+
         setLayout(new BorderLayout());
         init();
     }
-    
+
     private void loadReservationData() {
         allReservations = bookingService.getReseravtionFormByRoomId(roomId);
         filteredReservations = new ArrayList<>(allReservations);
     }
-    
+
     private void init() {
         createTopPanel();
         createFilterPanel();
         createTablePanel();
     }
-    
+
     private void createTopPanel() {
         JPanel pnlTop = new JPanel(new BorderLayout());
         JLabel lblTop = new JLabel("Quản lí đơn đặt phòng", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.bigFont);
-        
+
         pnlTop.setBackground(CustomUI.blue);
-        
+
         pnlTop.setPreferredSize(new Dimension(0, 50));
         pnlTop.setMinimumSize(new Dimension(0, 50));
         pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
@@ -104,10 +104,10 @@ public class ReservationFormSearchPanel extends JPanel {
 
         pnlTop.add(btnUndo, BorderLayout.WEST);
         pnlTop.add(lblTop, BorderLayout.CENTER);
-        
+
         add(pnlTop, BorderLayout.NORTH);
     }
-    
+
     private void createFilterPanel() {
         JPanel filterPanel = new JPanel(new GridBagLayout());
         filterPanel.setBackground(Color.WHITE);
@@ -115,21 +115,21 @@ public class ReservationFormSearchPanel extends JPanel {
             BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
             BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 10, 8, 10);
         gbc.anchor = GridBagConstraints.WEST;
-        
+
         // Initialize filter components
         initializeFilterComponents();
-        
+
         // Row 1: Tên phòng và Tên khách hàng
         addFilterRow(filterPanel, gbc, 0, 0, "Tên phòng:", txtRoomName);
         addFilterRow(filterPanel, gbc, 0, 2, "Tên khách hàng:", txtCustomerName);
-        
+
         // Row 2: Thời gian checkin và Reset button
         addFilterRow(filterPanel, gbc, 1, 0, "Thời gian checkin:", spnCheckinDate);
-        
+
         // Reset button
         gbc.gridx = 2;
         gbc.gridy = 1;
@@ -138,15 +138,15 @@ public class ReservationFormSearchPanel extends JPanel {
         gbc.weightx = 0.3;
         btnReset.setPreferredSize(new Dimension(120, 35));
         filterPanel.add(btnReset, gbc);
-        
+
         // Set fixed height for filter panel
         filterPanel.setPreferredSize(new Dimension(0, 120));
         filterPanel.setMinimumSize(new Dimension(0, 120));
         filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
-        
+
         add(filterPanel, BorderLayout.CENTER);
     }
-    
+
     private void initializeFilterComponents() {
         // Room name text field with auto-filtering
         txtRoomName = new JTextField(15);
@@ -172,7 +172,7 @@ public class ReservationFormSearchPanel extends JPanel {
         spnCheckinDate.setValue(new Date());
         spnCheckinDate.setFont(CustomUI.smallFont);
         spnCheckinDate.addChangeListener(e -> applyFilters());
-        
+
         // Reset button
         btnReset = new JButton("HOÀN TÁC");
         btnReset.setFont(CustomUI.smallFont);
@@ -182,7 +182,7 @@ public class ReservationFormSearchPanel extends JPanel {
         btnReset.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         btnReset.addActionListener(e -> resetFilters());
     }
-    
+
     private void createTablePanel() {
         // Create table model
         String[] columnNames = {"Khách hàng", "Đơn đặt phòng", "Phòng", "Checkin", "Checkout", "Thao tác"};
@@ -192,7 +192,7 @@ public class ReservationFormSearchPanel extends JPanel {
                 return column == 5; // Only action column is editable
             }
         };
-        
+
         // Create table
         reservationTable = new JTable(tableModel);
         reservationTable.setFont(CustomUI.tableDataFont); // Non-bold font for data
@@ -226,12 +226,12 @@ public class ReservationFormSearchPanel extends JPanel {
         // Set cell renderer for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
         reservationTable.getColumn("Thao tác").setCellEditor(new ActionButtonEditor());
-        
+
         // Create scroll pane
         JScrollPane scrollPane = new JScrollPane(reservationTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        
+
         add(scrollPane, BorderLayout.SOUTH);
 
         // Populate table with initial data
@@ -277,13 +277,13 @@ public class ReservationFormSearchPanel extends JPanel {
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
-        
+
         // Label
         gbc.gridx = startCol;
         JLabel label = new JLabel(labelText);
         label.setFont(CustomUI.smallFont);
         panel.add(label, gbc);
-        
+
         // Component
         gbc.gridx = startCol + 1;
         gbc.weightx = 0.3;
@@ -293,23 +293,23 @@ public class ReservationFormSearchPanel extends JPanel {
         component.setMinimumSize(new Dimension(150, 35));
         panel.add(component, gbc);
     }
-    
+
     private void applyFilters() {
         reservationFilter.roomName = txtRoomName.getText().trim();
         reservationFilter.customerName = txtCustomerName.getText().trim();
         reservationFilter.checkinDate = (Date) spnCheckinDate.getValue();
-        
+
         filteredReservations.clear();
-        
+
         for (ReservationFormResponse reservation : allReservations) {
             if (passesAllFilters(reservation)) {
                 filteredReservations.add(reservation);
             }
         }
-        
+
         populateTable();
     }
-    
+
     private boolean passesAllFilters(ReservationFormResponse reservation) {
         // Room name filter
         if (reservationFilter.roomName != null && !reservationFilter.roomName.isEmpty()) {
@@ -317,14 +317,14 @@ public class ReservationFormSearchPanel extends JPanel {
                 return false;
             }
         }
-        
+
         // Customer name filter
         if (reservationFilter.customerName != null && !reservationFilter.customerName.isEmpty()) {
             if (!reservation.getCustomerName().toLowerCase().contains(reservationFilter.customerName.toLowerCase())) {
                 return false;
             }
         }
-        
+
         // Checkin date filter - show all reservations with check-in time after the selected date/time
         if (reservationFilter.checkinDate != null && reservation.getTimeIn() != null) {
             Date filterDateTime = reservationFilter.checkinDate;
@@ -335,23 +335,23 @@ public class ReservationFormSearchPanel extends JPanel {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     private void resetFilters() {
         txtCustomerName.setText("");
         spnCheckinDate.setValue(new Date());
-        
+
         reservationFilter = new ReservationFilter(null, null, null);
         filteredReservations = new ArrayList<>(allReservations);
         populateTable();
     }
-    
+
     private void populateTable() {
         // Clear existing data
         tableModel.setRowCount(0);
-        
+
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
         // Sort filtered reservations by check-in date (nearest first)
@@ -375,7 +375,7 @@ public class ReservationFormSearchPanel extends JPanel {
             tableModel.addRow(rowData);
         }
     }
-    
+
     private void handleCheckIn(ReservationFormResponse reservation) {
         int result = JOptionPane.showConfirmDialog(this,
             "Xác nhận check-in cho khách " + reservation.getCustomerName() + " vào phòng " + reservation.getRoomName() + "?",
@@ -397,43 +397,43 @@ public class ReservationFormSearchPanel extends JPanel {
         String newRoom = JOptionPane.showInputDialog(this,
             "Nhập số phòng muốn chuyển đến:",
             "Đổi phòng", JOptionPane.QUESTION_MESSAGE);
-        
+
         if (newRoom != null && !newRoom.trim().isEmpty()) {
             int result = JOptionPane.showConfirmDialog(this,
                 "Xác nhận đổi phòng từ " + reservation.getRoomName() + " sang " + newRoom + "?",
                 "Xác nhận đổi phòng", JOptionPane.YES_NO_OPTION);
-            
+
             if (result == JOptionPane.YES_OPTION) {
                 JOptionPane.showMessageDialog(this,
                     "Đã đổi phòng thành công từ " + reservation.getRoomName() + " sang " + newRoom,
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                
+
                 // TODO: Implement actual room change logic
                 // bookingService.changeRoom(reservation.getId(), newRoom);
-                
+
                 RefreshManager.refreshAfterCancelReservation();
             }
         }
     }
-    
+
     private void handleCancelReservation(ReservationFormResponse reservation) {
         int result = JOptionPane.showConfirmDialog(this,
-            "Xác nhận hủy đơn đặt phòng " + reservation.getMaDonDatPhong() + " của khách " + reservation.getCustomerName() + "?",
-            "Hủy đơn đặt phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        
+                                                   "Xác nhận hủy đơn đặt phòng " + reservation.getMaDonDatPhong() + " Tại phòng:" + reservation.getRoomName() +" cho khách hàng: " + reservation.getCustomerName() + "?",
+                                                   "Hủy đơn đặt phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
         if (result == JOptionPane.YES_OPTION) {
             System.out.println("Cancelling reservation ID: " + reservation.getMaDonDatPhong());
-            boolean isSuccess = bookingService.cancelReservation(reservation.getMaDonDatPhong());
+            boolean isSuccess = bookingService.cancelRoomReservation(reservation.getMaDonDatPhong(), reservation.getRoomId());
             if (!isSuccess) {
                 JOptionPane.showMessageDialog(this,
-                    "Hủy đơn đặt phòng thất bại. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                                              "Hủy đơn đặt phòng thất bại. Vui lòng thử lại.",
+                                              "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             JOptionPane.showMessageDialog(this,
-                "Đã hủy đơn đặt phòng " + reservation.getRoomName() + " thành công",
-                "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                                          "Đã hủy đơn đặt phòng " + reservation.getRoomName() + " thành công",
+                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
             RefreshManager.refreshAfterCancelReservation();
         }
@@ -443,17 +443,17 @@ public class ReservationFormSearchPanel extends JPanel {
         loadReservationData();
         resetFilters();
     }
-    
+
     // Custom cell renderer for action buttons
     private class ActionButtonRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
         private JButton btnCheckIn;
         private JButton btnChangeRoom;
         private JButton btnCancel;
-        
+
         public ActionButtonRenderer() {
             setLayout(new FlowLayout(FlowLayout.CENTER, 3, 3));
             setOpaque(true);
-            
+
             // Check-in button
             btnCheckIn = new JButton("Check-in");
             btnCheckIn.setFont(CustomUI.verySmallFont);
@@ -471,7 +471,7 @@ public class ReservationFormSearchPanel extends JPanel {
             btnChangeRoom.setPreferredSize(new Dimension(120, 30));
             btnChangeRoom.setFocusPainted(false);
             btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
-            
+
             // Cancel button (small square with trash icon)
             ImageIcon trashIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/bin.png")));
             trashIcon = new ImageIcon(trashIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
@@ -487,7 +487,7 @@ public class ReservationFormSearchPanel extends JPanel {
             add(btnChangeRoom);
             add(btnCancel);
         }
-        
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (isSelected) {
@@ -498,7 +498,7 @@ public class ReservationFormSearchPanel extends JPanel {
             return this;
         }
     }
-    
+
     // Custom cell editor for action buttons
     private class ActionButtonEditor extends DefaultCellEditor {
         private JPanel panel;
@@ -510,7 +510,7 @@ public class ReservationFormSearchPanel extends JPanel {
 
         public ActionButtonEditor() {
             super(new JCheckBox());
-            
+
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
 
             // Check-in button
@@ -522,9 +522,18 @@ public class ReservationFormSearchPanel extends JPanel {
             btnCheckIn.setFocusPainted(false);
             btnCheckIn.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnCheckIn.addActionListener(e -> {
-                ReservationFormResponse freshReservation = (ReservationFormResponse) tableModel.getValueAt(currentRow, 5);
-                handleCheckIn(freshReservation);
-                fireEditingStopped();
+                // Store the reservation reference before stopping editing
+                ReservationFormResponse reservationToProcess = currentReservation;
+
+                // Stop editing immediately to prevent table access issues
+                SwingUtilities.invokeLater(() -> {
+                    fireEditingStopped();
+
+                    // Process the action after editor is stopped
+                    if (reservationToProcess != null) {
+                        handleCheckIn(reservationToProcess);
+                    }
+                });
             });
 
             // Change room button
@@ -536,11 +545,20 @@ public class ReservationFormSearchPanel extends JPanel {
             btnChangeRoom.setFocusPainted(false);
             btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnChangeRoom.addActionListener(e -> {
-                ReservationFormResponse freshReservation = (ReservationFormResponse) tableModel.getValueAt(currentRow, 5);
-                handleChangeRoom(freshReservation);
-                fireEditingStopped();
+                // Store the reservation reference before stopping editing
+                ReservationFormResponse reservationToProcess = currentReservation;
+
+                // Stop editing immediately to prevent table access issues
+                SwingUtilities.invokeLater(() -> {
+                    fireEditingStopped();
+
+                    // Process the action after editor is stopped
+                    if (reservationToProcess != null) {
+                        handleChangeRoom(reservationToProcess);
+                    }
+                });
             });
-            
+
             // Cancel button (small square with trash icon)
             ImageIcon trashIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/error.png")));
             trashIcon = new ImageIcon(trashIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
@@ -552,34 +570,44 @@ public class ReservationFormSearchPanel extends JPanel {
             btnCancel.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnCancel.setToolTipText("Hủy đơn");
             btnCancel.addActionListener(e -> {
-                ReservationFormResponse freshReservation = (ReservationFormResponse) tableModel.getValueAt(currentRow, 5);
-                handleCancelReservation(freshReservation);
+                // Store the reservation reference before stopping editing
+                ReservationFormResponse reservationToProcess = currentReservation;
+
+                // Stop editing immediately to prevent table access issues
+                SwingUtilities.invokeLater(() -> {
+                    fireEditingStopped();
+
+                    // Process the action after editor is stopped
+                    if (reservationToProcess != null) {
+                        handleCancelReservation(reservationToProcess);
+                    }
+                });
             });
-            
+
             panel.add(btnCheckIn);
             panel.add(btnChangeRoom);
             panel.add(btnCancel);
         }
-        
+
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             currentReservation = (ReservationFormResponse) value;
             currentRow = row;
             return panel;
         }
-        
+
         @Override
         public Object getCellEditorValue() {
             return currentReservation;
         }
     }
-    
+
     // Filter state holder
     private static class ReservationFilter {
         String roomName;
         String customerName;
         Date checkinDate;
-        
+
         public ReservationFilter(String roomName, String customerName, Date checkinDate) {
             this.roomName = roomName;
             this.customerName = customerName;

@@ -11,6 +11,10 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.text.DecimalFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Objects;
 
 public class RoomItem extends JPanel {
@@ -19,6 +23,8 @@ public class RoomItem extends JPanel {
     private boolean isMultiBookingMode = false;
     private MultiRoomSelectionCallback selectionCallback;
     private JPanel overlayPanel;
+
+    private DecimalFormat priceFormatter = new DecimalFormat("#,###");
 
     // Interface for multi-room selection callback
     public interface MultiRoomSelectionCallback {
@@ -445,7 +451,7 @@ public class RoomItem extends JPanel {
         gbc.gridy = 2;
         gbc.weightx = 0.0;
         JLabel lblHourlyLabel = new JLabel("Giá theo giờ:");
-        lblHourlyLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblHourlyLabel.setFont(CustomUI.supperSmallFont);
         lblHourlyLabel.setForeground(Color.BLACK);
         panel.add(lblHourlyLabel, gbc);
 
@@ -453,7 +459,8 @@ public class RoomItem extends JPanel {
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.EAST;
         JLabel lblHourlyPrice = new JLabel(String.format("%.0f vnđ", bookingResponse.getHourlyPrice()));
-        lblHourlyPrice.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblHourlyPrice.setText(priceFormatter.format(bookingResponse.getHourlyPrice()) + " VNĐ");
+        lblHourlyPrice.setFont(CustomUI.supperSmallFont);
         lblHourlyPrice.setForeground(Color.BLACK);
         panel.add(lblHourlyPrice, gbc);
 
@@ -463,7 +470,7 @@ public class RoomItem extends JPanel {
         gbc.weightx = 0.0;
         gbc.anchor = GridBagConstraints.WEST;
         JLabel lblDailyLabel = new JLabel("Giá theo ngày:");
-        lblDailyLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblDailyLabel.setFont(CustomUI.supperSmallFont);
         lblDailyLabel.setForeground(Color.BLACK);
         panel.add(lblDailyLabel, gbc);
 
@@ -471,7 +478,8 @@ public class RoomItem extends JPanel {
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.EAST;
         JLabel lblDailyPrice = new JLabel(String.format("%.0f vnđ", bookingResponse.getDailyPrice()));
-        lblDailyPrice.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblDailyPrice.setText(priceFormatter.format(bookingResponse.getDailyPrice()) + " VNĐ");
+        lblDailyPrice.setFont(CustomUI.supperSmallFont);
         lblDailyPrice.setForeground(Color.BLACK);
         panel.add(lblDailyPrice, gbc);
 
@@ -503,10 +511,10 @@ public class RoomItem extends JPanel {
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        JLabel lblRoomType = new JLabel(bookingResponse.getRoomType().toUpperCase());
-        lblRoomType.setFont(new Font("Arial", Font.BOLD, 12));
-        lblRoomType.setForeground(Color.BLACK);
-        panel.add(lblRoomType, gbc);
+        JLabel roomStatus = new JLabel(bookingResponse.getRoomStatus().toUpperCase());
+        roomStatus.setFont(new Font("Arial", Font.BOLD, 12));
+        roomStatus.setForeground(Color.BLACK);
+        panel.add(roomStatus, gbc);
 
         // Customer name in center
         gbc.gridy = 1;
@@ -516,7 +524,7 @@ public class RoomItem extends JPanel {
             customerName = "Khách hàng";
         }
         JLabel lblCustomer = new JLabel(customerName);
-        lblCustomer.setFont(CustomUI.smallFont);
+        lblCustomer.setFont(CustomUI.normalFont);
         lblCustomer.setForeground(Color.BLACK);
         panel.add(lblCustomer, gbc);
 
@@ -525,15 +533,23 @@ public class RoomItem extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(2, 10, 2, 5);
 
-        String checkInTime = bookingResponse.getTimeIn() != null ? bookingResponse.getTimeIn().toString() : "30/10/2025";
-        String checkOutTime = bookingResponse.getTimeOut() != null ? bookingResponse.getTimeOut().toString() : "01/11/2025";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+
+
+        Date now = new Date();
+        String checkInTime = bookingResponse.getTimeIn() != null
+                ? bookingResponse.getTimeIn().toLocalDateTime().format(formatter)
+                : now.toString();
+        String checkOutTime = bookingResponse.getTimeOut() != null
+                ? bookingResponse.getTimeOut().toLocalDateTime().format(formatter)
+                : Date.from(now.toInstant().plus(1, ChronoUnit.DAYS)).toString();
 
         // Check-in row
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.0;
         JLabel lblCheckInLabel = new JLabel("Checkin:");
-        lblCheckInLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblCheckInLabel.setFont(CustomUI.supperSmallFont);
         lblCheckInLabel.setForeground(Color.BLACK);
         panel.add(lblCheckInLabel, gbc);
 
@@ -541,7 +557,7 @@ public class RoomItem extends JPanel {
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.EAST;
         JLabel lblCheckIn = new JLabel(checkInTime);
-        lblCheckIn.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblCheckIn.setFont(CustomUI.supperSmallFont);
         lblCheckIn.setForeground(Color.BLACK);
         panel.add(lblCheckIn, gbc);
 
@@ -551,7 +567,7 @@ public class RoomItem extends JPanel {
         gbc.weightx = 0.0;
         gbc.anchor = GridBagConstraints.WEST;
         JLabel lblCheckOutLabel = new JLabel("Checkout:");
-        lblCheckOutLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblCheckOutLabel.setFont(CustomUI.supperSmallFont);
         lblCheckOutLabel.setForeground(Color.BLACK);
         panel.add(lblCheckOutLabel, gbc);
 
@@ -559,7 +575,7 @@ public class RoomItem extends JPanel {
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.EAST;
         JLabel lblCheckOut = new JLabel(checkOutTime);
-        lblCheckOut.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblCheckOut.setFont(CustomUI.supperSmallFont);
         lblCheckOut.setForeground(Color.BLACK);
         panel.add(lblCheckOut, gbc);
 

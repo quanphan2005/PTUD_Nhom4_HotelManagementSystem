@@ -1,7 +1,5 @@
 package vn.iuh.dao;
 
-import vn.iuh.entity.CongViec;
-import vn.iuh.entity.Phong;
 import vn.iuh.entity.PhongTinhPhuPhi;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -32,7 +30,7 @@ public class PhongTinhPhuPhiDAO {
             ps.setString(2, ptpp.getMaChiTietDatPhong());
             ps.setString(3, ptpp.getMaPhuPhi());
             ps.setDouble(4, ptpp.getDonGiaPhuPhi().doubleValue());
-            return ps.executeUpdate() > 1;
+            return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -83,11 +81,24 @@ public class PhongTinhPhuPhiDAO {
             phong.setMaPhongTinhPhuPhi(rs.getString("ma_phong_tinh_phu_phi"));
             phong.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
             phong.setMaPhuPhi(rs.getString("ma_phu_phi"));
-            phong.setDonGiaPhuPhi(BigDecimal.valueOf(rs.getDouble("gia_thoi_diem_do")));
+            phong.setDonGiaPhuPhi(BigDecimal.valueOf(rs.getDouble("don_gia_phu_phi")));
             return phong;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành Phong" + e.getMessage());
         }
     }
 
+    public boolean daTonTai(String maChiTiet, String maPhuPhi) {
+        String q = "SELECT COUNT(1) AS cnt FROM PhongTinhPhuPhi WHERE ma_chi_tiet_dat_phong = ? AND ma_phu_phi = ? AND da_xoa = 0";
+        try (PreparedStatement ps = connection.prepareStatement(q)) {
+            ps.setString(1, maChiTiet);
+            ps.setString(2, maPhuPhi);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("cnt") > 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
+    }
 }

@@ -10,8 +10,10 @@ import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.CheckOutService;
+import vn.iuh.service.RoomService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CheckOutServiceImpl;
+import vn.iuh.service.impl.RoomServiceImpl;
 import vn.iuh.util.IconUtil;
 import vn.iuh.util.RefreshManager;
 
@@ -20,6 +22,8 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -32,6 +36,7 @@ public class RoomUsageFormPanel extends JPanel {
     private BookingService bookingService;
     private CustomerInfoResponse customerInfoResponse;
     private CheckOutService checkOutService;
+    private RoomService roomService;
 
     // Formatters
     private DecimalFormat priceFormatter = new DecimalFormat("#,###");
@@ -90,12 +95,17 @@ public class RoomUsageFormPanel extends JPanel {
         this.checkOutService = new CheckOutServiceImpl();
         this.selectedRoom = roomInfo;
         this.bookingService = new BookingServiceImpl();
+        this.roomService = new RoomServiceImpl();
         this.customerInfoResponse = bookingService.getCustomerInfoByBookingId(roomInfo.getMaChiTietDatPhong());
         if (customerInfoResponse == null) {
-            new JOptionPane().showMessageDialog(this,
-                                                 "Không tìm thấy thông tin khách hàng cho mã chi tiết đặt phòng: "
-                                                 + roomInfo.getMaChiTietDatPhong(),
-                                                 "Lỗi", JOptionPane.ERROR_MESSAGE);
+            if (!Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
+                new JOptionPane().showMessageDialog(this,
+                                                    "Không tìm thấy thông tin khách hàng cho mã chi tiết đặt phòng: "
+                                                    + roomInfo.getMaChiTietDatPhong(),
+                                                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            selectedRoom = createDefaultValueForBookingInfo(roomInfo);
             customerInfoResponse = new CustomerInfoResponse("N/A", "N/A", "N/A", "N/A");
         }
 
@@ -627,7 +637,7 @@ public class RoomUsageFormPanel extends JPanel {
         ActionItem checkInItem =
                 new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
-        ActionItem completeItem = new ActionItem("Hoàn Tất Dọn Phòng", IconUtil.createCompleteIcon(), CustomUI.green,
+        ActionItem completeItem = new ActionItem("Hoàn tất dọn dẹp", IconUtil.createCompleteIcon(), CustomUI.bluePurple,
                                                      this::handleCompleteCleaning);
 
         if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {
@@ -1007,13 +1017,21 @@ public class RoomUsageFormPanel extends JPanel {
 
     private void handleCompleteCleaning() {
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận hoàn tất dọn phòng " + selectedRoom.getRoomName() + "?",
+                                                   "Xác nhận hoàn tất dọn phòng sớm hơn thời gian dự kiến?" + selectedRoom.getRoomName() + "?",
                                                    "Hoàn tất dọn phòng", JOptionPane.YES_NO_OPTION);
 
         if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã hoàn tất dọn phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            if (roomService.completeCleaning(selectedRoom.getRoomId())) {
+                JOptionPane.showMessageDialog(this,
+                                              "Đã hoàn tất dọn phòng " + selectedRoom.getRoomName(),
+                                              "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                RefreshManager.refreshAfterCleaning();
+                Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName());
+            } else {
+                JOptionPane.showMessageDialog(this,
+                                              "Hoàn tất dọn phòng thất bại cho " + selectedRoom.getRoomName(),
+                                              "Thất bại", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -1041,5 +1059,24 @@ public class RoomUsageFormPanel extends JPanel {
 
     private void handleCancel() {
         Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName());
+    }
+
+    private BookingResponse createDefaultValueForBookingInfo(BookingResponse roomInfo) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Timestamp tomorrow = new Timestamp(System.currentTimeMillis() + 24 * 60 * 60 * 1000);
+        return new BookingResponse(
+                roomInfo.getRoomId(),
+                roomInfo.getRoomName(),
+                roomInfo.isActive(),
+                roomInfo.getRoomStatus(),
+                roomInfo.getRoomType(),
+                roomInfo.getNumberOfCustomers(),
+                roomInfo.getDailyPrice(),
+                roomInfo.getHourlyPrice(),
+                "N/A",
+                "N/A",
+                now,
+                tomorrow
+        );
     }
 }

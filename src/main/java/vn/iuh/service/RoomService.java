@@ -12,4 +12,5 @@ public interface RoomService {
     Phong createRoom(RoomCreationEvent room);
     Phong updateRoom(RoomModificationEvent room);
     boolean deleteRoomByID(String roomID);
+    boolean completeCleaning(String roomId);
 }

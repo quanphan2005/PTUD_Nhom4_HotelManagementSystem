@@ -71,7 +71,7 @@ public class IconUtil {
 
     public static ImageIcon createCompleteIcon() {
         try {
-            ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource("/icons/error.png")));
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource("/icons/checked.png")));
             return new ImageIcon(icon.getImage().getScaledInstance(128, 128, Image.SCALE_SMOOTH));
         } catch (Exception e) {
             return createColoredIcon(new Color(244, 67, 54), "❌"); // Red for cancel

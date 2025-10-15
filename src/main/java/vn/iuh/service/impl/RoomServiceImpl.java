@@ -1,9 +1,11 @@
 package vn.iuh.service.impl;
 
 import vn.iuh.constraint.EntityIDSymbol;
+import vn.iuh.dao.CongViecDAO;
 import vn.iuh.dao.PhongDAO;
 import vn.iuh.dto.event.create.RoomCreationEvent;
 import vn.iuh.dto.event.update.RoomModificationEvent;
+import vn.iuh.entity.CongViec;
 import vn.iuh.entity.Phong;
 import vn.iuh.service.RoomService;
 import vn.iuh.util.EntityUtil;
@@ -14,13 +16,16 @@ import java.util.List;
 
 public class RoomServiceImpl implements RoomService {
     private final PhongDAO phongDAO;
+    private final CongViecDAO congViecDAO;
 
     public RoomServiceImpl() {
         phongDAO = new PhongDAO();
+        congViecDAO = new CongViecDAO();
     }
 
-    public RoomServiceImpl(PhongDAO phongDAO) {
+    public RoomServiceImpl(PhongDAO phongDAO, CongViecDAO congViecDAO) {
         this.phongDAO = phongDAO;
+        this.congViecDAO = congViecDAO;
     }
 
     @Override
@@ -86,5 +91,11 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public boolean deleteRoomByID(String roomID) {
         return phongDAO.xoaPhong(roomID);
+    }
+
+    public boolean completeCleaning(String roomID) {
+        CongViec congViec = congViecDAO.layCongViecHienTaiCuaPhong(roomID);
+        System.out.println(congViec.getMaCongViec());
+        return congViecDAO.removeJob(congViec.getMaCongViec());
     }
 }

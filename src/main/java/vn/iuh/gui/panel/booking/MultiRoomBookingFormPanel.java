@@ -965,7 +965,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         // Ensure pre-booking at least 1 hour in advance
         if (chkIsAdvanced.isSelected()) {
             Date now = new Date();
-            if (checkIn.before(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS).plus(1, ChronoUnit.MINUTES)))) {
+            if (checkIn.before(Date.from(now.toInstant().plus(1, ChronoUnit.HOURS)))) {
                 JOptionPane.showMessageDialog(this,
                                               "Thời gian đặt trước phải ít nhất 1 giờ so với hiện tại!",
                                               "Lỗi thời gian",
