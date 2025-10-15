@@ -157,4 +157,25 @@ public class NhanVienDAO {
             throw new TableEntityMismatch("Không thể chuyển kết quả thành nhân viên: " + e.getMessage());
         }
     }
+
+    public NhanVien layNVTheoMaPhienDangNhap(String maPhienDangNhap){
+        String sql = "select nv.* from PhienDangNhap pdn \n" +
+                "left join TaiKhoan tk on pdn.ma_tai_khoan = tk.ma_tai_khoan\n" +
+                "left join NhanVien nv on nv.ma_nhan_vien = tk.ma_nhan_vien\n" +
+                "where pdn.ma_phien_dang_nhap = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maPhienDangNhap);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhNhanVien(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+        return null;
+    }
 }

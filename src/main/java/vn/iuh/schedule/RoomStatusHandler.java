@@ -200,11 +200,9 @@ public class RoomStatusHandler implements Job {
                     updatedBookingResponse.add(res);
                     // kết thúc vòng lặp vì không tạo công việc mới
                     continue;
-
                 } else {
                     continue;
                 }
-
                 if (newStatus != null) {
                     congViecCanThem.add(new CongViec(
                             maCongViecMoiNhat,
@@ -251,7 +249,6 @@ public class RoomStatusHandler implements Job {
                 congViecCanThem.size(), congViecCanKetThuc.size());
     }
 
-
     private void createMessageForLateCheckOut(String roomId){
         try {
             Scheduler scheduler = SchedulerUtil.getInstance();
@@ -269,7 +266,7 @@ public class RoomStatusHandler implements Job {
 
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withIdentity("trigger_room_" + roomId, jobGroup)
-                    .startAt(DateBuilder.futureDate(WorkTimeCost.CHECK_OUT_LATE_SEND_MESSAGE.getMinutes(), DateBuilder.IntervalUnit.MINUTE))
+                    .startAt(DateBuilder.futureDate(5, DateBuilder.IntervalUnit.SECOND))
                     .build();
 
             scheduler.scheduleJob(jobDetail, trigger);

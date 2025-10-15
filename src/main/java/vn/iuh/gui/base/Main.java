@@ -6,7 +6,9 @@
 package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import vn.iuh.constraint.PanelName;
 import vn.iuh.gui.panel.LoginPanel;
+import vn.iuh.gui.dialog.WorkingHistoryDialog;
 import vn.iuh.gui.panel.QuanLyKhachHangPanel;
 import vn.iuh.gui.panel.QuanLyLoaiPhongPanel;
 import vn.iuh.gui.panel.QuanLyPhongPanel;
@@ -43,6 +45,9 @@ public class Main extends JFrame {
     private static BellButton btnBell;
     private JPopupMenu notificationPopup;
     private JPanel notificationPanel;
+    private JButton btnWorkingHistory;
+    private WorkingHistoryDialog workingHistoryDialog   ;
+    private JPanel pnlTopRight;
 
     public void init() {
         //Set hiển thị mặc định toàn màn hình
@@ -142,17 +147,23 @@ public class Main extends JFrame {
         pnlCenterWrapper.setBackground(CustomUI.darkBlue);
 
 
+        pnlTopRight = new JPanel();
+        pnlTopRight.setBackground(pnlTop.getBackground());
         btnBell = new BellButton();
+        createWoringHistoryButton();
 //        btnLogOut  = new JButton("Đăng xuất");
 //        btnLogOut.setBackground(CustomUI.red);
 //        btnLogOut.setForeground(CustomUI.white);
-//        btnLogOut.setFont(CustomUI.smallFont);
+//        btnLogOut.setFont(CustomUI.smallFont); p
+
+        pnlTopRight.add(btnWorkingHistory);
+        pnlTopRight.add(btnBell);
 
 
 
         pnlTop.add(cmpTopHeading, BorderLayout.WEST);
         pnlTop.add(pnlCenterWrapper, BorderLayout.CENTER);
-        pnlTop.add(btnBell, BorderLayout.EAST);
+        pnlTop.add(pnlTopRight, BorderLayout.EAST);
 
         //this.pMain.add(pnlTop, BorderLayout.NORTH);
         return pnlTop;
@@ -200,15 +211,30 @@ public class Main extends JFrame {
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         pnlCenter.add(pink, "dsadsa");
         pnlCenter.add(blue, "Inbox");
-//        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
-//        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý lưu trú");
-//        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
-        pnlCenter.add(reservationManagementPanel, "Quản lý đặt phòng");
-        pnlCenter.add(reservationFormManagementPanel, "Quản lý phiếu đặt phòng");
+        pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
+        pnlCenter.add(reservationFormManagementPanel, PanelName.RESERVATION_FORM_MANAGEMENT.getName());
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
 //        showCard("Quản lý đặt phòng");
 
         showCenterCard("Quản lý đặt phòng");
+    }
+
+    private JButton createWoringHistoryButton(){
+        btnWorkingHistory = new JButton("\uD83D\uDDD3\uFE0F");
+        btnWorkingHistory.setSize(60,60);
+        btnWorkingHistory.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        btnWorkingHistory.setForeground(CustomUI.white);
+        btnWorkingHistory.setFocusPainted(false);
+        btnWorkingHistory.setBorderPainted(false);
+        btnWorkingHistory.setContentAreaFilled(true);
+        btnWorkingHistory.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnWorkingHistory.setBackground(this.pnlTop.getBackground());
+        workingHistoryDialog = new WorkingHistoryDialog(this);
+        btnWorkingHistory.addActionListener( e -> {
+            workingHistoryDialog.open();
+            workingHistoryDialog.setVisible(true);
+        });
+        return btnWorkingHistory;
     }
 
     /** Hiện panel chức năng trong main UI */

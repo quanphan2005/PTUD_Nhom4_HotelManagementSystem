@@ -37,6 +37,25 @@ public class PhienDangNhapDAO {
         return null;
     }
 
+    public PhienDangNhap layPhienDangNhapTruocDo(){
+        String query = "select top 1 * from PhienDangNhap where getdate() > tg_ket_thuc and da_xoa = 0 order by ma_phien_dang_nhap desc";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhPhienDangNhap(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+
+        return null;
+    }
+
     public PhienDangNhap themPhienDangNhap(PhienDangNhap shift) {
         String query = "INSERT INTO PhienDangNhap " +
                 "(ma_phien_dang_nhap, so_quay, tg_bat_dau, tg_ket_thuc, ma_tai_khoan) " +

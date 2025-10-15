@@ -86,12 +86,15 @@ public class RoomItem extends JPanel {
                                                   .equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())
                                 || bookingResponse.getRoomStatus()
                                                   .equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
-                                || bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
                         ) {
                         cardName = PanelName.ROOM_USING.getName();
                         System.out.println(bookingResponse.getTimeIn());
                         Main.addCard(new RoomUsageFormPanel(bookingResponse), cardName);
                         }
+                    // TODO later
+                    else if (bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
+                            System.out.println("Room is being cleaned. Cannot proceed to booking or usage form.");
+                    }
                     Main.showCard(cardName);
                 }
             }
