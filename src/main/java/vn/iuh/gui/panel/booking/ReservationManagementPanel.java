@@ -653,23 +653,6 @@ public class ReservationManagementPanel extends JPanel {
         panel.add(component, gbc);
     }
 
-//    private void search() {
-//        filteredRooms = new ArrayList<>();
-//
-//        for (RoomItem roomItem : allRoomItems) {
-//            BookingResponse bookingResponse = roomItem.getBookingResponse();
-//
-//            // Apply all filters
-//            if (passesAllFilters(bookingResponse)) {
-//                filteredRooms.add(emptyRoomMap.get(bookingResponse.getRoomId()));
-//            }
-//        }
-//
-//        gridRoomPanels.setRoomItems(filteredRooms);
-//        gridRoomPanels.revalidate();
-//        gridRoomPanels.repaint();
-//    }
-
     private void search() {
         List<BookingResponse> allEmptyRoomInRange = bookingService.getAllEmptyRoomInRange(
                 new Timestamp(roomFilter.checkInDate.getTime()),
@@ -710,36 +693,6 @@ public class ReservationManagementPanel extends JPanel {
                 // If parsing fails, don't filter out
             }
         }
-
-//        // Date filters
-//        if (roomFilter.checkInDate != null && roomFilter.checkOutDate != null) {
-//            java.sql.Timestamp roomTimeIn = bookingResponse.getTimeIn();
-//            java.sql.Timestamp roomTimeOut = bookingResponse.getTimeOut();
-//
-//            // If room has no booking dates, it's available for any date
-//            if (roomTimeIn != null && roomTimeOut != null) {
-//                java.sql.Timestamp filterCheckin = roomFilter.checkInDate != null ?
-//                        new java.sql.Timestamp(roomFilter.checkInDate.getTime()) : null;
-//                java.sql.Timestamp filterCheckout = roomFilter.checkOutDate != null ?
-//                        new java.sql.Timestamp(roomFilter.checkOutDate.getTime()) : null;
-//
-//                // Check if the requested dates overlap with existing booking
-//                // Room is available if: requested checkout <= room checkin OR requested checkin >= room checkout
-//                if (filterCheckin != null && filterCheckout != null) {
-//                    if (!(filterCheckout.compareTo(roomTimeIn) <= 0 || filterCheckin.compareTo(roomTimeOut) >= 0)) {
-//                        return false;
-//                    }
-//                } else if (filterCheckin != null) {
-//                    if (filterCheckin.compareTo(roomTimeOut) < 0) {
-//                        return false;
-//                    }
-//                } else if (filterCheckout != null) {
-//                    if (filterCheckout.compareTo(roomTimeIn) > 0) {
-//                        return false;
-//                    }
-//                }
-//            }
-//        }
 
         // Status filter
         if (roomFilter.roomStatus != null && !roomFilter.roomStatus.equals(ALL_STATUS)) {
