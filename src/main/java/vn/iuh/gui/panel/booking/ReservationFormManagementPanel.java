@@ -21,11 +21,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReservationFormManagementPanel extends JPanel {
     private final BookingService bookingService;
     private final CheckinService checkinService;
-    
+    private final AtomicBoolean btnCheckinProcessing = new AtomicBoolean(false);
+
     // Filter components
     private JTextField txtRoomName;
     private JTextField txtCustomerName;
@@ -529,29 +531,52 @@ public class ReservationFormManagementPanel extends JPanel {
             btnCheckIn.setFocusPainted(false);
             btnCheckIn.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnCheckIn.addActionListener(e -> {
-                try {
-                    // Lấy dữ liệu từ table
-                    int modelRow = reservationTable.convertRowIndexToModel(currentRow);
+                // Đặt cờ để ngan việc ấn nhiều lần (chạy trùng lặp)
+                // Nếu giá trị của btnCheckinProcessing = false thì gán thành true và trả về true
+                // Ngược lại thì không thực hiện gì mà trực tiếp trả về false
+                if (!btnCheckinProcessing.compareAndSet(false, true)) {
+                    return;
+                }
 
+                try {
+                    // 1. Lấy dữ liệu của hàng hiện tại trong table
+                    int viewRow = reservationTable.getEditingRow();
+                    if (viewRow == -1) viewRow = reservationTable.getSelectedRow();
+                    if (viewRow == -1) viewRow = currentRow;
+
+                    // 2. Convert view -> model
+                    final int modelRow = reservationTable.convertRowIndexToModel(viewRow);
+
+                    // 3. Lấy object từ model
                     Object cell = tableModel.getValueAt(modelRow, 5);
                     if (!(cell instanceof ReservationFormResponse)) {
                         JOptionPane.showMessageDialog(ReservationFormManagementPanel.this,
                                 "Dữ liệu hàng không hợp lệ. Vui lòng thử lại.",
                                 "Lỗi", JOptionPane.ERROR_MESSAGE);
-                        fireEditingStopped();
                         return;
                     }
 
-                    ReservationFormResponse freshReservation = (ReservationFormResponse) cell;
+                    final ReservationFormResponse freshReservation = (ReservationFormResponse) cell;
 
-                    // Gọi handle checkin để xử lí
-                    ReservationFormManagementPanel.this.handleCheckIn(freshReservation);
-
-                } finally {
-                    // Đảm bảo editor đóng lại ngay lập tức
+                    // 4. Đóng editor NGAY (important) trước khi thực hiện logic có thể thay đổi table
                     fireEditingStopped();
+
+                    // 5. Thực hiện check-in sau khi editor đã đóng
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            ReservationFormManagementPanel.this.handleCheckIn(freshReservation);
+                        } finally {
+                            // reset flag khi xong
+                            btnCheckinProcessing.set(false);
+                        }
+                    });
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    btnCheckinProcessing.set(false);
                 }
             });
+
 
 
 
