@@ -14,7 +14,8 @@ public enum EntityIDSymbol {
     HISTORY_CHECKOUT_PREFIX("LN", 8),
     INVOICE_DETAIL_PREFIX("CD", 8),
     INVOICE_PREFIX("HD", 8),
-    ROOM_FEE("PP", 8)
+    ROOM_FEE("PP", 8),
+    LOGIN_SESSION("PN", 8)
     ;
 //................... Other here
 

@@ -6,10 +6,7 @@
 package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
-import vn.iuh.gui.panel.LoginPanel;
-import vn.iuh.gui.panel.QuanLyKhachHangPanel;
-import vn.iuh.gui.panel.QuanLyLoaiPhongPanel;
-import vn.iuh.gui.panel.QuanLyPhongPanel;
+import vn.iuh.gui.panel.*;
 import vn.iuh.gui.panel.booking.ReservationFormManagementPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
@@ -39,7 +36,7 @@ public class Main extends JFrame {
     private static JPanel pnlRoot;
     private JPanel pnlMainUI;
     private JPanel pnlCenterPos;
-    private static String maPhienDangNhap = "PN00000002";
+    private static String maPhienDangNhap;
     private static BellButton btnBell;
     private JPopupMenu notificationPopup;
     private JPanel notificationPanel;
@@ -143,18 +140,23 @@ public class Main extends JFrame {
 
 
         btnBell = new BellButton();
-//        btnLogOut  = new JButton("Đăng xuất");
-//        btnLogOut.setBackground(CustomUI.red);
-//        btnLogOut.setForeground(CustomUI.white);
-//        btnLogOut.setFont(CustomUI.smallFont);
+        btnLogOut  = new JButton("Đăng xuất");
+        btnLogOut.setBackground(CustomUI.red);
+        btnLogOut.setForeground(CustomUI.white);
+        btnLogOut.setFont(CustomUI.smallFont);
+        btnLogOut.addActionListener(e -> LogOutDialog.handleLogout(this));
 
+        JPanel pnlRightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        pnlRightButtons.setOpaque(false);
 
+        pnlRightButtons.add(btnBell);
+        pnlRightButtons.add(btnLogOut);
 
         pnlTop.add(cmpTopHeading, BorderLayout.WEST);
         pnlTop.add(pnlCenterWrapper, BorderLayout.CENTER);
-        pnlTop.add(btnBell, BorderLayout.EAST);
+        pnlTop.add(pnlRightButtons, BorderLayout.EAST);
 
-        //this.pMain.add(pnlTop, BorderLayout.NORTH);
+        //this.pMain.add(pnlTop, BorderLayout.NORH);
         return pnlTop;
     }
 
@@ -185,7 +187,9 @@ public class Main extends JFrame {
     public static String getCurrentLoginSession() {
         return maPhienDangNhap;
     }
-
+    public static void setCurrenLoginSession(String id){
+        maPhienDangNhap = id;
+    }
     //Tạo các màn hình con cho cardLayout (màn hình chức năng)
     public void initializeMainPanels(){
         JPanel pink = new JPanel();
