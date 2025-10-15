@@ -637,7 +637,7 @@ public class RoomUsageFormPanel extends JPanel {
         ActionItem checkInItem =
                 new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
-        ActionItem completeItem = new ActionItem("Hoàn Tất", IconUtil.createCompleteIcon(), CustomUI.bluePurple,
+        ActionItem completeItem = new ActionItem("Hoàn tất dọn dẹp", IconUtil.createCompleteIcon(), CustomUI.bluePurple,
                                                      this::handleCompleteCleaning);
 
         if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {

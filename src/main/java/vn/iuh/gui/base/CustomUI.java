@@ -21,6 +21,7 @@ public class CustomUI {
     public static final Color mine = new Color(240, 240, 240);
     public static final Color yellow = new Color(255, 223, 0);
 
+    public static final Font supperSmallFont = new Font("Arial", Font.BOLD, 12);
     public static final Font verySmallFont = new Font("Arial", Font.BOLD, 13);
     public static final Font smallFont = new Font("Arial", Font.BOLD, 16);
     public static final Font normalFont = new Font("Arial", Font.BOLD, 20);

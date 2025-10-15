@@ -54,12 +54,13 @@ public class BookingServiceImpl implements BookingService {
                     EntityUtil.increaseEntityID(maKH,
                                                 EntityIDSymbol.CUSTOMER_PREFIX.getPrefix(),
                                                 EntityIDSymbol.CUSTOMER_PREFIX.getLength()),
+                    bookingCreationEvent.getCCCD(),
                     bookingCreationEvent.getTenKhachHang(),
                     bookingCreationEvent.getSoDienThoai(),
-                    bookingCreationEvent.getCCCD(),
                     null
             ));
             khachHang = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
+            System.out.println("khachHang: " + khachHang);
         }
 
         List<ThongTinDatPhong> danhSachThongTinDatPhong = datPhongDAO.timThongTinDatPhongTrongKhoang(
