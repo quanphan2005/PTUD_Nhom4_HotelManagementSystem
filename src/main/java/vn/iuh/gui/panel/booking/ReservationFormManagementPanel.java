@@ -599,10 +599,15 @@ public class ReservationFormManagementPanel extends JPanel {
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            currentReservation = (ReservationFormResponse) value;
-            currentRow = row;
+            try {
+                currentReservation = (ReservationFormResponse) value;
+                currentRow = row;
 
-            return panel;
+                return panel;
+            } catch (Exception e) {
+                resetFilters();
+            }
+            return null;
         }
     }
 

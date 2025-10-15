@@ -133,7 +133,7 @@ public class LoginPanel extends JPanel implements ActionListener {
             String password = new String(txtPass.getPassword());
             LoginEvent loginEvent = new LoginEvent(username, password);
             AccountService accountService = new AccountServiceImpl();
-            if(accountService.handleLogin(loginEvent)){
+            if(((AccountServiceImpl) accountService).handleLogin(loginEvent)){
                 Main.showRootCard("MainUI");
             }else{
                 JOptionPane.showMessageDialog(this, "Đăng nhập thất bại");
