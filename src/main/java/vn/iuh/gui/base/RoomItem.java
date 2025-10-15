@@ -85,7 +85,6 @@ public class RoomItem extends JPanel {
                         System.out.println(bookingResponse.getTimeIn());
                         Main.addCard(new RoomUsageFormPanel(bookingResponse), cardName);
                         }
-
                     // TODO later
                     else if (bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
                             System.out.println("Room is being cleaned. Cannot proceed to booking or usage form.");
