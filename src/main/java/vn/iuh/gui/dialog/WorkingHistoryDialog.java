@@ -14,23 +14,23 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.List;
 
 public class WorkingHistoryDialog extends JDialog {
     private PhienDangNhap previousSession;
-    private List<LichSuThaoTac> lichSuThaoTac;
-    private List<LichSuThaoTac> lichSuCaLamTruoc;
-    private NhanVien nhanVienDangNhap;
+    private String maPhienDangNhapHienTai;
+    private  List<LichSuThaoTac> lichSuThaoTac;
+    private  List<LichSuThaoTac> lichSuCaLamTruoc;
+    private  NhanVien nhanVienDangNhap;
     private JLabel lblEmpId, lblEmpName, lblPhone, lblPreOrders, lblCheckIn, lblCheckOut;
     private JTable tblInvoices;
     private JButton btnConfirmLogout;
     private JPanel pnlMain;
-    private final NhanVienDAO nhanVienDAO;
-    private final LichSuThaoTacDAO lichSuThaoTacDAO;
+    private  final NhanVienDAO nhanVienDAO = new NhanVienDAO();
     private final PhienDangNhapDAO phienDangNhapDAO;
+    private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private DefaultTableModel model;
-    private NhanVien nhanVienTruoc;
+    private  NhanVien nhanVienTruoc;
     private JPanel pnlTop;
     private JButton btnBackToPrevious;
     private JButton btnToCurrent;
@@ -39,10 +39,7 @@ public class WorkingHistoryDialog extends JDialog {
     public WorkingHistoryDialog(JFrame parent) {
         super(parent, "Thống kê ca làm", true);
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
-        this.nhanVienDAO = new NhanVienDAO();
         this.phienDangNhapDAO = new PhienDangNhapDAO();
-        nhanVienDangNhap = nhanVienDAO.layNVTheoMaPhienDangNhap(Main.getCurrentLoginSession());
-        initComponents();
         setLocationRelativeTo(null);
     }
 
@@ -51,13 +48,11 @@ public class WorkingHistoryDialog extends JDialog {
         pnlMain = new JPanel();
         pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
 
-
         pnlTop = new JPanel();
         pnlTop.setLayout(new BorderLayout());
         JLabel title = new JLabel("LỊCH SỬ CA LÀM", SwingConstants.CENTER);
         title.setFont(CustomUI.bigFont);
         btnBackToPrevious = new JButton("\uFE0F");
-        btnBackToPrevious.setSize(new Dimension(30, 30));
         btnBackToPrevious.addActionListener( e ->{
             setCaLamTruoc();
         });
@@ -135,6 +130,9 @@ public class WorkingHistoryDialog extends JDialog {
             this.lblEmpName.setText("Tên nhân viên: " + nv.getTenNhanVien());
             this.lblPhone.setText("Số điện thoại: " + nv.getSoDienThoai());
         }
+        else {
+            initComponents();
+        }
     }
 
 
@@ -151,6 +149,11 @@ public class WorkingHistoryDialog extends JDialog {
 
     public void open(){
         this.lichSuThaoTac = lichSuThaoTacDAO.timThaoTacTheoPhienDN(Main.getCurrentLoginSession());
+        if(this.maPhienDangNhapHienTai == null){
+            this.maPhienDangNhapHienTai = Main.getCurrentLoginSession();
+            nhanVienDangNhap = nhanVienDAO.layNVTheoMaPhienDangNhap(maPhienDangNhapHienTai);
+            initComponents();
+        }
         refreshDanhSach(lichSuThaoTac);
     }
 
@@ -167,4 +170,15 @@ public class WorkingHistoryDialog extends JDialog {
         this.pnlTop.repaint();
     }
 
+    public void updateWorkingHistory(){
+        this.maPhienDangNhapHienTai = Main.getCurrentLoginSession();
+        this.nhanVienTruoc = this.nhanVienDangNhap;
+        this.lichSuCaLamTruoc = this.lichSuThaoTac;
+        this.nhanVienDangNhap = nhanVienDAO.layNVTheoMaPhienDangNhap(maPhienDangNhapHienTai);
+        this.resfreshThongTinNV(nhanVienDangNhap);
+    }
+
+    public String getMaPhienDangNhapHienTai() {
+        return maPhienDangNhapHienTai;
+    }
 }
