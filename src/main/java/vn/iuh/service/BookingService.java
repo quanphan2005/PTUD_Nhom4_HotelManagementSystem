@@ -14,6 +14,7 @@ public interface BookingService {
     List<ReservationFormResponse> getReseravtionFormByRoomId(String id);
     List<BookingResponse> getAllBookingInfo();
     List<BookingResponse> getAllEmptyRoomInRange(Timestamp timeIn, Timestamp timeOut);
+    List<String> getAllNonEmptyRoomInRange(Timestamp timeIn, Timestamp timeOut);
     CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong);
     boolean cancelReservation(String maDatPhong);
     boolean cancelRoomReservation(String maDatPhong, String maPhong);

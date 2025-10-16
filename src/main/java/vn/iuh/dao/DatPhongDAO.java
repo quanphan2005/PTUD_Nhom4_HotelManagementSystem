@@ -382,6 +382,62 @@ public class DatPhongDAO {
         return danhSachThongTinPhongTrong;
     }
 
+    /*
+        1. Room that currently checkout late
+        2. Room has booked but not yet check-in in range timeIn - timeOut
+     */
+    public List<String> timTatCaPhongKhongKhaDungTrongKhoang(Timestamp timeIn, Timestamp timeOut) {
+        // Convert this query below to query (String)
+//        select ma_phong from CongViec cv
+//        WHERE cv.da_xoa = 0
+//        AND (
+//            (cv.ten_trang_thai = N'CHECKOUT TRỄ' AND DATEADD(HOUR, 6, cv.tg_ket_thuc) < GETDATE())
+//            OR (
+//                    cv.ten_trang_thai = N'CHỜ CHECKIN'
+//            AND (cv.tg_bat_dau <= DATEADD(DAY, 3, GETDATE()) AND DATEADD(DAY, 3, GETDATE()) <= DATEADD(HOUR, 3, cv.tg_ket_thuc))
+//            OR (cv.tg_bat_dau <= DATEADD(DAY, 4, GETDATE()) AND DATEADD(DAY, 4, GETDATE()) <= DATEADD(HOUR, 3, cv.tg_ket_thuc))
+//            )
+//        )
+        String query =
+                "select ma_phong from CongViec cv" +
+                    " WHERE cv.da_xoa = 0" +
+                        " AND (" +
+                            " (cv.ten_trang_thai = ? AND DATEADD(MINUTE, ?, cv.tg_ket_thuc) >= ?)" +
+                            " OR (" +
+                                " (cv.tg_bat_dau <= ? AND ? <= DATEADD(MINUTE , ?, cv.tg_ket_thuc))" +
+                                " OR (cv.tg_bat_dau <= ? AND ? <= DATEADD(MINUTE , ?, cv.tg_ket_thuc))" +
+                            " )" +
+                        " )";
+
+        List<String> danhSachThongMaPhongKhongKhaDung = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+            ps.setInt(2, WorkTimeCost.CHECKOUT_LATE_MAX.getMinutes());
+            ps.setTimestamp(3, timeIn);
+            ps.setTimestamp(4, timeIn);
+            ps.setTimestamp(5, timeIn);
+            ps.setInt(6, WorkTimeCost.CLEANING_TIME.getMinutes()
+                      + WorkTimeCost.CHECKOUT_LATE_MIN.getMinutes());
+            ps.setTimestamp(7, timeOut);
+            ps.setTimestamp(8, timeOut);
+            ps.setInt(9, WorkTimeCost.CLEANING_TIME.getMinutes()
+                       + WorkTimeCost.CHECKOUT_LATE_MIN.getMinutes());
+
+            var rs = ps.executeQuery();
+
+            while (rs.next())
+                danhSachThongMaPhongKhongKhaDung.add(rs.getString("ma_phong"));
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return danhSachThongMaPhongKhongKhaDung;
+    }
+
     public List<ThongTinDatPhong> timThongTinDatPhongTrongKhoang(Timestamp tgNhanPhong, Timestamp tgTraPhong,
                                                                  List<String> danhSachMaPhong) {
         if (danhSachMaPhong.isEmpty())

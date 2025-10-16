@@ -2,7 +2,6 @@ package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
@@ -19,11 +18,11 @@ import vn.iuh.service.impl.LoaiPhongServiceImpl;
 import vn.iuh.util.RefreshManager;
 import vn.iuh.util.SchedulerUtil;
 import vn.iuh.util.TimeFilterHelper;
-import vn.iuh.util.TimeFilterHelper;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.Timestamp;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -38,7 +37,6 @@ public class ReservationManagementPanel extends JPanel {
     private List<RoomItem> allRoomItems;
     private List<RoomItem> filteredRooms;
     private Map<String, RoomItem> emptyRoomMap;
-    private Map<String, RoomItem> statusRoomMap;
     private List<RoomCategoryResponse> roomCategories;
 
     // Search panel components
@@ -72,15 +70,12 @@ public class ReservationManagementPanel extends JPanel {
         this.loaiPhongService = new LoaiPhongServiceImpl();
         List<BookingResponse> allBookingInfo = bookingService.getAllBookingInfo();
         emptyRoomMap = new HashMap<>();
-        statusRoomMap = new HashMap<>();
         roomCategories = loaiPhongService.getAllRoomCategories();
 
         allRoomItems = new ArrayList<>();
         for (BookingResponse bookingResponse : allBookingInfo) {
             allRoomItems.add(new RoomItem(bookingResponse));
-
             emptyRoomMap.put(bookingResponse.getRoomId(), new RoomItem(bookingResponse, true));
-            statusRoomMap.put(bookingResponse.getRoomId(), new RoomItem(bookingResponse, false));
         }
 
         filteredRooms = new ArrayList<>(allRoomItems);
@@ -307,23 +302,50 @@ public class ReservationManagementPanel extends JPanel {
         return panel;
     }
 
+    // HandleUpdateStatusCount
+    private void updateStatusCount() {
+
+        int totalRooms = allRoomItems != null ? allRoomItems.size() : 0;
+        int availableCount = 0;
+        int bookedCount = 0;
+        int checkingCount = 0;
+        int usingCount = 0;
+        int lateCount = 0;
+        int cleaningCount = 0;
+        int maintenanceCount = 0;
+
+        for (RoomItem roomItem : filteredRooms) {
+            // Switch case base on room status enums RoomStatus
+            switch (RoomStatus.fromStatus(roomItem.getRoomStatus())) {
+                case ROOM_EMPTY_STATUS -> availableCount++;
+                case ROOM_BOOKED_STATUS -> bookedCount++;
+                case ROOM_CHECKING_STATUS -> checkingCount++;
+                case ROOM_USING_STATUS -> usingCount++;
+                case ROOM_CHECKOUT_LATE_STATUS -> lateCount++;
+                case ROOM_CLEANING_STATUS -> cleaningCount++;
+                case ROOM_MAINTENANCE_STATUS -> maintenanceCount++;
+                case null -> {
+                    // Unknown status, do nothing
+                }
+            }
+        }
+
+        // Update button texts
+        statusButtons[0].setText(ALL_STATUS + " (" + totalRooms + ")");
+        statusButtons[1].setText(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")");
+        statusButtons[2].setText(RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")");
+        statusButtons[3].setText(RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")");
+        statusButtons[4].setText(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")");
+        statusButtons[5].setText(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus() + " (" + lateCount + ")");
+        statusButtons[6].setText(RoomStatus.ROOM_CLEANING_STATUS.getStatus() + " (" + cleaningCount + ")");
+        statusButtons[7].setText(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus() + " (" + maintenanceCount + ")");
+    }
+
     private int getStatusCount(String status) {
         if (filteredRooms == null) return 0;
 
         int count = 0;
         for (RoomItem roomItem : allRoomItems) {
-            if (roomItem.getRoomStatus().equalsIgnoreCase(status)) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private int getFilteredStatusCount(String status) {
-        if (filteredRooms == null) return 0;
-
-        int count = 0;
-        for (RoomItem roomItem : filteredRooms) {
             if (roomItem.getRoomStatus().equalsIgnoreCase(status)) {
                 count++;
             }
@@ -372,13 +394,13 @@ public class ReservationManagementPanel extends JPanel {
         btnMultiBookingToggle.addActionListener(e -> toggleMultiBookingMode());
 
         // Add hover effect
-        btnMultiBookingToggle.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+        btnMultiBookingToggle.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
                 btnMultiBookingToggle.setCursor(new Cursor(Cursor.HAND_CURSOR));
                 btnMultiBookingToggle.setBackground(btnMultiBookingToggle.isSelected() ? CustomUI.drakRed : CustomUI.blue);
             }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            public void mouseExited(MouseEvent evt) {
                 btnMultiBookingToggle.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                 updateToggleButtonAppearance(btnMultiBookingToggle.isSelected());
             }
@@ -654,17 +676,40 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void search() {
-        List<BookingResponse> allEmptyRoomInRange = bookingService.getAllEmptyRoomInRange(
-                new Timestamp(roomFilter.checkInDate.getTime()),
-                new Timestamp(roomFilter.checkOutDate.getTime())
-        );
-        System.out.println("Empty rooms in range: " + allEmptyRoomInRange.size());
         filteredRooms = new ArrayList<>();
+        // Search all empty room if both dates are set
+        if (roomFilter.checkInDate != null && roomFilter.checkOutDate != null) {
+//            List<BookingResponse> allEmptyRoomInRange = bookingService.getAllEmptyRoomInRange(
+//                    new Timestamp(roomFilter.checkInDate.getTime()),
+//                    new Timestamp(roomFilter.checkOutDate.getTime())
+//            );
+//            System.out.println("Empty rooms in range: " + allEmptyRoomInRange.size());
+//
+//            for (BookingResponse emptyRoom : allEmptyRoomInRange) {
+//                // Apply all filters
+//                if (passesAllFilters(emptyRoom)) {
+//                    filteredRooms.add(emptyRoomMap.get(emptyRoom.getRoomId()));
+//                }
+//            }
+            List<String> nonEmptyRoomIds = bookingService.getAllNonEmptyRoomInRange(
+                    new Timestamp(roomFilter.checkInDate.getTime()),
+                    new Timestamp(roomFilter.checkOutDate.getTime())
+            );
+            System.out.println("Non-empty rooms in range: " + nonEmptyRoomIds.size());
 
-        for (BookingResponse emptyRoom : allEmptyRoomInRange) {
-            // Apply all filters
-            if (passesAllFilters(emptyRoom)) {
-                filteredRooms.add(emptyRoomMap.get(emptyRoom.getRoomId()));
+            // Loop through all empty rooms (sorted) and apply filters
+            for (String roomId : emptyRoomMap.keySet().stream().sorted().toList()) {
+                RoomItem roomItem = emptyRoomMap.get(roomId);
+                if (!nonEmptyRoomIds.contains(roomId) && passesAllFilters(roomItem.getBookingResponse())) {
+                    filteredRooms.add(roomItem);
+                }
+            }
+        } else {
+            // If dates are not set, filter from all current rooms
+            for (RoomItem roomItem : allRoomItems) {
+                if (passesAllFilters(roomItem.getBookingResponse())) {
+                    filteredRooms.add(roomItem);
+                }
             }
         }
 
@@ -675,6 +720,8 @@ public class ReservationManagementPanel extends JPanel {
 
     // Consolidated filter method - all filtering logic in one place
     private boolean passesAllFilters(BookingResponse bookingResponse) {
+        if (bookingResponse == null) return false;
+
         // Room type filter
         if (roomFilter.roomType != null && !roomFilter.roomType.equals(ALL_STATUS)) {
             if (!bookingResponse.getRoomType().equalsIgnoreCase(roomFilter.roomType)) {
@@ -722,6 +769,10 @@ public class ReservationManagementPanel extends JPanel {
         spnCheckInDate.setValue(today);
         spnCheckOutDate.setValue(tomorrow);
 
+        // Reset TimeFilterHelper
+        TimeFilterHelper.setCheckinTime(null);
+        TimeFilterHelper.setCheckoutTime(null);
+
         // Re-attach listeners
         cmbRoomType.addActionListener(e -> handleCmbRoomTypeChangeEvent());
         cmbCapacity.addActionListener(e -> handleCmbRoomCapacityChangeEvent());
@@ -744,22 +795,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private void refreshFilterBtn() {
         if (statusButtons == null) return;
-
-        int availableCount = getFilteredStatusCount(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
-        int bookedCount = getFilteredStatusCount(RoomStatus.ROOM_BOOKED_STATUS.getStatus());
-        int checkingCount = getFilteredStatusCount(RoomStatus.ROOM_CHECKING_STATUS.getStatus());
-        int usingCount = getFilteredStatusCount(RoomStatus.ROOM_USING_STATUS.getStatus());
-        int lateCount = getFilteredStatusCount(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
-        int cleaningCount = getFilteredStatusCount(RoomStatus.ROOM_CLEANING_STATUS.getStatus());
-        int maintenanceCount = getFilteredStatusCount(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
-
-        statusButtons[1].setText(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")");
-        statusButtons[2].setText(RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")");
-        statusButtons[3].setText(RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")");
-        statusButtons[4].setText(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")");
-        statusButtons[5].setText(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus() + " (" + lateCount + ")");
-        statusButtons[6].setText(RoomStatus.ROOM_CLEANING_STATUS.getStatus() + " (" + cleaningCount + ")");
-        statusButtons[7].setText(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus() + " (" + maintenanceCount + ")");
+        updateStatusCount();
     }
 
     // Internal class to hold current filter state
@@ -791,11 +827,11 @@ public class ReservationManagementPanel extends JPanel {
                                             .usingJobData(jobDataMap)
                                             .build();
 
-            Trigger trigger = org.quartz.TriggerBuilder.newTrigger()
+            Trigger trigger = TriggerBuilder.newTrigger()
                                                        .withIdentity("roomStatusUpdateTrigger", "group1")
-                                                       .withSchedule(org.quartz.SimpleScheduleBuilder.simpleSchedule()
-                                                                                                     .withIntervalInSeconds(30)
-                                                                                                     .repeatForever())
+                                                       .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                                                                                          .withIntervalInSeconds(30)
+                                                                                          .repeatForever())
                                                        .build();
 
             scheduler.start();

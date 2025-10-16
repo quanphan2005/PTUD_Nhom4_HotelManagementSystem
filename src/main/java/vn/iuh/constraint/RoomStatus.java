@@ -21,6 +21,15 @@ public enum RoomStatus {
         this.status = status;
     }
 
+    public static RoomStatus fromStatus(String roomStatus) {
+        for (RoomStatus status : RoomStatus.values()) {
+            if (status.status.equalsIgnoreCase(roomStatus)) {
+                return status;
+            }
+        }
+        return null;
+    }
+
     public String getStatus() {
         return status;
     }

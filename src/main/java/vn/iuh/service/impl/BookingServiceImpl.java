@@ -316,6 +316,11 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public List<String> getAllNonEmptyRoomInRange(Timestamp timeIn, Timestamp timeOut) {
+        return datPhongDAO.timTatCaPhongKhongKhaDungTrongKhoang(timeIn, timeOut);
+    }
+
+    @Override
     public CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong) {
         CustomerInfo customerInfo = datPhongDAO.timThongTinKhachHangBangMaChiTietDatPhong(maChiTietDatPhong);
         if (Objects.isNull(customerInfo)) {
