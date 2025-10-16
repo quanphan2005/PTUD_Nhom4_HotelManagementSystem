@@ -244,6 +244,12 @@ public class Main extends JFrame {
         btnWorkingHistory.setBackground(this.pnlTop.getBackground());
         workingHistoryDialog = new WorkingHistoryDialog(this);
         btnWorkingHistory.addActionListener( e -> {
+            if(!getCurrentLoginSession().equalsIgnoreCase(workingHistoryDialog.getMaPhienDangNhapHienTai()) &&
+            workingHistoryDialog.getMaPhienDangNhapHienTai() != null)
+            {
+                workingHistoryDialog.updateWorkingHistory();
+                System.out.println("Khác");
+            }
             workingHistoryDialog.open();
             workingHistoryDialog.setVisible(true);
         });

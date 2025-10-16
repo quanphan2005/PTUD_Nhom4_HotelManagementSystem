@@ -30,7 +30,6 @@ public class LogOutDialog extends JDialog{
                     }
                     System.out.println("Hehehe");
                 }
-
             }catch (Exception ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(currentFrame,
