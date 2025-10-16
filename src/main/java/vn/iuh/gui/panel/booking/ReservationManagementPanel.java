@@ -6,13 +6,16 @@ import org.quartz.impl.StdSchedulerFactory;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.base.RoomItem;
 import vn.iuh.schedule.RoomStatusHandler;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.LoaiPhongService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.LoaiPhongServiceImpl;
 import vn.iuh.util.RefreshManager;
 import vn.iuh.util.SchedulerUtil;
 import vn.iuh.util.TimeFilterHelper;
@@ -20,18 +23,23 @@ import vn.iuh.util.TimeFilterHelper;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.sql.Timestamp;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ReservationManagementPanel extends JPanel {
     public static GridRoomPanel gridRoomPanels;
     private BookingService bookingService;
+    private LoaiPhongService loaiPhongService;
 
     private List<RoomItem> allRoomItems;
     private List<RoomItem> filteredRooms;
+    private Map<String, RoomItem> emptyRoomMap;
+    private Map<String, RoomItem> statusRoomMap;
+    private List<RoomCategoryResponse> roomCategories;
 
     // Search panel components
     private JComboBox<String> cmbRoomType;
@@ -61,11 +69,18 @@ public class ReservationManagementPanel extends JPanel {
 
     public void initData() {
         this.bookingService = new BookingServiceImpl();
+        this.loaiPhongService = new LoaiPhongServiceImpl();
         List<BookingResponse> allBookingInfo = bookingService.getAllBookingInfo();
+        emptyRoomMap = new HashMap<>();
+        statusRoomMap = new HashMap<>();
+        roomCategories = loaiPhongService.getAllRoomCategories();
 
         allRoomItems = new ArrayList<>();
         for (BookingResponse bookingResponse : allBookingInfo) {
             allRoomItems.add(new RoomItem(bookingResponse));
+
+            emptyRoomMap.put(bookingResponse.getRoomId(), new RoomItem(bookingResponse, true));
+            statusRoomMap.put(bookingResponse.getRoomId(), new RoomItem(bookingResponse, false));
         }
 
         filteredRooms = new ArrayList<>(allRoomItems);
@@ -173,32 +188,31 @@ public class ReservationManagementPanel extends JPanel {
         // Room type dropdown - populate with actual room categories
         cmbRoomType = new JComboBox<>();
         cmbRoomType.addItem(ALL_STATUS);
-        cmbRoomType.addItem("VIP");
-        cmbRoomType.addItem("THƯỜNG");
+
+        // map this to set of types
+        Set<String> types = roomCategories.stream().map(RoomCategoryResponse::getPhanLoai).collect(Collectors.toSet());
+        for (String type : types) {
+            cmbRoomType.addItem(type);
+        }
+
         cmbRoomType.setPreferredSize(new Dimension(200, 35));
         cmbRoomType.setFont(CustomUI.smallFont);
 
         cmbRoomType.setSelectedIndex(0); // Default to ALL_STATUS
-        cmbRoomType.addActionListener(e -> {
-            roomFilter.roomType = (String) cmbRoomType.getSelectedItem();
-            search();
-            refreshFilterBtn();
-        });
+        cmbRoomType.addActionListener(e -> handleCmbRoomTypeChangeEvent());
 
         // Capacity dropdown
         cmbCapacity = new JComboBox<>();
-        cmbCapacity.addItem(1);
-        cmbCapacity.addItem(2);
-        cmbCapacity.addItem(4);
+        Set<Integer> capacities = roomCategories.stream().map(RoomCategoryResponse::getSoLuongKhach).collect(Collectors.toSet());
+        for (Integer capacity : capacities) {
+            cmbCapacity.addItem(capacity);
+        }
+
         cmbCapacity.setPreferredSize(new Dimension(200, 35));
         cmbCapacity.setFont(CustomUI.smallFont);
 
         cmbCapacity.setSelectedIndex(0); // Default to 1
-        cmbCapacity.addActionListener(e -> {
-            roomFilter.capacity = (Integer) cmbCapacity.getSelectedItem();
-            search();
-            refreshFilterBtn();
-        });
+        cmbCapacity.addActionListener(e -> handleCmbRoomCapacityChangeEvent());
 
         // Check-in date spinner following BookingFormPanel style
         spnCheckInDate = new JSpinner(new SpinnerDateModel());
@@ -357,6 +371,19 @@ public class ReservationManagementPanel extends JPanel {
         btnMultiBookingToggle.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
         btnMultiBookingToggle.addActionListener(e -> toggleMultiBookingMode());
 
+        // Add hover effect
+        btnMultiBookingToggle.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnMultiBookingToggle.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                btnMultiBookingToggle.setBackground(btnMultiBookingToggle.isSelected() ? CustomUI.drakRed : CustomUI.blue);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnMultiBookingToggle.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                updateToggleButtonAppearance(btnMultiBookingToggle.isSelected());
+            }
+        });
+
         leftPanel.add(btnMultiBookingToggle);
 
         // Right panel with selection info and confirm button
@@ -502,6 +529,18 @@ public class ReservationManagementPanel extends JPanel {
         search();
     }
 
+    private void handleCmbRoomTypeChangeEvent() {
+        roomFilter.roomType = (String) cmbRoomType.getSelectedItem();
+        search();
+        refreshFilterBtn();
+    }
+
+    private void handleCmbRoomCapacityChangeEvent() {
+        roomFilter.capacity = (Integer) cmbCapacity.getSelectedItem();
+        search();
+        refreshFilterBtn();
+    }
+
     private void handleCheckinDateChange() {
         Date now = new Date();
         Date checkInDate = (Date) spnCheckInDate.getValue();
@@ -532,6 +571,9 @@ public class ReservationManagementPanel extends JPanel {
         }
 
         roomFilter.checkInDate = checkInDate;
+        if (roomFilter.checkOutDate == null) {
+            roomFilter.checkOutDate = (Date) spnCheckOutDate.getValue();
+        }
         search();
         refreshFilterBtn();
 
@@ -612,14 +654,17 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void search() {
+        List<BookingResponse> allEmptyRoomInRange = bookingService.getAllEmptyRoomInRange(
+                new Timestamp(roomFilter.checkInDate.getTime()),
+                new Timestamp(roomFilter.checkOutDate.getTime())
+        );
+        System.out.println("Empty rooms in range: " + allEmptyRoomInRange.size());
         filteredRooms = new ArrayList<>();
 
-        for (RoomItem roomItem : allRoomItems) {
-            BookingResponse bookingResponse = roomItem.getBookingResponse();
-
+        for (BookingResponse emptyRoom : allEmptyRoomInRange) {
             // Apply all filters
-            if (passesAllFilters(bookingResponse)) {
-                filteredRooms.add(roomItem);
+            if (passesAllFilters(emptyRoom)) {
+                filteredRooms.add(emptyRoomMap.get(emptyRoom.getRoomId()));
             }
         }
 
@@ -649,36 +694,6 @@ public class ReservationManagementPanel extends JPanel {
             }
         }
 
-        // Date filters
-        if (roomFilter.checkInDate != null && roomFilter.checkOutDate != null) {
-            java.sql.Timestamp roomTimeIn = bookingResponse.getTimeIn();
-            java.sql.Timestamp roomTimeOut = bookingResponse.getTimeOut();
-
-            // If room has no booking dates, it's available for any date
-            if (roomTimeIn != null && roomTimeOut != null) {
-                java.sql.Timestamp filterCheckin = roomFilter.checkInDate != null ?
-                        new java.sql.Timestamp(roomFilter.checkInDate.getTime()) : null;
-                java.sql.Timestamp filterCheckout = roomFilter.checkOutDate != null ?
-                        new java.sql.Timestamp(roomFilter.checkOutDate.getTime()) : null;
-
-                // Check if the requested dates overlap with existing booking
-                // Room is available if: requested checkout <= room checkin OR requested checkin >= room checkout
-                if (filterCheckin != null && filterCheckout != null) {
-                    if (!(filterCheckout.compareTo(roomTimeIn) <= 0 || filterCheckin.compareTo(roomTimeOut) >= 0)) {
-                        return false;
-                    }
-                } else if (filterCheckin != null) {
-                    if (filterCheckin.compareTo(roomTimeOut) < 0) {
-                        return false;
-                    }
-                } else if (filterCheckout != null) {
-                    if (filterCheckout.compareTo(roomTimeIn) > 0) {
-                        return false;
-                    }
-                }
-            }
-        }
-
         // Status filter
         if (roomFilter.roomStatus != null && !roomFilter.roomStatus.equals(ALL_STATUS)) {
             if (!bookingResponse.getRoomStatus().equalsIgnoreCase(roomFilter.roomStatus)) {
@@ -695,12 +710,23 @@ public class ReservationManagementPanel extends JPanel {
         Date pivot = Date.from(today.toInstant().plus(99999999, ChronoUnit.DAYS)); // Far future pivot
         Date tomorrow = Date.from(today.toInstant().plus(1, ChronoUnit.DAYS));
 
+        // remove existing listeners to avoid triggering during reset
+        cmbRoomType.removeActionListener(cmbRoomType.getActionListeners()[0]);
+        cmbCapacity.removeActionListener(cmbCapacity.getActionListeners()[0]);
+        spnCheckInDate.removeChangeListener(spnCheckInDate.getChangeListeners()[0]);
+        spnCheckOutDate.removeChangeListener(spnCheckOutDate.getChangeListeners()[0]);
+
         cmbRoomType.setSelectedIndex(0);
         cmbCapacity.setSelectedIndex(0);
-
         spnCheckOutDate.setValue(pivot);
         spnCheckInDate.setValue(today);
         spnCheckOutDate.setValue(tomorrow);
+
+        // Re-attach listeners
+        cmbRoomType.addActionListener(e -> handleCmbRoomTypeChangeEvent());
+        cmbCapacity.addActionListener(e -> handleCmbRoomCapacityChangeEvent());
+        spnCheckInDate.addChangeListener(e -> handleCheckinDateChange());
+        spnCheckOutDate.addChangeListener(e -> handleCheckoutDateChange());
 
         // Exit multi-booking mode if active
         if (isMultiBookingMode) {

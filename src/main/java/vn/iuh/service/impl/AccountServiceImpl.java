@@ -69,7 +69,7 @@ public class AccountServiceImpl implements AccountService {
         String[] columns = {"Mã", "Tên nhân viên", "CCCD", "Số điện thoại"};
         model.setColumnIdentifiers(columns);
 
-        for (NhanVien nv : new NhanVienDAO().dsNhanVienChuaCoTaiKhoan()) {
+        for (NhanVien nv : List.of(new NhanVienDAO().timNhanVienMoiNhat())) {
             model.addRow(new Object[]{
                     nv.getMaNhanVien(),
                     nv.getTenNhanVien(),

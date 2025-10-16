@@ -5,7 +5,7 @@ public enum PanelName {
     ROOM_USING("Thông tin đặt phòng"),
     MULTI_BOOKING("Đặt nhiều phòng"),
     RESERVATION_MANAGEMENT("Quản lý đặt phòng"),
-    RESERVATION_FORM_MANAGEMENT("Quản lý phiếu đặt phòng"),
+    RESERVATION_FORM_MANAGEMENT("Tìm phiếu đặt phòng"),
     RESERVATION_FORM_SEARCH("Tìm kiếm phiếu đặt phòng"),
     CHECKIN("Nhận phòng"),
     CHECKOUT("Trả phòng"),

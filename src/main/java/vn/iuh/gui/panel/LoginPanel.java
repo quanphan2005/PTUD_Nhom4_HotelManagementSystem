@@ -1,9 +1,15 @@
 package vn.iuh.gui.panel;
 
+import vn.iuh.constraint.EntityIDSymbol;
+import vn.iuh.dao.PhienDangNhapDAO;
+import vn.iuh.dao.TaiKhoanDAO;
 import vn.iuh.dto.event.create.LoginEvent;
+import vn.iuh.entity.PhienDangNhap;
+import vn.iuh.entity.TaiKhoan;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.AccountService;
 import vn.iuh.service.impl.AccountServiceImpl;
+import vn.iuh.util.EntityUtil;
 
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
@@ -12,6 +18,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.sql.Timestamp;
 import java.util.Arrays;
 
 public class LoginPanel extends JPanel implements ActionListener {
@@ -20,9 +27,14 @@ public class LoginPanel extends JPanel implements ActionListener {
     private final JButton btnExit;
     PlaceholderTextField txtUser;
     PlaceholderPassword txtPass;
+    private PhienDangNhapDAO phienDangNhapDao;
+    private TaiKhoanDAO taiKhoanDAO;
 
     public LoginPanel(Main main) {
         this.main = main;
+        this.phienDangNhapDao = new PhienDangNhapDAO();
+        this.taiKhoanDAO = new TaiKhoanDAO();
+
         setLayout(new GridLayout(1, 2));
         setBackground(Color.WHITE);
 
@@ -134,6 +146,23 @@ public class LoginPanel extends JPanel implements ActionListener {
             LoginEvent loginEvent = new LoginEvent(username, password);
             AccountService accountService = new AccountServiceImpl();
             if(accountService.handleLogin(loginEvent)){
+                PhienDangNhap phienDangNhapMoiNhat = phienDangNhapDao.timPhienDangNhapMoiNhat();
+                String maPhienDangNhapMoiNhat = phienDangNhapMoiNhat.getMaPhienDangNhap();
+                String newMaPhienDangNhap = EntityUtil.increaseEntityID(maPhienDangNhapMoiNhat,
+                        EntityIDSymbol.LOGIN_SESSION.getPrefix(),
+                        EntityIDSymbol.LOGIN_SESSION.getLength());
+
+                TaiKhoan tk = taiKhoanDAO.timTaiKhoanBangUserName(username);
+                PhienDangNhap phienDangNhap = new PhienDangNhap();
+                phienDangNhap.setMaPhienDangNhap(newMaPhienDangNhap);
+                phienDangNhap.setSoQuay(1);
+                phienDangNhap.setTgBatDau(new Timestamp(System.currentTimeMillis()));
+                phienDangNhap.setTgKetThuc(null);
+                phienDangNhap.setMaTaiKhoan(tk.getMaTaiKhoan());
+
+                phienDangNhapDao.themPhienDangNhap(phienDangNhap);
+                Main.setCurrenLoginSession(newMaPhienDangNhap);
+
                 Main.showRootCard("MainUI");
             }else{
                 JOptionPane.showMessageDialog(this, "Đăng nhập thất bại");

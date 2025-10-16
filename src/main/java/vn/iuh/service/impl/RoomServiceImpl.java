@@ -95,7 +95,7 @@ public class RoomServiceImpl implements RoomService {
 
     public boolean completeCleaning(String roomID) {
         CongViec congViec = congViecDAO.layCongViecHienTaiCuaPhong(roomID);
-        System.out.println(congViec.getMaCongViec());
+        System.out.println("Hoàn tất dọn dẹp phòng: " + roomID);
         return congViecDAO.removeJob(congViec.getMaCongViec());
     }
 }

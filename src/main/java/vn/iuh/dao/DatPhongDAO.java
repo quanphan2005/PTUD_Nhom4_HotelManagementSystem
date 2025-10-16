@@ -293,7 +293,7 @@ public class DatPhongDAO {
         return danhSachPhieuDatPhong;
     }
 
-    public List<ThongTinDatPhong> timTatCaThongTinDatPhongTrongKhoang(List<String> phongKhongKhaDungs) {
+    public List<ThongTinDatPhong> timTatCaThongTinDatPhongTheoDanhSachMaPhong(List<String> phongKhongKhaDungs) {
         if (phongKhongKhaDungs.isEmpty())
             return new ArrayList<>();
 
@@ -344,6 +344,42 @@ public class DatPhongDAO {
         }
 
         return thongTinDatPhongs;
+    }
+
+    public List<ThongTinPhong> timTatCaPhongTrongKhoangThoiGian(Timestamp timeIn, Timestamp timeOut) {
+        String query =
+                "SELECT p.ma_phong, p.ten_phong, p.dang_hoat_dong, cv.ten_trang_thai, lp.phan_loai, lp.so_luong_khach, gp.gia_ngay_moi, gp.gia_gio_moi" +
+                " FROM Phong p" +
+                " JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong" +
+                " JOIN GiaPhong gp ON gp.ma_loai_phong = lp.ma_loai_phong" +
+                " LEFT JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
+                " LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong AND (GETDATE() >= cv.tg_bat_dau) and cv.da_xoa = 0" +
+                " WHERE ctdp.da_xoa = 0" +
+                " AND ctdp.kieu_ket_thuc is null" +
+                " AND NOT (ctdp.tg_nhan_phong <= ? AND ? <= ctdp.tg_tra_phong ) " +
+                " AND NOT (ctdp.tg_nhan_phong <= ? AND ? <= ctdp.tg_tra_phong ) " +
+                " ORDER BY p.ma_phong";
+
+        List<ThongTinPhong> danhSachThongTinPhongTrong = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setTimestamp(1, timeIn);
+            ps.setTimestamp(2, timeIn);
+            ps.setTimestamp(3, timeOut);
+            ps.setTimestamp(4, timeOut);
+
+            var rs = ps.executeQuery();
+
+            while (rs.next())
+                danhSachThongTinPhongTrong.add(chuyenKetQuaThanhThongTinPhong(rs));
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return danhSachThongTinPhongTrong;
     }
 
     public List<ThongTinDatPhong> timThongTinDatPhongTrongKhoang(Timestamp tgNhanPhong, Timestamp tgTraPhong,

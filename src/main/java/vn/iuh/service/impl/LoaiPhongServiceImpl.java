@@ -2,10 +2,13 @@ package vn.iuh.service.impl;
 
 import com.github.lgooddatepicker.zinternaltools.Pair;
 import vn.iuh.dao.LoaiPhongDAO;
+import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.entity.LoaiPhong;
+import vn.iuh.exception.BusinessException;
 import vn.iuh.service.LoaiPhongService;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -19,6 +22,16 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
     @Override
     public LoaiPhong getRoomCategoryByID(String id) {
         return null;
+    }
+
+    @Override
+    public List<RoomCategoryResponse> getAllRoomCategories() {
+        List<LoaiPhong> danhSachLoaiPhong = loaiPhongDao.layTatCaLoaiPhong();
+        if(Objects.isNull(danhSachLoaiPhong) || danhSachLoaiPhong.isEmpty()){
+            throw new BusinessException("Không tìm thấy loại phòng nào");
+        }
+
+        return danhSachLoaiPhong.stream().map(this::createRoomCategoryResponse).toList();
     }
 
     @Override
@@ -48,5 +61,17 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             }
         }
         throw new RuntimeException("Mã loại phòng rỗng ko tìm thấy ");
+    }
+
+    public RoomCategoryResponse createRoomCategoryResponse(LoaiPhong loaiPhong){
+        if(Objects.isNull(loaiPhong)){
+            return null;
+        }
+        return new RoomCategoryResponse(
+                loaiPhong.getMaLoaiPhong(),
+                loaiPhong.getTenLoaiPhong(),
+                loaiPhong.getSoLuongKhach(),
+                loaiPhong.getPhanLoai()
+        );
     }
 }

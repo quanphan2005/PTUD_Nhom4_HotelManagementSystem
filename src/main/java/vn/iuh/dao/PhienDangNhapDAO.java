@@ -95,6 +95,24 @@ public class PhienDangNhapDAO {
         return null;
     }
 
+    public boolean capNhatThoiGianKetThuc(String id, Timestamp tgkt){
+        String query = "UPDATE PhienDangNhap SET tg_ket_thuc = ? WHERE ma_phien_dang_nhap = ? AND da_xoa = 0";
+        try{
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setTimestamp(1, tgkt);
+            ps.setString(2, id);
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                return true;
+            }
+
+        }catch(SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return false;
+    }
+
     private PhienDangNhap chuyenKetQuaThanhPhienDangNhap(ResultSet rs) throws SQLException {
         PhienDangNhap shift = new PhienDangNhap();
         try {

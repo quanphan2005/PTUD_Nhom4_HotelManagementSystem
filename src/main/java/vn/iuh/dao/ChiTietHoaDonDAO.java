@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -88,6 +89,23 @@ public class ChiTietHoaDonDAO {
         }
         return null;
     }
+
+    public List<ChiTietHoaDon> findByInvoiceId(String maHoaDon) {
+        String sql = "SELECT ma_chi_tiet_hoa_don, thoi_gian_su_dung, ma_hoa_don, ma_chi_tiet_dat_phong, ma_phong, don_gia_phong " +
+                "FROM ChiTietHoaDon WHERE ma_hoa_don = ?";
+        List<ChiTietHoaDon> ds = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maHoaDon);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                ds.add(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return ds;
+    }
+
 
     public ChiTietHoaDon layChiTietHoaDonMoiNhat() {
         String sql = "SELECT TOP 1 *" +

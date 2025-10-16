@@ -37,7 +37,7 @@ public class QuanLyKhachHangPanel extends JPanel {
     private static final Font FONT_ACTION = new Font("Arial", Font.BOLD, 18);
     private static final Font TABLE_FONT = FONT_LABEL;
     private static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 15);
-    private static final Color ROW_ALT_COLOR = new Color(247, 249, 250);
+    private static final Color ROW_ALT_COLOR = new Color(250, 247, 249);
     private static final Color ROW_SELECTED_COLOR = new Color(210, 230, 255);
 
     // Simple in-memory cache cho icons (key = path + size)
