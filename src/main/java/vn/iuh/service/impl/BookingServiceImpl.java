@@ -64,6 +64,15 @@ public class BookingServiceImpl implements BookingService {
             ));
             khachHang = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
             System.out.println("khachHang: " + khachHang);
+        } else {
+            // If customer already exists, check Name and Phone number match
+            if (!Objects.equals(khachHang.getTenKhachHang(), bookingCreationEvent.getTenKhachHang())
+                || !Objects.equals(khachHang.getSoDienThoai(), bookingCreationEvent.getSoDienThoai())
+            ) {
+                String message = "Đặt phòng thất bại! Thông tin khách hàng không khớp với CCCD đã có trong hệ thống.\n"
+                                 + "Vui lòng kiểm tra lại tên và số điện thoại.";
+                return new EventResponse(ResponseType.ERROR, message);
+            }
         }
 
         List<ThongTinDatPhong> danhSachThongTinDatPhong = datPhongDAO.timThongTinDatPhongTrongKhoang(
