@@ -2,6 +2,7 @@ package vn.iuh.service.impl;
 
 import vn.iuh.constraint.ActionType;
 import vn.iuh.constraint.EntityIDSymbol;
+import vn.iuh.constraint.ResponseType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.BookingCreationEvent;
@@ -12,10 +13,12 @@ import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
+import vn.iuh.dto.response.EventResponse;
 import vn.iuh.dto.response.ReservationFormResponse;
 import vn.iuh.entity.*;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
+import vn.iuh.util.TimeFormat;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -40,7 +43,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public boolean createBooking(BookingCreationEvent bookingCreationEvent) {
+    public EventResponse createBooking(BookingCreationEvent bookingCreationEvent) {
 
         // 1. find Customer by CCCD
         KhachHang khachHang = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
@@ -75,7 +78,20 @@ public class BookingServiceImpl implements BookingService {
             for (ThongTinDatPhong thongTinDatPhong : danhSachThongTinDatPhong) {
                 System.out.println(thongTinDatPhong);
             }
-            return false;
+            StringBuilder message =
+                    new StringBuilder("Đặt phòng thất bại! Có phòng đã được đặt trong khoảng thời gian này: \n ");
+            for (ThongTinDatPhong thongTinDatPhong : danhSachThongTinDatPhong) {
+                message.append("- Phòng: ")
+                       .append(thongTinDatPhong.getMaPhong())
+                       .append(" đã được đặt bởi khách hàng: ")
+                       .append(thongTinDatPhong.getTenKhachHang())
+                       .append(" từ: ")
+                       .append(TimeFormat.formatTime(thongTinDatPhong.getTgNhanPhong()))
+                       .append(" đến: ")
+                       .append(TimeFormat.formatTime(thongTinDatPhong.getTgTraPhong()))
+                       .append("\n");
+            }
+            return new EventResponse(ResponseType.ERROR, message.toString());
         }
 
         try {
@@ -201,14 +217,27 @@ public class BookingServiceImpl implements BookingService {
             System.out.println("Rollback transaction");
             e.printStackTrace();
             datPhongDAO.hoanTacGiaoTac();
-            return false;
+            return new EventResponse(ResponseType.ERROR, "Đặt phòng thất bại! Vui lòng thử lại sau.");
         }
 
         datPhongDAO.thucHienGiaoTac();
         System.out.println("Đặt phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString() +
                            " cho khách hàng: " + bookingCreationEvent.getTenKhachHang()
                            + " thành công!");
-        return true;
+        String message = "Đặt phòng thành công!";
+        if (bookingCreationEvent.getDanhSachMaPhong().size() > 1) {
+            message += " Các phòng đã được đặt:\n";
+            for (String roomId : bookingCreationEvent.getDanhSachMaPhong()) {
+                message += "- Phòng " + roomId + "\n";
+            }
+        }
+
+        if (bookingCreationEvent.isDaDatTruoc()) {
+            message += "Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
+        } else {
+            message += "Khách hàng sẽ tiến hành check-in ngay bây giờ.";
+        }
+        return new EventResponse(ResponseType.SUCCESS, message);
     }
 
     @Override

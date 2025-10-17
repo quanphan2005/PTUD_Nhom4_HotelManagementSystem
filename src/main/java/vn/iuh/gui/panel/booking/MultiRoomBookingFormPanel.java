@@ -2,9 +2,11 @@ package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
+import vn.iuh.constraint.ResponseType;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.EventResponse;
 import vn.iuh.entity.KhachHang;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
@@ -901,18 +903,17 @@ public class MultiRoomBookingFormPanel extends JPanel {
             BookingCreationEvent bookingEvent = createMultiRoomBookingEvent();
 
             // Call booking service
-            boolean success = bookingService.createBooking(bookingEvent);
-
-            if (success) {
-                JOptionPane.showMessageDialog(this, "Đặt " + selectedRooms.size() + " phòng thành công!",
-                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            EventResponse response = bookingService.createBooking(bookingEvent);
+            if (response.getType().equals(ResponseType.SUCCESS)) {
+                JOptionPane.showMessageDialog(this,  response.getMessage(),
+                                              "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
                 // Refresh reservation management panel
                 RefreshManager.refreshAfterBooking();
                 Main.showCard("Quản lý đặt phòng"); // Return to previous screen
             } else {
-                JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, response.getMessage(),
+                                              "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (Exception e) {

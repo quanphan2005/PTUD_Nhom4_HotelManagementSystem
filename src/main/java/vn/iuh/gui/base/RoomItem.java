@@ -5,6 +5,7 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.panel.booking.BookingFormPanel;
 import vn.iuh.gui.panel.booking.RoomUsageFormPanel;
+import vn.iuh.util.TimeFormat;
 
 import javax.swing.*;
 import java.awt.*;
@@ -616,8 +617,7 @@ public class RoomItem extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(2, 10, 2, 5);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
-
+        DateTimeFormatter formatter = TimeFormat.getFormatter();
 
         Date now = new Date();
         String checkInTime = bookingResponse.getTimeIn() != null

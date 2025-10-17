@@ -2,11 +2,13 @@ package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
+import vn.iuh.constraint.ResponseType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
+import vn.iuh.dto.response.EventResponse;
 import vn.iuh.entity.KhachHang;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.GridRoomPanel;
@@ -881,23 +883,16 @@ public class BookingFormPanel extends JPanel {
             BookingCreationEvent bookingEvent = createBookingEvent();
 
             // Call booking service
-            boolean success = bookingService.createBooking(bookingEvent);
-
-            if (success) {
-                JOptionPane.showMessageDialog(this, "Đặt phòng thành công!",
+            EventResponse response = bookingService.createBooking(bookingEvent);
+            if (response.getType().equals(ResponseType.SUCCESS)) {
+                JOptionPane.showMessageDialog(this,  response.getMessage(),
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
-
-                if(!chkIsAdvanced.isSelected()){
-                    GridRoomPanel gridRoomPanel = ReservationManagementPanel.gridRoomPanels;
-                    BookingResponse booking = collectBookingResponse(bookingEvent.getTenKhachHang(), bookingEvent.getTgNhanPhong(), bookingEvent.getTgTraPhong());
-                    gridRoomPanel.updateSingleRoomItem(selectedRoom.getRoomId(), booking);
-                }
 
                 // Refresh reservation management panel
                 RefreshManager.refreshAfterBooking();
                 handleCloseReservation(); // Return to previous screen
             } else {
-                JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Đã có phòng được đặt trong thời gian này.",
+                JOptionPane.showMessageDialog(this, response.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
