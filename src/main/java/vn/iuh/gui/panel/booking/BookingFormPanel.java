@@ -6,6 +6,7 @@ import vn.iuh.constraint.ResponseType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
+import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.dto.response.EventResponse;
@@ -15,9 +16,12 @@ import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.CustomerService;
+import vn.iuh.service.RoomService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CustomerServiceImpl;
+import vn.iuh.service.impl.RoomServiceImpl;
 import vn.iuh.util.IconUtil;
+import vn.iuh.util.PriceFormat;
 import vn.iuh.util.RefreshManager;
 import vn.iuh.util.TimeFilterHelper;
 
@@ -40,9 +44,10 @@ public class BookingFormPanel extends JPanel {
     private BookingResponse selectedRoom;
     private BookingService bookingService;
     private CustomerService customerService;
+    private RoomService roomService;
 
     // Formatters
-    private DecimalFormat priceFormatter = new DecimalFormat("#,###");
+    private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
 
     // Room Information Components
     private JLabel lblRoomNumber;
@@ -51,6 +56,7 @@ public class BookingFormPanel extends JPanel {
     private JLabel lblHourlyPrice;
     private JLabel lblDailyPrice;
     private JLabel lblRoomStatus;
+    private List<RoomFurnitureItem> RoomFurnitureItems;
 
     // Customer Information Components
     private JTextField txtCustomerName;
@@ -96,6 +102,7 @@ public class BookingFormPanel extends JPanel {
         this.selectedRoom = roomInfo;
         this.bookingService = new BookingServiceImpl();
         this.customerService = new CustomerServiceImpl();
+        this.roomService = new RoomServiceImpl();
 
         initializeComponents();
         setupLayout();
@@ -424,6 +431,8 @@ public class BookingFormPanel extends JPanel {
     }
 
     private JPanel createRoomInfoPanel() {
+        RoomFurnitureItems = roomService.getAllFurnitureInRoom(selectedRoom.getRoomId());
+
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Color.WHITE);
 
@@ -446,43 +455,69 @@ public class BookingFormPanel extends JPanel {
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
+        lblHourlyPrice.setText(priceFormatter.format(selectedRoom.getHourlyPrice()) + " VND");
+        lblDailyPrice.setText(priceFormatter.format(selectedRoom.getDailyPrice()) + " VND");
+
         // Essential room information using addFormRow for consistency
-        addFormRow(roomInfoContent, gbc, 0, "Số phòng:", lblRoomNumber);
-        addFormRow(roomInfoContent, gbc, 1, "Loại phòng:", lblRoomType);
-        addFormRow(roomInfoContent, gbc, 2, "Sức chứa:", lblRoomCapacity);
-        addFormRow(roomInfoContent, gbc, 3, "Trạng thái:", lblRoomStatus);
-        addFormRow(roomInfoContent, gbc, 4, "Giá theo giờ:", lblHourlyPrice);
-        addFormRow(roomInfoContent, gbc, 5, "Giá theo ngày:", lblDailyPrice);
+        addFormRow(roomInfoContent, gbc, 0, 0,"Số phòng:", lblRoomNumber);
+        addFormRow(roomInfoContent, gbc, 1, 0, "Loại phòng:", lblRoomType);
+        addFormRow(roomInfoContent, gbc, 2, 0, "Sức chứa:", lblRoomCapacity);
+        addFormRow(roomInfoContent, gbc, 0, 1, "Trạng thái:", lblRoomStatus);
+        addFormRow(roomInfoContent, gbc, 1, 1, "Giá theo giờ:", lblHourlyPrice);
+        addFormRow(roomInfoContent, gbc, 2, 1, "Giá theo ngày:", lblDailyPrice);
 
         // Additional info section with separator - flexible content based on room status
-        gbc.gridy = 6;
-        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 4;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(15, 10, 8, 10);
         JSeparator separator = new JSeparator();
         separator.setForeground(Color.GRAY);
         roomInfoContent.add(separator, gbc);
 
         // Reset for additional fields
-        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.insets = new Insets(5, 5, 5, 5);
         gbc.gridwidth = 1;
 
-        // Create additional info labels - these will be flexible based on room status
-        JLabel lblRoomId = new JLabel(selectedRoom.getRoomId());
-        JLabel lblAmenities = new JLabel(getAmenitiesForRoom());
-        JLabel lblArea = new JLabel(getAreaForRoom());
-        JLabel lblFloor = new JLabel("Tầng " + extractFloorFromRoomName());
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        JLabel furnitureItems = new JLabel("Nội thất phòng: ");
+        furnitureItems.setFont(CustomUI.smallFont);
+        gbc.insets = new Insets(15, 10, 8, 10);
+        roomInfoContent.add(furnitureItems, gbc);
 
-        // Add flexible additional information using addFormRow
-        addFormRow(roomInfoContent, gbc, 7, "Mã phòng:", lblRoomId);
-        addFormRow(roomInfoContent, gbc, 8, "Tiện nghi:", lblAmenities);
-        addFormRow(roomInfoContent, gbc, 9, "Diện tích:", lblArea);
-        addFormRow(roomInfoContent, gbc, 10, "Tầng:", lblFloor);
+        // Reset insets
+        gbc.insets = new Insets(5, 10, 5, 10);
 
-        // Add status-specific information if needed
-        addStatusSpecificInfo(roomInfoContent, gbc);
+        // Add furniture items
+        // It will separate into 2 column - Don`t use addFormRow for this part
+        int pivot = (RoomFurnitureItems.size() + 1) / 2;
+        for (int i = 0; i < RoomFurnitureItems.size(); i++) {
+            RoomFurnitureItem item = RoomFurnitureItems.get(i);
+            JLabel itemLabel = new JLabel(item.getName());
+            JLabel quantityLabel = new JLabel("Số lượng: " + item.getQuantity());
+
+            itemLabel.setFont(CustomUI.smallFont);
+            quantityLabel.setFont(CustomUI.smallFont);
+
+            if (i < pivot) {
+                // Left column
+                gbc.gridx = 0;
+                gbc.gridy = 5 + i;
+            } else {
+                // Right column
+                gbc.gridx = 2;
+                gbc.gridy = 5 + (i - pivot);
+            }
+
+            roomInfoContent.add(itemLabel, gbc);
+            gbc.gridx += 1;
+            roomInfoContent.add(quantityLabel, gbc);
+        }
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(roomInfoContent, BorderLayout.CENTER);
@@ -592,6 +627,24 @@ public class BookingFormPanel extends JPanel {
         panel.add(component, gbc);
     }
 
+    private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, int col, String labelText, JComponent component) {
+        gbc.gridy = row;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+
+        gbc.gridx = col * 2;
+        gbc.weightx = 0.0;
+        JLabel label = new JLabel(labelText);
+        label.setFont(CustomUI.smallFont);
+        panel.add(label, gbc);
+
+        gbc.gridx = col * 2 + 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.NONE;
+        component.setFont(CustomUI.smallFont);
+        panel.add(component, gbc);
+    }
+
     // Create a collapsible header panel
     private JPanel createCollapsibleHeader(ImageIcon icon, String title, Color backgroundColor, Color textColor, Runnable toggleAction) {
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -683,88 +736,6 @@ public class BookingFormPanel extends JPanel {
                 mainContentPanel.repaint();
             });
         }
-    }
-
-    // Helper methods for additional room info
-    private String extractFloorFromRoomName() {
-        String roomName = selectedRoom.getRoomName();
-        // Assuming room name format is like "101", "202A", etc.
-        if (roomName.length() >= 3 && Character.isDigit(roomName.charAt(0))) {
-            return String.valueOf(roomName.charAt(0));
-        }
-        return "N/A";
-    }
-
-    private String getAmenitiesForRoom() {
-        // This can be made flexible based on room type or category
-        String roomType = selectedRoom.getRoomType();
-        if (roomType.toLowerCase().contains("vip") || roomType.toLowerCase().contains("deluxe")) {
-            return "Điều hòa, TV, WiFi, Minibar, Jacuzzi";
-        } else if (roomType.toLowerCase().contains("standard")) {
-            return "Điều hòa, TV, WiFi";
-        } else {
-            return "Điều hòa, TV, WiFi, Tủ lạnh";
-        }
-    }
-
-    private String getAreaForRoom() {
-        // This can be made flexible based on room type or actual room data
-        String roomType = selectedRoom.getRoomType();
-        if (roomType.toLowerCase().contains("vip") || roomType.toLowerCase().contains("deluxe")) {
-            return "45m²";
-        } else if (roomType.toLowerCase().contains("standard")) {
-            return "25m²";
-        } else {
-            return "30m²";
-        }
-    }
-
-    private String getCurrentTimeString() {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm - dd/MM/yyyy");
-        return sdf.format(new java.util.Date());
-    }
-
-    // Method to add status-specific information dynamically
-    private void addStatusSpecificInfo(JPanel panel, GridBagConstraints gbc) {
-        String roomStatus = selectedRoom.getRoomStatus();
-        int currentRow = 11;
-
-        if ("OCCUPIED".equalsIgnoreCase(roomStatus)) {
-            // Add check-in time, expected checkout, etc.
-            JLabel lblCheckInTime = new JLabel("14:00 - 25/09/2024");
-            JLabel lblExpectedCheckout = new JLabel("12:00 - 27/09/2024");
-
-            addFormRow(panel, gbc, currentRow++, "Giờ nhận phòng:", lblCheckInTime);
-            addFormRow(panel, gbc, currentRow++, "Dự kiến trả:", lblExpectedCheckout);
-
-        } else if ("MAINTENANCE".equalsIgnoreCase(roomStatus)) {
-            // Add maintenance information
-            JLabel lblMaintenanceType = new JLabel("Bảo trì định kỳ");
-            JLabel lblEstimatedCompletion = new JLabel("28/09/2024");
-
-            addFormRow(panel, gbc, currentRow++, "Loại bảo trì:", lblMaintenanceType);
-            addFormRow(panel, gbc, currentRow++, "Dự kiến xong:", lblEstimatedCompletion);
-
-        } else if ("RESERVED".equalsIgnoreCase(roomStatus)) {
-            // Add reservation information
-            JLabel lblReservationTime = new JLabel("15:00 - 27/09/2024");
-            JLabel lblCustomerName = new JLabel("Đã đặt trước");
-
-            addFormRow(panel, gbc, currentRow++, "Giờ nhận phòng:", lblReservationTime);
-            addFormRow(panel, gbc, currentRow++, "Trạng thái:", lblCustomerName);
-
-        } else if ("CLEANING".equalsIgnoreCase(roomStatus)) {
-            // Add cleaning information
-            JLabel lblCleaningStatus = new JLabel("Đang dọn dẹp");
-            JLabel lblEstimatedReady = new JLabel("30 phút");
-
-            addFormRow(panel, gbc, currentRow++, "Trạng thái:", lblCleaningStatus);
-            addFormRow(panel, gbc, currentRow++, "Còn lại:", lblEstimatedReady);
-        }
-
-        // Add last updated time for all statuses
-        JLabel lblLastUpdated = new JLabel(getCurrentTimeString());
-        addFormRow(panel, gbc, currentRow, "Cập nhật lúc:", lblLastUpdated);
     }
 
     // Populate room information
@@ -966,6 +937,13 @@ public class BookingFormPanel extends JPanel {
 
 
     private boolean validateInput() {
+        if (txtCCCD.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND!",
+                                          "Lỗi", JOptionPane.WARNING_MESSAGE);
+            txtCCCD.requestFocus();
+            return false;
+        }
+
         if (txtCustomerName.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
@@ -977,13 +955,6 @@ public class BookingFormPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập số điện thoại!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
             txtPhoneNumber.requestFocus();
-            return false;
-        }
-
-        if (txtCCCD.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND!",
-                "Lỗi", JOptionPane.WARNING_MESSAGE);
-            txtCCCD.requestFocus();
             return false;
         }
 

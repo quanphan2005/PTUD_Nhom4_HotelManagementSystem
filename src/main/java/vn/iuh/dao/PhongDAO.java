@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.entity.Phong;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -77,6 +78,33 @@ public class PhongDAO {
         }
 
         return phongs;
+    }
+
+    public List<RoomFurnitureItem> timTatCaNoiThatTrongPhong(String roomID) {
+        String query = "SELECT nt.ma_noi_that, nt.ten_noi_that, nttlp.so_luong " +
+                       "FROM Phong p" +
+                       " JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong" +
+                       " JOIN NoiThatTrongLoaiPhong nttlp ON lp.ma_loai_phong = nttlp.ma_loai_phong" +
+                       " JOIN NoiThat nt ON nttlp.ma_noi_that = nt.ma_noi_that" +
+                       " WHERE p.ma_phong = ?";
+
+        List<RoomFurnitureItem> furnitureItems = new ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, roomID);
+
+            var rs = ps.executeQuery();
+
+            while (rs.next()) {
+                furnitureItems.add(chuyenKetQuaThanhNoiThatTrongPhong(rs));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return furnitureItems;
     }
 
     public Phong themPhong(Phong phong) {
@@ -180,6 +208,18 @@ public class PhongDAO {
             return phong;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành Phong" + e.getMessage());
+        }
+    }
+
+    private RoomFurnitureItem chuyenKetQuaThanhNoiThatTrongPhong(ResultSet rs) {
+        RoomFurnitureItem item = new RoomFurnitureItem();
+        try {
+            item.setMaNoiThat(rs.getString("ma_noi_that"));
+            item.setName(rs.getString("ten_noi_that"));
+            item.setQuantity(rs.getInt("so_luong"));
+            return item;
+        } catch (SQLException e) {
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành RoomFurnitureItem" + e.getMessage());
         }
     }
 }
