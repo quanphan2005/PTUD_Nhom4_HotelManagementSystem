@@ -478,10 +478,15 @@ public class RoomItem extends JPanel {
             return createEmptyRoomPanel();
         } else if (isOccupiedRoom(status)) {
             return createOccupiedRoomPanel();
+        } else if (isMaintenanceRoom(status)) {
+          return createMaintenanceRoomPanel();
         } else {
             return createEmptyRoomPanel();
         }
     }
+
+
+
 
     private JPanel createRightPanelForEmptyRoom() {
         JPanel rightPanel = new JPanel(new BorderLayout());
@@ -500,9 +505,13 @@ public class RoomItem extends JPanel {
                || status.equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
     }
 
+    private boolean isMaintenanceRoom(String status) {
+        return status.equalsIgnoreCase(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+    }
+
     private JPanel createEmptyRoomPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(new Color(144, 238, 144)); // Light green background
+        panel.setBackground(CustomUI.lightGreen); // Light green background
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
@@ -513,7 +522,7 @@ public class RoomItem extends JPanel {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         JLabel lblRoomType = new JLabel(bookingResponse.getRoomType().toUpperCase());
-        lblRoomType.setFont(new Font("Arial", Font.BOLD, 12));
+        lblRoomType.setFont(CustomUI.supperSmallFont);
         lblRoomType.setForeground(Color.BLACK);
         panel.add(lblRoomType, gbc);
 
@@ -521,7 +530,7 @@ public class RoomItem extends JPanel {
         gbc.gridy = 1;
         gbc.insets = new Insets(10, 10, 10, 10);
         JLabel lblStatus = new JLabel("TRỐNG");
-        lblStatus.setFont(new Font("Arial", Font.BOLD, 24));
+        lblStatus.setFont(CustomUI.bigFont);
         lblStatus.setForeground(Color.BLACK);
         panel.add(lblStatus, gbc);
 
@@ -596,7 +605,7 @@ public class RoomItem extends JPanel {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         JLabel roomStatus = new JLabel(bookingResponse.getRoomStatus().toUpperCase());
-        roomStatus.setFont(new Font("Arial", Font.BOLD, 12));
+        roomStatus.setFont(CustomUI.supperSmallFont);
         roomStatus.setForeground(Color.BLACK);
         panel.add(roomStatus, gbc);
 
@@ -661,6 +670,50 @@ public class RoomItem extends JPanel {
         lblCheckOut.setFont(CustomUI.supperSmallFont);
         lblCheckOut.setForeground(Color.BLACK);
         panel.add(lblCheckOut, gbc);
+
+        return panel;
+    }
+
+    private JPanel createMaintenanceRoomPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(CustomUI.gray); // Gray background
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 10, 5, 10);
+
+        // Room type at top
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JLabel lblRoomType = new JLabel(bookingResponse.getRoomType().toUpperCase());
+        lblRoomType.setFont(CustomUI.supperSmallFont);
+        lblRoomType.setForeground(Color.BLACK);
+        panel.add(lblRoomType, gbc);
+
+        // Status in center (large)
+        gbc.gridy = 1;
+        gbc.insets = new Insets(10, 10, 10, 10);
+        JLabel lblStatus = new JLabel("BẢO TRÌ");
+        lblStatus.setFont(CustomUI.bigFont);
+        lblStatus.setForeground(Color.BLACK);
+        panel.add(lblStatus, gbc);
+
+        // Price information using GridBagLayout
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(2, 10, 2, 5);
+
+        // Maintenance info at bottom
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(5, 10, 5, 10);
+        JLabel lblInfo = new JLabel("Đang bảo trì...");
+        lblInfo.setFont(CustomUI.italicSmallFont);
+        lblInfo.setForeground(Color.DARK_GRAY);
+        panel.add(lblInfo, gbc);
 
         return panel;
     }
