@@ -676,6 +676,12 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void search() {
+        // Toggle off multi-booking mode if active
+        if (isMultiBookingMode) {
+            btnMultiBookingToggle.setSelected(false);
+            toggleMultiBookingMode();
+        }
+
         filteredRooms = new ArrayList<>();
         // Search all empty room if both dates are set
         if (roomFilter.checkInDate != null && roomFilter.checkOutDate != null) {
@@ -700,10 +706,6 @@ public class ReservationManagementPanel extends JPanel {
                 }
             }
         }
-
-        // Update action listeners for multi-booking mode
-        if (isMultiBookingMode)
-            updateMultibookingMode();
 
         // Update grid panel with filtered results
         gridRoomPanels.setRoomItems(filteredRooms);
