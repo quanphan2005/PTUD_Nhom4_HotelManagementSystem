@@ -304,8 +304,6 @@ public class ReservationManagementPanel extends JPanel {
 
     // HandleUpdateStatusCount
     private void updateStatusCount() {
-
-        int totalRooms = allRoomItems != null ? allRoomItems.size() : 0;
         int availableCount = 0;
         int bookedCount = 0;
         int checkingCount = 0;
@@ -314,24 +312,26 @@ public class ReservationManagementPanel extends JPanel {
         int cleaningCount = 0;
         int maintenanceCount = 0;
 
-        for (RoomItem roomItem : filteredRooms) {
-            // Switch case base on room status enums RoomStatus
-            switch (RoomStatus.fromStatus(roomItem.getRoomStatus())) {
-                case ROOM_EMPTY_STATUS -> availableCount++;
-                case ROOM_BOOKED_STATUS -> bookedCount++;
-                case ROOM_CHECKING_STATUS -> checkingCount++;
-                case ROOM_USING_STATUS -> usingCount++;
-                case ROOM_CHECKOUT_LATE_STATUS -> lateCount++;
-                case ROOM_CLEANING_STATUS -> cleaningCount++;
-                case ROOM_MAINTENANCE_STATUS -> maintenanceCount++;
-                case null -> {
-                    // Unknown status, do nothing
+        if (roomFilter.checkInDate != null && roomFilter.checkOutDate != null) {
+            availableCount = filteredRooms.size();
+        } else {
+            for (RoomItem roomItem : filteredRooms) {
+                // Switch case base on room status enums RoomStatus
+                switch (RoomStatus.fromStatus(roomItem.getRoomStatus())) {
+                    case ROOM_EMPTY_STATUS -> availableCount++;
+                    case ROOM_BOOKED_STATUS -> bookedCount++;
+                    case ROOM_CHECKING_STATUS -> checkingCount++;
+                    case ROOM_USING_STATUS -> usingCount++;
+                    case ROOM_CHECKOUT_LATE_STATUS -> lateCount++;
+                    case ROOM_CLEANING_STATUS -> cleaningCount++;
+                    case ROOM_MAINTENANCE_STATUS -> maintenanceCount++;
+                    case null -> {
+                        // Unknown status, do nothing
+                    }
                 }
             }
         }
 
-        // Update button texts
-        statusButtons[0].setText(ALL_STATUS + " (" + totalRooms + ")");
         statusButtons[1].setText(RoomStatus.ROOM_EMPTY_STATUS.getStatus() + " (" + availableCount + ")");
         statusButtons[2].setText(RoomStatus.ROOM_BOOKED_STATUS.getStatus() + " (" + bookedCount + ")");
         statusButtons[3].setText(RoomStatus.ROOM_CHECKING_STATUS.getStatus() + " (" + checkingCount + ")");

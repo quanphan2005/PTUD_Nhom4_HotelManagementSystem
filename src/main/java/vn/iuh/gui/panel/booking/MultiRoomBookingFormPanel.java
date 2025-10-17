@@ -924,6 +924,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
     }
 
     private boolean validateInput() {
+        if (txtCCCD.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND!",
+                                          "Lỗi", JOptionPane.WARNING_MESSAGE);
+            txtCCCD.requestFocus();
+            return false;
+        }
+
         if (txtCustomerName.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
@@ -935,13 +942,6 @@ public class MultiRoomBookingFormPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập số điện thoại!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
             txtPhoneNumber.requestFocus();
-            return false;
-        }
-
-        if (txtCCCD.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND!",
-                "Lỗi", JOptionPane.WARNING_MESSAGE);
-            txtCCCD.requestFocus();
             return false;
         }
 
