@@ -87,7 +87,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private void setupMultiBookingCallbacks() {
         // Set selection callback for all room items
-        for (RoomItem roomItem : allRoomItems) {
+        for (RoomItem roomItem : filteredRooms) {
             roomItem.setSelectionCallback(this::handleRoomSelectionChanged);
         }
     }
@@ -481,7 +481,7 @@ public class ReservationManagementPanel extends JPanel {
         }
 
         // Update all room items with new mode
-        updateAllRoomItemsMode();
+        updateMultibookingMode();
 
         revalidate();
         repaint();
@@ -489,14 +489,14 @@ public class ReservationManagementPanel extends JPanel {
 
     private void clearAllSelections() {
         selectedRooms.clear();
-        for (RoomItem roomItem : allRoomItems) {
+        for (RoomItem roomItem : filteredRooms) {
             roomItem.setSelected(false);
         }
         updateSelectionDisplay();
     }
 
-    private void updateAllRoomItemsMode() {
-        for (RoomItem roomItem : allRoomItems) {
+    private void updateMultibookingMode() {
+        for (RoomItem roomItem : filteredRooms) {
             roomItem.setMultiBookingMode(isMultiBookingMode);
             roomItem.setSelectionCallback(this::handleRoomSelectionChanged);
         }
@@ -679,18 +679,6 @@ public class ReservationManagementPanel extends JPanel {
         filteredRooms = new ArrayList<>();
         // Search all empty room if both dates are set
         if (roomFilter.checkInDate != null && roomFilter.checkOutDate != null) {
-//            List<BookingResponse> allEmptyRoomInRange = bookingService.getAllEmptyRoomInRange(
-//                    new Timestamp(roomFilter.checkInDate.getTime()),
-//                    new Timestamp(roomFilter.checkOutDate.getTime())
-//            );
-//            System.out.println("Empty rooms in range: " + allEmptyRoomInRange.size());
-//
-//            for (BookingResponse emptyRoom : allEmptyRoomInRange) {
-//                // Apply all filters
-//                if (passesAllFilters(emptyRoom)) {
-//                    filteredRooms.add(emptyRoomMap.get(emptyRoom.getRoomId()));
-//                }
-//            }
             List<String> nonEmptyRoomIds = bookingService.getAllNonEmptyRoomInRange(
                     new Timestamp(roomFilter.checkInDate.getTime()),
                     new Timestamp(roomFilter.checkOutDate.getTime())
@@ -713,6 +701,11 @@ public class ReservationManagementPanel extends JPanel {
             }
         }
 
+        // Update action listeners for multi-booking mode
+        if (isMultiBookingMode)
+            updateMultibookingMode();
+
+        // Update grid panel with filtered results
         gridRoomPanels.setRoomItems(filteredRooms);
         gridRoomPanels.revalidate();
         gridRoomPanels.repaint();
