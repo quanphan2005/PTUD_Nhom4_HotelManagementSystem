@@ -88,8 +88,10 @@ public class RoomItem extends JPanel {
                     // Original single room booking behavior
                     String cardName = PanelName.BOOKING.getName();
                     if (bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_EMPTY_STATUS.getStatus())) {
-                        Main.addCard(new BookingFormPanel(bookingResponse, PanelName.RESERVATION_MANAGEMENT.getName()), cardName);
-                    } else if (
+                        Main.addCard(new BookingFormPanel(bookingResponse, PanelName.RESERVATION_MANAGEMENT.getName()),
+                                     cardName);
+                    } else
+                        if (
                                 bookingResponse.getRoomStatus()
                                                .equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus())
                                 || bookingResponse.getRoomStatus()
@@ -98,13 +100,24 @@ public class RoomItem extends JPanel {
                                                   .equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())
                                 || bookingResponse.getRoomStatus()
                                                   .equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
-                            || bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
+                                || bookingResponse.getRoomStatus()
+                                                  .equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
                         ) {
                             cardName = PanelName.ROOM_USING.getName();
                             System.out.println(bookingResponse.getTimeIn());
                             Main.addCard(new RoomUsageFormPanel(bookingResponse), cardName);
                         }
-
+                        else if (bookingResponse.getRoomStatus()
+                                                  .equalsIgnoreCase(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus())
+                        ) {
+                            JOptionPane.showMessageDialog(
+                                    SwingUtilities.getWindowAncestor(RoomItem.this),
+                                    "Phòng đang trong trạng thái bảo trì. Vui lòng chọn phòng khác.",
+                                    "Thông báo",
+                                    JOptionPane.INFORMATION_MESSAGE
+                            );
+                            return;
+                        }
                     Main.showCard(cardName);
                 }
             }
@@ -225,8 +238,8 @@ public class RoomItem extends JPanel {
 
         // Add shadow effect
         checkLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.BLACK, 2),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                BorderFactory.createLineBorder(Color.BLACK, 2),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
         return checkLabel;
@@ -476,17 +489,16 @@ public class RoomItem extends JPanel {
 
         if (isEmptyRoom(status)) {
             return createEmptyRoomPanel();
-        } else if (isOccupiedRoom(status)) {
-            return createOccupiedRoomPanel();
-        } else if (isMaintenanceRoom(status)) {
-          return createMaintenanceRoomPanel();
-        } else {
-            return createEmptyRoomPanel();
-        }
+        } else
+            if (isOccupiedRoom(status)) {
+                return createOccupiedRoomPanel();
+            } else
+                if (isMaintenanceRoom(status)) {
+                    return createMaintenanceRoomPanel();
+                } else {
+                    return createEmptyRoomPanel();
+                }
     }
-
-
-
 
     private JPanel createRightPanelForEmptyRoom() {
         JPanel rightPanel = new JPanel(new BorderLayout());
@@ -584,17 +596,23 @@ public class RoomItem extends JPanel {
 
         if (RoomStatus.ROOM_BOOKED_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
             panel.setBackground(CustomUI.cyan);
-        } else if(RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
-            panel.setBackground(CustomUI.lightBlue);
-        } else if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
-            panel.setBackground(CustomUI.orange);
-        } else if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
-            panel.setBackground(CustomUI.red);
-        } else if (RoomStatus.ROOM_CLEANING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
-            panel.setBackground(CustomUI.lightGreen);
-        } else {
-            panel.setBackground(new Color(255, 255, 224)); // Default light yellow
-        }
+        } else
+            if (RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                panel.setBackground(CustomUI.lightBlue);
+            } else
+                if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                    panel.setBackground(CustomUI.orange);
+                } else
+                    if (RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus()
+                                                            .equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                        panel.setBackground(CustomUI.red);
+                    } else
+                        if (RoomStatus.ROOM_CLEANING_STATUS.getStatus()
+                                                           .equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                            panel.setBackground(CustomUI.lightGreen);
+                        } else {
+                            panel.setBackground(new Color(255, 255, 224)); // Default light yellow
+                        }
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
@@ -785,8 +803,8 @@ public class RoomItem extends JPanel {
         return bookingResponse.getNumberOfCustomers();
     }
 
-    public boolean setBookingResponseStatus(String status){
-        if(!status.equalsIgnoreCase(this.getBookingResponse().getRoomStatus())){
+    public boolean setBookingResponseStatus(String status) {
+        if (!status.equalsIgnoreCase(this.getBookingResponse().getRoomStatus())) {
             this.bookingResponse.setRoomStatus(status);
             return true;
         }
