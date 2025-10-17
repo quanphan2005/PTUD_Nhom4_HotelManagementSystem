@@ -464,8 +464,14 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void toggleMultiBookingMode() {
-        isMultiBookingMode = btnMultiBookingToggle.isSelected();
+        // Search all empty room when entering multi-booking mode
+        boolean select = btnMultiBookingToggle.isSelected();
+        if (select) {
+            setDefaultValueForEmptyCondition();
+            search();
+        }
 
+        isMultiBookingMode = select;
         // Update button appearance
         updateToggleButtonAppearance(isMultiBookingMode);
 
@@ -485,6 +491,16 @@ public class ReservationManagementPanel extends JPanel {
 
         revalidate();
         repaint();
+    }
+
+    private void setDefaultValueForEmptyCondition() {
+        Date checkin = spnCheckInDate.getValue() != null ? (Date) spnCheckInDate.getValue() : new Date();
+        Date checkout = spnCheckOutDate.getValue() != null ? (Date) spnCheckOutDate.getValue() : Date.from(checkin.toInstant().plus(1, ChronoUnit.DAYS));
+        roomFilter.checkOutDate = checkout;
+        roomFilter.checkInDate = checkin;
+        roomFilter.roomType = roomFilter.roomType == null ? ALL_STATUS : roomFilter.roomType;
+        roomFilter.capacity = roomFilter.capacity == null ? 1 : roomFilter.capacity;
+        roomFilter.roomStatus = roomFilter.roomStatus == null ? RoomStatus.ROOM_EMPTY_STATUS.getStatus() : roomFilter.roomStatus;
     }
 
     private void clearAllSelections() {
@@ -677,7 +693,9 @@ public class ReservationManagementPanel extends JPanel {
 
     private void search() {
         // Toggle off multi-booking mode if active
+        boolean wasMultiBookingMode = isMultiBookingMode;
         if (isMultiBookingMode) {
+            // Reset by set off / on
             btnMultiBookingToggle.setSelected(false);
             toggleMultiBookingMode();
         }
@@ -705,6 +723,12 @@ public class ReservationManagementPanel extends JPanel {
                     filteredRooms.add(roomItem);
                 }
             }
+        }
+
+        if (wasMultiBookingMode) {
+            // Re-enable multi-booking mode if it was active
+            btnMultiBookingToggle.setSelected(true);
+            toggleMultiBookingMode();
         }
 
         // Update grid panel with filtered results
