@@ -7,6 +7,8 @@ public class PhongTinhPhuPhi {
     private String maChiTietDatPhong;
     private String maPhuPhi;
     private BigDecimal donGiaPhuPhi;
+    private String tenPhuPhi;
+    private String tenPhong;
 
     public PhongTinhPhuPhi() {
     }
@@ -17,6 +19,23 @@ public class PhongTinhPhuPhi {
         this.maPhuPhi = maPhuPhi;
         this.donGiaPhuPhi = donGiaPhuPhi;
     }
+
+    public String getTenPhong() {
+        return tenPhong;
+    }
+
+    public void setTenPhong(String tenPhong) {
+        this.tenPhong = tenPhong;
+    }
+
+    public String getTenPhuPhi() {
+        return tenPhuPhi;
+    }
+
+    public void setTenPhuPhi(String tenPhuPhi) {
+        this.tenPhuPhi = tenPhuPhi;
+    }
+
 
     public String getMaPhongTinhPhuPhi() {
         return maPhongTinhPhuPhi;

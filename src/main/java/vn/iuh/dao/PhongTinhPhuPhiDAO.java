@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PhongTinhPhuPhiDAO {
@@ -73,6 +74,36 @@ public class PhongTinhPhuPhiDAO {
         }
 
         return null;
+    }
+
+    public List<PhongTinhPhuPhi> getPhuPhiTheoMaHoaDon(String maHoaDon){
+        List<PhongTinhPhuPhi> danhSachPhuPhi = new ArrayList<>();
+
+        String query  = "SELECT ptpp.*, pp.ten_phu_phi, p.ten_phong FROM PhongTinhPhuPhi ptpp " +
+                "JOIN PhuPhi pp ON ptpp.ma_phu_phi = pp.ma_phu_phi " +
+                "JOIN ChiTietDatPhong ctdp ON ptpp.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                "JOIN ChiTietHoaDon cthd ON ctdp.ma_chi_tiet_dat_phong = cthd.ma_chi_tiet_dat_phong " +
+                "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                "WHERE cthd.ma_hoa_don = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+
+            ps.setString(1, maHoaDon);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PhongTinhPhuPhi phuPhi = mapResultSet(rs);
+                    phuPhi.setTenPhuPhi(rs.getString("ten_phu_phi"));
+                    phuPhi.setTenPhong(rs.getString("ten_phong"));
+                    danhSachPhuPhi.add(phuPhi);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch e) {
+            System.out.println(e.getMessage());
+        }
+        return danhSachPhuPhi;
     }
 
     private PhongTinhPhuPhi mapResultSet(ResultSet rs){
