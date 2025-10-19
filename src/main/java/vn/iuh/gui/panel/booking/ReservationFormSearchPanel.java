@@ -80,7 +80,7 @@ public class ReservationFormSearchPanel extends JPanel {
 
     private void createTopPanel() {
         JPanel pnlTop = new JPanel(new BorderLayout());
-        JLabel lblTop = new JLabel("Quản lí đơn đặt phòng", SwingConstants.CENTER);
+        JLabel lblTop = new JLabel("Quản lý đơn đặt phòng trước", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.bigFont);
 

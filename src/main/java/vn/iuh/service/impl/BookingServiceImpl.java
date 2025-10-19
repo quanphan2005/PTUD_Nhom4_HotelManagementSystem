@@ -242,9 +242,9 @@ public class BookingServiceImpl implements BookingService {
         }
 
         if (bookingCreationEvent.isDaDatTruoc()) {
-            message += "Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
+            message += " Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
         } else {
-            message += "Khách hàng sẽ tiến hành check-in ngay bây giờ.";
+            message += " Khách hàng sẽ tiến hành check-in ngay bây giờ.";
         }
         return new EventResponse(ResponseType.SUCCESS, message);
     }

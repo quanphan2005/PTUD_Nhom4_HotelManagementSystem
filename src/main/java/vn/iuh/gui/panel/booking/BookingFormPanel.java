@@ -958,6 +958,21 @@ public class BookingFormPanel extends JPanel {
             return false;
         }
 
+        // Check if customer with CCCD exists but have different name/phone
+        KhachHang kh = customerService.getCustomerByCCCD(txtCCCD.getText().trim());
+        if (kh != null) {
+            if (!kh.getTenKhachHang().equalsIgnoreCase(txtCustomerName.getText().trim())
+                || !kh.getSoDienThoai().equalsIgnoreCase(txtPhoneNumber.getText().trim())) {
+                // Show dialog deny changing name/phone for existing CCCD
+                JOptionPane.showMessageDialog(this,
+                                              "CCCD/CMND đã tồn tại với tên hoặc số điện thoại khác!\n" +
+                                              "Vui lòng kiểm tra lại thông tin khách hàng.",
+                                              "Lỗi thông tin khách hàng",
+                                              JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
+        }
+
         try {
             Double.parseDouble(txtInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
             Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
