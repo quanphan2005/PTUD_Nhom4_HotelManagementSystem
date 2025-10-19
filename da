@@ -1,0 +1,123 @@
+[33m7b89a94[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;31mfork/main[m[33m, [m[1;31mfork/HEAD[m[33m)[m merge auto checkout
+[33m3ac82ec[m change panel name
+[33md90d62b[m fix calculate room status logic
+[33ma3fe86c[m add filter logic for multibooking mode btn
+[33mbfa03be[m add dialog when clicking on maintenance room item
+[33mac3dc36[m add maintaintenance room item
+[33m79160e2[m update room info data on booking form
+[33m42e81a2[m add validate customer info with cccd existing
+[33mc4dce83[m update response dialog when booking room
+[33m0b6ae47[m add validation for multibooking mode
+[33m2d90324[m change multibooking selection base on filteredRoomItem
+[33mcd127cc[m Merge branch 'test' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem into test
+[33m0b3726d[m fixx workingHistory
+[33m08227f7[m Merge branch 'test' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem into test
+[33m3a33cfa[m refactory find empty room by checkin - checkout date
+[33m465c9d4[m Merge branch 'test' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem into test
+[33m73f7afb[m Resolve conflict
+[33m066fa62[m logout and save loginsession into db
+[33m9151e80[m Merge branch 'main' into test
+[33ma828e92[m remove old function
+[33me04e45a[m implement find empty room by checkin & checkout date
+[33m210fe18[m Get value room category type & capacity dynamic
+[33mf652dd4[m add hover effect for multi booking
+[33mb3d3717[m fix navigate for cleaning room
+[33m88ddced[m merge login & working history
+[33m0651a5c[m add cua Quan
+[33m8ea35ce[m Merge branch 'test' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem into test
+[33m71f4fc7[m add stuff
+[33mff6a46f[m Merge branch 'test' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem into test
+[33mb440d27[m Merge branch 'test' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem into test
+[33md9509a9[m merge main and solve conflict
+[33mbb6724d[m impl xem lịch sử ca làm
+[33m6489d63[m refactor cancel room reservation logic
+[33mb48aaa2[m UI dang nhap, xu ly dang nhap
+[33mc8ee2da[m format date time
+[33m7999903[m create cleaning info panel & allow cleaning completed early
+[33m352c223[m fix checkin validate error for multi booking
+[33m9ec76b9[m fix logic get all pre-booking form
+[33m3ba1fbe[m Merge pull request #3 from quanphan2005/Checkin_service
+[33m908c76c[m Merge branch 'pull'
+[33mfbe6132[m fix parameter query themThongBao
+[33m6cd70bd[m Build and fix checkin service
+[33m29c2778[m add thêm logic checkout lên giao diện RoomUsageForm
+[33m5c4ec5d[m Merge branch 'pull'
+[33mcff076d[m fix checkout
+[33m604993f[m[33m ([m[1;32mBookthemgio_service[m[33m)[m Build checkin service
+[33macd246d[m Merge main into Checkin_service
+[33m65837d3[m Build checkin service
+[33m4fa75fe[m merge code
+[33m3a2dcfb[m merge upstream với impl send message checkout trễ
+[33med6dcf0[m impl gửi message cho phòng check-out trễ
+[33m89914ea[m fix validate checkin date for booking action
+[33m5f27817[m merge
+[33m973e206[m add Price/hour for multiBooking
+[33m3bf59a9[m Ensure pre-booking at least 1 hour in advance & update calculate logic for hours
+[33mb9ccfd3[m Create time helper allow faster fill checkin & checkout date on booking form
+[33m21cca90[m update menu
+[33mae6a1a7[m support find customer by CCCD while create booking form
+[33m6bf5081[m update checkout thêm lịch sử thao tác
+[33mf449576[m fix error fetching booking info for checkout late case & get customer info for usage room
+[33m50025b5[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem into pull
+[33m6f50cda[m add themLichSuVao condition before store & add refresh condition
+[33ma4e9189[m refresh ReservationFormSearch and allow BookingFormPanel forward to it
+[33m84bd152[m support to search reservation for specific room, standartlize booking & multibooking action items
+[33mf6c77cc[m[33m ([m[1;31morigin/test[m[33m)[m impl checkout feature
+[33mdfdc523[m auto increase checkout date after checkin 1 days
+[33m020f176[m implement cancel reservation
+[33m7fcfc46[m add 1 column to ReservationFormManagement
+[33m02bedc6[m[33m ([m[1;32mIncrease-loading-speed[m[33m)[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem
+[33m1eaa3dd[m Merge pull request #2 from quanphan2005/Increase-loading-speed
+[33mff01692[m change table using dynamic size
+[33me9467c6[m[33m ([m[1;31mfork/Increase-loading-speed[m[33m)[m Increase the loading speed of QuanLyPhong, QuanLyLoaiPhong, QuanLyKhachHang panel
+[33mfaf7eea[m change ServiceSelectionPanel undo logic & improve dialog message
+[33m01d1eba[m change room item color base on it status & fix validate bug when clicking btnReset
+[33m91e11b7[m create RoomUsageFormPanel & implement allow continous booking on usage room
+[33m498c88a[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem
+[33m880fdcb[m fix count total room btn
+[33mf4bedfe[m Merge pull request #1 from quanphan2005/NhanhCuaQuanPhan
+[33md33e1dd[m[33m ([m[1;31mfork/NhanhCuaQuanPhan[m[33m, [m[1;32mNhanhCuaQuanPhan[m[33m)[m Them icon bi thieu hihi
+[33m503b1ca[m Build QuanLyPhong, QuanLyLoaiPhong, QuanLyKhachHang panel
+[33m98ea2f0[m build QuanLyPhong gui
+[33mc63e483[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem
+[33md24e54a[m build QuanLyPhong gui
+[33m0879ccf[m fix can`t calculate total service price
+[33m9128e8f[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem
+[33m1c64123[m serivce order for existing booking & fix reset selected service feature
+[33m7caf5ce[m fix lỗi chèn công việc sau khi mở lại app
+[33m7e6268f[m update query timDDPChoCheckInCuaPhong them ma_chi_tiet_dat_phong
+[33mdb6d4dd[m refresh ReservationManagement Panel after booking & improve statusBtn filter logic
+[33mc5d1517[m refresh ReservationManagement Panel
+[33me0187ba[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem
+[33m609eb19[m refresh ReservationManagement after booking
+[33mff6f168[m update thời gian dọn dẹp và check-out trễ
+[33me72f71c[m update query tìm job hiện tại của phòng, bổ sung trạng thái chờ check-in vào cron job
+[33m9aac2ce[m add  cron job autoupdate room status
+[33m5459066[m improve filter logic, add checkin button
+[33mc458e07[m Design RevervationFormManagement UI & improve table components on ServiceSelectionPanel
+[33m876a25c[m implement call service for multiple room at same time
+[33m679f838[m implement auto calculate room / deposite / services price
+[33m413cceb[m validate checkin & checkout date
+[33mcfcde51[m implement multi booking feature
+[33mf6bd548[m implement room filter
+[33m73bdfd4[m implement service order when booking room
+[33m303b056[m design call service dialog
+[33mecbf66a[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem
+[33m1b009f8[m remove default value
+[33m943dc48[m đổi ca làm mặc định trong đặt phòng
+[33m51c888a[m Stop tracking .env and .idea files
+[33m8dcc748[m remove env file
+[33ma5c1762[m change all DAO using Vietnamese
+[33m9b4b944[m change DatPhongDAO method name
+[33m085f918[m Merge branch 'main' of https://github.com/hthinh24/PTUD_Nhom4_HotelManagementSystem
+[33m2098af1[m update bookingDAO using new field name
+[33m33d827c[m Translate DAO to Vietnamese
+[33m0acbcb5[m merge entity
+[33m9587846[m Change entity datatype
+[33m51cd36a[m change entity data type
+[33m7176c2f[m merge entity
+[33m01a588c[m update entity using Vietnamese
+[33m659ad1b[m Translate entity to Vietnamese
+[33m6c3810a[m Migrate old project
+[33m91da5f1[m Init project
+[33m15adfeb[m Initial commit
