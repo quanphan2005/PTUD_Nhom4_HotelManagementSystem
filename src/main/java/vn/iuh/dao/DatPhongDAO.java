@@ -630,6 +630,27 @@ public class DatPhongDAO {
         }
     }
 
+    public List<ChiTietDatPhong> timTatCaChiTietDatPhongBangMaDatPhong(String maDatPhong) {
+        String query = "SELECT * FROM ChiTietDatPhong WHERE ma_don_dat_phong = ? AND da_xoa = 0";
+        List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDatPhong);
+
+            var rs = ps.executeQuery();
+            while (rs.next())
+                chiTietDatPhongs.add(chuyenKetQuaThanhChiTietDatPhong(rs));
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return chiTietDatPhongs;
+    }
+
     private ThongTinPhong chuyenKetQuaThanhThongTinPhong(ResultSet rs) {
         try {
             return new ThongTinPhong(

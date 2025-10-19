@@ -469,13 +469,31 @@ public class BookingServiceImpl implements BookingService {
             return false;
         }
 
+        // 2.1 Check weather ReservationDetail has been checked-in
+        LichSuDiVao lichSuDiVao = lichSuDiVaoDAO.timLichSuDiVaoBangMaChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
+        if (lichSuDiVao != null && lichSuDiVao.getLaLanDauTien()) {
+            System.out.println("Không thể hủy đặt phòng cho mã đặt phòng: " + maDatPhong + " và mã phòng: " + maPhong + " vì đã thực hiện check-in.");
+            return false;
+        }
+
         try {
             datPhongDAO.khoiTaoGiaoTac();
 
             // 3. Delete specific reservavtionDetail
             datPhongDAO.huyChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
 
-            // 4. Handle RoomUsageService
+            // 4. Delete ReservationForm if no more reservationDetail
+            List<ChiTietDatPhong> danhSachChiTietDatPhong = datPhongDAO.timTatCaChiTietDatPhongBangMaDatPhong(maDatPhong);
+            if (danhSachChiTietDatPhong.isEmpty()) {
+                datPhongDAO.huyDonDatPhong(maDatPhong);
+            } else if (danhSachChiTietDatPhong.size() == 1) {
+                ChiTietDatPhong chiTietDatPhongCuoiCung = danhSachChiTietDatPhong.get(0);
+                if (Objects.equals(chiTietDatPhongCuoiCung.getMaChiTietDatPhong(),
+                                   chiTietDatPhong.getMaChiTietDatPhong()))
+                    datPhongDAO.huyDonDatPhong(maDatPhong);
+            }
+
+            // 5. Handle RoomUsageService
             List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
             if (!danhSachPhongDungDichVu.isEmpty()) {
                 for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu)
@@ -487,7 +505,7 @@ public class BookingServiceImpl implements BookingService {
                 donGoiDichVuDao.huyDanhSachPhongDungDichVu(danhSachMaDonGoiDichVu);
             }
 
-            // 5. Update WorkingHistory
+            // 6. Update WorkingHistory
             LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
             String workingHistoryId = lichSuThaoTacMoiNhat == null ? null :
                     lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
@@ -503,7 +521,7 @@ public class BookingServiceImpl implements BookingService {
                     null
             ));
 
-            // 6. Remove room`s job
+            // 7. Remove room`s job
             congViecDAO.xoaCongViecChoCheckIn(chiTietDatPhong.getMaChiTietDatPhong());
 
             datPhongDAO.thucHienGiaoTac();
