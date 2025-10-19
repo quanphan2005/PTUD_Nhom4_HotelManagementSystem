@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import vn.iuh.dto.repository.ThongTinDichVu;
+import vn.iuh.entity.Phong;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -83,7 +84,7 @@ public class DonGoiDichVuDao {
     public List<ThongTinDichVu> timTatCaThongTinDichVu() {
         String query = "SELECT dv.ma_dich_vu, dv.ten_dich_vu, dv.ton_kho, dv.co_the_tang, gdv.gia_moi, ldv.ten_loai_dich_vu" +
                        " FROM DichVu dv" +
-                       " JOIN LoaiDichVu ldv ON dv.ma_loai_dich_vu = ldv.ma_loai_dich_vu" +
+                       " JOIN LoaiDichVu ldv ON dv.ma_loai_dich_vu = ldv.ma_loai_dich_vu " +
                        " LEFT JOIN GiaDichVu gdv ON dv.ma_dich_vu = gdv.ma_dich_vu" +
                        " WHERE dv.da_xoa = 0";
 
@@ -127,7 +128,7 @@ public class DonGoiDichVuDao {
     public List<PhongDungDichVu> timDonGoiDichVuBangMaDatPhong(String maDatPhong) {
         String query = "SELECT * FROM ChiTietDatPhong ctdp" +
                        " JOIN PhongDungDichVu pddv" +
-                       " ON ctdp.ma_chi_tiet_dat_phong = pddv.ma_chi_tiet_dat_phong" +
+                       " ON ctdp.ma_chi_tiet_dat_phong = pddv.ma_chi_tiet_dat_phong " +
                        " WHERE ctdp.ma_don_dat_phong = ?";
 
         List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
@@ -158,6 +159,30 @@ public class DonGoiDichVuDao {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<PhongDungDichVu> timDonGoiDichVuBangDonDatPhong(String maDonDatPhong){
+        List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+
+        String query = "SELECT pddv.*, dv.ten_dich_vu, p.ten_phong FROM PhongDungDichVu pddv " +
+                        "JOIN DichVu dv ON pddv.ma_dich_vu = dv.ma_dich_vu " +
+                        "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong "+
+                        "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                        "WHERE ctdp.ma_don_dat_phong = ?";
+        try{
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1,maDonDatPhong);
+            var rs = ps.executeQuery();
+            while(rs.next()){
+                PhongDungDichVu pddv = chuyenKetQuaThanhPhongDungDichVu(rs);
+                pddv.setTenDichVu(rs.getString("ten_dich_vu"));
+                pddv.setTenPhong(rs.getString("ten_phong"));
+                danhSachPhongDungDichVu.add(pddv);
+            }
+        }catch(SQLException e){
+            throw new RuntimeException(e);
+        }
+        return danhSachPhongDungDichVu;
     }
 
     public List<PhongDungDichVu> timDonGoiDichVuBangChiTietDatPhong(String maChiTietDatPhong) {
@@ -213,6 +238,7 @@ public class DonGoiDichVuDao {
             String tenLoaiDichVu = rs.getString("ten_loai_dich_vu");
             double giaMoi = rs.getDouble("gia_moi");
             int tonKho = rs.getInt("ton_kho");
+
             boolean coTheTang = rs.getBoolean("co_the_tang");
 
             return new ThongTinDichVu(maDichVu, tenDichVu, tonKho, coTheTang, giaMoi, tenLoaiDichVu);
