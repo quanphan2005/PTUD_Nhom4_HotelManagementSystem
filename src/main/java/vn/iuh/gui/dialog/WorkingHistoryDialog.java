@@ -172,9 +172,9 @@ public class WorkingHistoryDialog extends JDialog {
 
     public void updateWorkingHistory(){
         this.maPhienDangNhapHienTai = Main.getCurrentLoginSession();
+        this.nhanVienDangNhap = nhanVienDAO.layNVTheoMaPhienDangNhap(maPhienDangNhapHienTai);
         this.nhanVienTruoc = this.nhanVienDangNhap;
         this.lichSuCaLamTruoc = this.lichSuThaoTac;
-        this.nhanVienDangNhap = nhanVienDAO.layNVTheoMaPhienDangNhap(maPhienDangNhapHienTai);
         this.resfreshThongTinNV(nhanVienDangNhap);
     }
 
