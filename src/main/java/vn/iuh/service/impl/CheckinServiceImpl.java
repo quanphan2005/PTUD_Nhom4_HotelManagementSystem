@@ -31,7 +31,6 @@ public class CheckinServiceImpl implements CheckinService {
     private final PhongTinhPhuPhiDAO phongTinhPhuPhiDAO;
     private final ChiTietDatPhongDAO chiTietDatPhongDAO;
     private final PhuPhiDAO phuPhiDAO;
-    private final PhienDangNhapDAO phienDangNhapDAO;
 
     private volatile String thongBaoLoi;
 
@@ -42,16 +41,13 @@ public class CheckinServiceImpl implements CheckinService {
         this.phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO();
         this.chiTietDatPhongDAO = new ChiTietDatPhongDAO();
         this.phuPhiDAO = new PhuPhiDAO();
-        this.phienDangNhapDAO = new PhienDangNhapDAO();
     }
 
     @Override
     public boolean checkin(String maDonDatPhong,
                            String tenPhong) {
 
-        // Lấy phiên đăng nhập mới nhất để lưu lịch sử thao tác
-        PhienDangNhap phienDangNhapMoiNhat = phienDangNhapDAO.timPhienDangNhapMoiNhat();
-        String maPhienDangNhap = (phienDangNhapMoiNhat == null) ? null : phienDangNhapMoiNhat.getMaPhienDangNhap();
+        String maPhienDangNhap = Main.getCurrentLoginSession();
 
         DatPhongDAO datPhongDAO = new DatPhongDAO();
         try {
@@ -117,34 +113,42 @@ public class CheckinServiceImpl implements CheckinService {
                 return false;
             }
 
+            // Kiểm tra trạng thái công việc hiện tại của phòng (không cho phép checkin nếu ở các trạng thái forbidden)
+            CongViec congViecHienTai = congViecDAO.layCongViecHienTaiCuaPhong(maPh);
+            if (congViecHienTai != null) {
+                Timestamp jobStart = congViecHienTai.getTgBatDau();
+                Timestamp jobEnd = congViecHienTai.getTgKetThuc();
+                boolean started = jobStart != null && !now.before(jobStart);
+                boolean notFinished = jobEnd == null || jobEnd.after(now);
+                boolean active = started && notFinished;
+
+                if (active) {
+                    RoomStatus roomStatus = RoomStatus.fromString(trimToNull(congViecHienTai.getTenTrangThai()));
+
+                    // Các trạng thái không cho phép checkin:
+                    boolean forbidden = roomStatus == RoomStatus.ROOM_CHECKING_STATUS
+                            || roomStatus == RoomStatus.ROOM_USING_STATUS
+                            || roomStatus == RoomStatus.ROOM_CHECKOUT_LATE_STATUS
+                            || roomStatus == RoomStatus.ROOM_CLEANING_STATUS
+                            || roomStatus == RoomStatus.ROOM_MAINTENANCE_STATUS;
+
+                    if (forbidden) {
+                        thongBaoLoi = "Phòng đang ở trạng thái '" + congViecHienTai.getTenTrangThai() + "'. Không thể check-in.";
+                        datPhongDAO.hoanTacGiaoTac();
+                        return false;
+                    }
+                }
+            }
+
             // 7) Nếu checkin sớm
             if (now.before(chiTietDatPhong.getTgNhanPhong())) {
-                // Tạo chi tiết đặt phòng mới
-                ChiTietDatPhong latestChiTietDatPhong = chiTietDatPhongDAO.timChiTietDatPhongMoiNhat();
-                String lastChiTietDatPhongId = (latestChiTietDatPhong == null) ? null : trimToNull(latestChiTietDatPhong.getMaChiTietDatPhong());
-                String newChiTietDatPhongId = EntityUtil.increaseEntityID(lastChiTietDatPhongId,
-                        EntityIDSymbol.ROOM_RESERVATION_DETAIL_PREFIX.getPrefix(),
-                        EntityIDSymbol.ROOM_RESERVATION_DETAIL_PREFIX.getLength());
-
-                ChiTietDatPhong newChiTietDatPhong = new ChiTietDatPhong(newChiTietDatPhongId,
-                        now,
-                        chiTietDatPhong.getTgTraPhong(),
-                        chiTietDatPhong.getKieuKetThuc(),
-                        chiTietDatPhong.getMaDonDatPhong(),
-                        chiTietDatPhong.getMaPhong(),
-                        maPhienDangNhap,
-                        now);
-
-                boolean insertedCt = chiTietDatPhongDAO.insert(newChiTietDatPhong);
-                if (!insertedCt) {
-                    throw new SQLException("Không thể thêm ChiTietDatPhong cho checkin sớm: " + newChiTietDatPhongId);
+                // Cập nhật ChiTietDatPhong hiện tại: đặt tg_nhan_phong = now và ghi lại ma_phien_dang_nhap
+                boolean updated = chiTietDatPhongDAO.capNhatTgNhanPhong(maChiTietDatPhongMain, now, maPhienDangNhap, now);
+                if (!updated) {
+                    throw new SQLException("Không thể cập nhật ChiTietDatPhong cho checkin sớm: " + maChiTietDatPhongMain);
                 }
 
-                // Cập nhập lại mã chi tiết đang dùng để lưu lịch sử đi vào
-                maChiTietDatPhongMain = newChiTietDatPhongId;
-                chiTietDatPhong = newChiTietDatPhong;
-
-                // Áp phụ phí cho chi tiết đặt phòng
+                // Áp phụ phí cho chi tiết đặt phòng hiện tại (không tạo mới)
                 String tenPhuPhi = Fee.CHECK_IN_SOM.getStatus();
                 ThongTinPhuPhi thongTinPhuPhi = phuPhiDAO.getThongTinPhuPhiByName(tenPhuPhi);
                 if (thongTinPhuPhi == null) {
@@ -155,7 +159,7 @@ public class CheckinServiceImpl implements CheckinService {
                 BigDecimal giaHienTai = thongTinPhuPhi.getGiaHienTai();
                 if (giaHienTai == null) giaHienTai = BigDecimal.ZERO;
 
-                // Kiểm tra phụ phí đã tồn tại cho chi tiết đặt phòng mới chưa
+                // Kiểm tra phụ phí đã tồn tại cho chi tiết đặt phòng chưa
                 boolean feeAlreadyAppliedForNewCt = phongTinhPhuPhiDAO.daTonTai(maChiTietDatPhongMain, maPhuPhi);
                 if (!feeAlreadyAppliedForNewCt) {
                     var latestFee = phongTinhPhuPhiDAO.getLatest();
@@ -172,7 +176,7 @@ public class CheckinServiceImpl implements CheckinService {
                 }
             }
 
-            // 8) Ghi lịch sử checkin (sử dụng maChiTietDatPhongMain đã có, có thể là mã mới nếu checkin sớm)
+            // 8) Ghi lịch sử checkin (sử dụng maChiTietDatPhongMain đã có)
             var lastLichSuDiVao = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
             String lastCheckinId = (lastLichSuDiVao == null) ? null : trimToNull(lastLichSuDiVao.getMaLichSuDiVao());
             String newLichSuDiVaoId = EntityUtil.increaseEntityID(lastCheckinId,
@@ -234,6 +238,7 @@ public class CheckinServiceImpl implements CheckinService {
             return false;
         }
     }
+
 
     // In lỗi ra thoi hehe
     @Override
