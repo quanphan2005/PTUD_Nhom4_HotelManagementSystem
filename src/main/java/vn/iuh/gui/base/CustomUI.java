@@ -13,6 +13,7 @@ public class CustomUI {
     public static final Color green = new Color(100, 220, 100);
     public static final Color darkGreen = new Color(34, 139, 34);
     public static final Color red = new Color(220, 35, 35);
+    public static final Color drakRed = new Color(200, 35, 51);
     public static final Color orange = new Color(255, 170, 71);
     public static final Color bluePurple = new Color(135, 162, 255);
     public static final Color purple = new Color(166, 103, 239);
@@ -21,6 +22,9 @@ public class CustomUI {
     public static final Color mine = new Color(240, 240, 240);
     public static final Color yellow = new Color(255, 223, 0);
 
+    public static final Font italicSmallFont = new Font("Arial", Font.ITALIC, 12);
+
+    public static final Font supperSmallFont = new Font("Arial", Font.BOLD, 12);
     public static final Font verySmallFont = new Font("Arial", Font.BOLD, 13);
     public static final Font smallFont = new Font("Arial", Font.BOLD, 16);
     public static final Font normalFont = new Font("Arial", Font.BOLD, 20);
@@ -37,5 +41,4 @@ public class CustomUI {
     public static final Color tableRowEven = new Color(248, 249, 250); // Very light gray for alternating rows
     public static final Color tableRowOdd = Color.WHITE;
     public static final Color tableSelection = new Color(174, 214, 241); // Light blue selection
-
 }

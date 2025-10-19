@@ -5,12 +5,17 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.gui.panel.booking.BookingFormPanel;
 import vn.iuh.gui.panel.booking.RoomUsageFormPanel;
+import vn.iuh.util.TimeFormat;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.text.DecimalFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Objects;
 
 public class RoomItem extends JPanel {
@@ -19,6 +24,8 @@ public class RoomItem extends JPanel {
     private boolean isMultiBookingMode = false;
     private MultiRoomSelectionCallback selectionCallback;
     private JPanel overlayPanel;
+
+    private DecimalFormat priceFormatter = new DecimalFormat("#,###");
 
     // Interface for multi-room selection callback
     public interface MultiRoomSelectionCallback {
@@ -54,6 +61,17 @@ public class RoomItem extends JPanel {
         createActionListener();
     }
 
+    public RoomItem(BookingResponse bookingResponse, boolean isEmptyRoom) {
+        this.bookingResponse = bookingResponse;
+
+        if (isEmptyRoom) {
+            createEmptyUI();
+        } else {
+            createUI();
+        }
+        createActionListener();
+    }
+
     private void createActionListener() {
         this.addMouseListener(new MouseAdapter() {
             @Override
@@ -70,8 +88,10 @@ public class RoomItem extends JPanel {
                     // Original single room booking behavior
                     String cardName = PanelName.BOOKING.getName();
                     if (bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_EMPTY_STATUS.getStatus())) {
-                        Main.addCard(new BookingFormPanel(bookingResponse, PanelName.RESERVATION_MANAGEMENT.getName()), cardName);
-                    } else if (
+                        Main.addCard(new BookingFormPanel(bookingResponse, PanelName.RESERVATION_MANAGEMENT.getName()),
+                                     cardName);
+                    } else
+                        if (
                                 bookingResponse.getRoomStatus()
                                                .equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus())
                                 || bookingResponse.getRoomStatus()
@@ -80,11 +100,23 @@ public class RoomItem extends JPanel {
                                                   .equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())
                                 || bookingResponse.getRoomStatus()
                                                   .equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())
-                                || bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
+                                || bookingResponse.getRoomStatus()
+                                                  .equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
                         ) {
-                        cardName = PanelName.ROOM_USING.getName();
-                        System.out.println(bookingResponse.getTimeIn());
-                        Main.addCard(new RoomUsageFormPanel(bookingResponse), cardName);
+                            cardName = PanelName.ROOM_USING.getName();
+                            System.out.println(bookingResponse.getTimeIn());
+                            Main.addCard(new RoomUsageFormPanel(bookingResponse), cardName);
+                        }
+                        else if (bookingResponse.getRoomStatus()
+                                                  .equalsIgnoreCase(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus())
+                        ) {
+                            JOptionPane.showMessageDialog(
+                                    SwingUtilities.getWindowAncestor(RoomItem.this),
+                                    "Phòng đang trong trạng thái bảo trì. Vui lòng chọn phòng khác.",
+                                    "Thông báo",
+                                    JOptionPane.INFORMATION_MESSAGE
+                            );
+                            return;
                         }
                     Main.showCard(cardName);
                 }
@@ -206,11 +238,27 @@ public class RoomItem extends JPanel {
 
         // Add shadow effect
         checkLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.BLACK, 2),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                BorderFactory.createLineBorder(Color.BLACK, 2),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
         return checkLabel;
+    }
+
+    private void createEmptyUI() {
+        setLayout(new BorderLayout());
+        setPreferredSize(new Dimension(0, 120));
+        setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        setBackground(Color.WHITE);
+
+        // Left blue panel
+        JPanel leftPanel = createLeftPanelForEmptyRoom();
+
+        // Right panel with room details
+        JPanel rightPanel = createRightPanelForEmptyRoom();
+
+        add(leftPanel, BorderLayout.WEST);
+        add(rightPanel, BorderLayout.CENTER);
     }
 
     private void createUI() {
@@ -274,6 +322,58 @@ public class RoomItem extends JPanel {
         leftPanel.add(capacityPanel);
         leftPanel.add(Box.createVerticalStrut(5));
         leftPanel.add(statusIcon);
+
+        return leftPanel;
+    }
+
+    private JPanel createLeftPanelForEmptyRoom() {
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setPreferredSize(new Dimension(100, 120));
+        leftPanel.setBackground(new Color(30, 144, 255)); // Blue color
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Room name
+        JLabel lblRoomName = new JLabel("PHÒNG");
+        lblRoomName.setFont(CustomUI.smallFont);
+        lblRoomName.setForeground(Color.WHITE);
+        lblRoomName.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblRoomNumber = new JLabel(bookingResponse.getRoomName().substring(6));
+        lblRoomNumber.setFont(CustomUI.smallFont);
+        lblRoomNumber.setForeground(Color.WHITE);
+        lblRoomNumber.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Capacity with icon
+        JPanel capacityPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        capacityPanel.setOpaque(false);
+
+        JLabel lblCapacity = new JLabel(String.valueOf(bookingResponse.getNumberOfCustomers()));
+        lblCapacity.setFont(CustomUI.normalFont);
+        lblCapacity.setForeground(Color.WHITE);
+
+        // Create person icon using ImageIcon
+        ImageIcon personIcon = createPersonIcon();
+        JLabel personIconLabel = new JLabel(personIcon);
+
+        capacityPanel.add(lblCapacity);
+        capacityPanel.add(personIconLabel);
+
+        // Status icon at bottom
+        JLabel iconLabel = new JLabel(getStatusImageIcon(RoomStatus.ROOM_EMPTY_STATUS.getStatus()));
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Add components with proper spacing
+        leftPanel.add(lblRoomName);
+        leftPanel.add(Box.createVerticalGlue());
+        leftPanel.add(lblRoomNumber);
+        leftPanel.add(Box.createVerticalStrut(5));
+        capacityPanel.add(lblCapacity);
+        capacityPanel.add(personIconLabel);
+        leftPanel.add(capacityPanel);
+        leftPanel.add(Box.createVerticalStrut(5));
+        leftPanel.add(iconLabel);
 
         return leftPanel;
     }
@@ -389,11 +489,21 @@ public class RoomItem extends JPanel {
 
         if (isEmptyRoom(status)) {
             return createEmptyRoomPanel();
-        } else if (isOccupiedRoom(status)) {
-            return createOccupiedRoomPanel();
-        } else {
-            return createEmptyRoomPanel();
-        }
+        } else
+            if (isOccupiedRoom(status)) {
+                return createOccupiedRoomPanel();
+            } else
+                if (isMaintenanceRoom(status)) {
+                    return createMaintenanceRoomPanel();
+                } else {
+                    return createEmptyRoomPanel();
+                }
+    }
+
+    private JPanel createRightPanelForEmptyRoom() {
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        return createEmptyRoomPanel();
     }
 
     private boolean isEmptyRoom(String status) {
@@ -407,9 +517,13 @@ public class RoomItem extends JPanel {
                || status.equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
     }
 
+    private boolean isMaintenanceRoom(String status) {
+        return status.equalsIgnoreCase(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+    }
+
     private JPanel createEmptyRoomPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(new Color(144, 238, 144)); // Light green background
+        panel.setBackground(CustomUI.lightGreen); // Light green background
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
@@ -420,7 +534,7 @@ public class RoomItem extends JPanel {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         JLabel lblRoomType = new JLabel(bookingResponse.getRoomType().toUpperCase());
-        lblRoomType.setFont(new Font("Arial", Font.BOLD, 12));
+        lblRoomType.setFont(CustomUI.supperSmallFont);
         lblRoomType.setForeground(Color.BLACK);
         panel.add(lblRoomType, gbc);
 
@@ -428,7 +542,7 @@ public class RoomItem extends JPanel {
         gbc.gridy = 1;
         gbc.insets = new Insets(10, 10, 10, 10);
         JLabel lblStatus = new JLabel("TRỐNG");
-        lblStatus.setFont(new Font("Arial", Font.BOLD, 24));
+        lblStatus.setFont(CustomUI.bigFont);
         lblStatus.setForeground(Color.BLACK);
         panel.add(lblStatus, gbc);
 
@@ -442,7 +556,7 @@ public class RoomItem extends JPanel {
         gbc.gridy = 2;
         gbc.weightx = 0.0;
         JLabel lblHourlyLabel = new JLabel("Giá theo giờ:");
-        lblHourlyLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblHourlyLabel.setFont(CustomUI.supperSmallFont);
         lblHourlyLabel.setForeground(Color.BLACK);
         panel.add(lblHourlyLabel, gbc);
 
@@ -450,7 +564,8 @@ public class RoomItem extends JPanel {
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.EAST;
         JLabel lblHourlyPrice = new JLabel(String.format("%.0f vnđ", bookingResponse.getHourlyPrice()));
-        lblHourlyPrice.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblHourlyPrice.setText(priceFormatter.format(bookingResponse.getHourlyPrice()) + " VNĐ");
+        lblHourlyPrice.setFont(CustomUI.supperSmallFont);
         lblHourlyPrice.setForeground(Color.BLACK);
         panel.add(lblHourlyPrice, gbc);
 
@@ -460,7 +575,7 @@ public class RoomItem extends JPanel {
         gbc.weightx = 0.0;
         gbc.anchor = GridBagConstraints.WEST;
         JLabel lblDailyLabel = new JLabel("Giá theo ngày:");
-        lblDailyLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblDailyLabel.setFont(CustomUI.supperSmallFont);
         lblDailyLabel.setForeground(Color.BLACK);
         panel.add(lblDailyLabel, gbc);
 
@@ -468,7 +583,8 @@ public class RoomItem extends JPanel {
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.EAST;
         JLabel lblDailyPrice = new JLabel(String.format("%.0f vnđ", bookingResponse.getDailyPrice()));
-        lblDailyPrice.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblDailyPrice.setText(priceFormatter.format(bookingResponse.getDailyPrice()) + " VNĐ");
+        lblDailyPrice.setFont(CustomUI.supperSmallFont);
         lblDailyPrice.setForeground(Color.BLACK);
         panel.add(lblDailyPrice, gbc);
 
@@ -480,17 +596,105 @@ public class RoomItem extends JPanel {
 
         if (RoomStatus.ROOM_BOOKED_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
             panel.setBackground(CustomUI.cyan);
-        } else if(RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
-            panel.setBackground(CustomUI.lightBlue);
-        } else if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
-            panel.setBackground(CustomUI.orange);
-        } else if(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())){
-            panel.setBackground(CustomUI.red);
-        } else if (RoomStatus.ROOM_CLEANING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
-            panel.setBackground(CustomUI.lightGreen);
-        } else {
-            panel.setBackground(new Color(255, 255, 224)); // Default light yellow
+        } else
+            if (RoomStatus.ROOM_CHECKING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                panel.setBackground(CustomUI.lightBlue);
+            } else
+                if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                    panel.setBackground(CustomUI.orange);
+                } else
+                    if (RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus()
+                                                            .equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                        panel.setBackground(CustomUI.red);
+                    } else
+                        if (RoomStatus.ROOM_CLEANING_STATUS.getStatus()
+                                                           .equalsIgnoreCase(bookingResponse.getRoomStatus())) {
+                            panel.setBackground(CustomUI.lightGreen);
+                        } else {
+                            panel.setBackground(new Color(255, 255, 224)); // Default light yellow
+                        }
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 10, 5, 10);
+
+        // Room type at top
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JLabel roomStatus = new JLabel(bookingResponse.getRoomStatus().toUpperCase());
+        roomStatus.setFont(CustomUI.supperSmallFont);
+        roomStatus.setForeground(Color.BLACK);
+        panel.add(roomStatus, gbc);
+
+        // Customer name in center
+        gbc.gridy = 1;
+        gbc.insets = new Insets(10, 10, 10, 10);
+        String customerName = bookingResponse.getCustomerName();
+        if (customerName == null || customerName.trim().isEmpty()) {
+            customerName = "Khách hàng";
         }
+        JLabel lblCustomer = new JLabel(customerName);
+        lblCustomer.setFont(CustomUI.normalFont);
+        lblCustomer.setForeground(Color.BLACK);
+        panel.add(lblCustomer, gbc);
+
+        // Time information using GridBagLayout
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(2, 10, 2, 5);
+
+        DateTimeFormatter formatter = TimeFormat.getFormatter();
+
+        Date now = new Date();
+        String checkInTime = bookingResponse.getTimeIn() != null
+                ? bookingResponse.getTimeIn().toLocalDateTime().format(formatter)
+                : now.toString();
+        String checkOutTime = bookingResponse.getTimeOut() != null
+                ? bookingResponse.getTimeOut().toLocalDateTime().format(formatter)
+                : Date.from(now.toInstant().plus(1, ChronoUnit.DAYS)).toString();
+
+        // Check-in row
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0.0;
+        JLabel lblCheckInLabel = new JLabel("Checkin:");
+        lblCheckInLabel.setFont(CustomUI.supperSmallFont);
+        lblCheckInLabel.setForeground(Color.BLACK);
+        panel.add(lblCheckInLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.EAST;
+        JLabel lblCheckIn = new JLabel(checkInTime);
+        lblCheckIn.setFont(CustomUI.supperSmallFont);
+        lblCheckIn.setForeground(Color.BLACK);
+        panel.add(lblCheckIn, gbc);
+
+        // Check-out row
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.weightx = 0.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        JLabel lblCheckOutLabel = new JLabel("Checkout:");
+        lblCheckOutLabel.setFont(CustomUI.supperSmallFont);
+        lblCheckOutLabel.setForeground(Color.BLACK);
+        panel.add(lblCheckOutLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.EAST;
+        JLabel lblCheckOut = new JLabel(checkOutTime);
+        lblCheckOut.setFont(CustomUI.supperSmallFont);
+        lblCheckOut.setForeground(Color.BLACK);
+        panel.add(lblCheckOut, gbc);
+
+        return panel;
+    }
+
+    private JPanel createMaintenanceRoomPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(CustomUI.gray); // Gray background
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
@@ -501,64 +705,33 @@ public class RoomItem extends JPanel {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         JLabel lblRoomType = new JLabel(bookingResponse.getRoomType().toUpperCase());
-        lblRoomType.setFont(new Font("Arial", Font.BOLD, 12));
+        lblRoomType.setFont(CustomUI.supperSmallFont);
         lblRoomType.setForeground(Color.BLACK);
         panel.add(lblRoomType, gbc);
 
-        // Customer name in center
+        // Status in center (large)
         gbc.gridy = 1;
         gbc.insets = new Insets(10, 10, 10, 10);
-        String customerName = bookingResponse.getCustomerName();
-        if (customerName == null || customerName.trim().isEmpty()) {
-            customerName = "Khách hàng";
-        }
-        JLabel lblCustomer = new JLabel(customerName);
-        lblCustomer.setFont(CustomUI.smallFont);
-        lblCustomer.setForeground(Color.BLACK);
-        panel.add(lblCustomer, gbc);
+        JLabel lblStatus = new JLabel("BẢO TRÌ");
+        lblStatus.setFont(CustomUI.bigFont);
+        lblStatus.setForeground(Color.BLACK);
+        panel.add(lblStatus, gbc);
 
-        // Time information using GridBagLayout
+        // Price information using GridBagLayout
         gbc.gridwidth = 1;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(2, 10, 2, 5);
 
-        String checkInTime = bookingResponse.getTimeIn() != null ? bookingResponse.getTimeIn().toString() : "30/10/2025";
-        String checkOutTime = bookingResponse.getTimeOut() != null ? bookingResponse.getTimeOut().toString() : "01/11/2025";
-
-        // Check-in row
+        // Maintenance info at bottom
         gbc.gridx = 0;
         gbc.gridy = 2;
-        gbc.weightx = 0.0;
-        JLabel lblCheckInLabel = new JLabel("Checkin:");
-        lblCheckInLabel.setFont(new Font("Arial", Font.PLAIN, 11));
-        lblCheckInLabel.setForeground(Color.BLACK);
-        panel.add(lblCheckInLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel lblCheckIn = new JLabel(checkInTime);
-        lblCheckIn.setFont(new Font("Arial", Font.PLAIN, 11));
-        lblCheckIn.setForeground(Color.BLACK);
-        panel.add(lblCheckIn, gbc);
-
-        // Check-out row
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.weightx = 0.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        JLabel lblCheckOutLabel = new JLabel("Checkout:");
-        lblCheckOutLabel.setFont(new Font("Arial", Font.PLAIN, 11));
-        lblCheckOutLabel.setForeground(Color.BLACK);
-        panel.add(lblCheckOutLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel lblCheckOut = new JLabel(checkOutTime);
-        lblCheckOut.setFont(new Font("Arial", Font.PLAIN, 11));
-        lblCheckOut.setForeground(Color.BLACK);
-        panel.add(lblCheckOut, gbc);
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(5, 10, 5, 10);
+        JLabel lblInfo = new JLabel("Đang bảo trì...");
+        lblInfo.setFont(CustomUI.italicSmallFont);
+        lblInfo.setForeground(Color.DARK_GRAY);
+        panel.add(lblInfo, gbc);
 
         return panel;
     }
@@ -630,8 +803,8 @@ public class RoomItem extends JPanel {
         return bookingResponse.getNumberOfCustomers();
     }
 
-    public boolean setBookingResponseStatus(String status){
-        if(!status.equalsIgnoreCase(this.getBookingResponse().getRoomStatus())){
+    public boolean setBookingResponseStatus(String status) {
+        if (!status.equalsIgnoreCase(this.getBookingResponse().getRoomStatus())) {
             this.bookingResponse.setRoomStatus(status);
             return true;
         }

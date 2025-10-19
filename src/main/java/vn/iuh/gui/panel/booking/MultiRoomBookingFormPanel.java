@@ -2,9 +2,11 @@ package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
+import vn.iuh.constraint.ResponseType;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.EventResponse;
 import vn.iuh.entity.KhachHang;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
@@ -901,18 +903,17 @@ public class MultiRoomBookingFormPanel extends JPanel {
             BookingCreationEvent bookingEvent = createMultiRoomBookingEvent();
 
             // Call booking service
-            boolean success = bookingService.createBooking(bookingEvent);
-
-            if (success) {
-                JOptionPane.showMessageDialog(this, "Đặt " + selectedRooms.size() + " phòng thành công!",
-                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            EventResponse response = bookingService.createBooking(bookingEvent);
+            if (response.getType().equals(ResponseType.SUCCESS)) {
+                JOptionPane.showMessageDialog(this,  response.getMessage(),
+                                              "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
                 // Refresh reservation management panel
                 RefreshManager.refreshAfterBooking();
                 Main.showCard("Quản lý đặt phòng"); // Return to previous screen
             } else {
-                JOptionPane.showMessageDialog(this, "Đặt phòng thất bại! Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, response.getMessage(),
+                                              "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (Exception e) {
@@ -923,6 +924,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
     }
 
     private boolean validateInput() {
+        if (txtCCCD.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND!",
+                                          "Lỗi", JOptionPane.WARNING_MESSAGE);
+            txtCCCD.requestFocus();
+            return false;
+        }
+
         if (txtCustomerName.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
@@ -937,11 +945,19 @@ public class MultiRoomBookingFormPanel extends JPanel {
             return false;
         }
 
-        if (txtCCCD.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập CCCD/CMND!",
-                "Lỗi", JOptionPane.WARNING_MESSAGE);
-            txtCCCD.requestFocus();
-            return false;
+        // Check if customer with CCCD exists but have different name/phone
+        KhachHang kh = customerService.getCustomerByCCCD(txtCCCD.getText().trim());
+        if (kh != null) {
+            if (!kh.getTenKhachHang().equalsIgnoreCase(txtCustomerName.getText().trim())
+                || !kh.getSoDienThoai().equalsIgnoreCase(txtPhoneNumber.getText().trim())) {
+                // Show dialog deny changing name/phone for existing CCCD
+                JOptionPane.showMessageDialog(this,
+                                              "CCCD/CMND đã tồn tại với tên hoặc số điện thoại khác!\n" +
+                                              "Vui lòng kiểm tra lại thông tin khách hàng.",
+                                              "Lỗi thông tin khách hàng",
+                                              JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
         }
 
         try {

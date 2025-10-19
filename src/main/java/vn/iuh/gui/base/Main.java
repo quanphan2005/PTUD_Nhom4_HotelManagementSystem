@@ -6,9 +6,13 @@
 package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import vn.iuh.constraint.PanelName;
+import vn.iuh.gui.panel.LoginPanel;
+import vn.iuh.gui.dialog.WorkingHistoryDialog;
 import vn.iuh.gui.panel.QuanLyKhachHangPanel;
 import vn.iuh.gui.panel.QuanLyLoaiPhongPanel;
 import vn.iuh.gui.panel.QuanLyPhongPanel;
+import vn.iuh.gui.panel.*;
 import vn.iuh.gui.panel.booking.ReservationFormManagementPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
@@ -35,11 +39,16 @@ public class Main extends JFrame {
     private JButton btnLogOut;
     private JPanel pnlCenterWrapper;
     private RoundedWrapperPanel pnlWrapperCenter;
-
-    private static String maPhienDangNhap = "PN00000002";
+    private static JPanel pnlRoot;
+    private JPanel pnlMainUI;
+    private JPanel pnlCenterPos;
+    private static String maPhienDangNhap;
     private static BellButton btnBell;
     private JPopupMenu notificationPopup;
     private JPanel notificationPanel;
+    private JButton btnWorkingHistory;
+    private WorkingHistoryDialog workingHistoryDialog   ;
+    private JPanel pnlTopRight;
 
     public void init() {
         //Set hiển thị mặc định toàn màn hình
@@ -63,25 +72,39 @@ public class Main extends JFrame {
         this.pMain = new JPanel();
         this.pMain.setLayout(new BorderLayout());
 
-        createASideBar();
-        createTopCounting();
-        createCenterPanel();
+        mainLayout = new CardLayout();
+        pnlRoot = new JPanel(mainLayout);
+
+        LoginPanel loginPanel = new LoginPanel(this);
+        pnlRoot.add(loginPanel, "Login");
+
+        pnlMainUI = new JPanel(new BorderLayout());
+
+        pnlMainUI.add(createASideBar(), BorderLayout.WEST);
+        pnlMainUI.add(createTopCounting(), BorderLayout.NORTH);
+        pnlMainUI.add(createCenterPanel(), BorderLayout.CENTER);
         initializeMainPanels();
-        
-        this.add(this.pMain);
+        pnlRoot.add(pnlMainUI, "MainUI");
+
+        showRootCard("Login");
+
+        this.pMain.add(pnlRoot, BorderLayout.CENTER);
+        this.add(pMain);
     }
 
-    private void createCenterPanel(){
+    private JPanel createCenterPanel(){
         //Tạo panelCenter dùng để cho phần thao tác chính, chứa các màn hình khác với cardLayout 
         mainLayout = new CardLayout();
         pnlCenter = new JPanel(mainLayout);
         pnlWrapperCenter = new RoundedWrapperPanel();
         pnlWrapperCenter.setBorder(BorderFactory.createEmptyBorder(5, 5, 5,5));
         pnlWrapperCenter.add(pnlCenter);
-        this.pMain.add(pnlWrapperCenter, BorderLayout.CENTER);
+        //this.pMain.add(pnlWrapperCenter, BorderLayout.CENTER);
+
+        return pnlWrapperCenter;
     }
 
-    private void createASideBar() {
+    private JPanel createASideBar() {
         //Tạo 1 panel bên trái bọc 2 thành phần userInfor và Menu
         pnlLeftWrapper = new JPanel();
         pnlLeftWrapper.setLayout(new BorderLayout());
@@ -109,9 +132,9 @@ public class Main extends JFrame {
         pnlLeftWrapper.add(scrollPanel);
         
         
-        this.pMain.add(pnlLeftWrapper, BorderLayout.WEST);
+        return pnlLeftWrapper;
     }
-    private void createTopCounting(){
+    private JPanel createTopCounting(){
         //Tạo phần top bằng 1 panel được custom lại
         cmpTopHeading = new HeadingTop();
         pnlTop = new JPanel();
@@ -125,19 +148,36 @@ public class Main extends JFrame {
         pnlCenterWrapper.setBackground(CustomUI.darkBlue);
 
 
+        pnlTopRight = new JPanel();
+        pnlTopRight.setBackground(pnlTop.getBackground());
         btnBell = new BellButton();
-//        btnLogOut  = new JButton("Đăng xuất");
-//        btnLogOut.setBackground(CustomUI.red);
-//        btnLogOut.setForeground(CustomUI.white);
-//        btnLogOut.setFont(CustomUI.smallFont);
+        btnLogOut  = new JButton("Đăng xuất");
+        btnLogOut.setBackground(CustomUI.red);
+        btnLogOut.setForeground(CustomUI.white);
+        btnLogOut.setFont(CustomUI.smallFont);
+        btnLogOut.addActionListener(e -> LogOutDialog.handleLogout(this));
+        createWoringHistoryButton();
+        btnLogOut  = new JButton("Đăng xuất");
+        btnLogOut.setBackground(CustomUI.red);
+        btnLogOut.setForeground(CustomUI.white);
+        btnLogOut.setFont(CustomUI.smallFont);
+        btnLogOut.addActionListener(e -> LogOutDialog.handleLogout(this));
+        pnlTopRight.add(btnWorkingHistory);
+        pnlTopRight.add(btnBell);
 
+        JPanel pnlRightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        pnlRightButtons.setOpaque(false);
 
+        pnlRightButtons.add(btnWorkingHistory);
+        pnlRightButtons.add(btnBell);
+        pnlRightButtons.add(btnLogOut);
 
         pnlTop.add(cmpTopHeading, BorderLayout.WEST);
         pnlTop.add(pnlCenterWrapper, BorderLayout.CENTER);
-        pnlTop.add(btnBell, BorderLayout.EAST);
+        pnlTop.add(pnlRightButtons, BorderLayout.EAST);
 
-        this.pMain.add(pnlTop, BorderLayout.NORTH);
+        //this.pMain.add(pnlTop, BorderLayout.NORTH);
+        return pnlTop;
     }
 
     public static void main(String[] args) throws UnsupportedLookAndFeelException {
@@ -153,6 +193,13 @@ public class Main extends JFrame {
         mainLayout.show(pnlCenter, name);
     }
 
+    public static void showRootCard(String name) {
+        if (pnlRoot != null) {
+            CardLayout cl = (CardLayout) pnlRoot.getLayout();
+            cl.show(pnlRoot, name);
+        }
+    }
+
     public static void addCard(JPanel panel, String name){
         pnlCenter.add(panel, name);
     }
@@ -160,7 +207,9 @@ public class Main extends JFrame {
     public static String getCurrentLoginSession() {
         return maPhienDangNhap;
     }
-
+    public static void setCurrenLoginSession(String id){
+        maPhienDangNhap = id;
+    }
     //Tạo các màn hình con cho cardLayout (màn hình chức năng)
     public void initializeMainPanels(){
         JPanel pink = new JPanel();
@@ -175,12 +224,45 @@ public class Main extends JFrame {
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         pnlCenter.add(pink, "dsadsa");
         pnlCenter.add(blue, "Inbox");
-//        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
-//        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý lưu trú");
-//        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
-        pnlCenter.add(reservationManagementPanel, "Quản lý đặt phòng");
-        pnlCenter.add(reservationFormManagementPanel, "Quản lý phiếu đặt phòng");
+        pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
+        pnlCenter.add(reservationFormManagementPanel, PanelName.RESERVATION_FORM_MANAGEMENT.getName());
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
-        showCard("Quản lý đặt phòng");
+//        showCard("Quản lý đặt phòng");
+
+        showCenterCard("Quản lý đặt phòng");
     }
+
+    private JButton createWoringHistoryButton(){
+        btnWorkingHistory = new JButton("\uD83D\uDDD3\uFE0F");
+        btnWorkingHistory.setSize(60,60);
+        btnWorkingHistory.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        btnWorkingHistory.setForeground(CustomUI.white);
+        btnWorkingHistory.setFocusPainted(false);
+        btnWorkingHistory.setBorderPainted(false);
+        btnWorkingHistory.setContentAreaFilled(true);
+        btnWorkingHistory.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnWorkingHistory.setBackground(this.pnlTop.getBackground());
+        workingHistoryDialog = new WorkingHistoryDialog(this);
+        btnWorkingHistory.addActionListener( e -> {
+            if(!getCurrentLoginSession().equalsIgnoreCase(workingHistoryDialog.getMaPhienDangNhapHienTai()) &&
+            workingHistoryDialog.getMaPhienDangNhapHienTai() != null)
+            {
+                workingHistoryDialog.updateWorkingHistory();
+                System.out.println("Khác");
+            }
+            workingHistoryDialog.open();
+            workingHistoryDialog.setVisible(true);
+        });
+        return btnWorkingHistory;
+    }
+
+    /** Hiện panel chức năng trong main UI */
+    public static void showCenterCard(String name) {
+        if (pnlRoot != null) {
+            CardLayout cl = (CardLayout) pnlCenter.getLayout();
+            cl.show(pnlCenter, name);
+        }
+    }
+
+
 }

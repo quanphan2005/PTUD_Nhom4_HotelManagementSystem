@@ -38,20 +38,6 @@ public class GridRoomPanel extends JPanel implements Serializable {
         repaint();
     }
 
-    public void updateSingleRoomItem(String roomId, BookingResponse updatedRoom) {
-        RoomItem roomItem = roomItemMap.get(roomId);
-        if(roomItem != null){
-            RoomItem newItem = new RoomItem(updatedRoom);
-            int index = getComponentZOrder(roomItem);
-            remove(roomItem);
-            add(newItem, index);
-            roomItemMap.put(roomId, newItem);
-            revalidate();
-            repaint();
-        }
-    }
-
-
     public GridRoomPanel(List<RoomItem> rooms) {
         init(rooms);
     }

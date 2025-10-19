@@ -143,7 +143,7 @@ public class ChiTietDatPhongDAO {
     }
 
     public ChiTietDatPhong timChiTietDatPhongMoiNhat() {
-        String sql = "SELECT TOP 1 * FROM ChiTietDatPhong WHERE da_xoa = 0 ORDER BY ma_chi_tiet_dat_phong DESC";
+        String sql = "SELECT TOP 1 * FROM ChiTietDatPhong ORDER BY ma_chi_tiet_dat_phong DESC";
         try (var ps = connection.prepareStatement(sql)) {
             var rs = ps.executeQuery();
             if (rs.next()) {

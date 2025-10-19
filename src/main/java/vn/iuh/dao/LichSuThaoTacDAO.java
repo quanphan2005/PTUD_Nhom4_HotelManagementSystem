@@ -5,6 +5,8 @@ import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LichSuThaoTacDAO {
     private final Connection connection;
@@ -86,6 +88,25 @@ public class LichSuThaoTacDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Không thể chuyển kết quả thành LichSuThaoTac: " + e);
         }
+    }
+
+public List<LichSuThaoTac> timThaoTacTheoPhienDN(String maPhienDangNhap){
+        String query = "SELECT  * FROM LichSuThaoTac WHERE da_xoa = 0 and ma_phien_dang_nhap = ?";
+        List<LichSuThaoTac> danhSachThaoTac = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maPhienDangNhap);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                danhSachThaoTac.add(mapResultSetToWorkingHistory(rs));
+            }
+            return danhSachThaoTac;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+        return null;
     }
 }
 

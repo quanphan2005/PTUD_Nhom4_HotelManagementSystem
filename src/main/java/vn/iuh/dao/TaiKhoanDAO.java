@@ -4,10 +4,9 @@ import vn.iuh.entity.TaiKhoan;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TaiKhoanDAO {
     private final Connection connection;
@@ -128,6 +127,53 @@ public class TaiKhoanDAO {
 
         return null;
     }
+
+    public TaiKhoan timTaiKhoanBangUserName(String userName) {
+        String query = "SELECT * FROM TaiKhoan WHERE ten_dang_nhap = ? AND da_xoa = 0";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, userName);
+
+            var rs = ps.executeQuery();
+            if(rs.next())
+                return chuyenKetQuaThanhTaiKhoan(rs);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
+    public List<TaiKhoan> getAllTaiKhoan() {
+        List<TaiKhoan> list = new ArrayList<>();
+        String sql = "SELECT ma_tai_khoan, ten_dang_nhap, ma_chuc_vu, " +
+                "ma_nhan_vien FROM TaiKhoan";
+
+        try {
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                TaiKhoan tk = new TaiKhoan();
+                tk.setMaTaiKhoan(rs.getString("ma_tai_khoan"));
+                tk.setTenDangNhap(rs.getString("ten_dang_nhap"));
+                tk.setMaChucVu(rs.getString("ma_chuc_vu"));
+                tk.setMaNhanVien(rs.getString("ma_nhan_vien"));
+                list.add(tk);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+
 
     public TaiKhoan chuyenKetQuaThanhTaiKhoan(ResultSet rs) throws SQLException {
         TaiKhoan taiKhoan = new TaiKhoan();
