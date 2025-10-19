@@ -16,6 +16,7 @@ import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CheckOutServiceImpl;
 import vn.iuh.service.impl.RoomServiceImpl;
 import vn.iuh.util.IconUtil;
+import vn.iuh.util.PriceFormat;
 import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
@@ -40,7 +41,7 @@ public class RoomUsageFormPanel extends JPanel {
     private RoomService roomService;
 
     // Formatters
-    private DecimalFormat priceFormatter = new DecimalFormat("#,###");
+    private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
 
     // Room Information Components
     private JLabel lblRoomNumber;
