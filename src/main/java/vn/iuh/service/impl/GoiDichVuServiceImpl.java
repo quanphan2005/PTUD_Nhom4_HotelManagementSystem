@@ -1,6 +1,7 @@
 package vn.iuh.service.impl;
 
 import vn.iuh.constraint.EntityIDSymbol;
+import vn.iuh.dao.ChiTietDatPhongDAO;
 import vn.iuh.dao.DonGoiDichVuDao;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
@@ -13,13 +14,16 @@ import java.util.List;
 
 public class GoiDichVuServiceImpl implements GoiDichVuService {
     private final DonGoiDichVuDao donGoiDichVuDao;
+    private final ChiTietDatPhongDAO chiTietDatPhongDAO;
 
     public GoiDichVuServiceImpl() {
         this.donGoiDichVuDao = new DonGoiDichVuDao();
+        this.chiTietDatPhongDAO = new ChiTietDatPhongDAO();
     }
 
-    public GoiDichVuServiceImpl(DonGoiDichVuDao donGoiDichVuDao) {
+    public GoiDichVuServiceImpl(DonGoiDichVuDao donGoiDichVuDao, ChiTietDatPhongDAO chiTietDatPhongDAO) {
         this.donGoiDichVuDao = donGoiDichVuDao;
+        this.chiTietDatPhongDAO = new ChiTietDatPhongDAO();
     }
 
     @Override
@@ -34,6 +38,16 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
 
     @Override
     public boolean goiDichVu(String maChiTietDatPhong, List<DonGoiDichVu> danhSachDichVu, String maPhienDangNhap) {
+
+        if (maChiTietDatPhong == null || maChiTietDatPhong.isEmpty()) {
+            System.out.println("Mã chi tiết đặt phòng không hợp lệ. Vui lòng kiểm tra lại.");
+            return false;
+        }
+
+        if (chiTietDatPhongDAO.timChiTietDatPhong(maChiTietDatPhong) == null) {
+            System.out.println("Chi tiết đặt phòng không tồn tại. Vui lòng kiểm tra lại.");
+            return false;
+        }
 
         // 1. Tạo danh sách phòng dùng dịch vụ từ danh sách đơn gọi dịch vụ
         PhongDungDichVu phongDungDichVuMoiNhat = donGoiDichVuDao.timPhongDungDichVuMoiNhat();

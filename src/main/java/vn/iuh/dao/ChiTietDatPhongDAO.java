@@ -21,6 +21,24 @@ public class ChiTietDatPhongDAO {
         this.connection = connection;
     }
 
+    public ChiTietDatPhong timChiTietDatPhong(String maChiTietDatPhong) {
+        String query = "SELECT * FROM ChiTietDatPhong WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
+
+        try {
+            var ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return mapResultSetToChiTietDatPhong(rs);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
+    }
+
     public int capNhatKetThucCTDP(List<String> chiTietDatPhongs) {
         if (chiTietDatPhongs == null || chiTietDatPhongs.isEmpty()) return 0;
 
@@ -198,5 +216,4 @@ public class ChiTietDatPhongDAO {
             return false;
         }
     }
-
 }
