@@ -36,7 +36,7 @@ public class ChiTietHoaDonDAO {
 
 
     public boolean themDanhSachChiTietHoaDon(List<ChiTietHoaDon> danhSachChiTietHoaDon){
-        String sql = "INSERT INTO ChiTietHoaDon (ma_chi_tiet_hoa_don, thoi_gian_su_dung, ma_hoa_don, ma_chi_tiet_dat_phong, ma_phong, don_gia_phong) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO ChiTietHoaDon (ma_chi_tiet_hoa_don, thoi_gian_su_dung, ma_hoa_don, ma_chi_tiet_dat_phong, ma_phong, don_gia_phong, tong_tien) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
             // Tắt auto-commit để thực hiện batch an toàn
@@ -49,6 +49,7 @@ public class ChiTietHoaDonDAO {
                 ps.setString(4, cthd.getMaChiTietDatPhong());
                 ps.setString(5, cthd.getMaPhong());
                 ps.setBigDecimal(6, cthd.getDonGiaPhongHienTai());
+                ps.setBigDecimal(7, cthd.getTongTien());
 
                 ps.addBatch(); // thêm vào batch
             }
@@ -77,7 +78,7 @@ public class ChiTietHoaDonDAO {
     }
 
     public ChiTietHoaDon getById(String maChiTietHoaDon) {
-        String sql = "SELECT ma_chi_tiet_hoa_don, thoi_gian_su_dung, ma_hoa_don, ma_chi_tiet_dat_phong, ma_phong, don_gia_phong FROM ChiTietHoaDon WHERE ma_chi_tiet_hoa_don = ?";
+        String sql = "SELECT * FROM ChiTietHoaDon WHERE ma_chi_tiet_hoa_don = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maChiTietHoaDon);
             ResultSet rs = ps.executeQuery();
@@ -89,23 +90,6 @@ public class ChiTietHoaDonDAO {
         }
         return null;
     }
-
-    public List<ChiTietHoaDon> findByInvoiceId(String maHoaDon) {
-        String sql = "SELECT ma_chi_tiet_hoa_don, thoi_gian_su_dung, ma_hoa_don, ma_chi_tiet_dat_phong, ma_phong, don_gia_phong " +
-                "FROM ChiTietHoaDon WHERE ma_hoa_don = ?";
-        List<ChiTietHoaDon> ds = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, maHoaDon);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                ds.add(mapResultSet(rs));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return ds;
-    }
-
 
     public ChiTietHoaDon layChiTietHoaDonMoiNhat() {
         String sql = "SELECT TOP 1 *" +
@@ -122,4 +106,19 @@ public class ChiTietHoaDonDAO {
         }
         return null;
     }
+    public List<ChiTietHoaDon> getInvoiceDetaiByInvoiceId(String maHoaDon){
+        String query = "select * from ChiTietHoaDon where ma_hoa_don = ?";
+        List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1,maHoaDon);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                danhSachChiTietHoaDon.add(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return danhSachChiTietHoaDon;
+    }
+
 }
