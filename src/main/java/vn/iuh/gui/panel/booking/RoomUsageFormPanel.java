@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.DonGoiDichVu;
+import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.gui.base.CustomUI;
@@ -48,6 +49,7 @@ public class RoomUsageFormPanel extends JPanel {
     private JLabel lblHourlyPrice;
     private JLabel lblDailyPrice;
     private JLabel lblRoomStatus;
+    private List<RoomFurnitureItem> RoomFurnitureItems;
 
     // Customer Information Components
     private JTextField txtCustomerName;
@@ -487,6 +489,8 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private JPanel createRoomInfoPanel() {
+        RoomFurnitureItems = roomService.getAllFurnitureInRoom(selectedRoom.getRoomId());
+
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Color.WHITE);
 
@@ -509,43 +513,69 @@ public class RoomUsageFormPanel extends JPanel {
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
+        lblHourlyPrice.setText(priceFormatter.format(selectedRoom.getHourlyPrice()) + " VND");
+        lblDailyPrice.setText(priceFormatter.format(selectedRoom.getDailyPrice()) + " VND");
+
         // Essential room information using addFormRow for consistency
-        addFormRow(roomInfoContent, gbc, 0, "Số phòng:", lblRoomNumber);
-        addFormRow(roomInfoContent, gbc, 1, "Loại phòng:", lblRoomType);
-        addFormRow(roomInfoContent, gbc, 2, "Sức chứa:", lblRoomCapacity);
-        addFormRow(roomInfoContent, gbc, 3, "Trạng thái:", lblRoomStatus);
-        addFormRow(roomInfoContent, gbc, 4, "Giá theo giờ:", lblHourlyPrice);
-        addFormRow(roomInfoContent, gbc, 5, "Giá theo ngày:", lblDailyPrice);
+        addFormRow(roomInfoContent, gbc, 0, 0,"Số phòng:", lblRoomNumber);
+        addFormRow(roomInfoContent, gbc, 1, 0, "Loại phòng:", lblRoomType);
+        addFormRow(roomInfoContent, gbc, 2, 0, "Sức chứa:", lblRoomCapacity);
+        addFormRow(roomInfoContent, gbc, 0, 1, "Trạng thái:", lblRoomStatus);
+        addFormRow(roomInfoContent, gbc, 1, 1, "Giá theo giờ:", lblHourlyPrice);
+        addFormRow(roomInfoContent, gbc, 2, 1, "Giá theo ngày:", lblDailyPrice);
 
         // Additional info section with separator - flexible content based on room status
-        gbc.gridy = 6;
-        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 4;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(15, 10, 8, 10);
         JSeparator separator = new JSeparator();
         separator.setForeground(Color.GRAY);
         roomInfoContent.add(separator, gbc);
 
         // Reset for additional fields
-        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.insets = new Insets(5, 5, 5, 5);
         gbc.gridwidth = 1;
 
-        // Create additional info labels - these will be flexible based on room status
-        JLabel lblRoomId = new JLabel(selectedRoom.getRoomId());
-        JLabel lblAmenities = new JLabel(getAmenitiesForRoom());
-        JLabel lblArea = new JLabel(getAreaForRoom());
-        JLabel lblFloor = new JLabel("Tầng " + extractFloorFromRoomName());
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        JLabel furnitureItems = new JLabel("Nội thất phòng: ");
+        furnitureItems.setFont(CustomUI.smallFont);
+        gbc.insets = new Insets(15, 10, 8, 10);
+        roomInfoContent.add(furnitureItems, gbc);
 
-        // Add flexible additional information using addFormRow
-        addFormRow(roomInfoContent, gbc, 7, "Mã phòng:", lblRoomId);
-        addFormRow(roomInfoContent, gbc, 8, "Tiện nghi:", lblAmenities);
-        addFormRow(roomInfoContent, gbc, 9, "Diện tích:", lblArea);
-        addFormRow(roomInfoContent, gbc, 10, "Tầng:", lblFloor);
+        // Reset insets
+        gbc.insets = new Insets(5, 10, 5, 10);
 
-        // Add status-specific information if needed
-        addStatusSpecificInfo(roomInfoContent, gbc);
+        // Add furniture items
+        // It will separate into 2 column - Don`t use addFormRow for this part
+        int pivot = (RoomFurnitureItems.size() + 1) / 2;
+        for (int i = 0; i < RoomFurnitureItems.size(); i++) {
+            RoomFurnitureItem item = RoomFurnitureItems.get(i);
+            JLabel itemLabel = new JLabel(item.getName());
+            JLabel quantityLabel = new JLabel("Số lượng: " + item.getQuantity());
+
+            itemLabel.setFont(CustomUI.smallFont);
+            quantityLabel.setFont(CustomUI.smallFont);
+
+            if (i < pivot) {
+                // Left column
+                gbc.gridx = 0;
+                gbc.gridy = 5 + i;
+            } else {
+                // Right column
+                gbc.gridx = 2;
+                gbc.gridy = 5 + (i - pivot);
+            }
+
+            roomInfoContent.add(itemLabel, gbc);
+            gbc.gridx += 1;
+            roomInfoContent.add(quantityLabel, gbc);
+        }
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(roomInfoContent, BorderLayout.CENTER);
@@ -710,6 +740,24 @@ public class RoomUsageFormPanel extends JPanel {
                 component.setPreferredSize(new Dimension(300, 35));
                 component.setMinimumSize(new Dimension(250, 35));
             }
+        panel.add(component, gbc);
+    }
+
+    private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, int col, String labelText, JComponent component) {
+        gbc.gridy = row;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+
+        gbc.gridx = col * 2;
+        gbc.weightx = 0.0;
+        JLabel label = new JLabel(labelText);
+        label.setFont(CustomUI.smallFont);
+        panel.add(label, gbc);
+
+        gbc.gridx = col * 2 + 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.NONE;
+        component.setFont(CustomUI.smallFont);
         panel.add(component, gbc);
     }
 
