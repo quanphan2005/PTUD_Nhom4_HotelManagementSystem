@@ -171,26 +171,32 @@ public class RoomStatusHandler implements Job {
                 Timestamp tgKetThuc = null;
                 String roomId = rj.getRoomId();
 
-                //Checking -> Using
+                //kiểm tra -> sử dụng
                 if (currentStatus.equalsIgnoreCase(RoomStatus.ROOM_CHECKING_STATUS.getStatus())) {
                     newStatus = RoomStatus.ROOM_USING_STATUS.getStatus();
                     tgKetThuc = res.getTimeOut();
 
-                    //Using ->Checkout late
+                    //sử dụng ->checkout trễ
                 } else if (currentStatus.equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus())) {
                     newStatus = RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus();
                     tgKetThuc = Timestamp.valueOf(rj.getEndTime().toLocalDateTime()
                             .plusMinutes(WorkTimeCost.CHECKOUT_LATE_MIN.getMinutes()));
                     createMessageForLateCheckOut(rj.getRoomId());
 
-                    //Checkout late -> Cleaning
+                    //trễ checkout -> dọn dẹp
                 } else if (currentStatus.equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())) {
                     newStatus = RoomStatus.ROOM_CLEANING_STATUS.getStatus();
-                    tgKetThuc = Timestamp.valueOf(rj.getEndTime().toLocalDateTime()
-                            .plusMinutes(WorkTimeCost.CLEANING_TIME.getMinutes()));
+//                    tgKetThuc = Timestamp.valueOf(rj.getEndTime().toLocalDateTime()
+//                            .plusMinutes(WorkTimeCost.CLEANING_TIME.getMinutes()));
                     checkOutService.checkOutByReservationDetail(res.getMaChiTietDatPhong());
+                    res.setRoomStatus(newStatus);
+                    updatedBookingResponse.add(res);
+                    System.out.println(maCongViecMoiNhat);
+                    maCongViecMoiNhat = congViecService.taoMaCongViecMoi(null);
+                    System.out.println(maCongViecMoiNhat);
+                    continue;
 
-                    //Booked hoặc Cleaning hết hạn -> xoá công việc
+                    //chờ check-in hoặc dọn dẹp hết hạn -> xoá công việc
                 } else if (
                         currentStatus.equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
                                 currentStatus.equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
@@ -233,18 +239,16 @@ public class RoomStatusHandler implements Job {
             }
         }
 
-        //Cập nhật giao diện
-        gridRoomPanel.updateRoomItemStatus(updatedBookingResponse);
 
         //Xử lý xóa và thêm công việc batch
         if (!congViecCanKetThuc.isEmpty()) {
             jobDAO.xoaDanhSachCongViec(congViecCanKetThuc);
         }
-
         if (!congViecCanThem.isEmpty()) {
             jobDAO.themDanhSachCongViec(congViecCanThem);
         }
-
+        //Cập nhật giao diện
+        gridRoomPanel.updateRoomItemStatus(updatedBookingResponse);
         System.out.printf("Đã thêm %d công việc mới, xóa %d công việc cũ%n",
                 congViecCanThem.size(), congViecCanKetThuc.size());
     }

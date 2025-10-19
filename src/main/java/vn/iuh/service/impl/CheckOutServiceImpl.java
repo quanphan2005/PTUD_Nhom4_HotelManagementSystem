@@ -47,14 +47,14 @@ public class CheckOutServiceImpl implements CheckOutService {
 
     public DonDatPhong validateDonDatPhong(String maDonDatPhong){
         var reservation = datPhongDAO.getDonDatPhongById(maDonDatPhong);
-        var existingInvoice = hoaDonDAO.findInvoiceForReservation(maDonDatPhong);
+//        var existingInvoice = hoaDonDAO.findInvoiceForReservation(maDonDatPhong);
         if(reservation == null){
             throw new BusinessException("Không tìm thấy đơn đặt phòng");
         }
-
-        if(existingInvoice != null){
-            throw new BusinessException("Đã tạo hóa đơn thanh toán cho đơn đặt phòng này");
-        }
+//
+//        if(existingInvoice != null){
+//            throw new BusinessException("Đã tạo hóa đơn thanh toán cho đơn đặt phòng này");
+//        }
         return reservation;
     }
 
@@ -73,22 +73,20 @@ public class CheckOutServiceImpl implements CheckOutService {
 
     @Override
     public boolean checkOutReservation(String reservationId){
-
-        //Tìm đơn đặt phòng
-        var reservation = validateDonDatPhong(reservationId);
-
-//        Lấy tất cả chi tiết thông tin sử dụng phòng của đơn đặt phòng
-        List<ThongTinSuDungPhong> chiTietSuDungList = filterUsageRoom(reservationId);
-        if(chiTietSuDungList.isEmpty()){
-            throw new BusinessException("Không tìm thấy thông tin sử dụng của đơn đặt phòng này");
-        }
-
-        List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
-        List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
-        List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
-
         try {
             datPhongDAO.khoiTaoGiaoTac();
+        //Tìm đơn đặt phòng
+            var reservation = validateDonDatPhong(reservationId);
+
+    //      Lấy tất cả chi tiết thông tin sử dụng phòng của đơn đặt phòng
+            List<ThongTinSuDungPhong> chiTietSuDungList = filterUsageRoom(reservationId);
+            if(chiTietSuDungList.isEmpty()){
+                throw new BusinessException("Không tìm thấy thông tin sử dụng của đơn đặt phòng này");
+            }
+
+            List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
+            List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
+            List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
 
             //Tạo hóa đơn thanh toán
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
@@ -133,15 +131,15 @@ public class CheckOutServiceImpl implements CheckOutService {
                 phongTinhPhuPhiDAO.themDanhSachPhuPhiChoCacPhong(danhSachPhongTinhPhuPhiMoi);
             }
 
-            //Thêm danh sách ra ngoài lần cuối cùng
-            List<LichSuRaNgoai> danhSachLichSuRaNgoaiLanCuoi = taoDanhSachRaNgoaiLanCuoi(danhSachMaChiTietDatPhong);
-            lichSuRaNgoaiDAO.themDanhSachLichSuRaNgoai(danhSachLichSuRaNgoaiLanCuoi);
-
             //Cập nhật ChiTietDatPhong thành trả phòng
             chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
 
             //Chèn danh sách chi tiết hóa đơn đã tạo
             chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
+
+            //Thêm danh sách ra ngoài lần cuối cùng
+            List<LichSuRaNgoai> danhSachLichSuRaNgoaiLanCuoi = taoDanhSachRaNgoaiLanCuoi(danhSachMaChiTietDatPhong);
+            lichSuRaNgoaiDAO.themDanhSachLichSuRaNgoai(danhSachLichSuRaNgoaiLanCuoi);
 
             //tạo các job dọn dẹp cho phòng vừa sử dụng
             List<CongViec> danhSachCongViecMoi = createCleaningJobForRoom(danhSachMaPhongDangSuDung);
@@ -315,5 +313,78 @@ public class CheckOutServiceImpl implements CheckOutService {
         String maDonDatPhong = chiTietDatPhongDAO.findFormIDByDetail(reservationDetail);
         System.out.println("trả phòng cho " + maDonDatPhong);
         return this.checkOutReservation(maDonDatPhong);
+    }
+
+    public boolean createHoaDonForAutoCheckout(String reservationDetail){
+        String maDonDatPhong = chiTietDatPhongDAO.findFormIDByDetail(reservationDetail);
+        var reservation = validateDonDatPhong(maDonDatPhong);
+
+//        Lấy tất cả chi tiết thông tin sử dụng phòng của đơn đặt phòng
+        List<ThongTinSuDungPhong> chiTietSuDungList = filterUsageRoom(maDonDatPhong);
+        if(chiTietSuDungList.isEmpty()){
+            throw new BusinessException("Không tìm thấy thông tin sử dụng của đơn đặt phòng này");
+        }
+
+        List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
+        List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
+        List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
+
+        try {
+            datPhongDAO.khoiTaoGiaoTac();
+
+            //Tạo hóa đơn thanh toán
+            HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
+            hoaDonDAO.createInvoice(hoaDonThanhToan);
+
+            String maChiTietHoaDonMoiNhat = null;
+            boolean isCheckOutTre = false;
+
+
+            for (ThongTinSuDungPhong ct : chiTietSuDungList) {
+                Timestamp tgBatDau;
+                if (ct.getGioCheckIn().after(ct.getTgNhanPhong()))
+                    tgBatDau = ct.getTgNhanPhong();
+                else
+                    tgBatDau = ct.getGioCheckIn();
+
+                //tính thời gian sử dụng theo giờ
+                double thoiGianSuDung = tinhKhoangCachGio(tgBatDau, ct.getTgTraPhong());
+
+                //Lấy giá theo giờ hay theo ngày
+                boolean isDatTheoNgay = thoiGianSuDung > 12;
+                BigDecimal donGia = loaiPhongService.layGiaTheoLoaiPhong(ct.getMaLoaiPhong(), isDatTheoNgay);
+
+
+                //Chưa có kiểu kết thúc tức đang sử dung
+                if (ct.getKieuKetThuc() == null) {
+                    danhSachMaPhongDangSuDung.add(ct.getMaPhong());
+                    danhSachMaChiTietDatPhong.add(ct.getMaChiTietDatPhong());
+                    Timestamp thoiDiemHienTai = new Timestamp(System.currentTimeMillis());
+                    if (thoiDiemHienTai.after(ct.getTgTraPhong())) {
+                        isCheckOutTre = true;
+                    }
+                }
+                ChiTietHoaDon chiTietHoaDon = createInvoiceDetailFromEntity(ct, hoaDonThanhToan.getMaHoaDon(), donGia, thoiGianSuDung, maChiTietHoaDonMoiNhat);
+                danhSachChiTietHoaDon.add(chiTietHoaDon);
+                maChiTietHoaDonMoiNhat = chiTietHoaDon.getMaChiTietHoaDon();
+            }
+
+            //Thêm phụ phí check-out trễ nếu có
+            if (isCheckOutTre) {
+                List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhiMoi = createLateCheckOutFee(danhSachMaChiTietDatPhong);
+                phongTinhPhuPhiDAO.themDanhSachPhuPhiChoCacPhong(danhSachPhongTinhPhuPhiMoi);
+            }
+
+            //Cập nhật ChiTietDatPhong thành trả phòng
+            chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
+
+            //Chèn danh sách chi tiết hóa đơn đã tạo
+            chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
+        }catch (BusinessException e){
+            System.out.println("Lỗi khi tạo hóa đơn");
+            datPhongDAO.hoanTacGiaoTac();
+        }
+        datPhongDAO.thucHienGiaoTac();
+        return true;
     }
 }

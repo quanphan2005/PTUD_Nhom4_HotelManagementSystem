@@ -141,7 +141,7 @@ public class CongViecDAO {
     }
 
     public CongViec layCongViecHienTaiCuaPhong(String maPhong){
-        String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? AND getdate() >= tg_bat_dau and da_xoa = 0 ORDER BY tg_bat_dau DESC";
+        String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? AND getdate() >= dateadd(second, -60, tg_bat_dau) and da_xoa = 0 ORDER BY tg_bat_dau DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
