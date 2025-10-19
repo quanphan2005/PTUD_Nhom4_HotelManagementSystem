@@ -15,6 +15,7 @@ import vn.iuh.service.CustomerService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CustomerServiceImpl;
 import vn.iuh.util.IconUtil;
+import vn.iuh.util.PriceFormat;
 import vn.iuh.util.RefreshManager;
 import vn.iuh.util.TimeFilterHelper;
 
@@ -80,7 +81,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
     private JButton closeButton;
 
     // Formatters
-    private DecimalFormat priceFormatter = new DecimalFormat("#,###");
+    private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
 
     public MultiRoomBookingFormPanel(List<BookingResponse> selectedRooms) {
         this.selectedRooms = selectedRooms;

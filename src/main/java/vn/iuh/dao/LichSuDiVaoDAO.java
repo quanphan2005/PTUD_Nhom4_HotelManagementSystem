@@ -36,6 +36,25 @@ public class LichSuDiVaoDAO {
         }
     }
 
+    public LichSuDiVao timLichSuDiVaoBangMaChiTietDatPhong(String maChiTietDatPhong) {
+        String query = "SELECT * FROM LichSuDiVao WHERE ma_chi_tiet_dat_phong = ? AND la_lan_dau_tien = ? AND da_xoa = 0";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+            ps.setInt(2, 1);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhLichSuDiVao(rs);
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public LichSuDiVao timLichSuDiVaoMoiNhat() {
         String query = "SELECT TOP 1 * FROM LichSuDiVao ORDER BY ma_lich_su_di_vao DESC";
 

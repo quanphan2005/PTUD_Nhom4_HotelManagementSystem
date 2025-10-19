@@ -8,6 +8,7 @@ import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.GoiDichVuService;
 import vn.iuh.service.impl.GoiDichVuServiceImpl;
+import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
 import javax.swing.Timer;
@@ -54,7 +55,7 @@ public class ServiceSelectionPanel extends JPanel {
     private ServiceSelectionCallback callback;
 
     // Formatters
-    private DecimalFormat priceFormatter = new DecimalFormat("#,###");
+    private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
 
     public interface ServiceSelectionCallback {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
