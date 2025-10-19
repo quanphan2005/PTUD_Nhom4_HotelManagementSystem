@@ -6,10 +6,7 @@ import vn.iuh.entity.ChiTietDatPhong;
 import vn.iuh.entity.DonDatPhong;
 import vn.iuh.util.DatabaseUtil;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -184,6 +181,21 @@ public class ChiTietDatPhongDAO {
             return mapResultSetToChiTietDatPhong(ps.executeQuery());
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    //Cập nhập tg_nhan_phong cho ChiTietDatPhong
+    public boolean capNhatTgNhanPhong(String maChiTiet, Timestamp tgNhanPhong, String maPhienDangNhap, Timestamp thoiGianCapNhat) {
+        String sql = "UPDATE ChiTietDatPhong SET tg_nhan_phong = ?, ma_phien_dang_nhap = ?, thoi_gian_tao = ? WHERE ma_chi_tiet_dat_phong = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setTimestamp(1, tgNhanPhong);
+            ps.setString(2, maPhienDangNhap);
+            ps.setTimestamp(3, thoiGianCapNhat);
+            ps.setString(4, maChiTiet);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("Lỗi cập nhật tg_nhan_phong cho ChiTietDatPhong " + maChiTiet + ": " + e.getMessage());
+            return false;
         }
     }
 
