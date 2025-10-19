@@ -186,15 +186,10 @@ public class RoomStatusHandler implements Job {
                     //trễ checkout -> dọn dẹp
                 } else if (currentStatus.equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())) {
                     newStatus = RoomStatus.ROOM_CLEANING_STATUS.getStatus();
-//                    tgKetThuc = Timestamp.valueOf(rj.getEndTime().toLocalDateTime()
-//                            .plusMinutes(WorkTimeCost.CLEANING_TIME.getMinutes()));
-                    checkOutService.checkOutByReservationDetail(res.getMaChiTietDatPhong());
-                    res.setRoomStatus(newStatus);
-                    updatedBookingResponse.add(res);
-                    System.out.println(maCongViecMoiNhat);
-                    maCongViecMoiNhat = congViecService.taoMaCongViecMoi(null);
-                    System.out.println(maCongViecMoiNhat);
-                    continue;
+                    tgKetThuc = Timestamp.valueOf(rj.getEndTime().toLocalDateTime()
+                            .plusMinutes(WorkTimeCost.CLEANING_TIME.getMinutes()));
+                    checkOutService.createHoaDonForAutoCheckout(res.getMaChiTietDatPhong());
+                    createMessageForAutoCheckOut(rj.getRoomId());
 
                     //chờ check-in hoặc dọn dẹp hết hạn -> xoá công việc
                 } else if (
@@ -244,6 +239,7 @@ public class RoomStatusHandler implements Job {
         if (!congViecCanKetThuc.isEmpty()) {
             jobDAO.xoaDanhSachCongViec(congViecCanKetThuc);
         }
+
         if (!congViecCanThem.isEmpty()) {
             jobDAO.themDanhSachCongViec(congViecCanThem);
         }
@@ -264,6 +260,32 @@ public class RoomStatusHandler implements Job {
                 return;
             }
             JobDetail jobDetail = JobBuilder.newJob(SendMessageLateCheckOut.class)
+                    .withIdentity(jobKey)
+                    .usingJobData("roomId", roomId)
+                    .build();
+
+            Trigger trigger = TriggerBuilder.newTrigger()
+                    .withIdentity("trigger_room_" + roomId, jobGroup)
+                    .startAt(DateBuilder.futureDate(5, DateBuilder.IntervalUnit.SECOND))
+                    .build();
+
+            scheduler.scheduleJob(jobDetail, trigger);
+        } catch (SchedulerException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createMessageForAutoCheckOut(String roomId){
+        try {
+            Scheduler scheduler = SchedulerUtil.getInstance();
+            String jobName = "room_" + roomId;
+            String jobGroup = "roomAutoCheckOutGroup";
+            JobKey jobKey = new JobKey(jobName, jobGroup);
+
+            if (scheduler.checkExists(jobKey)) {
+                return;
+            }
+            JobDetail jobDetail = JobBuilder.newJob(SendMessageAutoCheckOut.class)
                     .withIdentity(jobKey)
                     .usingJobData("roomId", roomId)
                     .build();

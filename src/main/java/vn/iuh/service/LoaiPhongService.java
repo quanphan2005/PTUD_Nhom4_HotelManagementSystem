@@ -5,6 +5,7 @@ import vn.iuh.entity.LoaiPhong;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public interface LoaiPhongService {
     LoaiPhong getRoomCategoryByID(String id);

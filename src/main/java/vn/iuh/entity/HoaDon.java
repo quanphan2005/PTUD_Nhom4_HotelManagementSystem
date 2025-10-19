@@ -13,9 +13,43 @@ public class HoaDon {
     private String maDonDatPhong;
     private String maKhachHang;
     private Timestamp thoiGianTao;
+    private BigDecimal tongTien;
+    private BigDecimal tienThue;
+    private BigDecimal tongHoaDon;
     private List<ChiTietHoaDon> chiTietHoaDonList;
 
     public HoaDon() {
+    }
+
+    public List<ChiTietHoaDon> getChiTietHoaDonList() {
+        return chiTietHoaDonList;
+    }
+
+    public void setChiTietHoaDonList(List<ChiTietHoaDon> chiTietHoaDonList) {
+        this.chiTietHoaDonList = chiTietHoaDonList;
+    }
+
+    public BigDecimal getTongHoaDon() {
+        if (tongHoaDon != null){
+            return tongHoaDon;
+        }
+        return this.getTongTien().add(this.getTienThue());
+    }
+
+    public void setTongHoaDon(BigDecimal tongHoaDon) {
+        this.tongHoaDon = tongHoaDon;
+    }
+
+    public BigDecimal getTienThue() {
+        return tienThue == null ? BigDecimal.ZERO : tienThue;
+    }
+
+    public void setTienThue(BigDecimal tienThue) {
+        this.tienThue = tienThue;
+    }
+
+    public void setTongTien(BigDecimal tongTien) {
+        this.tongTien = tongTien;
     }
 
     public HoaDon(String maHoaDon, String kieuHoaDon, String maPhienDangNhap, String maDonDatPhong, String maKhachHang) {
@@ -90,12 +124,15 @@ public class HoaDon {
     public void setThoiGianTao(Timestamp thoiGianTao) {
         this.thoiGianTao = thoiGianTao;
     }
+
     public BigDecimal getTongTien(){
+        if(tongTien != null){
+            return this.tongTien;
+        }
         BigDecimal tongTien = new BigDecimal(0);
         for(ChiTietHoaDon ct : this.chiTietHoaDonList){
-            tongTien = tongTien.add(ct.tinhThanhTien());
+            tongTien = tongTien.add(ct.getTongTien());
         }
         return tongTien;
     }
-
 }

@@ -34,13 +34,14 @@ public class WorkingHistoryDialog extends JDialog {
     private JPanel pnlTop;
     private JButton btnBackToPrevious;
     private JButton btnToCurrent;
+    private JLabel title;
+    private JLabel previousTitle;
 
 
     public WorkingHistoryDialog(JFrame parent) {
         super(parent, "Thống kê ca làm", true);
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.phienDangNhapDAO = new PhienDangNhapDAO();
-        setLocationRelativeTo(null);
     }
 
     private void initComponents() {
@@ -50,8 +51,10 @@ public class WorkingHistoryDialog extends JDialog {
 
         pnlTop = new JPanel();
         pnlTop.setLayout(new BorderLayout());
-        JLabel title = new JLabel("LỊCH SỬ CA LÀM", SwingConstants.CENTER);
+        title = new JLabel("LỊCH SỬ CA LÀM", SwingConstants.CENTER);
+        previousTitle = new JLabel("LỊCH SỬ CA LÀM TRƯỚC", SwingConstants.CENTER);
         title.setFont(CustomUI.bigFont);
+        previousTitle.setFont(CustomUI.bigFont);
         btnBackToPrevious = new JButton("\uFE0F");
         btnBackToPrevious.addActionListener( e ->{
             setCaLamTruoc();
@@ -63,7 +66,10 @@ public class WorkingHistoryDialog extends JDialog {
             refreshDanhSach(this.lichSuThaoTac);
             this.pnlTop.remove(btnToCurrent);
             this.pnlTop.add(btnBackToPrevious, BorderLayout.WEST);
+            this.pnlTop.remove(previousTitle);
+            this.pnlTop.add(title,BorderLayout.CENTER);
             this.pnlTop.repaint();
+
         });
 
         pnlTop.add(title, BorderLayout.CENTER);
@@ -155,6 +161,7 @@ public class WorkingHistoryDialog extends JDialog {
             initComponents();
         }
         refreshDanhSach(lichSuThaoTac);
+        setLocationRelativeTo(null);
     }
 
     private void setCaLamTruoc(){
@@ -167,6 +174,8 @@ public class WorkingHistoryDialog extends JDialog {
         resfreshThongTinNV(nhanVienTruoc);
         this.pnlTop.remove(btnBackToPrevious);
         this.pnlTop.add(btnToCurrent, BorderLayout.WEST);
+        this.pnlTop.remove(title);
+        this.pnlTop.add(previousTitle,BorderLayout.CENTER);
         this.pnlTop.repaint();
     }
 
