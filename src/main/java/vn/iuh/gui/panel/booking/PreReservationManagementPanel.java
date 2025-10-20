@@ -64,6 +64,7 @@ public class PreReservationManagementPanel extends JPanel {
     }
 
     private void init() {
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         createTopPanel();
         createFilterPanel();
         createTablePanel();
@@ -71,7 +72,7 @@ public class PreReservationManagementPanel extends JPanel {
 
     private void createTopPanel() {
         JPanel pnlTop = new JPanel();
-        JLabel lblTop = new JLabel("Quản lý đơn đặt phòng trước", SwingConstants.CENTER);
+        JLabel lblTop = new JLabel("QUẢN LÝ ĐƠN ĐẶT PHÒNG TRƯỚC", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.bigFont);
 
@@ -90,11 +91,11 @@ public class PreReservationManagementPanel extends JPanel {
         filterPanel.setBackground(Color.WHITE);
         filterPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.insets = new Insets(5, 10, 5, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
         // Initialize filter components
@@ -116,12 +117,12 @@ public class PreReservationManagementPanel extends JPanel {
         btnReset.setPreferredSize(new Dimension(120, 35));
         filterPanel.add(btnReset, gbc);
 
-        // Set fixed height for filter panel
-        filterPanel.setPreferredSize(new Dimension(0, 120));
-        filterPanel.setMinimumSize(new Dimension(0, 120));
-        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        // Create wrapper panel with spacing
+        JPanel filterWrapper = new JPanel(new BorderLayout());
+        filterWrapper.add(filterPanel, BorderLayout.CENTER);
+        filterWrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0)); // Add margins
 
-        add(filterPanel, BorderLayout.CENTER);
+        add(filterWrapper, BorderLayout.CENTER);
     }
 
     private void initializeFilterComponents() {
@@ -174,18 +175,36 @@ public class PreReservationManagementPanel extends JPanel {
         };
 
         // Create table
-        reservationTable = new JTable(tableModel);
-        reservationTable.setFont(CustomUI.tableDataFont); // Non-bold font for data
+        reservationTable = new JTable(tableModel) { // Tạo JTable mới dựa trên model
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
+                Component c = super.prepareRenderer(renderer, row, column);
+
+                // reuse font constant (không new font mỗi cell)
+                c.setFont(CustomUI.TABLE_FONT);
+
+                if (!isRowSelected(row)) {
+                    // reuse color constant
+                    c.setBackground(row % 2 == 0 ? CustomUI.ROW_ODD : CustomUI.ROW_EVEN);
+                } else {
+                    c.setBackground(CustomUI.ROW_SELECTED_COLOR);
+                }
+                return c;
+            }
+        };
+        reservationTable.setFont(CustomUI.TABLE_FONT); // Non-bold font for data
         reservationTable.setRowHeight(40);
-        reservationTable.setSelectionBackground(CustomUI.tableSelection);
+        reservationTable.setSelectionBackground(CustomUI.ROW_SELECTED_COLOR);
         reservationTable.setGridColor(CustomUI.tableBorder);
         reservationTable.setShowGrid(true); // Show grid lines
         reservationTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling
-        reservationTable.getTableHeader().setFont(CustomUI.tableHeaderFont);
-        reservationTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
-        reservationTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
+        reservationTable.getTableHeader().setPreferredSize(new Dimension(reservationTable.getWidth(), 40));
+        reservationTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
+        reservationTable.getTableHeader().setBackground(CustomUI.blue);
+        reservationTable.getTableHeader().setForeground(CustomUI.white);
         reservationTable.getTableHeader().setOpaque(true);
         reservationTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
 
@@ -209,7 +228,6 @@ public class PreReservationManagementPanel extends JPanel {
 
         // Create scroll pane
         JScrollPane scrollPane = new JScrollPane(reservationTable);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         add(scrollPane, BorderLayout.SOUTH);
@@ -225,17 +243,17 @@ public class PreReservationManagementPanel extends JPanel {
             Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             // Set font to non-bold for data
-            component.setFont(CustomUI.tableDataFont);
+            component.setFont(CustomUI.TABLE_FONT);
 
             if (isSelected) {
-                component.setBackground(CustomUI.tableSelection);
+                component.setBackground(CustomUI.ROW_SELECTED_COLOR);
                 component.setForeground(Color.BLACK);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
-                    component.setBackground(CustomUI.tableRowEven);
+                    component.setBackground(CustomUI.ROW_EVEN);
                 } else {
-                    component.setBackground(CustomUI.tableRowOdd);
+                    component.setBackground(CustomUI.ROW_ODD);
                 }
                 component.setForeground(Color.BLACK);
             }

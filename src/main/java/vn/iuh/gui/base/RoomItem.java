@@ -89,7 +89,7 @@ public class RoomItem extends JPanel {
                     // Original single room booking behavior
                     String cardName = PanelName.BOOKING.getName();
                     if (bookingResponse.getRoomStatus().equalsIgnoreCase(RoomStatus.ROOM_EMPTY_STATUS.getStatus())) {
-                        Main.addCard(new BookingFormPanel(bookingResponse, PanelName.RESERVATION_MANAGEMENT.getName()),
+                        Main.addCard(new BookingFormPanel(bookingResponse, PanelName.BOOKING_MANAGEMENT.getName()),
                                      cardName);
                     } else
                         if (

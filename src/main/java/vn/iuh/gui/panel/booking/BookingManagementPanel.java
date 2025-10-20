@@ -397,7 +397,7 @@ public class BookingManagementPanel extends JPanel {
         btnMultiBookingToggle.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent evt) {
                 btnMultiBookingToggle.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                btnMultiBookingToggle.setBackground(btnMultiBookingToggle.isSelected() ? CustomUI.drakRed : CustomUI.blue);
+                btnMultiBookingToggle.setBackground(btnMultiBookingToggle.isSelected() ? CustomUI.darkRed : CustomUI.blue);
             }
 
             public void mouseExited(MouseEvent evt) {

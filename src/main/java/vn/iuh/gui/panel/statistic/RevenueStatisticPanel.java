@@ -12,13 +12,6 @@ import java.awt.*;
 
 
 public class RevenueStatisticPanel extends JPanel {
-    private static final Font FONT_LABEL  = new Font("Arial", Font.BOLD, 14);
-    private static final Font FONT_ACTION = new Font("Arial", Font.BOLD, 18);
-    private static final Font TABLE_FONT = FONT_LABEL;
-    private static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 15);
-    private static final Color ROW_ALT_COLOR = new Color(247, 249, 250);
-    private static final Color ROW_SELECTED_COLOR = new Color(210, 230, 255);
-
     private JPanel pnlTop;
     private JLabel lblTop;
     private JPanel pnlFilter;
@@ -255,20 +248,20 @@ public class RevenueStatisticPanel extends JPanel {
                 Component c = super.prepareRenderer(renderer, row, column);
 
                 // reuse font constant (không new font mỗi cell)
-                c.setFont(TABLE_FONT);
+                c.setFont(CustomUI.TABLE_FONT);
 
                 if (!isRowSelected(row)) {
                     // reuse color constant
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : ROW_ALT_COLOR);
+                    c.setBackground(row % 2 == 0 ? CustomUI.ROW_ODD : CustomUI.ROW_EVEN);
                 } else {
-                    c.setBackground(ROW_SELECTED_COLOR);
+                    c.setBackground(CustomUI.ROW_SELECTED_COLOR);
                 }
                 return c;
             }
         };
 
         table.setRowHeight(48);
-        table.setFont(TABLE_FONT);
+        table.setFont(CustomUI.TABLE_FONT);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setFillsViewportHeight(true);
@@ -278,7 +271,7 @@ public class RevenueStatisticPanel extends JPanel {
         header.setPreferredSize(new Dimension(header.getPreferredSize().width, 42));
         header.setBackground(CustomUI.blue);
         header.setForeground(CustomUI.white);
-        header.setFont(HEADER_FONT);
+        header.setFont(CustomUI.HEADER_FONT);
         header.setReorderingAllowed(false);
 
         // Căn giữa cho thông tin trong các cột

@@ -199,15 +199,15 @@ public class PreReservationSearchPanel extends JPanel {
 
         // Create table
         reservationTable = new JTable(tableModel);
-        reservationTable.setFont(CustomUI.tableDataFont); // Non-bold font for data
+        reservationTable.setFont(CustomUI.TABLE_FONT); // Non-bold font for data
         reservationTable.setRowHeight(40);
-        reservationTable.setSelectionBackground(CustomUI.tableSelection);
+        reservationTable.setSelectionBackground(CustomUI.ROW_SELECTED_COLOR);
         reservationTable.setGridColor(CustomUI.tableBorder);
         reservationTable.setShowGrid(true); // Show grid lines
         reservationTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling
-        reservationTable.getTableHeader().setFont(CustomUI.tableHeaderFont);
+        reservationTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
         reservationTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
         reservationTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
         reservationTable.getTableHeader().setOpaque(true);
@@ -249,17 +249,17 @@ public class PreReservationSearchPanel extends JPanel {
             Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             // Set font to non-bold for data
-            component.setFont(CustomUI.tableDataFont);
+            component.setFont(CustomUI.TABLE_FONT);
 
             if (isSelected) {
-                component.setBackground(CustomUI.tableSelection);
+                component.setBackground(CustomUI.ROW_SELECTED_COLOR);
                 component.setForeground(Color.BLACK);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
-                    component.setBackground(CustomUI.tableRowEven);
+                    component.setBackground(CustomUI.ROW_EVEN);
                 } else {
-                    component.setBackground(CustomUI.tableRowOdd);
+                    component.setBackground(CustomUI.ROW_ODD);
                 }
                 component.setForeground(Color.BLACK);
             }

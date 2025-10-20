@@ -11,10 +11,7 @@ import vn.iuh.dto.repository.CustomerInfo;
 import vn.iuh.dto.repository.PhieuDatPhong;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
-import vn.iuh.dto.response.BookingResponse;
-import vn.iuh.dto.response.CustomerInfoResponse;
-import vn.iuh.dto.response.EventResponse;
-import vn.iuh.dto.response.PreReservationResponse;
+import vn.iuh.dto.response.*;
 import vn.iuh.entity.*;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
@@ -405,8 +402,8 @@ public class BookingServiceImpl implements BookingService {
 
             // 7. Update WorkingHistory
             LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
-            String workingHistoryId = lichSuThaoTacMoiNhat == null ? null :
-                    lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
+            String workingHistoryId = lichSuThaoTacMoiNhat == null ? null : lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
+
             String actionDescription = "Hủy đặt phòng cho khách hàng " + donDatPhong.getMaKhachHang()
                                        + " - Mã đặt phòng: " + donDatPhong.getMaDonDatPhong();
             lichSuThaoTacDAO.themLichSuThaoTac(new LichSuThaoTac(
@@ -646,6 +643,11 @@ public class BookingServiceImpl implements BookingService {
                 thongTinPhong.getGiaNgay(),
                 thongTinPhong.getGiaGio()
         );
+    }
+
+    @Override
+    public List<ReservationResponse> getAllReservationsWithStatus() {
+        return datPhongDAO.getAllReservationsWithStatus();
     }
 
 }

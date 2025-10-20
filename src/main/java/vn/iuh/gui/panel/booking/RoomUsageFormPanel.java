@@ -981,7 +981,7 @@ public class RoomUsageFormPanel extends JPanel {
     // Setup event handlers for buttons
     private void setupEventHandlers() {
         btnCancel.addActionListener(e -> handleCancel());
-        closeButton.addActionListener(e -> Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName()));
+        closeButton.addActionListener(e -> Main.showCard(PanelName.BOOKING_MANAGEMENT.getName()));
         btnCreateReservationForm.addActionListener(e -> handleCreateReservationForm());
         reservationButton.addActionListener(e -> handleShowReservationManagement());
     }
@@ -990,8 +990,8 @@ public class RoomUsageFormPanel extends JPanel {
         PreReservationSearchPanel reservationFormManagementPanel =
                 new PreReservationSearchPanel(PanelName.ROOM_USING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
 
-        Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_SEARCH.getName());
-        Main.showCard(PanelName.RESERVATION_FORM_SEARCH.getName());
+        Main.addCard(reservationFormManagementPanel, PanelName.PRE_RESERVATION_SEARCH.getName());
+        Main.showCard(PanelName.PRE_RESERVATION_SEARCH.getName());
     }
 
     // Handler methods for action buttons
@@ -1014,7 +1014,7 @@ public class RoomUsageFormPanel extends JPanel {
                         "Đã hoàn thành trả phòng " + selectedRoom.getRoomName(),
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 RefreshManager.refreshAfterBooking();
-                Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName());
+                Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Trả phòng thất bại cho " + selectedRoom.getRoomName(),
@@ -1074,7 +1074,7 @@ public class RoomUsageFormPanel extends JPanel {
                                               "Đã hoàn tất dọn phòng " + selectedRoom.getRoomName(),
                                               "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 RefreshManager.refreshAfterCleaning();
-                Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName());
+                Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
             } else {
                 JOptionPane.showMessageDialog(this,
                                               "Hoàn tất dọn phòng thất bại cho " + selectedRoom.getRoomName(),
@@ -1106,7 +1106,7 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void handleCancel() {
-        Main.showCard(PanelName.RESERVATION_MANAGEMENT.getName());
+        Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
     }
 
     private BookingResponse createDefaultValueForBookingInfo(BookingResponse roomInfo) {

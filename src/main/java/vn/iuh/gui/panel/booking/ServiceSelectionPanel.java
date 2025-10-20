@@ -1,7 +1,6 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import vn.iuh.constraint.PanelName;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
 import vn.iuh.gui.base.CustomUI;
@@ -122,15 +121,15 @@ public class ServiceSelectionPanel extends JPanel {
             }
         };
         serviceTable = new JTable(serviceTableModel);
-        serviceTable.setFont(CustomUI.tableDataFont); // Non-bold font for data
+        serviceTable.setFont(CustomUI.TABLE_FONT); // Non-bold font for data
         serviceTable.setRowHeight(40);
-        serviceTable.setSelectionBackground(CustomUI.tableSelection);
+        serviceTable.setSelectionBackground(CustomUI.ROW_SELECTED_COLOR);
         serviceTable.setGridColor(CustomUI.tableBorder);
         serviceTable.setShowGrid(true); // Show grid lines
         serviceTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling
-        serviceTable.getTableHeader().setFont(CustomUI.tableHeaderFont);
+        serviceTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
         serviceTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
         serviceTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
         serviceTable.getTableHeader().setOpaque(true);
@@ -167,15 +166,15 @@ public class ServiceSelectionPanel extends JPanel {
             }
         };
         selectedServicesTable = new JTable(selectedServicesTableModel);
-        selectedServicesTable.setFont(CustomUI.tableDataFont); // Non-bold font for data
+        selectedServicesTable.setFont(CustomUI.TABLE_FONT); // Non-bold font for data
         selectedServicesTable.setRowHeight(30);
-        selectedServicesTable.setSelectionBackground(CustomUI.tableSelection);
+        selectedServicesTable.setSelectionBackground(CustomUI.ROW_SELECTED_COLOR);
         selectedServicesTable.setGridColor(CustomUI.tableBorder);
         selectedServicesTable.setShowGrid(true); // Show grid lines
         selectedServicesTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling for selected services table
-        selectedServicesTable.getTableHeader().setFont(CustomUI.tableHeaderFont);
+        selectedServicesTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
         selectedServicesTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
         selectedServicesTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
         selectedServicesTable.getTableHeader().setOpaque(true);
@@ -1062,17 +1061,17 @@ public class ServiceSelectionPanel extends JPanel {
             Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             // Set font to non-bold for data
-            component.setFont(CustomUI.tableDataFont);
+            component.setFont(CustomUI.TABLE_FONT);
 
             if (isSelected) {
-                component.setBackground(CustomUI.tableSelection);
+                component.setBackground(CustomUI.ROW_SELECTED_COLOR);
                 component.setForeground(Color.BLACK);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
-                    component.setBackground(CustomUI.tableRowEven);
+                    component.setBackground(CustomUI.ROW_EVEN);
                 } else {
-                    component.setBackground(CustomUI.tableRowOdd);
+                    component.setBackground(CustomUI.ROW_ODD);
                 }
                 component.setForeground(Color.BLACK);
             }
@@ -1097,17 +1096,17 @@ public class ServiceSelectionPanel extends JPanel {
             Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             // Set font to non-bold for data
-            component.setFont(CustomUI.tableDataFont);
+            component.setFont(CustomUI.TABLE_FONT);
 
             if (isSelected) {
-                component.setBackground(CustomUI.tableSelection);
+                component.setBackground(CustomUI.ROW_SELECTED_COLOR);
                 component.setForeground(Color.BLACK);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
-                    component.setBackground(CustomUI.tableRowEven);
+                    component.setBackground(CustomUI.ROW_EVEN);
                 } else {
-                    component.setBackground(CustomUI.tableRowOdd);
+                    component.setBackground(CustomUI.ROW_ODD);
                 }
                 component.setForeground(Color.BLACK);
             }

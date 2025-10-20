@@ -5,6 +5,7 @@ import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.dto.response.EventResponse;
 import vn.iuh.dto.response.PreReservationResponse;
+import vn.iuh.dto.response.ReservationResponse;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -19,4 +20,5 @@ public interface BookingService {
     CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong);
     boolean cancelReservation(String maDatPhong);
     boolean cancelRoomReservation(String maDatPhong, String maPhong);
+    List<ReservationResponse> getAllReservationsWithStatus();
 }

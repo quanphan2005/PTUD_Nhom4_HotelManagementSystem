@@ -12,6 +12,7 @@ import vn.iuh.gui.dialog.WorkingHistoryDialog;
 import vn.iuh.gui.panel.*;
 import vn.iuh.gui.panel.booking.PreReservationManagementPanel;
 import vn.iuh.gui.panel.booking.BookingManagementPanel;
+import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 
 import javax.swing.*;
@@ -211,15 +212,21 @@ public class Main extends JFrame {
         JPanel blue = new JPanel();
         blue.setBackground(Color.blue);
         BookingManagementPanel bookingManagementPanel = new BookingManagementPanel();
+        ReservationManagementPanel reservationManagementPanel = new ReservationManagementPanel();
         PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
         RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
+
         pnlCenter.add(pink, "dsadsa");
         pnlCenter.add(blue, "Inbox");
-        pnlCenter.add(bookingManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
-        pnlCenter.add(preReservationManagementPanel, PanelName.RESERVATION_FORM_MANAGEMENT.getName());
+//        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
+//        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
+//        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý khách hàng");
+        pnlCenter.add(bookingManagementPanel, PanelName.BOOKING_MANAGEMENT.getName());
+        pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
+        pnlCenter.add(preReservationManagementPanel, PanelName.PRE_RESERVATION_MANAGEMENT.getName());
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
 //        showCard("Quản lý đặt phòng");
 

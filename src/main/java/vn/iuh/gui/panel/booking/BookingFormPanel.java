@@ -1063,8 +1063,8 @@ public class BookingFormPanel extends JPanel {
         PreReservationSearchPanel reservationFormManagementPanel =
                 new PreReservationSearchPanel(PanelName.BOOKING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
 
-        Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_SEARCH.getName());
-        Main.showCard(PanelName.RESERVATION_FORM_SEARCH.getName());
+        Main.addCard(reservationFormManagementPanel, PanelName.PRE_RESERVATION_SEARCH.getName());
+        Main.showCard(PanelName.PRE_RESERVATION_SEARCH.getName());
     }
 
     private void handleCalculateDeposit() {

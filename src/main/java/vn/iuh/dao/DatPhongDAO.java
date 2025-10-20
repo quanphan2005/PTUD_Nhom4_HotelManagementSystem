@@ -781,4 +781,45 @@ public class DatPhongDAO {
             return null;
         }
     }
+
+    public List<vn.iuh.dto.response.ReservationResponse> getAllReservationsWithStatus() {
+        String query =
+                "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
+                "p.ma_phong, p.ten_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
+                "COALESCE(cv.ten_trang_thai, 'Không xác định') as status " +
+                "FROM DonDatPhong ddp " +
+                "JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
+                "JOIN ChiTietDatPhong ctdp ON ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong " +
+                "JOIN Phong p ON p.ma_phong = ctdp.ma_phong " +
+                "LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
+                "    AND cv.tg_bat_dau = ctdp.tg_nhan_phong " +
+                "    AND cv.da_xoa = 0 " +
+                "WHERE ddp.da_xoa = 0 AND ctdp.da_xoa = 0 " +
+                "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
+
+        List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            var rs = ps.executeQuery();
+
+            while (rs.next()) {
+                reservations.add(new vn.iuh.dto.response.ReservationResponse(
+                        rs.getString("CCCD"),
+                        rs.getString("ten_khach_hang"),
+                        rs.getString("ma_don_dat_phong"),
+                        rs.getString("ma_phong"),
+                        rs.getString("ten_phong"),
+                        rs.getTimestamp("tg_nhan_phong"),
+                        rs.getTimestamp("tg_tra_phong"),
+                        rs.getString("status")
+                ));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error fetching reservations with status: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        return reservations;
+    }
 }
