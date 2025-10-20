@@ -1,55 +1,80 @@
 package vn.iuh.dto.event.create;
 
-import vn.iuh.entity.ChiTietHoaDon;
-import vn.iuh.entity.PhongDungDichVu;
-import vn.iuh.entity.PhongTinhPhuPhi;
+import vn.iuh.dto.repository.ThongTinPhuPhi;
+import vn.iuh.entity.*;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public class InvoiceCreationEvent {
     private String maPhienDangNhap;
-    private String maDonDatPhong;
-    private String maKhachHang;
-    private String kieuHoaDon;
-    private String tenKhachHang;
-    private String cccd;
-    private String soDienThoai;
-    private String tenNhanVien;
+    private DonDatPhong donDatPhong;
+    private KhachHang khachHang;
+    private HoaDon hoaDon;
+    private NhanVien tenNhanVien;
+    private ThongTinPhuPhi thueVAT;
     private List<ChiTietHoaDon> chiTietHoaDonList;
     private List<PhongDungDichVu> phongDungDichVuList;
     private List<PhongTinhPhuPhi> phongTinhPhuPhiList;
-    private BigDecimal tongTien;
 
-    public InvoiceCreationEvent(String maPhienDangNhap, String maDonDatPhong, String maKhachHang,
-                                String kieuHoaDon, String tenKhachHang, String cccd, String soDienThoai,
-                                String tenNhanVien, List<ChiTietHoaDon> chiTietHoaDonList,
-                                List<PhongDungDichVu> phongDungDichVuList, List<PhongTinhPhuPhi> phongTinhPhuPhiList,
-                                BigDecimal tongTien) {
+    public InvoiceCreationEvent(String maPhienDangNhap, DonDatPhong donDatPhong, ThongTinPhuPhi thueVAT,KhachHang khachHang, HoaDon hoaDon, NhanVien tenNhanVien, List<ChiTietHoaDon> chiTietHoaDonList, List<PhongDungDichVu> phongDungDichVuList, List<PhongTinhPhuPhi> phongTinhPhuPhiList) {
         this.maPhienDangNhap = maPhienDangNhap;
-        this.maDonDatPhong = maDonDatPhong;
-        this.maKhachHang = maKhachHang;
-        this.kieuHoaDon = kieuHoaDon;
-        this.tenKhachHang = tenKhachHang;
-        this.cccd = cccd;
-        this.soDienThoai = soDienThoai;
+        this.donDatPhong = donDatPhong;
+        this.thueVAT = thueVAT;
+        this.khachHang = khachHang;
+        this.hoaDon = hoaDon;
         this.tenNhanVien = tenNhanVien;
         this.chiTietHoaDonList = chiTietHoaDonList;
         this.phongDungDichVuList = phongDungDichVuList;
         this.phongTinhPhuPhiList = phongTinhPhuPhiList;
-        this.tongTien = tongTien;
     }
 
-    public String getCccd() {
-        return cccd;
+    public ThongTinPhuPhi getThueVAT() {
+        return thueVAT;
     }
 
-    public BigDecimal getTongTien() {
-        return tongTien;
+    public void setThueVAT(ThongTinPhuPhi thueVAT) {
+        this.thueVAT = thueVAT;
     }
 
-    public String getTenNhanVien() {
+    public String getMaPhienDangNhap() {
+        return maPhienDangNhap;
+    }
+
+    public void setMaPhienDangNhap(String maPhienDangNhap) {
+        this.maPhienDangNhap = maPhienDangNhap;
+    }
+
+    public DonDatPhong getDonDatPhong() {
+        return donDatPhong;
+    }
+
+    public void setDonDatPhong(DonDatPhong donDatPhong) {
+        this.donDatPhong = donDatPhong;
+    }
+
+    public KhachHang getKhachHang() {
+        return khachHang;
+    }
+
+    public void setKhachHang(KhachHang khachHang) {
+        this.khachHang = khachHang;
+    }
+
+    public HoaDon getHoaDon() {
+        return hoaDon;
+    }
+
+    public void setHoaDon(HoaDon hoaDon) {
+        this.hoaDon = hoaDon;
+    }
+
+    public NhanVien getTenNhanVien() {
         return tenNhanVien;
+    }
+
+    public void setTenNhanVien(NhanVien tenNhanVien) {
+        this.tenNhanVien = tenNhanVien;
     }
 
     public List<ChiTietHoaDon> getChiTietHoaDonList() {
@@ -74,61 +99,5 @@ public class InvoiceCreationEvent {
 
     public void setPhongTinhPhuPhiList(List<PhongTinhPhuPhi> phongTinhPhuPhiList) {
         this.phongTinhPhuPhiList = phongTinhPhuPhiList;
-    }
-
-    public void setTongTien(BigDecimal tongTien) {
-        this.tongTien = tongTien;
-    }
-
-    public void setCccd(String cccd) {
-        this.cccd = cccd;
-    }
-
-    public String getSoDienThoai() {
-        return soDienThoai;
-    }
-
-    public void setSoDienThoai(String soDienThoai) {
-        this.soDienThoai = soDienThoai;
-    }
-
-    public String getTenKhachHang() {
-        return tenKhachHang;
-    }
-
-    public void setTenKhachHang(String tenKhachHang) {
-        this.tenKhachHang = tenKhachHang;
-    }
-
-    public String getMaPhienDangNhap() {
-        return maPhienDangNhap;
-    }
-
-    public void setMaPhienDangNhap(String maPhienDangNhap) {
-        this.maPhienDangNhap = maPhienDangNhap;
-    }
-
-    public String getMaDonDatPhong() {
-        return maDonDatPhong;
-    }
-
-    public void setMaDonDatPhong(String maDonDatPhong) {
-        this.maDonDatPhong = maDonDatPhong;
-    }
-
-    public String getMaKhachHang() {
-        return maKhachHang;
-    }
-
-    public void setMaKhachHang(String maKhachHang) {
-        this.maKhachHang = maKhachHang;
-    }
-
-    public String getKieuHoaDon() {
-        return kieuHoaDon;
-    }
-
-    public void setKieuHoaDon(String kieuHoaDon) {
-        this.kieuHoaDon = kieuHoaDon;
     }
 }

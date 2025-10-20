@@ -10,6 +10,7 @@ import vn.iuh.entity.ChiTietHoaDon;
 import vn.iuh.entity.DichVu;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.entity.PhongTinhPhuPhi;
+import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 
 import javax.swing.*;
@@ -25,10 +26,13 @@ public class InvoiceDialog extends JDialog {
     private JTable tblPhong, tblDichVu;
     private JLabel lblTotal;
     private JTable tblPhuPhi;
+    private JLabel lblTitle;
+    private JPanel pnlTitle;
+    private JLabel lblTaxFee;
+    private JLabel lblTotalInvoice;
 
     public InvoiceDialog(InvoiceCreationEvent invoiceCreationEvent) {
         this.invoiceData = invoiceCreationEvent;
-        setTitle("Hóa đơn thanh toán");
         setSize(800, 700);
         setLocationRelativeTo(null);
         setModal(true);
@@ -36,35 +40,39 @@ public class InvoiceDialog extends JDialog {
     }
 
     private void initComponents() {
+        lblTitle = new JLabel("Hóa đơn thanh toán");
+        lblTitle.setFont(CustomUI.bigFont);
+        pnlTitle  = new JPanel();
+        pnlTitle.add(lblTitle);
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        JPanel infoPanel = new JPanel(new GridLayout(3, 2, 10, 5));
+        JPanel infoPanel = new JPanel(new GridLayout(5, 2, 10, 5));
 
         infoPanel.add(new JLabel("Khách hàng: "));
-        infoPanel.add(new JLabel(invoiceData.getTenKhachHang()));
+        infoPanel.add(new JLabel(invoiceData.getKhachHang().getTenKhachHang()));
 
         infoPanel.add(new JLabel("CCCD: "));
-        infoPanel.add(new JLabel(invoiceData.getCccd()));
+        infoPanel.add(new JLabel(invoiceData.getKhachHang().getCCCD()));
 
         infoPanel.add(new JLabel("SĐT: "));
-        infoPanel.add(new JLabel(invoiceData.getSoDienThoai()));
+        infoPanel.add(new JLabel(invoiceData.getKhachHang().getSoDienThoai()));
 
-        JPanel infoPanel2 = new JPanel(new GridLayout(2, 2, 10, 5));
-        infoPanel2.add(new JLabel("Ngày tạo: "));
-        infoPanel2.add(new JLabel(new Timestamp(System.currentTimeMillis()).toString()));
+        infoPanel.add(new JLabel("Ngày tạo: "));
+        infoPanel.add(new JLabel(new Timestamp(System.currentTimeMillis()).toString()));
 
-        infoPanel2.add(new JLabel("Nhân viên: "));
-        infoPanel2.add(new JLabel(invoiceData.getTenNhanVien()));
+        infoPanel.add(new JLabel("Nhân viên: "));
+        infoPanel.add(new JLabel(invoiceData.getTenNhanVien().getTenNhanVien()));
+
 
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.add(infoPanel, BorderLayout.NORTH);
-        topPanel.add(infoPanel2, BorderLayout.CENTER);
+        topPanel.add(pnlTitle, BorderLayout.NORTH);
+        topPanel.add(infoPanel, BorderLayout.CENTER);
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
         // ===== Bảng chi tiết phòng =====
-        String[] colPhong = {"Tên phòng", "Đơn giá", "Thời gian", "Thành tiền"};
+        String[] colPhong = {"Tên phòng", "Đơn giá" ,"Thời gian", "Thành tiền"};
         DefaultTableModel modelPhong = new DefaultTableModel(colPhong, 0);
         tblPhong = new JTable(modelPhong);
         fillRoomTable(modelPhong);
@@ -93,15 +101,23 @@ public class InvoiceDialog extends JDialog {
         feePanel.add(new JScrollPane(tblPhuPhi), BorderLayout.CENTER);
 
         // ===== Tổng tiền =====
-        JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        lblTotal = new JLabel("Tổng tiền: " + formatCurrency(invoiceData.getTongTien()));
-        lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        JPanel totalPanel = new JPanel();
+        totalPanel.setLayout(new BoxLayout(totalPanel, BoxLayout.Y_AXIS));
+        lblTotal = new JLabel("Tổng tiền: " + formatCurrency(invoiceData.getHoaDon().getTongTien()));
+        lblTaxFee = new JLabel("Thuế VAT(" + this.invoiceData.getThueVAT().getGiaHienTai() + "%): " + formatCurrency(invoiceData.getHoaDon().getTienThue()));
+        lblTotalInvoice = new  JLabel("Tổng hóa đơn: " +  formatCurrency(invoiceData.getHoaDon().getTongHoaDon()));
+        lblTotal.setFont(CustomUI.normalFont);
+        lblTaxFee.setFont(CustomUI.normalFont);
+        lblTotalInvoice.setFont(CustomUI.normalFont);
         totalPanel.add(lblTotal);
+        totalPanel.add(lblTaxFee);
+        totalPanel.add(lblTotalInvoice);
 
-        // ===== Nút in hóa đơn =====
-        JButton btnPrint = new JButton("In hóa đơn");
-        btnPrint.addActionListener(e -> JOptionPane.showMessageDialog(this, "in hóa đơn"));
-        totalPanel.add(btnPrint);
+
+//        // ===== Nút in hóa đơn =====
+//        JButton btnPrint = new JButton("In hóa đơn");
+//        btnPrint.addActionListener(e -> JOptionPane.showMessageDialog(this, "in hóa đơn"));
+//        totalPanel.add(btnPrint);
 
         // ===== Combine center =====
         JPanel centerPanel = new JPanel(new GridLayout(3, 1, 0, 10));
@@ -117,11 +133,36 @@ public class InvoiceDialog extends JDialog {
 
     private void fillRoomTable(DefaultTableModel model) {
         for (ChiTietHoaDon cthd : invoiceData.getChiTietHoaDonList()) {
+            double thoiGianSuDung = cthd.getThoiGianSuDung();
+            int soNgay = (int) (thoiGianSuDung / 24); // số ngày
+            double phanDuSauNgay = thoiGianSuDung % 24;
+
+            int soGio = (int) phanDuSauNgay; // số giờ
+            double phanDuSauGio = (phanDuSauNgay - soGio) * 60;
+
+            int soPhut = (int) phanDuSauGio; // số phút
+
+            StringBuilder builder = new StringBuilder();
+            if(soNgay > 0){
+                builder.append(soNgay);
+                builder.append(" Ngày ");
+            }
+
+            if(soGio > 0){
+                builder.append(soGio);
+                builder.append(" Giờ ");
+            }
+
+            if(soPhut > 0){
+                builder.append(soPhut);
+                builder.append(" Phút ");
+            }
+
             model.addRow(new Object[]{
                     cthd.getTenPhong(),
                     formatCurrency(cthd.getDonGiaPhongHienTai()),
-                    cthd.getThoiGianSuDung(),
-                    formatCurrency(cthd.tinhThanhTien())
+                    builder.toString(),
+                    formatCurrency(cthd.getTongTien())
             });
         }
     }
@@ -146,7 +187,7 @@ public class InvoiceDialog extends JDialog {
                 model.addRow(new Object[]{
                         pp.getTenPhong(),
                         pp.getTenPhuPhi(),
-                        formatCurrency(pp.getDonGiaPhuPhi())
+                        formatCurrency(pp.getTongTien())
                 });
             }
         }
@@ -157,5 +198,6 @@ public class InvoiceDialog extends JDialog {
         DecimalFormat df = new DecimalFormat("#,### VND");
         return df.format(value);
     }
+
 }
 

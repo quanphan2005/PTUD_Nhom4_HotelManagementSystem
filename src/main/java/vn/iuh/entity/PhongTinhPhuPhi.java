@@ -17,7 +17,10 @@ public class PhongTinhPhuPhi {
         if(tongTien != null){
             return tongTien;
         }
-        throw new BusinessException("Phòng tính phụ phí chưa được set tổng tiền");
+        else {
+            this.tongTien = this.donGiaPhuPhi;
+            return this.tongTien;
+        }
     }
 
     public void setTongTien(BigDecimal tongTien) {

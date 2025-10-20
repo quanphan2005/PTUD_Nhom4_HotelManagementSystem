@@ -243,7 +243,7 @@ public class RevenueStatisticPanel extends JPanel {
     }
 
     private void createTableResult(){
-        String[] cols = {"Mã hóa đơn", "Khách hàng", "Mã phòng", "Nhân viên", "Ngày lập", "Tiền phòng","Dịch vụ", "Thuế", "Tổng tiền"};
+        String[] cols = {"Mã hóa đơn", "Khách hàng", "Nhân viên", "Ngày lập", "Tiền phòng","Dịch vụ", "Thuế", "Tổng tiền"};
         DefaultTableModel model = new DefaultTableModel(null, cols) {
             @Override public boolean isCellEditable(int row, int column) { return false; } // Không cho phép chỉnh sửa thông tin trong các ô của table
         };

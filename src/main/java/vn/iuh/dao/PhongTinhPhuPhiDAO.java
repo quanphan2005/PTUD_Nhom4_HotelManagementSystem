@@ -81,11 +81,11 @@ public class PhongTinhPhuPhiDAO {
         List<PhongTinhPhuPhi> danhSachPhuPhi = new ArrayList<>();
 
         String query  = "SELECT ptpp.*, pp.ten_phu_phi, p.ten_phong FROM PhongTinhPhuPhi ptpp " +
-                "JOIN PhuPhi pp ON ptpp.ma_phu_phi = pp.ma_phu_phi " +
-                "JOIN ChiTietDatPhong ctdp ON ptpp.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
-                "JOIN ChiTietHoaDon cthd ON ctdp.ma_chi_tiet_dat_phong = cthd.ma_chi_tiet_dat_phong " +
-                "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
-                "WHERE cthd.ma_hoa_don = ?";
+                            "JOIN PhuPhi pp ON ptpp.ma_phu_phi = pp.ma_phu_phi " +
+                            "JOIN ChiTietDatPhong ctdp ON ptpp.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                            "JOIN ChiTietHoaDon cthd ON ctdp.ma_chi_tiet_dat_phong = cthd.ma_chi_tiet_dat_phong " +
+                            "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                            "WHERE cthd.ma_hoa_don = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
 
