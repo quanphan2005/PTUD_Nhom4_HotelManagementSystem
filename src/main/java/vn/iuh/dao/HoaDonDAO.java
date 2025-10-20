@@ -66,6 +66,54 @@ public class HoaDonDAO {
         return null;
     }
 
+    public List<HoaDon> layTatCaHoaDon(){
+        List<HoaDon> list = new ArrayList<>();
+        String query = "SELECT hd.ma_hoa_don, hd.kieu_hoa_don, hd.ma_don_dat_phong, hd.ma_khach_hang FROM HoaDon hd";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                HoaDon hoaDon= new HoaDon();
+                hoaDon.setMaHoaDon(rs.getString("ma_hoa_don"));
+                hoaDon.setKieuHoaDon(rs.getString("kieu_hoa_don"));
+                hoaDon.setMaDonDatPhong(rs.getString("ma_don_dat_phong"));
+                hoaDon.setMaKhachHang(rs.getString("ma_khach_hang"));
+                list.add(hoaDon);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+//    public List<HoaDon> timTheoNgay(Date tuNgay, Date denNgay){
+//        List<HoaDon> dsHoaDon = new ArrayList<>();
+//        String query = "SELECT * FROM HoaDon " +
+//                "WHERE CAST(thoi_gian_tao AS DATE) BETWEEN ? AND ?";
+//
+//        try (PreparedStatement ps = connection.prepareStatement(query)) {
+//
+//            // SỬA 2: Dùng setDate thay vì setTimestamp để khớp với CAST
+//            ps.setDate(1, new java.sql.Date(tuNgay.getTime()));
+//            ps.setDate(2, new java.sql.Date(denNgay.getTime()));
+//
+//            try (ResultSet rs = ps.executeQuery()) {
+//                while (rs.next()) {
+//                    HoaDon hd = mapResultSet(rs);
+//                    dsHoaDon.add(hd);
+//                }
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//
+//        return dsHoaDon;
+//    }
+
     public boolean boSungGiaTien(InvoicePricingUpdate pricing){
         String sql = "Update HoaDon set tong_tien = ?, tien_thue = ? , tong_hoa_don = ? where ma_hoa_don = ?";
         try {
