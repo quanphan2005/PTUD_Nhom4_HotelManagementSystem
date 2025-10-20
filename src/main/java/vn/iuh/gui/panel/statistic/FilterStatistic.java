@@ -1,23 +1,24 @@
 package vn.iuh.gui.panel.statistic;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 
 public class FilterStatistic {
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private Timestamp startDate;
+    private Timestamp endDate;
     private String employeeName;
 
-    public FilterStatistic(LocalDate startDate, LocalDate endDate, String employeeName) {
+    public FilterStatistic(Timestamp startDate, Timestamp endDate, String employeeName) {
         this.startDate = startDate;
         this.endDate = endDate;
         this.employeeName = employeeName;
     }
 
-    public LocalDate getStartDate() {
+    public Timestamp getStartDate() {
         return startDate;
     }
 
-    public LocalDate getEndDate() {
+    public Timestamp getEndDate() {
         return endDate;
     }
 

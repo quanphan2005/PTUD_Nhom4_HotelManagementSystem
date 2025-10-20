@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface HoaDonService {
     HoaDon getInvoiceByID(String id);
-    HoaDon createInvoice(InvoiceCreationEvent event);
+    InvoiceCreationEvent createInvoice(InvoiceCreationEvent event);
     HoaDon getLatestInvoice();
     List<ChiTietHoaDon> insertListChiTietHoaDon(List<ChiTietHoaDon> chiTietHoaDonList);
 }

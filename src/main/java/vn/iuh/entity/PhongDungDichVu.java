@@ -1,5 +1,6 @@
 package vn.iuh.entity;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 public class PhongDungDichVu {
@@ -8,11 +9,30 @@ public class PhongDungDichVu {
     private double giaThoiDiemDo;
     private boolean duocTang;
     private String maChiTietDatPhong;
+    private String tenPhong;
     private String maDichVu;
     private String maPhienDangNhap;
     private Timestamp thoiGianTao;
+    private String tenDichVu;
+    private BigDecimal tongTien;
 
     public PhongDungDichVu() {}
+
+    public String getTenPhong() {
+        return tenPhong;
+    }
+
+    public void setTenPhong(String tenPhong) {
+        this.tenPhong = tenPhong;
+    }
+
+    public String getTenDichVu() {
+        return tenDichVu;
+    }
+
+    public void setTenDichVu(String tenDichVu) {
+        this.tenDichVu = tenDichVu;
+    }
 
     public PhongDungDichVu(String maPhongDungDichVu, int soLuong, double giaThoiDiemDo,
                            boolean duocTang, String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
@@ -26,6 +46,7 @@ public class PhongDungDichVu {
         this.maPhienDangNhap = maPhienDangNhap;
         this.thoiGianTao = thoiGianTao;
     }
+
 
     public String getMaPhongDungDichVu() {
         return maPhongDungDichVu;
@@ -89,5 +110,19 @@ public class PhongDungDichVu {
 
     public void setThoiGianTao(Timestamp thoiGianTao) {
         this.thoiGianTao = thoiGianTao;
+    }
+
+    public BigDecimal tinhThanhTien(){
+        return BigDecimal.valueOf(giaThoiDiemDo).multiply(BigDecimal.valueOf(soLuong));
+    }
+
+    public BigDecimal getTongTien() {
+        if(tongTien != null){
+            return tongTien;
+        }
+        else {
+            tongTien = this.tinhThanhTien();
+            return tongTien;
+        }
     }
 }

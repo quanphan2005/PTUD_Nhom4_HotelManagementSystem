@@ -9,6 +9,8 @@ public class ChiTietHoaDon {
     private String maChiTietDatPhong;
     private BigDecimal donGiaPhongHienTai;
     private double thoiGianSuDung;
+    private BigDecimal tongTien;
+    private String tenPhong;
 
     public ChiTietHoaDon(String maChiTietHoaDon, String maHoaDon, String maPhong, String maChiTietDatPhong, BigDecimal donGiaPhongHienTai, double thoiGianSuDung) {
         this.maChiTietHoaDon = maChiTietHoaDon;
@@ -17,6 +19,14 @@ public class ChiTietHoaDon {
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.donGiaPhongHienTai = donGiaPhongHienTai;
         this.thoiGianSuDung = thoiGianSuDung;
+    }
+
+    public String getTenPhong() {
+        return tenPhong;
+    }
+
+    public void setTenPhong(String tenPhong) {
+        this.tenPhong = tenPhong;
     }
 
     public ChiTietHoaDon() {
@@ -70,11 +80,11 @@ public class ChiTietHoaDon {
         this.thoiGianSuDung = thoiGianSuDung;
     }
 
-    public BigDecimal tinhThanhTien() {
-        if(donGiaPhongHienTai != null)
-        {
-            return donGiaPhongHienTai.multiply(BigDecimal.valueOf(thoiGianSuDung));
-        }
-        return BigDecimal.ZERO;
+    public BigDecimal getTongTien() {
+        return tongTien;
+    }
+
+    public void setTongTien(BigDecimal tongTien) {
+        this.tongTien = tongTien;
     }
 }

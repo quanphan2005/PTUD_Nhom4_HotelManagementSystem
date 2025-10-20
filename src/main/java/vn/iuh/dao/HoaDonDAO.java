@@ -1,10 +1,13 @@
 package vn.iuh.dao;
 
+import vn.iuh.dto.event.update.InvoicePricingUpdate;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HoaDonDAO {
     private final Connection connection;
@@ -49,7 +52,6 @@ public class HoaDonDAO {
             ps.setString(3, hoaDon.getMaPhienDangNhap());
             ps.setString(4, hoaDon.getMaDonDatPhong());
             ps.setString(5, hoaDon.getMaKhachHang());
-
             ps.executeUpdate();
             return hoaDon;
         } catch (SQLException e) {
@@ -57,6 +59,25 @@ public class HoaDonDAO {
         }
 
         return null;
+    }
+
+    public boolean boSungGiaTien(InvoicePricingUpdate pricing){
+        String sql = "Update HoaDon set tong_tien = ?, tien_thue = ? , tong_hoa_don = ? where ma_hoa_don = ?";
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setBigDecimal(1, pricing.getTongTien());
+            ps.setBigDecimal(2, pricing.getTienThue());
+            ps.setBigDecimal(3, pricing.getTongHoaDon());
+            ps.setString(4, pricing.getMaHoaDon());
+
+            int rs = ps.executeUpdate();
+            return rs > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+        return false;
     }
 
     public HoaDon timHoaDonMoiNhat() {
@@ -111,5 +132,28 @@ public class HoaDonDAO {
             System.out.println(et.getMessage());
         }
         return null;
+    }
+
+    public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maNhanVien){
+        String sql = "select * from HoaDon where getdate() between ? and ? order by ma_hoa_don and  (? IS NULL OR ma_nhan_vien = ?)";
+
+        List<HoaDon> danhSachHoaDon = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setTimestamp(1,tgBatDau);
+            ps.setTimestamp(2,tgKetThuc);
+            ps.setString(3, maNhanVien);
+            ps.setString(4, maNhanVien);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                danhSachHoaDon.add(chuyenKetQuaThanhHoaDon(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+        return danhSachHoaDon;
     }
 }
