@@ -10,6 +10,7 @@ public class BookingCreationEvent {
     private String moTa;
     private Timestamp tgNhanPhong;
     private Timestamp tgTraPhong;
+    private String phuongThucThanhToan;
     private double tongTienDuTinh;
     private double tienDatCoc;
     private boolean daDatTruoc;
@@ -29,6 +30,28 @@ public class BookingCreationEvent {
         this.moTa = moTa;
         this.tgNhanPhong = tgNhanPhong;
         this.tgTraPhong = tgTraPhong;
+        this.tongTienDuTinh = tongTienDuTinh;
+        this.tienDatCoc = tienDatCoc;
+        this.daDatTruoc = daDatTruoc;
+        this.danhSachMaPhong = danhSachMaPhong;
+        this.danhSachDichVu = danhSachDichVu;
+        this.maPhienDangNhap = maPhienDangNhap;
+        this.thoiGianTao = thoiGianTao;
+    }
+
+    public BookingCreationEvent(String tenKhachHang, String soDienThoai, String CCCD, String moTa,
+                                Timestamp tgNhanPhong,
+                                Timestamp tgTraPhong, String phuongThucThanhToan, double tongTienDuTinh,
+                                double tienDatCoc,
+                                boolean daDatTruoc, List<String> danhSachMaPhong, List<DonGoiDichVu> danhSachDichVu,
+                                String maPhienDangNhap, Timestamp thoiGianTao) {
+        this.tenKhachHang = tenKhachHang;
+        this.soDienThoai = soDienThoai;
+        this.CCCD = CCCD;
+        this.moTa = moTa;
+        this.tgNhanPhong = tgNhanPhong;
+        this.tgTraPhong = tgTraPhong;
+        this.phuongThucThanhToan = phuongThucThanhToan;
         this.tongTienDuTinh = tongTienDuTinh;
         this.tienDatCoc = tienDatCoc;
         this.daDatTruoc = daDatTruoc;
@@ -60,6 +83,10 @@ public class BookingCreationEvent {
 
     public Timestamp getTgTraPhong() {
         return tgTraPhong;
+    }
+
+    public String getPhuongThucThanhToan() {
+        return phuongThucThanhToan;
     }
 
     public double getTongTienDuTinh() {

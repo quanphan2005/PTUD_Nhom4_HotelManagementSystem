@@ -129,6 +129,11 @@ public class HoaDon {
         if(tongTien != null){
             return this.tongTien;
         }
+
+        if (this.chiTietHoaDonList == null || this.chiTietHoaDonList.isEmpty()){
+            return new BigDecimal(0);
+        }
+
         BigDecimal tongTien = new BigDecimal(0);
         for(ChiTietHoaDon ct : this.chiTietHoaDonList){
             tongTien = tongTien.add(ct.getTongTien());

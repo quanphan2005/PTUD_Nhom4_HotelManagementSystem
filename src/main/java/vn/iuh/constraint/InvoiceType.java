@@ -1,7 +1,9 @@
 package vn.iuh.constraint;
 
 public enum InvoiceType {
-    THANH_TOAN("THANH TOÁN"),
+    PAYMENT_INVOICE("THANH TOÁN"),
+    DEPOSIT_INVOICE("ĐẶT CỌC"),
+    REFUND_INVOICE("HOÀN TIỀN")
     ;
 
     private  String status;

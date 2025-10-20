@@ -41,23 +41,28 @@ public class HoaDonDAO {
     }
 
     public HoaDon createInvoice(HoaDon hoaDon) {
-        String query = "INSERT INTO HoaDon (ma_hoa_don, " +
-                "kieu_hoa_don, ma_phien_dang_nhap, ma_don_dat_phong, ma_khach_hang) " +
-                "VALUES (?, ?, ?, ?, ?)";
-
+        String sql = "Insert into HoaDon (ma_hoa_don, phuong_thuc_thanh_toan, kieu_hoa_don, tinh_trang_thanh_toan, ma_phien_dang_nhap, ma_don_dat_phong, ma_khach_hang, tong_tien, tien_thue, tong_hoa_don) " +
+                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
-            PreparedStatement ps = connection.prepareStatement(query);
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, hoaDon.getMaHoaDon());
-            ps.setString(2, hoaDon.getKieuHoaDon());
-            ps.setString(3, hoaDon.getMaPhienDangNhap());
-            ps.setString(4, hoaDon.getMaDonDatPhong());
-            ps.setString(5, hoaDon.getMaKhachHang());
-            ps.executeUpdate();
-            return hoaDon;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
+            ps.setString(2, hoaDon.getPhuongThucThanhToan());
+            ps.setString(3, hoaDon.getKieuHoaDon());
+            ps.setString(4, hoaDon.getTinhTrangThanhToan());
+            ps.setString(5, hoaDon.getMaPhienDangNhap());
+            ps.setString(6, hoaDon.getMaDonDatPhong());
+            ps.setString(7, hoaDon.getMaKhachHang());
+            ps.setBigDecimal(8, hoaDon.getTongTien());
+            ps.setBigDecimal(9, hoaDon.getTienThue());
+            ps.setBigDecimal(10, hoaDon.getTongHoaDon());
 
+            int rs = ps.executeUpdate();
+            if (rs > 0) {
+                return hoaDon;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return null;
     }
 

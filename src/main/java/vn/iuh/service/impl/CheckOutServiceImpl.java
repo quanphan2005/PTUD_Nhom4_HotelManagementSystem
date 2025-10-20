@@ -359,7 +359,7 @@ public class CheckOutServiceImpl implements CheckOutService {
     }
     private HoaDon createInvoiceFromEntity(DonDatPhong ddp) {
         return new HoaDon(taoMaHoaDonMoi(),
-                InvoiceType.THANH_TOAN.getStatus(),
+                InvoiceType.PAYMENT_INVOICE.getStatus(),
                 Main.getCurrentLoginSession(),
                 ddp.getMaDonDatPhong(),
                 ddp.getMaKhachHang()

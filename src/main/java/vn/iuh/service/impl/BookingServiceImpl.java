@@ -1,9 +1,6 @@
 package vn.iuh.service.impl;
 
-import vn.iuh.constraint.ActionType;
-import vn.iuh.constraint.EntityIDSymbol;
-import vn.iuh.constraint.ResponseType;
-import vn.iuh.constraint.RoomStatus;
+import vn.iuh.constraint.*;
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
@@ -17,6 +14,7 @@ import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.TimeFormat;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +27,7 @@ public class BookingServiceImpl implements BookingService {
     private final LichSuDiVaoDAO lichSuDiVaoDAO;
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private final CongViecDAO congViecDAO;
+    private final HoaDonDAO hoaDonDAO;
 
     public BookingServiceImpl() {
         this.datPhongDAO = new DatPhongDAO();
@@ -37,6 +36,7 @@ public class BookingServiceImpl implements BookingService {
         this.lichSuDiVaoDAO = new LichSuDiVaoDAO();
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecDAO = new CongViecDAO();
+        this.hoaDonDAO = new HoaDonDAO();
     }
 
     @Override
@@ -110,6 +110,22 @@ public class BookingServiceImpl implements BookingService {
                                                                   khachHang.getMaKhachHang());
             datPhongDAO.themDonDatPhong(donDatPhong);
 
+            // 2.1.1 Create Invoice Advance Payment
+            if (bookingCreationEvent.isDaDatTruoc()) {
+                HoaDon hoaDonMoiNhat = hoaDonDAO.timHoaDonMoiNhat();
+                String maHoaDonMoiNhat = hoaDonMoiNhat == null ? null : hoaDonMoiNhat.getMaHoaDon();
+
+                HoaDon hoaDonDatCoc = createInvoiceEntity(
+                        EntityUtil.increaseEntityID(maHoaDonMoiNhat,
+                                                    EntityIDSymbol.INVOICE_PREFIX.getPrefix(),
+                                                    EntityIDSymbol.INVOICE_PREFIX.getLength()),
+                        donDatPhong,
+                        bookingCreationEvent.getPhuongThucThanhToan()
+                );
+
+                hoaDonDAO.createInvoice(hoaDonDatCoc);
+            }
+
             // 2.2. Create RoomReservationDetail Entity & insert to DB
             List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
             ChiTietDatPhong chiTietDatPhongMoiNhat = datPhongDAO.timChiTietDatPhongMoiNhat();
@@ -124,8 +140,6 @@ public class BookingServiceImpl implements BookingService {
                 chiTietDatPhongs.add(chiTietDatPhong);
                 maChiTietDatPhongMoiNhat = chiTietDatPhong.getMaChiTietDatPhong();
             }
-
-
             datPhongDAO.themChiTietDatPhong(donDatPhong, chiTietDatPhongs);
 
             // 2.3. Create HistoryCheckInEntity & insert to DB
@@ -559,6 +573,25 @@ public class BookingServiceImpl implements BookingService {
                 bookingCreationEvent.getMaPhienDangNhap(),
                 null
         );
+    }
+
+    private HoaDon createInvoiceEntity(String maHD, DonDatPhong donDatPhong, String phuongThucThanhToan) {
+        HoaDon hoaDon = new HoaDon(
+                maHD,
+                InvoiceType.DEPOSIT_INVOICE.getStatus(),
+                donDatPhong.getMaPhienDangNhap(),
+                donDatPhong.getMaDonDatPhong(),
+                donDatPhong.getMaKhachHang()
+        );
+        hoaDon.setPhuongThucThanhToan(phuongThucThanhToan);
+        hoaDon.setTinhTrangThanhToan(PaymentStatus.PAID.getStatus());
+        hoaDon.setThoiGianTao(null);
+        hoaDon.setTongTien(BigDecimal.valueOf(donDatPhong.getTienDatCoc()));
+        hoaDon.setTienThue(BigDecimal.valueOf(donDatPhong.getTienDatCoc() * FeeValue.TAX.getValue()));
+        hoaDon.setTongHoaDon(BigDecimal.valueOf(donDatPhong.getTienDatCoc() * (1 + FeeValue.TAX.getValue())));
+        hoaDon.setChiTietHoaDonList(null);
+
+        return hoaDon;
     }
 
     private ChiTietDatPhong createRoomReservationDetailEntity(BookingCreationEvent bookingCreationEvent,
