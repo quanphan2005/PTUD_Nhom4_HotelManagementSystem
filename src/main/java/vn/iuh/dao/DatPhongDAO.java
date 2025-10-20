@@ -743,6 +743,7 @@ public class DatPhongDAO {
                 "LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
                 "    AND cv.da_xoa = 0 " +
                 "WHERE ctdp.tg_nhan_phong BETWEEN ? AND ? " +
+                "AND cv.ten_trang_thai != ? " +
                 "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
 
         List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
@@ -750,6 +751,7 @@ public class DatPhongDAO {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setTimestamp(1, startDate);
             ps.setTimestamp(2, endDate);
+            ps.setString(3, RoomStatus.ROOM_CLEANING_STATUS.getStatus());
             var rs = ps.executeQuery();
 
             while (rs.next()) {
