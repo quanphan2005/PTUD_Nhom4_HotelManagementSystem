@@ -171,6 +171,9 @@ public class CheckOutServiceImpl implements CheckOutService {
                 maChiTietHoaDonMoiNhat = chiTietHoaDon.getMaChiTietHoaDon();
             }
 
+            //Thêm danh sách chi tiết hóa đơn vào hóa đơn entity
+            hoaDonThanhToan.setChiTietHoaDonList(danhSachChiTietHoaDon);
+
             //Cập nhật ChiTietDatPhong thành trả phòng
             chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
 
@@ -202,7 +205,6 @@ public class CheckOutServiceImpl implements CheckOutService {
                 List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhiMoi = createLateCheckOutFee(danhSachMaChiTietDatPhong, danhSachMaPhongDangSuDung, thoiGianCheckOutTre);
                 phongTinhPhuPhiDAO.themDanhSachPhuPhiChoCacPhong(danhSachPhongTinhPhuPhiMoi);
                 danhSachPhongTinhPhuPhi.addAll(danhSachPhongTinhPhuPhiMoi);
-                System.out.println("Số lượng " + danhSachPhongTinhPhuPhi.size());
             }
 
             BigDecimal tongTien = BigDecimal.ZERO;
@@ -226,8 +228,9 @@ public class CheckOutServiceImpl implements CheckOutService {
             InvoicePricingUpdate pricing = new InvoicePricingUpdate(hoaDonThanhToan.getMaHoaDon(), tongTien, tienThue, tongTien.add(tienThue));
             var result = hoaDonDAO.boSungGiaTien(pricing);
             if(result){
-                hoaDonThanhToan.setTongHoaDon(tongTien);
+                hoaDonThanhToan.setTongTien(tongTien);
                 hoaDonThanhToan.setTienThue(tienThue);
+                hoaDonThanhToan.setTongHoaDon(tongTien.add(tienThue));
             }
             else {
                 throw new BusinessException("Lỗi khi cập nhật thành tiền cho hóa đơn");
@@ -513,6 +516,10 @@ public class CheckOutServiceImpl implements CheckOutService {
                 danhSachChiTietHoaDon.add(chiTietHoaDon);
                 maChiTietHoaDonMoiNhat = chiTietHoaDon.getMaChiTietHoaDon();
             }
+
+            //Thêm danh sách chi tiết hóa đơn vào hóa đơn entity
+            hoaDonThanhToan.setChiTietHoaDonList(danhSachChiTietHoaDon);
+
 
             //Cập nhật ChiTietDatPhong thành trả phòng
             chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
