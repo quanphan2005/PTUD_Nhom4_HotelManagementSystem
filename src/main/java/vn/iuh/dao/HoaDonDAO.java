@@ -187,16 +187,16 @@ public class HoaDonDAO {
         return null;
     }
 
-    public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maNhanVien){
-        String sql = "select * from HoaDon where getdate() between ? and ? order by ma_hoa_don and  (? IS NULL OR ma_nhan_vien = ?)";
+    public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maPhienDangNhap){
+        String sql = "select * from HoaDon where thoi_gian_tao between ? and ? order by ma_phien_dang_nhap and  (? IS NULL OR ma_phien_dang_nhap = ?)";
 
         List<HoaDon> danhSachHoaDon = new ArrayList<>();
         try {
             PreparedStatement ps = connection.prepareStatement(sql);
             ps.setTimestamp(1,tgBatDau);
             ps.setTimestamp(2,tgKetThuc);
-            ps.setString(3, maNhanVien);
-            ps.setString(4, maNhanVien);
+            ps.setString(3, maPhienDangNhap);
+            ps.setString(4, maPhienDangNhap);
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
