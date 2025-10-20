@@ -303,6 +303,4 @@ public class RevenueStatisticPanel extends JPanel {
         chartPanel.add(lblChart, BorderLayout.CENTER);
         pnlVisualDisplay.add(chartPanel, "chart");
     }
-
-
 }
