@@ -2,11 +2,15 @@ package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.ui.FlatLineBorder;
+import vn.iuh.constraint.Fee;
 import vn.iuh.dao.HoaDonDAO;
+import vn.iuh.dto.event.create.InvoiceCreationEvent;
+import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
 import vn.iuh.gui.base.Main;
+import vn.iuh.gui.dialog.InvoiceDialog;
 import vn.iuh.service.HoaDonService;
 import vn.iuh.service.impl.HoaDonServiceImpl;
 import vn.iuh.dao.*;
@@ -73,10 +77,14 @@ public class QuanLyHoaDonPanel extends JPanel{
     private ChiTietHoaDonDAO chiTietHoaDonDAO;
     private DonGoiDichVuDao donGoiDichVuDAO;
     private PhongTinhPhuPhiDAO phongTinhPhuPhiDAO;
+    private PhuPhiDAO phuPhiDAO;
     private KhachHangDAO khachHangDAO;
     private NhanVienDAO nhanVienDAO;
+    private DatPhongDAO datPhongDAO;
 
     public QuanLyHoaDonPanel() {
+        this.phuPhiDAO = new PhuPhiDAO();
+        this.datPhongDAO = new DatPhongDAO();
         this.chiTietHoaDonDAO = new ChiTietHoaDonDAO();
         this.donGoiDichVuDAO = new DonGoiDichVuDao();
         this.phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO();
@@ -506,16 +514,43 @@ public class QuanLyHoaDonPanel extends JPanel{
             if(hoaDon == null){
                 JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn" + maHoaDon);
             }
+            String maDonDatPhong = hoaDon.getMaDonDatPhong();
+
+            ThongTinPhuPhi ttpp = phuPhiDAO.getThongTinPhuPhiByName(Fee.THUE.status);
+
+            DonDatPhong ddp = datPhongDAO.getDonDatPhongById(maDonDatPhong);
 
             KhachHang khachHang = khachHangDAO.timKhachHang(hoaDon.getMaKhachHang());
 
             NhanVien nhanVien = nhanVienDAO.timNhanVien(hoaDon.getMaPhienDangNhap());
 
-            List<ChiTietHoaDon> dsChiTiet = chiTietHoaDonDAO.findByInvoiceId(maHoaDon);
+            String tenNhanVien = nhanVien.getTenNhanVien();
+
+            List<ChiTietHoaDon> dsChiTiet = chiTietHoaDonDAO.getInvoiceDetaiByInvoiceId(maHoaDon);
 
             List<PhongDungDichVu> dsPhongDungDichVu = donGoiDichVuDAO.timDonGoiDichVuBangMaDatPhong(hoaDon.getMaDonDatPhong());
 
-            List<PhongTinhPhuPhi> dsPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon()
+            List<PhongTinhPhuPhi> dsPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon(maHoaDon);
+
+            BigDecimal tongTien = hoaDon.getTongHoaDon();
+
+            InvoiceCreationEvent invoiceCreationEvent = new InvoiceCreationEvent(
+                    hoaDon.getMaPhienDangNhap(),
+                    ddp, ttpp,
+                    khachHang,
+                    hoaDon,
+                    nhanVien,
+                    dsChiTiet,
+                    dsPhongDungDichVu,
+                    dsPhongTinhPhuPhi
+            );
+            SwingUtilities.invokeLater(() -> {
+                InvoiceDialog dialog = new InvoiceDialog(invoiceCreationEvent);
+                dialog.setVisible(true);
+            });
+
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 }
