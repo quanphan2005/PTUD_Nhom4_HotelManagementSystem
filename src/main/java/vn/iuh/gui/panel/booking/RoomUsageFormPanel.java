@@ -24,7 +24,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.time.temporal.ChronoUnit;
@@ -988,8 +987,8 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void handleShowReservationManagement() {
-        ReservationFormSearchPanel reservationFormManagementPanel =
-                new ReservationFormSearchPanel(PanelName.ROOM_USING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
+        PreReservationSearchPanel reservationFormManagementPanel =
+                new PreReservationSearchPanel(PanelName.ROOM_USING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
 
         Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_SEARCH.getName());
         Main.showCard(PanelName.RESERVATION_FORM_SEARCH.getName());

@@ -14,7 +14,7 @@ import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.dto.response.EventResponse;
-import vn.iuh.dto.response.ReservationFormResponse;
+import vn.iuh.dto.response.PreReservationResponse;
 import vn.iuh.entity.*;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
@@ -250,13 +250,13 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<ReservationFormResponse> getAllReservationForms() {
+    public List<PreReservationResponse> getAllReservationForms() {
         System.out.println("Fetching all reservation forms...");
         List<PhieuDatPhong> danhSachPhieuDatPhong = datPhongDAO.timTatCaPhieuDatPhong();
 
-        List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
+        List<PreReservationResponse> preReservationRespons = new ArrayList<>();
         for (PhieuDatPhong phieuDatPhong : danhSachPhieuDatPhong) {
-            reservationFormResponses.add(new ReservationFormResponse(
+            preReservationRespons.add(new PreReservationResponse(
                     phieuDatPhong.getTenKhachHang(),
                     phieuDatPhong.getMaDonDatPhong(),
                     phieuDatPhong.getMaPhong(),
@@ -266,17 +266,17 @@ public class BookingServiceImpl implements BookingService {
             ));
         }
 
-        return reservationFormResponses;
+        return preReservationRespons;
     }
 
     @Override
-    public List<ReservationFormResponse> getReseravtionFormByRoomId(String id) {
+    public List<PreReservationResponse> getReseravtionFormByRoomId(String id) {
         System.out.println("Fetching reservation forms for room ID: " + id);
         List<PhieuDatPhong> danhSachPhieuDatPhong = datPhongDAO.timThongTinDatPhongBangMaPhong(id);
 
-        List<ReservationFormResponse> reservationFormResponses = new ArrayList<>();
+        List<PreReservationResponse> preReservationRespons = new ArrayList<>();
         for (PhieuDatPhong phieuDatPhong : danhSachPhieuDatPhong) {
-            reservationFormResponses.add(new ReservationFormResponse(
+            preReservationRespons.add(new PreReservationResponse(
                     phieuDatPhong.getTenKhachHang(),
                     phieuDatPhong.getMaDonDatPhong(),
                     phieuDatPhong.getMaPhong(),
@@ -286,7 +286,7 @@ public class BookingServiceImpl implements BookingService {
             ));
         }
 
-        return reservationFormResponses;
+        return preReservationRespons;
     }
 
     @Override

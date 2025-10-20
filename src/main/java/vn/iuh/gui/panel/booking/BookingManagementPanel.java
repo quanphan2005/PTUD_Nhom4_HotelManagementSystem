@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ReservationManagementPanel extends JPanel {
+public class BookingManagementPanel extends JPanel {
     public static GridRoomPanel gridRoomPanels;
     private BookingService bookingService;
     private LoaiPhongService loaiPhongService;
@@ -60,7 +60,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private final String ALL_STATUS = "TẤT CẢ";
 
-    public ReservationManagementPanel() {
+    public BookingManagementPanel() {
         init();
         setupMultiBookingCallbacks();
     }

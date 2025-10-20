@@ -9,19 +9,13 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.gui.panel.LoginPanel;
 import vn.iuh.gui.dialog.WorkingHistoryDialog;
-import vn.iuh.gui.panel.QuanLyKhachHangPanel;
-import vn.iuh.gui.panel.QuanLyLoaiPhongPanel;
-import vn.iuh.gui.panel.QuanLyPhongPanel;
 import vn.iuh.gui.panel.*;
-import vn.iuh.gui.panel.booking.ReservationFormManagementPanel;
-import vn.iuh.gui.panel.booking.ReservationManagementPanel;
+import vn.iuh.gui.panel.booking.PreReservationManagementPanel;
+import vn.iuh.gui.panel.booking.BookingManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.List;
 
 public class Main extends JFrame {
     private JPanel pMain;
@@ -216,16 +210,16 @@ public class Main extends JFrame {
         pink.setBackground(Color.cyan);
         JPanel blue = new JPanel();
         blue.setBackground(Color.blue);
-        ReservationManagementPanel reservationManagementPanel = new ReservationManagementPanel();
-        ReservationFormManagementPanel reservationFormManagementPanel = new ReservationFormManagementPanel();
+        BookingManagementPanel bookingManagementPanel = new BookingManagementPanel();
+        PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
         RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         pnlCenter.add(pink, "dsadsa");
         pnlCenter.add(blue, "Inbox");
-        pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
-        pnlCenter.add(reservationFormManagementPanel, PanelName.RESERVATION_FORM_MANAGEMENT.getName());
+        pnlCenter.add(bookingManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
+        pnlCenter.add(preReservationManagementPanel, PanelName.RESERVATION_FORM_MANAGEMENT.getName());
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
 //        showCard("Quản lý đặt phòng");
 

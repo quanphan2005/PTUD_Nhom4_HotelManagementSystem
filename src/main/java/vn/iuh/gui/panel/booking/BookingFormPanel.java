@@ -8,11 +8,9 @@ import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
-import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.dto.response.EventResponse;
 import vn.iuh.entity.KhachHang;
 import vn.iuh.gui.base.CustomUI;
-import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.CustomerService;
@@ -1062,8 +1060,8 @@ public class BookingFormPanel extends JPanel {
     }
 
     private void handleShowReservationManagement() {
-        ReservationFormSearchPanel reservationFormManagementPanel =
-                new ReservationFormSearchPanel(PanelName.BOOKING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
+        PreReservationSearchPanel reservationFormManagementPanel =
+                new PreReservationSearchPanel(PanelName.BOOKING.getName(), selectedRoom.getRoomName(), selectedRoom.getRoomId());
 
         Main.addCard(reservationFormManagementPanel, PanelName.RESERVATION_FORM_SEARCH.getName());
         Main.showCard(PanelName.RESERVATION_FORM_SEARCH.getName());

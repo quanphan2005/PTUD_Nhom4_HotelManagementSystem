@@ -1,31 +1,29 @@
 package vn.iuh.util;
 
-import vn.iuh.constraint.PanelName;
 import vn.iuh.gui.base.GridRoomPanel;
-import vn.iuh.gui.base.Main;
-import vn.iuh.gui.panel.booking.ReservationFormManagementPanel;
-import vn.iuh.gui.panel.booking.ReservationFormSearchPanel;
-import vn.iuh.gui.panel.booking.ReservationManagementPanel;
+import vn.iuh.gui.panel.booking.PreReservationManagementPanel;
+import vn.iuh.gui.panel.booking.PreReservationSearchPanel;
+import vn.iuh.gui.panel.booking.BookingManagementPanel;
 
 public class RefreshManager {
-    private static ReservationManagementPanel reservationManagementPanel;
-    private static ReservationFormManagementPanel reservationFormManagementPanel;
-    private static ReservationFormSearchPanel reservationFormSearchPanel;
+    private static BookingManagementPanel bookingManagementPanel;
+    private static PreReservationManagementPanel preReservationManagementPanel;
+    private static PreReservationSearchPanel preReservationSearchPanel;
     private static GridRoomPanel gridRoomPanel;
 
     // Registration methods
-    public static void setReservationManagementPanel(ReservationManagementPanel panel) {
-        reservationManagementPanel = panel;
+    public static void setReservationManagementPanel(BookingManagementPanel panel) {
+        bookingManagementPanel = panel;
         System.out.println("RefreshManager: ReservationManagementPanel registered");
     }
 
-    public static void setReservationFormManagementPanel(ReservationFormManagementPanel panel) {
-        reservationFormManagementPanel = panel;
+    public static void setReservationFormManagementPanel(PreReservationManagementPanel panel) {
+        preReservationManagementPanel = panel;
         System.out.println("RefreshManager: ReservationFormManagementPanel registered");
     }
 
-    public static void setReservationFormSearchPanel(ReservationFormSearchPanel panel) {
-        reservationFormSearchPanel = panel;
+    public static void setReservationFormSearchPanel(PreReservationSearchPanel panel) {
+        preReservationSearchPanel = panel;
         System.out.println("RefreshManager: ReservationFormSearchPanel registered");
     }
 
@@ -36,18 +34,18 @@ public class RefreshManager {
 
     // Individual refresh methods
     public static void refreshReservationManagementPanel() {
-        if (reservationManagementPanel != null)
-            reservationManagementPanel.refreshPanel();
+        if (bookingManagementPanel != null)
+            bookingManagementPanel.refreshPanel();
     }
 
     public static void refreshReservationFormManagementPanel() {
-        if (reservationFormManagementPanel != null)
-            reservationFormManagementPanel.refreshPanel();
+        if (preReservationManagementPanel != null)
+            preReservationManagementPanel.refreshPanel();
     }
 
     public static void refreshReservationFormSearchPanel() {
-        if (reservationFormSearchPanel != null)
-            reservationFormSearchPanel.refreshPanel();
+        if (preReservationSearchPanel != null)
+            preReservationSearchPanel.refreshPanel();
     }
 
     // Comprehensive refresh method
