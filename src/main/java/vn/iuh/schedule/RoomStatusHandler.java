@@ -239,7 +239,6 @@ public class RoomStatusHandler implements Job {
         if (!congViecCanKetThuc.isEmpty()) {
             jobDAO.xoaDanhSachCongViec(congViecCanKetThuc);
         }
-
         if (!congViecCanThem.isEmpty()) {
             jobDAO.themDanhSachCongViec(congViecCanThem);
         }
