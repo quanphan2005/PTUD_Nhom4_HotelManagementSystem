@@ -548,7 +548,7 @@ public class RoomItem extends JPanel {
 
         // Status in center (large)
         gbc.gridy = 1;
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(5, 10, 10, 10);
         JLabel lblStatus = new JLabel("TRỐNG");
         lblStatus.setFont(CustomUI.bigFont);
         lblStatus.setForeground(Color.BLACK);
@@ -633,7 +633,7 @@ public class RoomItem extends JPanel {
 
         // Customer name in center
         gbc.gridy = 1;
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(5, 10, 10, 10);
         String customerName = bookingResponse.getCustomerName();
         if (customerName == null || customerName.trim().isEmpty()) {
             customerName = "Khách hàng";
@@ -715,7 +715,7 @@ public class RoomItem extends JPanel {
 
         // Status in center (large)
         gbc.gridy = 1;
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(5, 10, 10, 10);
         JLabel lblStatus = new JLabel("ĐANG DỌN DẸP");
         lblStatus.setFont(CustomUI.normalFont);
         lblStatus.setForeground(Color.BLACK);
