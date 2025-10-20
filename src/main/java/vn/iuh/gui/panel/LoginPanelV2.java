@@ -2,6 +2,7 @@ package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.dao.PhienDangNhapDAO;
 import vn.iuh.dao.TaiKhoanDAO;
@@ -24,7 +25,6 @@ import java.awt.geom.RoundRectangle2D;
 import java.sql.Timestamp;
 
 public class LoginPanelV2 extends JPanel implements ActionListener {
-    private final Main main;
     private final JButton btnLogin;
     private final JLabel lblForgotPassword;
     private final PlaceholderTextField txtUser;
@@ -32,8 +32,7 @@ public class LoginPanelV2 extends JPanel implements ActionListener {
     private final PhienDangNhapDAO phienDangNhapDao;
     private final TaiKhoanDAO taiKhoanDAO;
 
-    public LoginPanelV2(Main main) {
-        this.main = main;
+    public LoginPanelV2() {
         this.phienDangNhapDao = new PhienDangNhapDAO();
         this.taiKhoanDAO = new TaiKhoanDAO();
 
@@ -165,11 +164,17 @@ public class LoginPanelV2 extends JPanel implements ActionListener {
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 lblForgotPassword.setForeground(new Color(170, 170, 170));
             }
+
+            // TODO: Implement forgot password functionality
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                JOptionPane.showMessageDialog(LoginPanelV2.this,
-                    "Vui lòng liên hệ quản trị viên để khôi phục mật khẩu.",
-                    "Khôi phục mật khẩu",
-                    JOptionPane.INFORMATION_MESSAGE);
+                // Quick test purpose only
+                Main.setCurrenLoginSession("PH99999999");
+                Main.showRootCard("MainUI");
+
+//                JOptionPane.showMessageDialog(LoginPanelV2.this,
+//                    "Vui lòng liên hệ quản trị viên để khôi phục mật khẩu.",
+//                    "Khôi phục mật khẩu",
+//                    JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
@@ -243,6 +248,19 @@ public class LoginPanelV2 extends JPanel implements ActionListener {
                 JOptionPane.showMessageDialog(this, "Tên đăng nhập hoặc mật khẩu không đúng", "Đăng nhập thất bại", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(new FlatMacLightLaf());
+        } catch (UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            Main mainFrame = new Main();
+            mainFrame.setVisible(true);
+        });
     }
 
     // Custom panel for left side with image and decorative elements

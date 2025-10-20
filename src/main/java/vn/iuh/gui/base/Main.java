@@ -70,7 +70,7 @@ public class Main extends JFrame {
         mainLayout = new CardLayout();
         pnlRoot = new JPanel(mainLayout);
 
-        LoginPanelV2 loginPanel = new LoginPanelV2(this);
+        LoginPanelV2 loginPanel = new LoginPanelV2();
         pnlRoot.add(loginPanel, "Login");
 
         pnlMainUI = new JPanel(new BorderLayout());
