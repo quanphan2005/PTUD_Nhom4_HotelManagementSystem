@@ -1,11 +1,13 @@
 package vn.iuh.dao;
 
+import vn.iuh.constraint.RoomEndType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.constraint.WorkTimeCost;
 import vn.iuh.dto.repository.CustomerInfo;
 import vn.iuh.dto.repository.PhieuDatPhong;
 import vn.iuh.dto.repository.ThongTinDatPhong;
 import vn.iuh.dto.repository.ThongTinPhong;
+import vn.iuh.dto.response.ReservationResponse;
 import vn.iuh.entity.LichSuDiVao;
 import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.ChiTietDatPhong;
@@ -651,6 +653,135 @@ public class DatPhongDAO {
         return chiTietDatPhongs;
     }
 
+    public ThongTinDatPhong timDonDatPhongChoCheckInCuaPhong(String maPhong, Timestamp tgBatDau, Timestamp tgKetThuc) {
+        String query =
+                "SELECT p.ma_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong " +
+                "FROM Phong p " +
+                "LEFT JOIN ChiTietDatPhong ctdp ON ctdp.ma_phong = p.ma_phong " +
+                "LEFT JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong " +
+                "LEFT JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
+                "WHERE  p.ma_phong = ? and ctdp.tg_nhan_phong BETWEEN dateadd(second, -10 , ?) AND ?";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maPhong);
+            ps.setTimestamp(2, tgBatDau);
+            ps.setTimestamp(3, tgKetThuc);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhThongTinDatPhong(rs);
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
+    }
+
+    public DonDatPhong getDonDatPhongById(String maDonDatPhong) {
+        String query = "SELECT * FROM DonDatPhong WHERE ma_don_dat_phong = ? AND da_xoa = 0";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhDonDatPhong(rs);
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
+    }
+
+    public List<vn.iuh.dto.response.ReservationResponse> getAllReservationsWithStatus() {
+        String query =
+                "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
+                "p.ma_phong, p.ten_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
+                "cv.ten_trang_thai, ddp.da_xoa " +
+                "FROM DonDatPhong ddp " +
+                "JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
+                "JOIN ChiTietDatPhong ctdp ON ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong " +
+                "JOIN Phong p ON p.ma_phong = ctdp.ma_phong " +
+                "LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
+                "    AND cv.da_xoa = 0 " +
+                "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
+
+        List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            var rs = ps.executeQuery();
+
+            while (rs.next()) {
+                reservations.add(chuyenKetQuaThanhReservationResponse(rs));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error fetching reservations with status: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        return reservations;
+    }
+
+    public List<vn.iuh.dto.response.ReservationResponse> getAllReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate) {
+        String query =
+                "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
+                "p.ma_phong, p.ten_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
+                "cv.ten_trang_thai, ddp.da_xoa " +
+                "FROM DonDatPhong ddp " +
+                "JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
+                "JOIN ChiTietDatPhong ctdp ON ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong " +
+                "JOIN Phong p ON p.ma_phong = ctdp.ma_phong " +
+                "LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
+                "    AND cv.da_xoa = 0 " +
+                "WHERE ctdp.tg_nhan_phong BETWEEN ? AND ? " +
+                "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
+
+        List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setTimestamp(1, startDate);
+            ps.setTimestamp(2, endDate);
+            var rs = ps.executeQuery();
+
+            while (rs.next()) {
+                reservations.add(chuyenKetQuaThanhReservationResponse(rs));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error fetching reservations with status: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        return reservations;
+    }
+
+    private ReservationResponse chuyenKetQuaThanhReservationResponse(ResultSet rs) {
+        try {
+            return new ReservationResponse(
+                    rs.getString("CCCD"),
+                    rs.getString("ten_khach_hang"),
+                    rs.getString("ma_don_dat_phong"),
+                    rs.getString("ma_phong"),
+                    rs.getString("ten_phong"),
+                    rs.getTimestamp("tg_nhan_phong"),
+                    rs.getTimestamp("tg_tra_phong"),
+                    rs.getString("ten_trang_thai"),
+                    rs.getBoolean("da_xoa")
+            );
+        } catch (SQLException e) {
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành ReservationResponse: " + e.getMessage());
+        }
+    }
+
     private ThongTinPhong chuyenKetQuaThanhThongTinPhong(ResultSet rs) {
         try {
             return new ThongTinPhong(
@@ -732,94 +863,5 @@ public class DatPhongDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành ChiTietDatPhong: " + e.getMessage());
         }
-    }
-
-    public ThongTinDatPhong timDonDatPhongChoCheckInCuaPhong(String maPhong, Timestamp tgBatDau, Timestamp tgKetThuc) {
-        String query =
-                "SELECT p.ma_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong " +
-                "FROM Phong p " +
-                "LEFT JOIN ChiTietDatPhong ctdp ON ctdp.ma_phong = p.ma_phong " +
-                "LEFT JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong " +
-                "LEFT JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
-                "WHERE  p.ma_phong = ? and ctdp.tg_nhan_phong BETWEEN dateadd(second, -10 , ?) AND ?";
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, maPhong);
-            ps.setTimestamp(2, tgBatDau);
-            ps.setTimestamp(3, tgKetThuc);
-
-            var rs = ps.executeQuery();
-            if (rs.next())
-                return chuyenKetQuaThanhThongTinDatPhong(rs);
-            else
-                return null;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (TableEntityMismatch mismatchException) {
-            System.out.println(mismatchException.getMessage());
-            return null;
-        }
-    }
-
-    public DonDatPhong getDonDatPhongById(String maDonDatPhong) {
-        String query = "SELECT * FROM DonDatPhong WHERE ma_don_dat_phong = ? AND da_xoa = 0";
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, maDonDatPhong);
-
-            var rs = ps.executeQuery();
-            if (rs.next())
-                return chuyenKetQuaThanhDonDatPhong(rs);
-            else
-                return null;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (TableEntityMismatch mismatchException) {
-            System.out.println(mismatchException.getMessage());
-            return null;
-        }
-    }
-
-    public List<vn.iuh.dto.response.ReservationResponse> getAllReservationsWithStatus() {
-        String query =
-                "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
-                "p.ma_phong, p.ten_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
-                "COALESCE(cv.ten_trang_thai, 'Không xác định') as status " +
-                "FROM DonDatPhong ddp " +
-                "JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
-                "JOIN ChiTietDatPhong ctdp ON ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong " +
-                "JOIN Phong p ON p.ma_phong = ctdp.ma_phong " +
-                "LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
-                "    AND cv.tg_bat_dau = ctdp.tg_nhan_phong " +
-                "    AND cv.da_xoa = 0 " +
-                "WHERE ddp.da_xoa = 0 AND ctdp.da_xoa = 0 " +
-                "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
-
-        List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            var rs = ps.executeQuery();
-
-            while (rs.next()) {
-                reservations.add(new vn.iuh.dto.response.ReservationResponse(
-                        rs.getString("CCCD"),
-                        rs.getString("ten_khach_hang"),
-                        rs.getString("ma_don_dat_phong"),
-                        rs.getString("ma_phong"),
-                        rs.getString("ten_phong"),
-                        rs.getTimestamp("tg_nhan_phong"),
-                        rs.getTimestamp("tg_tra_phong"),
-                        rs.getString("status")
-                ));
-            }
-
-        } catch (SQLException e) {
-            System.out.println("Error fetching reservations with status: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-
-        return reservations;
     }
 }

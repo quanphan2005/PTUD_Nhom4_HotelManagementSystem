@@ -1,6 +1,7 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.RoomEndType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.ReservationResponse;
 import vn.iuh.gui.base.CustomUI;
@@ -43,15 +44,20 @@ public class ReservationManagementPanel extends JPanel {
     public ReservationManagementPanel() {
         bookingService = new BookingServiceImpl();
 
-        // Load data
-        loadReservationData();
-
         setLayout(new BorderLayout());
         init();
+
+        // Load data
+        loadReservationData();
+        applyFilters(); // Apply default filter on load
     }
 
     private void loadReservationData() {
-        allReservations = bookingService.getAllReservationsWithStatus();
+        // Get all reservations with relevant statuses in range of spninner dates
+        allReservations = bookingService.getAllReservationsWithStatusInRange(
+            new Timestamp(((Date) spnStartDate.getValue()).getTime()),
+            new Timestamp(((Date) spnEndDate.getValue()).getTime())
+        );
         filteredReservations = new ArrayList<>(allReservations);
     }
 
@@ -60,6 +66,33 @@ public class ReservationManagementPanel extends JPanel {
         createTopPanel();
         createFilterPanel();
         createTablePanel();
+        setUpEvents();
+    }
+
+    private void setUpEvents() {
+        // Events are set up in the component initialization methods
+        txtMaDon.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                applyFilters();
+            }
+        });
+        txtCCCD.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                applyFilters();
+            }
+        });
+        txtTenPhong.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                applyFilters();
+            }
+        });
+        spnStartDate.addChangeListener(e -> applyFilters());
+        spnEndDate.addChangeListener(e -> applyFilters());
+        chkCurrentReservations.addActionListener(e -> applyFilters());
+        btnReset.addActionListener(e -> resetFilters());
     }
 
     private void createTopPanel() {
@@ -144,32 +177,14 @@ public class ReservationManagementPanel extends JPanel {
         // Mã đơn text field with auto-filtering
         txtMaDon = new JTextField(15);
         txtMaDon.setFont(CustomUI.smallFont);
-        txtMaDon.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent e) {
-                applyFilters();
-            }
-        });
 
         // CCCD text field with auto-filtering
         txtCCCD = new JTextField(15);
         txtCCCD.setFont(CustomUI.smallFont);
-        txtCCCD.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent e) {
-                applyFilters();
-            }
-        });
 
         // Tên phòng text field with auto-filtering
         txtTenPhong = new JTextField(15);
         txtTenPhong.setFont(CustomUI.smallFont);
-        txtTenPhong.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent e) {
-                applyFilters();
-            }
-        });
 
         // Start date spinner
         spnStartDate = new JSpinner(new SpinnerDateModel());
@@ -177,7 +192,6 @@ public class ReservationManagementPanel extends JPanel {
         spnStartDate.setEditor(startDateEditor);
         spnStartDate.setValue(new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000)); // 30 days ago
         spnStartDate.setFont(CustomUI.smallFont);
-        spnStartDate.addChangeListener(e -> applyFilters());
 
         // End date spinner
         spnEndDate = new JSpinner(new SpinnerDateModel());
@@ -185,13 +199,11 @@ public class ReservationManagementPanel extends JPanel {
         spnEndDate.setEditor(endDateEditor);
         spnEndDate.setValue(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)); // 30 days from now
         spnEndDate.setFont(CustomUI.smallFont);
-        spnEndDate.addChangeListener(e -> applyFilters());
 
         // Checkbox for current reservations
         chkCurrentReservations = new JCheckBox("Các đơn hiện tại");
         chkCurrentReservations.setFont(CustomUI.smallFont);
         chkCurrentReservations.setSelected(true); // Default to showing current reservations
-        chkCurrentReservations.addActionListener(e -> applyFilters());
 
         // Reset button
         btnReset = new JButton("Hoàn tác");
@@ -200,7 +212,6 @@ public class ReservationManagementPanel extends JPanel {
         btnReset.setForeground(Color.BLACK);
         btnReset.setFocusPainted(false);
         btnReset.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        btnReset.addActionListener(e -> resetFilters());
     }
 
     private void createTablePanel() {
@@ -272,9 +283,6 @@ public class ReservationManagementPanel extends JPanel {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         add(scrollPane, BorderLayout.SOUTH);
-
-        // Populate table with initial data
-        applyFilters(); // Apply default filter on load
     }
 
     // Custom renderer for alternating row colors
@@ -329,6 +337,10 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void applyFilters() {
+        allReservations = bookingService.getAllReservationsWithStatusInRange(
+            new Timestamp(((Date) spnStartDate.getValue()).getTime()),
+            new Timestamp(((Date) spnEndDate.getValue()).getTime())
+        );
         filteredReservations.clear();
 
         String maDonFilter = txtMaDon.getText().trim().toLowerCase();
@@ -346,7 +358,7 @@ public class ReservationManagementPanel extends JPanel {
                     continue;
                 }
             } else {
-                // Show only ended reservations (Đã trả phòng, Checkout trễ)
+                // Show only ended reservations (Đã trả phòng, hủy đơn, etc.)
                 if (!isEndedReservation(reservation.getStatus())) {
                     continue;
                 }
@@ -401,9 +413,8 @@ public class ReservationManagementPanel extends JPanel {
     private boolean isEndedReservation(String status) {
         // Ended reservations include: "Đã trả phòng", "Checkout trễ", etc.
         return status != null && (
-            status.equalsIgnoreCase(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus()) ||
-            status.equalsIgnoreCase("Đã trả phòng") ||
-            status.equalsIgnoreCase("Không xác định")
+                status.equalsIgnoreCase(RoomEndType.TRA_PHONG.getStatus())
+                || status.equalsIgnoreCase(RoomEndType.HUY_PHONG.getStatus())
         );
     }
 

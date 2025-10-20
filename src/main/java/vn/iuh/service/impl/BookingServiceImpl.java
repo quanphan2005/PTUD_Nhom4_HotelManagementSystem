@@ -680,7 +680,26 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<ReservationResponse> getAllReservationsWithStatus() {
-        return datPhongDAO.getAllReservationsWithStatus();
+        List<ReservationResponse> allReservationsWithStatus = datPhongDAO.getAllReservationsWithStatus();
+        for (ReservationResponse reservation : allReservationsWithStatus) {
+            if (reservation.isDeleted())
+                reservation.setStatus(RoomEndType.HUY_PHONG.getStatus());
+            else if (!reservation.isDeleted() && reservation.getStatus() == null)
+                reservation.setStatus(RoomEndType.TRA_PHONG.getStatus());
+        }
+        return allReservationsWithStatus;
     }
 
+    @Override
+    public List<ReservationResponse> getAllReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate) {
+        List<ReservationResponse> allReservationsWithStatusInRange =
+                datPhongDAO.getAllReservationsWithStatusInRange(startDate, endDate);
+        for (ReservationResponse reservation : allReservationsWithStatusInRange) {
+            if (reservation.isDeleted())
+                reservation.setStatus(RoomEndType.HUY_PHONG.getStatus());
+            else if (!reservation.isDeleted() && reservation.getStatus() == null)
+                reservation.setStatus(RoomEndType.TRA_PHONG.getStatus());
+        }
+        return allReservationsWithStatusInRange;
+    }
 }

@@ -49,7 +49,7 @@ public class PreReservationManagementPanel extends JPanel {
         bookingService = new BookingServiceImpl();
         checkinService = new CheckinServiceImpl();
         reservationFilter = new ReservationFilter(null, null, null);
-        RefreshManager.setReservationFormManagementPanel(this);
+        RefreshManager.setPreReservationManagementPanel(this);
 
         // Load data
         loadReservationData();
