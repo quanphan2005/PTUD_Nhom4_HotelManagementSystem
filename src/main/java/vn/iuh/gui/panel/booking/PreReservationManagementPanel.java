@@ -212,15 +212,22 @@ public class PreReservationManagementPanel extends JPanel {
         reservationTable.setDefaultRenderer(Object.class, new AlternatingRowRenderer());
 
         // Set column widths using relative proportions
-        TableColumnModel columnModel = reservationTable.getColumnModel();
         reservationTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        reservationTable.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int tableWidth = reservationTable.getWidth();
+                TableColumnModel columnModel = reservationTable.getColumnModel();
 
-        columnModel.getColumn(0).setPreferredWidth(150); // Khách hàng - 15%
-        columnModel.getColumn(1).setPreferredWidth(150); // Đơn đặt phòng - 10%
-        columnModel.getColumn(2).setPreferredWidth(100); // Phòng - 10%
-        columnModel.getColumn(3).setPreferredWidth(150); // Checkin - 15%
-        columnModel.getColumn(4).setPreferredWidth(150); // Checkout - 15%
-        columnModel.getColumn(5).setPreferredWidth(300); // Thao tác - 30%
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.10)); // 10%
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.30)); // 30%
+            }
+        });
+
 
         // Set cell renderer for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());

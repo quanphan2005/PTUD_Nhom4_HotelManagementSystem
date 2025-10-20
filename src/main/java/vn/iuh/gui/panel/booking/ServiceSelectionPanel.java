@@ -129,9 +129,10 @@ public class ServiceSelectionPanel extends JPanel {
         serviceTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling
+        serviceTable.getTableHeader().setPreferredSize(new Dimension(serviceTable.getWidth(), 40));
         serviceTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
-        serviceTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
-        serviceTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
+        serviceTable.getTableHeader().setBackground(CustomUI.TABLE_HEADER_BACKGROUND);
+        serviceTable.getTableHeader().setForeground(CustomUI.TABLE_HEADER_FOREGROUND);
         serviceTable.getTableHeader().setOpaque(true);
         serviceTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
 
@@ -141,13 +142,22 @@ public class ServiceSelectionPanel extends JPanel {
         TableColumnModel serviceColumnModel = serviceTable.getColumnModel();
         serviceTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
-        // Set fixed column widths to prevent resizing
-        serviceColumnModel.getColumn(0).setPreferredWidth(200); // Tên
-        serviceColumnModel.getColumn(1).setPreferredWidth(250); // Loại
-        serviceColumnModel.getColumn(2).setPreferredWidth(150);  // Giá
-        serviceColumnModel.getColumn(3).setPreferredWidth(100);  // Tồn kho
-        serviceColumnModel.getColumn(4).setPreferredWidth(100);  // Quà tặng
-        serviceColumnModel.getColumn(5).setPreferredWidth(200); // Đã chọn
+        // Set column widths using relative proportions
+        serviceTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        serviceTable.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int tableWidth = serviceTable.getWidth();
+                TableColumnModel columnModel = serviceTable.getColumnModel();
+
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Tên
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.25)); // 25% - Loại
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Giá
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Tồn kho
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Quà tặng
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Đã chọn
+            }
+        });
 
         // Custom renderer and editor for gift column (column 4)
         serviceTable.getColumnModel().getColumn(4).setCellRenderer(new GiftRenderer());
@@ -165,32 +175,55 @@ public class ServiceSelectionPanel extends JPanel {
                 return false;
             }
         };
-        selectedServicesTable = new JTable(selectedServicesTableModel);
+        selectedServicesTable = new JTable(selectedServicesTableModel) { // Tạo JTable mới dựa trên model
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
+                Component c = super.prepareRenderer(renderer, row, column);
+
+                // reuse font constant (không new font mỗi cell)
+                c.setFont(CustomUI.TABLE_FONT);
+
+                if (!isRowSelected(row)) {
+                    // reuse color constant
+                    c.setBackground(row % 2 == 0 ? CustomUI.ROW_ODD : CustomUI.ROW_EVEN);
+                } else {
+                    c.setBackground(CustomUI.ROW_SELECTED_COLOR);
+                }
+                return c;
+            }
+        };
         selectedServicesTable.setFont(CustomUI.TABLE_FONT); // Non-bold font for data
-        selectedServicesTable.setRowHeight(30);
+        selectedServicesTable.setRowHeight(40);
         selectedServicesTable.setSelectionBackground(CustomUI.ROW_SELECTED_COLOR);
         selectedServicesTable.setGridColor(CustomUI.tableBorder);
         selectedServicesTable.setShowGrid(true); // Show grid lines
         selectedServicesTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling for selected services table
+        selectedServicesTable.getTableHeader().setPreferredSize(new Dimension(selectedServicesTable.getWidth(), 30));
         selectedServicesTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
-        selectedServicesTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
-        selectedServicesTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
+        selectedServicesTable.getTableHeader().setBackground(CustomUI.TABLE_HEADER_BACKGROUND);
+        selectedServicesTable.getTableHeader().setForeground(CustomUI.TABLE_HEADER_FOREGROUND);
         selectedServicesTable.getTableHeader().setOpaque(true);
-        selectedServicesTable.getTableHeader()
-                             .setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
+        selectedServicesTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
 
         // Set alternating row colors for selected services table
         selectedServicesTable.setDefaultRenderer(Object.class, new SelectedServicesTableRenderer());
 
-        // Set fixed column widths for selected services table
-        TableColumnModel selectedServiceColumnModel = selectedServicesTable.getColumnModel();
+        // Set column widths using relative proportions
         selectedServicesTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        selectedServicesTable.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int tableWidth = selectedServicesTable.getWidth();
+                TableColumnModel columnModel = selectedServicesTable.getColumnModel();
 
-        selectedServiceColumnModel.getColumn(0).setPreferredWidth(400); // Tên dịch vụ
-        selectedServiceColumnModel.getColumn(1).setPreferredWidth(100); // Số lượng
-        selectedServiceColumnModel.getColumn(2).setPreferredWidth(500); // Thành tiền
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.40)); // 20% - Tên dịch vụ
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.10)); // 25% - Số lượng
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.50)); // 15% - Thành tiền
+            }
+        });
 
         // Action buttons with fixed sizes
         btnReset = new JButton("Hoàn Tác");

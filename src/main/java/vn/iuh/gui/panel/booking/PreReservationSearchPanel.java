@@ -198,7 +198,24 @@ public class PreReservationSearchPanel extends JPanel {
         };
 
         // Create table
-        reservationTable = new JTable(tableModel);
+        reservationTable = new JTable(tableModel) { // Tạo JTable mới dựa trên model
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
+                Component c = super.prepareRenderer(renderer, row, column);
+
+                // reuse font constant (không new font mỗi cell)
+                c.setFont(CustomUI.TABLE_FONT);
+
+                if (!isRowSelected(row)) {
+                    // reuse color constant
+                    c.setBackground(row % 2 == 0 ? CustomUI.ROW_ODD : CustomUI.ROW_EVEN);
+                } else {
+                    c.setBackground(CustomUI.ROW_SELECTED_COLOR);
+                }
+                return c;
+            }
+        };
         reservationTable.setFont(CustomUI.TABLE_FONT); // Non-bold font for data
         reservationTable.setRowHeight(40);
         reservationTable.setSelectionBackground(CustomUI.ROW_SELECTED_COLOR);
@@ -207,9 +224,10 @@ public class PreReservationSearchPanel extends JPanel {
         reservationTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling
+        reservationTable.getTableHeader().setPreferredSize(new Dimension(reservationTable.getWidth(), 40));
         reservationTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
-        reservationTable.getTableHeader().setBackground(CustomUI.tableHeaderBackground);
-        reservationTable.getTableHeader().setForeground(CustomUI.tableHeaderForeground);
+        reservationTable.getTableHeader().setBackground(CustomUI.TABLE_HEADER_BACKGROUND);
+        reservationTable.getTableHeader().setForeground(CustomUI.TABLE_HEADER_FOREGROUND);
         reservationTable.getTableHeader().setOpaque(true);
         reservationTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
 
@@ -217,16 +235,21 @@ public class PreReservationSearchPanel extends JPanel {
         reservationTable.setDefaultRenderer(Object.class, new AlternatingRowRenderer());
 
         // Set column widths using relative proportions
-        TableColumnModel columnModel = reservationTable.getColumnModel();
         reservationTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        reservationTable.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int tableWidth = reservationTable.getWidth();
+                TableColumnModel columnModel = reservationTable.getColumnModel();
 
-        columnModel.getColumn(0).setPreferredWidth(150); // Khách hàng - 15%
-        columnModel.getColumn(1).setPreferredWidth(150); // Đơn đặt phòng - 10%
-        columnModel.getColumn(2).setPreferredWidth(100); // Phòng - 10%
-        columnModel.getColumn(3).setPreferredWidth(150); // Checkin - 15%
-        columnModel.getColumn(4).setPreferredWidth(150); // Checkout - 15%
-        columnModel.getColumn(5).setPreferredWidth(300); // Thao tác - 30%
-
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.10)); // 10%
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15%
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.30)); // 30%
+            }
+        });
         // Set cell renderer for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
         reservationTable.getColumn("Thao tác").setCellEditor(new ActionButtonEditor());

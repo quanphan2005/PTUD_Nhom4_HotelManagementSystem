@@ -269,8 +269,8 @@ public class RevenueStatisticPanel extends JPanel {
 
         JTableHeader header = table.getTableHeader();
         header.setPreferredSize(new Dimension(header.getPreferredSize().width, 42));
-        header.setBackground(CustomUI.blue);
-        header.setForeground(CustomUI.white);
+        header.setBackground(CustomUI.TABLE_HEADER_BACKGROUND);
+        header.setForeground(CustomUI.TABLE_HEADER_FOREGROUND);
         header.setFont(CustomUI.HEADER_FONT);
         header.setReorderingAllowed(false);
 

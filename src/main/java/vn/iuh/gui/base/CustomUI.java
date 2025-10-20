@@ -36,8 +36,8 @@ public class CustomUI {
     public static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 16);
     public static final Font TABLE_FONT  = new Font("Arial", Font.PLAIN, 13);
 
-    public static final Color tableHeaderBackground = new Color(52, 152, 219); // Professional blue
-    public static final Color tableHeaderForeground = Color.WHITE;
+    public static final Color TABLE_HEADER_BACKGROUND = new Color(30, 144, 255); // Professional blue
+    public static final Color TABLE_HEADER_FOREGROUND = Color.WHITE;
     public static final Color tableBorder = new Color(189, 195, 199); // Light gray border
 
     public static final Color ROW_EVEN = new Color(247, 249, 250); // Very light gray for alternating rows
