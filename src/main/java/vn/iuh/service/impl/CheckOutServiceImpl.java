@@ -5,7 +5,6 @@ import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.InvoiceCreationEvent;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.dto.repository.ThongTinSuDungPhong;
-import vn.iuh.dto.event.update.InvoicePricingUpdate;
 import vn.iuh.entity.*;
 import vn.iuh.exception.BusinessException;
 import vn.iuh.gui.base.Main;
@@ -87,6 +86,7 @@ public class CheckOutServiceImpl implements CheckOutService {
         return chiTietSuDungList;
     }
 
+
     @Override
     public boolean checkOutReservation(String reservationId){
         try {
@@ -109,7 +109,6 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             //Tạo hóa đơn thanh toán
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
-            hoaDonDAO.createInvoice(hoaDonThanhToan);
 
             String maChiTietHoaDonMoiNhat = null;
             boolean isCheckOutTre = false;
@@ -177,9 +176,6 @@ public class CheckOutServiceImpl implements CheckOutService {
             //Cập nhật ChiTietDatPhong thành trả phòng
             chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
 
-            //Chèn danh sách chi tiết hóa đơn đã tạo
-            chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
-
             //Thêm danh sách ra ngoài lần cuối cùng
             List<LichSuRaNgoai> danhSachLichSuRaNgoaiLanCuoi = taoDanhSachRaNgoaiLanCuoi(danhSachMaChiTietDatPhong);
             lichSuRaNgoaiDAO.themDanhSachLichSuRaNgoai(danhSachLichSuRaNgoaiLanCuoi);
@@ -214,35 +210,42 @@ public class CheckOutServiceImpl implements CheckOutService {
             }
 
             for(PhongDungDichVu pddv : danhSachPhongDungDichVu){
-                tongTien = tongTien.add(pddv.tinhThanhTien());
+                if(!pddv.getDuocTang()){
+                    tongTien = tongTien.add(pddv.tinhThanhTien());
+                }
             }
 
             for(PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi){
                 tongTien = tongTien.add(ptpp.getTongTien());
             }
-            //Tính thuế giá trị gia tăng
-            ThongTinPhuPhi pp = phuPhiDAO.getThongTinPhuPhiByName(Fee.THUE.status);
-            BigDecimal tienThue = tongTien.multiply(pp.getGiaHienTai())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-            InvoicePricingUpdate pricing = new InvoicePricingUpdate(hoaDonThanhToan.getMaHoaDon(), tongTien, tienThue, tongTien.add(tienThue));
-            var result = hoaDonDAO.boSungGiaTien(pricing);
-            if(result){
-                hoaDonThanhToan.setTongTien(tongTien);
-                hoaDonThanhToan.setTienThue(tienThue);
-                hoaDonThanhToan.setTongHoaDon(tongTien.add(tienThue));
+            //tìm hóa đơn đặt trước nếu có
+            HoaDon hoaDonDatCoc = hoaDonDAO.timHoaTheoMaDonDatPhong(reservationId,
+                    InvoiceType.DEPOSIT_INVOICE.getStatus());
+
+            if(hoaDonDatCoc != null){
+                tongTien = tongTien.subtract(hoaDonDatCoc.getTongTien());
             }
-            else {
-                throw new BusinessException("Lỗi khi cập nhật thành tiền cho hóa đơn");
-            }
+
+            //Tính thuế giá trị gia tăng
+            BigDecimal tienThue = tongTien.multiply(BigDecimal.valueOf(FeeValue.TAX.value));
+
+            hoaDonThanhToan.setTongTien(tongTien);
+            hoaDonThanhToan.setTienThue(tienThue);
+            hoaDonThanhToan.setTongHoaDon(tongTien.add(tienThue));
+
+            hoaDonDAO.createInvoice(hoaDonThanhToan);
+
+            //Chèn danh sách chi tiết hóa đơn đã tạo
+            chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
 
             String maPhienDangNhap = Main.getCurrentLoginSession();
             String maKhachHang = reservation.getMaKhachHang();
             KhachHang khachHang = khachHangDAO.timKhachHang(maKhachHang);
             NhanVien nhanVien = nhanVienDAO.layNVTheoMaPhienDangNhap(Main.getCurrentLoginSession());
             invoiceCreationEvent = new InvoiceCreationEvent(maPhienDangNhap,
+                                            hoaDonDatCoc != null ? hoaDonDatCoc.getTongTien() : BigDecimal.ZERO,
                                             reservation,
-                                            pp,
                                             khachHang,
                                             hoaDonThanhToan,
                                             nhanVien,
@@ -357,14 +360,16 @@ public class CheckOutServiceImpl implements CheckOutService {
                 EntityIDSymbol.INVOICE_PREFIX.getLength()
         );
     }
+    //(ma_hoa_don, phuong_thuc_thanh_toan, kieu_hoa_don, tinh_trang_thanh_toan, ma_phien_dang_nhap, ma_don_dat_phong, ma_khach_hang, tong_tien, tien_thue, tong_hoa_don)
+
     private HoaDon createInvoiceFromEntity(DonDatPhong ddp) {
         return new HoaDon(taoMaHoaDonMoi(),
                 InvoiceType.PAYMENT_INVOICE.getStatus(),
                 Main.getCurrentLoginSession(),
                 ddp.getMaDonDatPhong(),
-                ddp.getMaKhachHang()
-                );
+                ddp.getMaKhachHang());
     }
+
 
     private List<LichSuRaNgoai> taoDanhSachRaNgoaiLanCuoi(List<String> danhSachMaChiTietDatPhong) {
         List<LichSuRaNgoai> historyCheckOuts = null;
@@ -455,7 +460,6 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             //Tạo hóa đơn thanh toán
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
-            hoaDonDAO.createInvoice(hoaDonThanhToan);
 
             String maChiTietHoaDonMoiNhat = null;
             boolean isCheckOutTre = false;
@@ -524,9 +528,6 @@ public class CheckOutServiceImpl implements CheckOutService {
             //Cập nhật ChiTietDatPhong thành trả phòng
             chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
 
-            //Chèn danh sách chi tiết hóa đơn đã tạo
-            chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
-
             //Thêm danh sách ra ngoài lần cuối cùng
             List<LichSuRaNgoai> danhSachLichSuRaNgoaiLanCuoi = taoDanhSachRaNgoaiLanCuoi(danhSachMaChiTietDatPhong);
             lichSuRaNgoaiDAO.themDanhSachLichSuRaNgoai(danhSachLichSuRaNgoaiLanCuoi);
@@ -552,26 +553,34 @@ public class CheckOutServiceImpl implements CheckOutService {
             }
 
             for(PhongDungDichVu pddv : danhSachPhongDungDichVu){
-                tongTien = tongTien.add(pddv.tinhThanhTien());
+                if(!pddv.getDuocTang()){
+                    tongTien = tongTien.add(pddv.tinhThanhTien());
+                }
             }
 
             for(PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi){
                 tongTien = tongTien.add(ptpp.getTongTien());
             }
-            //Tính thuế giá trị gia tăng
-            ThongTinPhuPhi pp = phuPhiDAO.getThongTinPhuPhiByName(Fee.THUE.status);
-            BigDecimal tienThue = tongTien.multiply(pp.getGiaHienTai())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-            InvoicePricingUpdate pricing = new InvoicePricingUpdate(hoaDonThanhToan.getMaHoaDon(), tongTien, tienThue, tongTien.add(tienThue));
-            var result = hoaDonDAO.boSungGiaTien(pricing);
-            if(result){
-                hoaDonThanhToan.setTongHoaDon(tongTien);
-                hoaDonThanhToan.setTienThue(tienThue);
+            //tìm hóa đơn đặt trước nếu có
+            HoaDon hoaDonDatCoc = hoaDonDAO.timHoaTheoMaDonDatPhong(reservationId,
+                    InvoiceType.DEPOSIT_INVOICE.getStatus());
+
+            if(hoaDonDatCoc != null){
+                tongTien = tongTien.subtract(hoaDonDatCoc.getTongTien());
             }
-            else {
-                throw new BusinessException("Lỗi khi cập nhật thành tiền cho hóa đơn");
-            }
+
+            //Tính thuế giá trị gia tăng
+            BigDecimal tienThue = tongTien.multiply(BigDecimal.valueOf(FeeValue.TAX.value));
+
+            hoaDonThanhToan.setTongTien(tongTien);
+            hoaDonThanhToan.setTienThue(tienThue);
+            hoaDonThanhToan.setTongHoaDon(tongTien.add(tienThue));
+            hoaDonDAO.createInvoice(hoaDonThanhToan);
+
+            //Chèn danh sách chi tiết hóa đơn đã tạo
+            chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
+
         }catch (BusinessException e){
             System.out.println("Lỗi khi tạo hóa đơn");
             datPhongDAO.hoanTacGiaoTac();

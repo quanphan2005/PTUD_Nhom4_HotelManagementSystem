@@ -7,6 +7,7 @@ import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class PhongDAO {
@@ -221,5 +222,168 @@ public class PhongDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành RoomFurnitureItem" + e.getMessage());
         }
+    }
+
+    public List<Phong> timPhongUngVien(String currentRoomId, int neededPersons, Timestamp fromTime, Timestamp toTime) {
+        List<Phong> results = new LinkedList<>();
+
+        if (currentRoomId == null || fromTime == null) return results; // bảo vệ đầu vào
+
+        try {
+            // 1) Lấy ma_loai_phong và ten_loai_phong của phòng hiện tại
+            String qGetLoai = "SELECT p.ma_loai_phong, lp.ten_loai_phong " +
+                    "FROM Phong p JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong " +
+                    "WHERE p.ma_phong = ?";
+
+            String maLoaiPhong = null;
+            String tenLoaiPhong = null;
+            try (PreparedStatement ps = connection.prepareStatement(qGetLoai)) {
+                ps.setString(1, currentRoomId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        maLoaiPhong = rs.getString("ma_loai_phong");
+                        tenLoaiPhong = rs.getString("ten_loai_phong");
+                    } else {
+                        return results; // không tìm thấy phòng hiện tại
+                    }
+                }
+            }
+
+            // Nếu toTime != null mà < fromTime thì hoán đổi cho an toàn
+            if (toTime != null && toTime.before(fromTime)) {
+                Timestamp tmp = fromTime;
+                fromTime = toTime;
+                toTime = tmp;
+            }
+
+            // 2) Lấy danh sách phòng cơ bản phù hợp (THEO TÊN LOẠI PHÒNG)
+
+            //Tìm tất cả các phòng khác với phòng hiện tại nhưng cùng loại phòng
+            String baseQuery = "SELECT p.* FROM Phong p " +
+                    "JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong " +
+                    "WHERE p.ma_phong <> ? " +
+                    "AND lp.ten_loai_phong = ? " +
+                    "AND lp.so_luong_khach >= ? " +
+                    "AND p.dang_hoat_dong = 1 " +
+                    "AND ISNULL(p.da_xoa,0) = 0";
+
+            try (PreparedStatement psBase = connection.prepareStatement(baseQuery)) {
+                psBase.setString(1, currentRoomId);
+                psBase.setString(2, tenLoaiPhong);
+                psBase.setInt(3, neededPersons);
+
+                try (ResultSet rs = psBase.executeQuery()) {
+                    // Prepare statements để kiểm tra các phòng còn trống thời gian phù hợp với phòng cũ
+                    final String bookingOverlapWhenToNotNull =
+                            "SELECT 1 FROM ChiTietDatPhong cdp " +
+                                    "WHERE cdp.ma_phong = ? AND ISNULL(cdp.da_xoa,0)=0 " +
+                                    "  AND cdp.tg_nhan_phong IS NOT NULL AND cdp.tg_tra_phong IS NOT NULL " +
+                                    "  AND cdp.tg_nhan_phong < cdp.tg_tra_phong " +
+                                    "  AND NOT (cdp.tg_tra_phong <= ? OR cdp.tg_nhan_phong >= ?)";
+
+                    final String bookingOverlapWhenToNull =
+                            "SELECT 1 FROM ChiTietDatPhong cdp " +
+                                    "WHERE cdp.ma_phong = ? AND ISNULL(cdp.da_xoa,0)=0 " +
+                                    "  AND cdp.tg_nhan_phong IS NOT NULL AND cdp.tg_tra_phong IS NOT NULL " +
+                                    "  AND cdp.tg_nhan_phong < cdp.tg_tra_phong " +
+                                    "  AND cdp.tg_tra_phong > ?";
+
+                    final String workOverlapWhenToNotNull =
+                            "SELECT 1 FROM CongViec cv " +
+                                    "WHERE cv.ma_phong = ? AND ISNULL(cv.da_xoa,0)=0 " +
+                                    "  AND cv.tg_bat_dau IS NOT NULL AND cv.tg_ket_thuc IS NOT NULL " +
+                                    "  AND cv.tg_bat_dau < cv.tg_ket_thuc " +
+                                    "  AND NOT (cv.tg_ket_thuc <= ? OR cv.tg_bat_dau >= ?)";
+
+                    final String workOverlapWhenToNull =
+                            "SELECT 1 FROM CongViec cv " +
+                                    "WHERE cv.ma_phong = ? AND ISNULL(cv.da_xoa,0)=0 " +
+                                    "  AND cv.tg_bat_dau IS NOT NULL AND cv.tg_ket_thuc IS NOT NULL " +
+                                    "  AND cv.tg_bat_dau < cv.tg_ket_thuc " +
+                                    "  AND cv.tg_ket_thuc > ?";
+
+                    try (PreparedStatement psBookingOverlapNotNull = connection.prepareStatement(bookingOverlapWhenToNotNull);
+                         PreparedStatement psBookingOverlapNull = connection.prepareStatement(bookingOverlapWhenToNull);
+                         PreparedStatement psWorkOverlapNotNull = connection.prepareStatement(workOverlapWhenToNotNull);
+                         PreparedStatement psWorkOverlapNull = connection.prepareStatement(workOverlapWhenToNull)) {
+
+                        while (rs.next()) {
+                            Phong p = mapResultSetToRoom(rs);
+                            String roomId = p.getMaPhong();
+
+                            boolean blockedByBooking = false;
+                            boolean blockedByWork = false;
+
+                            if (toTime != null) {
+                                psBookingOverlapNotNull.setString(1, roomId);
+                                psBookingOverlapNotNull.setTimestamp(2, fromTime);
+                                psBookingOverlapNotNull.setTimestamp(3, toTime);
+                                try (ResultSet r2 = psBookingOverlapNotNull.executeQuery()) {
+                                    blockedByBooking = r2.next();
+                                }
+
+                                psWorkOverlapNotNull.setString(1, roomId);
+                                psWorkOverlapNotNull.setTimestamp(2, fromTime);
+                                psWorkOverlapNotNull.setTimestamp(3, toTime);
+                                try (ResultSet r3 = psWorkOverlapNotNull.executeQuery()) {
+                                    blockedByWork = r3.next();
+                                }
+                            } else {
+                                // Trường hợp thời gian checkout == null
+                                psBookingOverlapNull.setString(1, roomId);
+                                psBookingOverlapNull.setTimestamp(2, fromTime);
+                                try (ResultSet r2 = psBookingOverlapNull.executeQuery()) {
+                                    blockedByBooking = r2.next();
+                                }
+
+                                psWorkOverlapNull.setString(1, roomId);
+                                psWorkOverlapNull.setTimestamp(2, fromTime);
+                                try (ResultSet r3 = psWorkOverlapNull.executeQuery()) {
+                                    blockedByWork = r3.next();
+                                }
+                            }
+
+                            //Nếu phòng không bận (trống vào khoảng thời gian cần đổi) thì thêm phòng vào danh sách
+                            if (!blockedByBooking && !blockedByWork) {
+                                results.add(p);
+                            } else {
+                                String reason = blockedByBooking && blockedByWork ? "booking+work" :
+                                        blockedByBooking ? "booking" : "work";
+                                System.out.println("timPhongUngVien: Loai phong " + p.getMaPhong() + " vì: " + reason);
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return results;
+    }
+
+    // Lấy giá mới nhất của một loại phòng
+    public double[] getLatestPriceForLoaiPhong(String maLoaiPhong) {
+        double[] price = new double[]{0.0, 0.0};
+        String query = "SELECT TOP 1 gia_ngay_moi, gia_gio_moi FROM GiaPhong WHERE ma_loai_phong = ? AND ISNULL(da_xoa,0)=0 ORDER BY thoi_gian_tao DESC";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, maLoaiPhong);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double gNgay = rs.getDouble("gia_ngay_moi");
+                    if (rs.wasNull()) gNgay = 0.0;
+                    double gGio = rs.getDouble("gia_gio_moi");
+                    if (rs.wasNull()) gGio = 0.0;
+                    price[0] = gNgay;
+                    price[1] = gGio;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return price;
     }
 }

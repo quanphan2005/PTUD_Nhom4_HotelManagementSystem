@@ -4,19 +4,14 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-import vn.iuh.constraint.Fee;
+import vn.iuh.constraint.FeeValue;
 import vn.iuh.dto.event.create.InvoiceCreationEvent;
 import vn.iuh.entity.ChiTietHoaDon;
-import vn.iuh.entity.DichVu;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.entity.PhongTinhPhuPhi;
 import vn.iuh.gui.base.CustomUI;
-import vn.iuh.gui.base.Main;
 
-import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -62,7 +57,7 @@ public class InvoiceDialog extends JDialog {
         infoPanel.add(new JLabel(new Timestamp(System.currentTimeMillis()).toString()));
 
         infoPanel.add(new JLabel("Nhân viên: "));
-        infoPanel.add(new JLabel(invoiceData.getTenNhanVien().getTenNhanVien()));
+        infoPanel.add(new JLabel(invoiceData.getNhanVien().getTenNhanVien()));
 
 
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -82,7 +77,7 @@ public class InvoiceDialog extends JDialog {
         roomPanel.add(new JScrollPane(tblPhong), BorderLayout.CENTER);
 
         // ===== Bảng dịch vụ và phụ phí =====
-        String[] colDichVu = {"Phòng", "Tên dịch vụ ", "Đơn giá", "Số lượng", "Thành tiền"};
+        String[] colDichVu = {"Phòng", "Tên dịch vụ ", "Đơn giá", "Số lượng","Thành tiền", "Ghi chú"};
         DefaultTableModel modelDichVu = new DefaultTableModel(colDichVu, 0);
         tblDichVu = new JTable(modelDichVu);
         fillServiceTable(modelDichVu);
@@ -104,7 +99,7 @@ public class InvoiceDialog extends JDialog {
         JPanel totalPanel = new JPanel();
         totalPanel.setLayout(new BoxLayout(totalPanel, BoxLayout.Y_AXIS));
         lblTotal = new JLabel("Tổng tiền: " + formatCurrency(invoiceData.getHoaDon().getTongTien()));
-        lblTaxFee = new JLabel("Thuế VAT(" + this.invoiceData.getThueVAT().getGiaHienTai() + "%): " + formatCurrency(invoiceData.getHoaDon().getTienThue()));
+        lblTaxFee = new JLabel("Thuế VAT(" + FeeValue.TAX + "%): " + formatCurrency(invoiceData.getHoaDon().getTienThue()));
         lblTotalInvoice = new  JLabel("Tổng hóa đơn: " +  formatCurrency(invoiceData.getHoaDon().getTongHoaDon()));
         lblTotal.setFont(CustomUI.normalFont);
         lblTaxFee.setFont(CustomUI.normalFont);
@@ -170,13 +165,7 @@ public class InvoiceDialog extends JDialog {
     private void fillServiceTable(DefaultTableModel model) {
         if (invoiceData.getPhongDungDichVuList() != null) {
             for (PhongDungDichVu pddv : invoiceData.getPhongDungDichVuList()) {
-                model.addRow(new Object[]{
-                        pddv.getTenPhong(),
-                        pddv.getTenDichVu(),
-                        formatCurrency(BigDecimal.valueOf(pddv.getGiaThoiDiemDo())),
-                        pddv.getSoLuong(),
-                        formatCurrency(pddv.tinhThanhTien())
-                });
+                model.addRow(pddv.getSimpleObject());
             }
         }
     }

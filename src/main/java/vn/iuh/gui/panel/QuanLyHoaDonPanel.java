@@ -3,6 +3,7 @@ package vn.iuh.gui.panel;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.ui.FlatLineBorder;
 import vn.iuh.constraint.Fee;
+import vn.iuh.constraint.InvoiceType;
 import vn.iuh.dao.HoaDonDAO;
 import vn.iuh.dto.event.create.InvoiceCreationEvent;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
@@ -134,7 +135,7 @@ public class QuanLyHoaDonPanel extends JPanel{
         mainPanel.setBackground(CustomUI.white);
 
         mainPanel.add(createLeftSearchPanel()); // Panel bên trái
-//        mainPanel.add(Box.createHorizontalGlue());
+        mainPanel.add(Box.createHorizontalGlue());
         mainPanel.add(Box.createHorizontalStrut(20)); // Khoảng cách
         mainPanel.add(createRightDatePanel()); // Panel bên phải
 
@@ -149,8 +150,8 @@ public class QuanLyHoaDonPanel extends JPanel{
         pnlLeft.setLayout(new BoxLayout(pnlLeft, BoxLayout.Y_AXIS));
         pnlLeft.setBackground(CustomUI.white);
         pnlLeft.setBorder(new FlatLineBorder(new Insets(12, 12, 12, 12), Color.decode("#CED4DA"), 2, 30));
-        pnlLeft.setMaximumSize(new Dimension(750, 200));
-        pnlLeft.setPreferredSize(new Dimension(750, 200));
+        pnlLeft.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+        pnlLeft.setPreferredSize(new Dimension(600, 200));
 
         // --- Hàng 1: Tìm kiếm ---
         JPanel row1 = new JPanel();
@@ -435,7 +436,7 @@ public class QuanLyHoaDonPanel extends JPanel{
 
         try {
             if (params.length == 0) {
-                dsHoaDon = hoaDonDAO.layTatCaHoaDon();
+                dsHoaDon = hoaDonDAO.layDanhSachHoaDon();
             } else if (params.length == 1) {
                 HoaDon hd = hoaDonDAO.timHoaDon((String) params[0]);
                 if (hd != null) dsHoaDon = List.of(hd);
@@ -522,21 +523,22 @@ public class QuanLyHoaDonPanel extends JPanel{
 
             KhachHang khachHang = khachHangDAO.timKhachHang(hoaDon.getMaKhachHang());
 
-            NhanVien nhanVien = nhanVienDAO.timNhanVien(hoaDon.getMaPhienDangNhap());
+            NhanVien nhanVien = nhanVienDAO.layNVTheoMaPhienDangNhap(Main.getCurrentLoginSession());
 
-            String tenNhanVien = nhanVien.getTenNhanVien();
+            List<ChiTietHoaDon> dsChiTiet = chiTietHoaDonDAO.layChiTietHoaDonBangMaHoaDon(maHoaDon);
 
-            List<ChiTietHoaDon> dsChiTiet = chiTietHoaDonDAO.getInvoiceDetaiByInvoiceId(maHoaDon);
-
-            List<PhongDungDichVu> dsPhongDungDichVu = donGoiDichVuDAO.timDonGoiDichVuBangMaDatPhong(hoaDon.getMaDonDatPhong());
+            List<PhongDungDichVu> dsPhongDungDichVu = donGoiDichVuDAO.timDonGoiDichVuBangDonDatPhong(hoaDon.getMaDonDatPhong());
 
             List<PhongTinhPhuPhi> dsPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon(maHoaDon);
 
             BigDecimal tongTien = hoaDon.getTongHoaDon();
+            BigDecimal tienThue = hoaDon.getTienThue();
+            BigDecimal tongHoaDon = hoaDon.getTongHoaDon();
 
             InvoiceCreationEvent invoiceCreationEvent = new InvoiceCreationEvent(
                     hoaDon.getMaPhienDangNhap(),
-                    ddp, ttpp,
+                    hoaDon.getTongTien(),
+                    ddp,
                     khachHang,
                     hoaDon,
                     nhanVien,

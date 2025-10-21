@@ -1,12 +1,16 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.PreReservationResponse;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.panel.DoiPhongDiaLog;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.CheckinService;
+import vn.iuh.service.DoiPhongService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CheckinServiceImpl;
+import vn.iuh.service.impl.DoiPhongServiceImpl;
 import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
@@ -16,6 +20,7 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,6 +30,7 @@ import java.util.Objects;
 public class PreReservationManagementPanel extends JPanel {
     private final BookingService bookingService;
     private final CheckinService checkinService;
+    private final DoiPhongService doiPhongService;
 
     // Filter components
     private JTextField txtRoomName;
@@ -48,8 +54,10 @@ public class PreReservationManagementPanel extends JPanel {
         // Initialize services and data
         bookingService = new BookingServiceImpl();
         checkinService = new CheckinServiceImpl();
+        doiPhongService = new DoiPhongServiceImpl();
+
         reservationFilter = new ReservationFilter(null, null, null);
-        RefreshManager.setReservationFormManagementPanel(this);
+        RefreshManager.setPreReservationManagementPanel(this);
 
         // Load data
         loadReservationData();
@@ -90,8 +98,8 @@ public class PreReservationManagementPanel extends JPanel {
         JPanel filterPanel = new JPanel(new GridBagLayout());
         filterPanel.setBackground(Color.WHITE);
         filterPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -404,7 +412,7 @@ public class PreReservationManagementPanel extends JPanel {
                 JOptionPane.showMessageDialog(PreReservationManagementPanel.this,
                         "Đã check-in thành công cho khách " + reservation.getCustomerName()
                                 + " vào phòng " + reservation.getRoomName(),
-                                              "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
                 // Làm mới UI
                 RefreshManager.refreshAfterCancelReservation();
@@ -414,58 +422,159 @@ public class PreReservationManagementPanel extends JPanel {
                 try { err = checkinService.getLastError(); } catch (Exception ignored) {}
                 if (err == null || err.trim().isEmpty()) err = "Check-in thất bại. Vui lòng kiểm tra log hoặc thử lại.";
                 JOptionPane.showMessageDialog(PreReservationManagementPanel.this,
-                                              err,
-                                              "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        err,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(PreReservationManagementPanel.this,
                     "Có lỗi khi thực hiện check-in: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()),
-                                          "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void handleChangeRoom(PreReservationResponse reservation) {
-        String newRoom = JOptionPane.showInputDialog(this,
-            "Nhập số phòng muốn chuyển đến:",
-            "Đổi phòng", JOptionPane.QUESTION_MESSAGE);
+        if (reservation == null) return;
 
-        if (newRoom != null && !newRoom.trim().isEmpty()) {
-            int result = JOptionPane.showConfirmDialog(this,
-                "Xác nhận đổi phòng từ " + reservation.getRoomName() + " sang " + newRoom + "?",
-                "Xác nhận đổi phòng", JOptionPane.YES_NO_OPTION);
+        // 1) Lấy số người cần (mặc định là 1, sau đó sẽ gán lại sau khi lấy so_luọng_khach từ LoaiPhong)
+        int neededPersons = 1;
 
-            if (result == JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(this,
-                    "Đã đổi phòng thành công từ " + reservation.getRoomName() + " sang " + newRoom,
-                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
-
-                // TODO: Implement actual room change logic
-                // bookingService.changeRoom(reservation.getId(), newRoom);
-
-                RefreshManager.refreshAfterCancelReservation();
-            }
+        // 2) Thời gian cần phòng trống
+        Timestamp now = new Timestamp(new Date().getTime());
+        Timestamp timeIn = reservation.getTimeIn() != null ? new Timestamp(reservation.getTimeIn().getTime()) : null;
+        Timestamp fromTime;
+        if (timeIn == null) {
+            // Không có timeIn thì để thời gian bắt đầu là hiện tại
+            fromTime = now;
+        } else {
+            // Nếu đơn chưa checkin thì lấy thời gian bắt đầu là thời gian checkin
+            // Nếu khách đã checkin (đang ở) thì lấy thời gian từ hiện tại
+            fromTime = timeIn.after(now) ? timeIn : now;
         }
+        Timestamp toTime = reservation.getTimeOut() != null ? new Timestamp(reservation.getTimeOut().getTime()) : null;
+
+        // 3) Tìm phòng phù hợp qua DoiPhongServiceImpl
+        List<BookingResponse> candidates;
+        try {
+            candidates = doiPhongService.timPhongPhuHopChoDoiPhong(reservation.getRoomId(), neededPersons, fromTime, toTime);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tìm phòng ứng viên: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (candidates == null || candidates.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy phòng phù hợp (cùng loại, đủ sức chứa và trống trong khoảng thời gian yêu cầu).",
+                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // 4) Tạo BookingResponse đại diện cho đơn hiện tại (dùng để hiển thị info trên DoiPhongPanel)
+        String roomType = (candidates.get(0).getRoomType() != null) ? candidates.get(0).getRoomType() : "";
+        BookingResponse currentBooking = new BookingResponse(
+                reservation.getRoomId(),
+                reservation.getRoomName(),
+                true,
+                "OCCUPIED",
+                roomType,
+                String.valueOf(neededPersons),
+                0.0,
+                0.0,
+                reservation.getCustomerName(),
+                reservation.getMaDonDatPhong(),
+                reservation.getTimeIn(),
+                reservation.getTimeOut()
+        );
+
+        // 5) Tạo panel đổi phòng và hiển thị modal dialog
+        DoiPhongDiaLog doiPhongDiaLog = new DoiPhongDiaLog(currentBooking, candidates);
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Đổi phòng", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dialog.getContentPane().add(doiPhongDiaLog);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+
+        // 6) Đăng ký callback để DoiPhongPanel báo về khi user xác nhận đổi phòng hoặc hủy.
+        doiPhongDiaLog.setChangeRoomCallback(new DoiPhongDiaLog.ChangeRoomCallback() {
+            @Override
+            public void onChangeRoom(String oldRoomId, BookingResponse newRoom, boolean applyFee) {
+                if (newRoom == null || newRoom.getRoomId() == null) {
+                    JOptionPane.showMessageDialog(dialog, "Phòng chọn không hợp lệ.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Thêm thông tin về việc có tính phụ phí trong lời xác nhận
+                String feeText = applyFee ? "\n(Phụ phí sẽ được tính khi đổi phòng.)" : "";
+                int confirm = JOptionPane.showConfirmDialog(dialog,
+                        "Xác nhận đổi phòng từ " + reservation.getRoomName() + " sang " + newRoom.getRoomName() + "?" + feeText,
+                        "Xác nhận", JOptionPane.YES_NO_OPTION);
+
+                if (confirm != JOptionPane.YES_OPTION) return;
+
+                try {
+                    // Thực thi đổi phòng tại service (DoiPhongService)
+                    // NOTE: hiện changeRoom chưa nhận applyFee — nếu bạn muốn xử lý phụ phí, implement thêm param vào service/dao.
+                    boolean success = doiPhongService.changeRoom(
+                            reservation.getMaDonDatPhong(),
+                            oldRoomId,
+                            newRoom.getRoomId()
+                    );
+
+                    if (success) {
+                        // TODO: Nếu có phụ phí thì thêm phụ phí
+                        if (applyFee) {
+                            // hàm tính phụ phí
+                        }
+
+                        JOptionPane.showMessageDialog(dialog,
+                                "Đổi phòng thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                        dialog.dispose();
+                        RefreshManager.refreshAfterCancelReservation();
+                    } else {
+                        String err = null;
+                        try { err = doiPhongService.getLastError(); } catch (Exception ignored) {}
+                        if (err == null || err.trim().isEmpty()) err = "Đổi phòng thất bại. Vui lòng thử lại.";
+                        JOptionPane.showMessageDialog(dialog, err, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(dialog,
+                            "Có lỗi khi đổi phòng: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()),
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+            @Override
+            public void onCancel() {
+                dialog.dispose();
+            }
+        });
+
+        dialog.setVisible(true);
     }
 
     private void handleCancelReservation(PreReservationResponse reservation) {
         int result = JOptionPane.showConfirmDialog(this,
-            "Xác nhận hủy đơn đặt phòng " + reservation.getMaDonDatPhong() + " Tại phòng:" + reservation.getRoomName() +" cho khách hàng: " + reservation.getCustomerName() + "?",
-            "Hủy đơn đặt phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Xác nhận hủy đơn đặt phòng " + reservation.getMaDonDatPhong() + " Tại phòng:" + reservation.getRoomName() +" cho khách hàng: " + reservation.getCustomerName() + "?",
+                "Hủy đơn đặt phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
             System.out.println("Cancelling reservation ID: " + reservation.getMaDonDatPhong());
             boolean isSuccess = bookingService.cancelRoomReservation(reservation.getMaDonDatPhong(), reservation.getRoomId());
             if (!isSuccess) {
                 JOptionPane.showMessageDialog(this,
-                    "Hủy đơn đặt phòng thất bại. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        "Hủy đơn đặt phòng thất bại. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             JOptionPane.showMessageDialog(this,
-                "Đã hủy đơn đặt phòng " + reservation.getRoomName() + " thành công",
-                "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    "Đã hủy đơn đặt phòng " + reservation.getRoomName() + " thành công",
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
             RefreshManager.refreshAfterCancelReservation();
         }

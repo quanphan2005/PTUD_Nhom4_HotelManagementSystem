@@ -6,6 +6,7 @@ import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,8 +57,8 @@ public class DonGoiDichVuDao {
 
     public void themPhongDungDichVu(List<PhongDungDichVu> danhSachPhongDungDichVu) {
         String query = "INSERT INTO PhongDungDichVu" +
-                       " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
-                       " VALUES (?, ?, ?, ?, ?, ?, ?)";
+                       " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap, tong_tien)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -70,7 +71,7 @@ public class DonGoiDichVuDao {
                 ps.setString(5, phongDungDichVu.getMaChiTietDatPhong());
                 ps.setString(6, phongDungDichVu.getMaDichVu());
                 ps.setString(7, phongDungDichVu.getMaPhienDangNhap());
-
+                ps.setBigDecimal(8, phongDungDichVu.getTongTien());
                 ps.addBatch();
             }
 
@@ -174,7 +175,7 @@ public class DonGoiDichVuDao {
             ps.setString(1,maDonDatPhong);
             var rs = ps.executeQuery();
             while(rs.next()){
-                PhongDungDichVu pddv = chuyenKetQuaThanhPhongDungDichVu(rs);
+                PhongDungDichVu pddv = mapResultSet(rs);
                 pddv.setTenDichVu(rs.getString("ten_dich_vu"));
                 pddv.setTenPhong(rs.getString("ten_phong"));
                 danhSachPhongDungDichVu.add(pddv);
@@ -244,6 +245,23 @@ public class DonGoiDichVuDao {
             return new ThongTinDichVu(maDichVu, tenDichVu, tonKho, coTheTang, giaMoi, tenLoaiDichVu);
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi khi chuyển kết quả sang ThongTinDichVu: " + e.getMessage());
+        }
+    }
+
+    private PhongDungDichVu mapResultSet(ResultSet rs){
+        PhongDungDichVu phongDungDichVu = new PhongDungDichVu();
+
+        try{
+            phongDungDichVu.setMaPhongDungDichVu(rs.getString("ma_phong_dung_dich_vu"));
+            phongDungDichVu.setSoLuong(rs.getInt("so_luong"));
+            phongDungDichVu.setGiaThoiDiemDo(rs.getDouble("gia_thoi_diem_do"));
+            phongDungDichVu.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
+            phongDungDichVu.setMaDichVu(rs.getString("ma_dich_vu"));
+            phongDungDichVu.setMaPhienDangNhap(rs.getString("ma_phien_dang_nhap"));
+            phongDungDichVu.setTongTien(BigDecimal.valueOf(rs.getDouble("tong_tien")));
+            return phongDungDichVu;
+        }catch (SQLException e) {
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành PhongDungDichVu" + e.getMessage());
         }
     }
 

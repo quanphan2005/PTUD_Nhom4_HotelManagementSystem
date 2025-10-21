@@ -82,7 +82,7 @@ public class BookingManagementPanel extends JPanel {
         roomFilter = new RoomFilter(null, null, null, null, null);
 
         // Register this panel for refresh events
-        RefreshManager.setReservationManagementPanel(this);
+        RefreshManager.setBookingManagementPanel(this);
     }
 
     private void setupMultiBookingCallbacks() {

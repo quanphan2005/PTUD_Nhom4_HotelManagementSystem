@@ -1,5 +1,7 @@
 package vn.iuh.entity;
 
+import vn.iuh.util.PriceFormat;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
@@ -47,6 +49,9 @@ public class PhongDungDichVu {
         this.thoiGianTao = thoiGianTao;
     }
 
+    public void setTongTien(BigDecimal tongTien) {
+        this.tongTien = tongTien;
+    }
 
     public String getMaPhongDungDichVu() {
         return maPhongDungDichVu;
@@ -117,12 +122,27 @@ public class PhongDungDichVu {
     }
 
     public BigDecimal getTongTien() {
-        if(tongTien != null){
-            return tongTien;
+        if(!this.duocTang){
+            if(tongTien != null){
+                return tongTien;
+            }
+            else {
+                tongTien = this.tinhThanhTien();
+                return tongTien;
+            }
+        }else {
+            return BigDecimal.ZERO;
         }
-        else {
-            tongTien = this.tinhThanhTien();
-            return tongTien;
-        }
+    }
+
+    public Object[] getSimpleObject(){
+        return new Object[]{
+            this.tenPhong,
+            this.tenDichVu,
+                PriceFormat.formatPrice(this.giaThoiDiemDo) + " VNĐ",
+                this.soLuong,
+                PriceFormat.formatPrice(this.getTongTien().doubleValue()) + " VNĐ",
+                this.duocTang ? "Được tặng" : ""
+        };
     }
 }

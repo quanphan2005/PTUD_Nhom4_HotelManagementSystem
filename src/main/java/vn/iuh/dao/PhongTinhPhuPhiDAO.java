@@ -114,6 +114,7 @@ public class PhongTinhPhuPhiDAO {
             phong.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
             phong.setMaPhuPhi(rs.getString("ma_phu_phi"));
             phong.setDonGiaPhuPhi(BigDecimal.valueOf(rs.getDouble("don_gia_phu_phi")));
+            phong.setTongTien(BigDecimal.valueOf(rs.getDouble("tong_tien")));
             return phong;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành Phong" + e.getMessage());

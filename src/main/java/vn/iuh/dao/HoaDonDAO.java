@@ -1,6 +1,5 @@
 package vn.iuh.dao;
 
-import vn.iuh.dto.event.update.InvoicePricingUpdate;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -66,63 +65,13 @@ public class HoaDonDAO {
         return null;
     }
 
-    public List<HoaDon> layTatCaHoaDon(){
-        List<HoaDon> list = new ArrayList<>();
-        String query = "SELECT hd.ma_hoa_don, hd.kieu_hoa_don, hd.ma_don_dat_phong, hd.ma_khach_hang FROM HoaDon hd";
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(query);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                HoaDon hoaDon= new HoaDon();
-                hoaDon.setMaHoaDon(rs.getString("ma_hoa_don"));
-                hoaDon.setKieuHoaDon(rs.getString("kieu_hoa_don"));
-                hoaDon.setMaDonDatPhong(rs.getString("ma_don_dat_phong"));
-                hoaDon.setMaKhachHang(rs.getString("ma_khach_hang"));
-                list.add(hoaDon);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return list;
-    }
-
-//    public List<HoaDon> timTheoNgay(Date tuNgay, Date denNgay){
-//        List<HoaDon> dsHoaDon = new ArrayList<>();
-//        String query = "SELECT * FROM HoaDon " +
-//                "WHERE CAST(thoi_gian_tao AS DATE) BETWEEN ? AND ?";
-//
-//        try (PreparedStatement ps = connection.prepareStatement(query)) {
-//
-//            // SỬA 2: Dùng setDate thay vì setTimestamp để khớp với CAST
-//            ps.setDate(1, new java.sql.Date(tuNgay.getTime()));
-//            ps.setDate(2, new java.sql.Date(denNgay.getTime()));
-//
-//            try (ResultSet rs = ps.executeQuery()) {
-//                while (rs.next()) {
-//                    HoaDon hd = mapResultSet(rs);
-//                    dsHoaDon.add(hd);
-//                }
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//
-//        return dsHoaDon;
-//    }
-
-    public boolean boSungGiaTien(InvoicePricingUpdate pricing){
-        String sql = "Update HoaDon set tong_tien = ?, tien_thue = ? , tong_hoa_don = ? where ma_hoa_don = ?";
+    public boolean updateTinhTrangThanhToan(HoaDon hoaDon){
+        String sql = "Update HoaDon set phuong_thuc_thanh_toan = ? , tinh_trang_thanh_toan = ? where ma_hoa_don = ?";
         try {
             PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setBigDecimal(1, pricing.getTongTien());
-            ps.setBigDecimal(2, pricing.getTienThue());
-            ps.setBigDecimal(3, pricing.getTongHoaDon());
-            ps.setString(4, pricing.getMaHoaDon());
-
+            ps.setString(1, hoaDon.getPhuongThucThanhToan());
+            ps.setString(2, hoaDon.getTinhTrangThanhToan());
+            ps.setString(3, hoaDon.getMaHoaDon());
             int rs = ps.executeUpdate();
             return rs > 0;
         } catch (SQLException e) {
@@ -152,6 +101,26 @@ public class HoaDonDAO {
         return null;
     }
 
+    public HoaDon timHoaTheoMaDonDatPhong(String maDonDatPhong, String kieuHoaDon){
+        String query = "SELECT TOP 1 * FROM HoaDon where ma_don_dat_phong = ? and kieu_hoa_don = ?";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+            ps.setString(2, kieuHoaDon);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return chuyenKetQuaThanhHoaDon(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
     private HoaDon chuyenKetQuaThanhHoaDon(ResultSet rs) throws SQLException {
         HoaDon hoaDon = new HoaDon();
         try {
@@ -163,6 +132,9 @@ public class HoaDonDAO {
             hoaDon.setMaDonDatPhong(rs.getString("ma_don_dat_phong"));
             hoaDon.setMaKhachHang(rs.getString("ma_khach_hang"));
             hoaDon.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
+            hoaDon.setTongTien(rs.getBigDecimal("tong_tien"));
+            hoaDon.setTienThue(rs.getBigDecimal("tien_thue"));
+            hoaDon.setTongHoaDon(rs.getBigDecimal("tong_hoa_don"));
 
             return hoaDon;
         } catch (SQLException e) {
@@ -187,16 +159,39 @@ public class HoaDonDAO {
         return null;
     }
 
-    public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maPhienDangNhap){
-        String sql = "select * from HoaDon where thoi_gian_tao between ? and ? order by ma_phien_dang_nhap and  (? IS NULL OR ma_phien_dang_nhap = ?)";
+    public List<HoaDon> layDanhSachHoaDon(){
+        List<HoaDon> list = new ArrayList<>();
+        String query = "select * from HoaDon";
+        try (PreparedStatement ps = connection.prepareStatement(query);
+
+             var rs = ps.executeQuery()) {
+            while (rs.next()) {
+
+                HoaDon hoaDon = chuyenKetQuaThanhHoaDon(rs);
+                list.add(hoaDon);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi lấy tất cả hóa đơn: " + e.getMessage(), e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return list;
+    }
+
+    public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maNhanVien){
+        String sql = "select * from HoaDon where (thoi_gian_tao between ? and ?) and  (? IS NULL OR ma_nhan_vien = ?)" +
+                "order by ma_hoa_don ";
 
         List<HoaDon> danhSachHoaDon = new ArrayList<>();
         try {
             PreparedStatement ps = connection.prepareStatement(sql);
             ps.setTimestamp(1,tgBatDau);
             ps.setTimestamp(2,tgKetThuc);
-            ps.setString(3, maPhienDangNhap);
-            ps.setString(4, maPhienDangNhap);
+            ps.setString(3, maNhanVien);
+            ps.setString(4, maNhanVien);
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
