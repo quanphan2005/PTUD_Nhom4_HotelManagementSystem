@@ -49,10 +49,6 @@ public class PhongDungDichVu {
         this.thoiGianTao = thoiGianTao;
     }
 
-    public void setTongTien(BigDecimal tongTien) {
-        this.tongTien = tongTien;
-    }
-
     public String getMaPhongDungDichVu() {
         return maPhongDungDichVu;
     }
