@@ -28,7 +28,6 @@ public class LogOutDialog extends JDialog{
                         phien.setTgKetThuc(new Timestamp(System.currentTimeMillis()));
                         service.updateFinishingTime(maPhien, new Timestamp(System.currentTimeMillis()));
                     }
-                    System.out.println("Hehehe");
                 }
             }catch (Exception ex) {
                 ex.printStackTrace();

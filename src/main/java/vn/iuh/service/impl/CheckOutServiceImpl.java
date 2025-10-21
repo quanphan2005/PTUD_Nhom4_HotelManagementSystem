@@ -103,13 +103,9 @@ public class CheckOutServiceImpl implements CheckOutService {
             List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
             List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
             List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
-            List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
-            List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = new ArrayList<>();
 
             InvoiceCreationEvent invoiceCreationEvent = null;
 
-
-            InvoiceCreationEvent invoiceCreationEvent = null;
 
 
             //Tạo hóa đơn thanh toán

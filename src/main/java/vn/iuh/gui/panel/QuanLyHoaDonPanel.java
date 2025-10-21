@@ -531,10 +531,6 @@ public class QuanLyHoaDonPanel extends JPanel{
 
             List<PhongTinhPhuPhi> dsPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon(maHoaDon);
 
-            BigDecimal tongTien = hoaDon.getTongHoaDon();
-            BigDecimal tienThue = hoaDon.getTienThue();
-            BigDecimal tongHoaDon = hoaDon.getTongHoaDon();
-
             InvoiceCreationEvent invoiceCreationEvent = new InvoiceCreationEvent(
                     hoaDon.getMaPhienDangNhap(),
                     hoaDon.getTongTien(),
