@@ -6,6 +6,7 @@ import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,8 +57,8 @@ public class DonGoiDichVuDao {
 
     public void themPhongDungDichVu(List<PhongDungDichVu> danhSachPhongDungDichVu) {
         String query = "INSERT INTO PhongDungDichVu" +
-                       " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap)" +
-                       " VALUES (?, ?, ?, ?, ?, ?, ?)";
+                       " (ma_phong_dung_dich_vu, so_luong, gia_thoi_diem_do, duoc_tang, ma_chi_tiet_dat_phong, ma_dich_vu, ma_phien_dang_nhap, tong_tien)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -70,7 +71,7 @@ public class DonGoiDichVuDao {
                 ps.setString(5, phongDungDichVu.getMaChiTietDatPhong());
                 ps.setString(6, phongDungDichVu.getMaDichVu());
                 ps.setString(7, phongDungDichVu.getMaPhienDangNhap());
-
+                ps.setBigDecimal(8, phongDungDichVu.getTongTien());
                 ps.addBatch();
             }
 

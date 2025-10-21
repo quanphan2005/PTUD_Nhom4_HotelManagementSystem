@@ -1,7 +1,8 @@
 package vn.iuh.constraint;
 
 public enum FeeValue {
-    TAX(0.1)
+    TAX(0.1),
+    CHECKOUT_TRE(2)
     ;
 
     public final double value;

@@ -1006,15 +1006,14 @@ public class RoomUsageFormPanel extends JPanel {
                 "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
-            System.out.println("Trả phòng...");
             boolean success = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
 
             if (success) {
-                JOptionPane.showMessageDialog(this,
-                        "Đã hoàn thành trả phòng " + selectedRoom.getRoomName(),
-                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                RefreshManager.refreshAfterBooking();
-                Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
+//                JOptionPane.showMessageDialog(this,
+//                        "Đã hoàn thành trả phòng " + selectedRoom.getRoomName(),
+//                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+//                RefreshManager.refreshAfterBooking();
+//                Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Trả phòng thất bại cho " + selectedRoom.getRoomName(),

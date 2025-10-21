@@ -148,9 +148,10 @@ public class PhuPhiDAO {
     }
 
     public ThongTinPhuPhi getThongTinPhuPhiByName(String name){
-        String query =  "select pp.ma_phu_phi, pp.ten_phu_phi, gpp.la_phan_tram, gpp.gia_hien_tai from PhuPhi pp\n" +
-                "left join GiaPhuPhi gpp on pp.ma_phu_phi = gpp.ma_phu_phi\n" +
-                "where pp.da_xoa = 0 and gpp.da_xoa = 0 and pp.ten_phu_phi = ?";
+        String query =  "select top 1 pp.ma_phu_phi, pp.ten_phu_phi, gpp.la_phan_tram, gpp.gia_hien_tai from PhuPhi pp\n" +
+                        "left join GiaPhuPhi gpp on pp.ma_phu_phi = gpp.ma_phu_phi\n" +
+                        "where pp.da_xoa = 0 and gpp.da_xoa = 0 and pp.ten_phu_phi = ?\n"
+                        +"order by gpp.thoi_gian_tao desc";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
