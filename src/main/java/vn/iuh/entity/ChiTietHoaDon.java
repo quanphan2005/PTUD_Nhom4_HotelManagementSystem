@@ -81,7 +81,11 @@ public class ChiTietHoaDon {
     }
 
     public BigDecimal getTongTien() {
-        return tongTien;
+        if(tongTien != null){
+            return tongTien;
+
+        }
+        return BigDecimal.ZERO;
     }
 
     public void setTongTien(BigDecimal tongTien) {

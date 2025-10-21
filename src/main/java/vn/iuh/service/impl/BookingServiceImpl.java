@@ -251,7 +251,6 @@ public class BookingServiceImpl implements BookingService {
                 message += "- Phòng " + roomId + "\n";
             }
         }
-
         if (bookingCreationEvent.isDaDatTruoc()) {
             message += " Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
         } else {

@@ -1,14 +1,30 @@
 package vn.iuh.gui.panel.statistic;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.dao.NhanVienDAO;
+import vn.iuh.dto.response.InvoiceStatistic;
+import vn.iuh.entity.NhanVien;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
+import vn.iuh.service.impl.RevenueStatisticService;
 
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 
 public class RevenueStatisticPanel extends JPanel {
@@ -27,8 +43,17 @@ public class RevenueStatisticPanel extends JPanel {
     private JPanel pnlVisualDisplay;
     private CardLayout cardLayout;
     private JPanel pnlTextDisplay;
-
-
+    private FilterStatistic filter;
+    private JComboBox<String> cmbEmployee;
+    private List<NhanVien> danhSachNhanVien;
+    private final RevenueStatisticService revenueStatisticService;
+    private NhanVienDAO nhanVienDAO;
+    private JLabel lblTotalInvoiceValue;
+    private JLabel lblFeeValue;
+    private JLabel lblTotalRevenueValue ;
+    private JLabel lblServiceValue;
+    private JLabel lblRoomValue;
+    private JLabel lblTaxValue;
 
     private void init(){
         createTopPanel();
@@ -42,7 +67,11 @@ public class RevenueStatisticPanel extends JPanel {
         createResultPanel();
         this.add(pnlMain, BorderLayout.CENTER);
     }
+
+
     public RevenueStatisticPanel() {
+        this.nhanVienDAO = new NhanVienDAO();
+        this.revenueStatisticService = new RevenueStatisticService();
         setLayout(new BorderLayout());
         init();
     }
@@ -85,8 +114,22 @@ public class RevenueStatisticPanel extends JPanel {
         lblEmployee = new JLabel("Chọn nhân viên     ");
         lblEmployee.setFont(CustomUI.smallFont);
         lblEmployee.setForeground(CustomUI.black);
-        JComboBox<String> cmbEmployee = new JComboBox<>(new String[]{"Alice", "Bob", "Charlie"});
+        cmbEmployee = new JComboBox<>();
+        loadDanhSachNhanVien();
+        cmbEmployee.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                loadDanhSachNhanVien();
+            }
+
+            @Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+            @Override public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
+
         JButton btnReLoad = new JButton("Tải lại");
+        btnReLoad.addActionListener(e ->{
+            this.handleReload();
+        });
         btnReLoad.setSize(new Dimension(20, 10));
         btnReLoad.setFont(CustomUI.smallFont);
         btnReLoad.setForeground(CustomUI.white);
@@ -131,6 +174,116 @@ public class RevenueStatisticPanel extends JPanel {
         pnlFilter.setBackground(CustomUI.white);
         pnlMain.add(pnlFilter);
     }
+
+    private void loadDanhSachNhanVien(){
+        danhSachNhanVien = nhanVienDAO.layDanhSachNhanVien();
+        cmbEmployee.removeAllItems();
+        cmbEmployee.addItem("Tất cả");
+        for(NhanVien nv : danhSachNhanVien){
+            cmbEmployee.addItem(nv.getTenNhanVien());
+        }
+    }
+
+
+    private void validateTime(){
+        LocalDate startDate = datePickerStart.getDate();
+        LocalDate endDate = datePickerEnd.getDate();
+        LocalDate today = LocalDate.now();
+
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc");
+        }
+        if (startDate.isAfter(today)) {
+            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày hiện tại");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày kết thúc");
+        }
+    }
+
+    private void handleReload(){
+        try {
+            validateTime();
+
+            String selectedTenNhanVien = (String) cmbEmployee.getSelectedItem();
+            Timestamp ngayBatDau = Timestamp.valueOf(datePickerStart.getDate().atTime(LocalTime.MIN));
+            Timestamp ngayKetThuc = Timestamp.valueOf(datePickerEnd.getDate().atTime(LocalTime.MAX));
+
+            String maNhanVien = null;
+            if (!"Tất cả".equalsIgnoreCase(selectedTenNhanVien)) {
+                maNhanVien = danhSachNhanVien.stream()
+                        .filter(nv -> nv.getTenNhanVien().equalsIgnoreCase(selectedTenNhanVien))
+                        .map(NhanVien::getMaNhanVien)
+                        .findFirst()
+                        .orElse(null);
+            }
+            System.out.println("Nhân viên: " + maNhanVien);
+            System.out.println("Từ: " + ngayBatDau + " - Đến: " + ngayKetThuc);
+            FilterStatistic newFilter = new FilterStatistic(ngayBatDau, ngayKetThuc, maNhanVien);
+            List<InvoiceStatistic> danhSachKetQua  = revenueStatisticService.layThongKeVoiDieuKien(newFilter);
+
+            for(InvoiceStatistic i : danhSachKetQua){
+                System.out.println(Arrays.toString(i.getObject()));
+            }
+
+            fillTable(danhSachKetQua);
+            updateStatisticLabels(danhSachKetQua);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi: " + ex.getMessage(), "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+
+    }
+
+
+    private void updateStatisticLabels(List<InvoiceStatistic> invoices) {
+        if (invoices == null || invoices.isEmpty()) {
+            lblTotalInvoiceValue.setText("0");
+            lblFeeValue.setText("0");
+            lblTotalRevenueValue.setText("0");
+            lblServiceValue.setText("0");
+            lblRoomValue.setText("0");
+            lblTaxValue.setText("0");
+            return;
+        }
+
+        BigDecimal totalFee = invoices.stream()
+                .map(InvoiceStatistic::getPhuPhi)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalRevenue = invoices.stream()
+                .map(InvoiceStatistic::getTongHoaDon)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalService = invoices.stream()
+                .map(InvoiceStatistic::getTienDichVu)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalRoom = invoices.stream()
+                .map(InvoiceStatistic::getTienPhong)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalTax = invoices.stream()
+                .map(InvoiceStatistic::getTienThue)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+
+        lblTotalInvoiceValue.setText(String.valueOf(invoices.size()));
+        lblFeeValue.setText(formatter.format(totalFee));
+        lblTotalRevenueValue.setText(formatter.format(totalRevenue));
+        lblServiceValue.setText(formatter.format(totalService));
+        lblRoomValue.setText(formatter.format(totalRoom));
+        lblTaxValue.setText(formatter.format(totalTax));
+    }
+
     private void createResultPanel(){
         pnlResult = new JPanel(new BorderLayout());
         pnlVisualDisplay = new JPanel();
@@ -158,10 +311,10 @@ public class RevenueStatisticPanel extends JPanel {
         lblTotalInvoice.setForeground(CustomUI.black);
         pnlTextDisplay.add(lblTotalInvoice, gbc);
         gbc.gridx = 1;
-        JLabel lblDeposit = new JLabel("Tiền cọc:");
-        lblDeposit.setFont(CustomUI.smallFont);
-        lblDeposit.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblDeposit, gbc);
+        JLabel lblFee = new JLabel("Tiền phụ phí:");
+        lblFee.setFont(CustomUI.smallFont);
+        lblFee.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblFee, gbc);
         gbc.gridx = 2;
         JLabel lblTotalRevenue = new JLabel("Tổng doanh thu:");
         lblTotalRevenue.setFont(CustomUI.smallFont);
@@ -192,19 +345,19 @@ public class RevenueStatisticPanel extends JPanel {
         gbc.gridx = 0;
         gbc.insets = new Insets(5, 200, 5, 30);
         gbc.weightx = 1.0;
-        JLabel lblTotalInvoiceValue = new JLabel("30");
+        lblTotalInvoiceValue = new JLabel("30");
         lblTotalInvoiceValue.setFont(CustomUI.smallFont);
         lblTotalInvoiceValue.setForeground(CustomUI.black);
         pnlTextDisplay.add(lblTotalInvoiceValue, gbc); // Tổng số hóa đơn
         gbc.gridx = 1;
         gbc.insets = new Insets(5, 180, 5, 30);
-        JLabel lblDepositValue = new JLabel("25.380.000");
-        lblDepositValue.setFont(CustomUI.smallFont);
-        lblDepositValue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblDepositValue, gbc); // Tiền cọc
+        lblFeeValue = new JLabel("25.380.000");
+        lblFeeValue.setFont(CustomUI.smallFont);
+        lblFeeValue.setForeground(CustomUI.black);
+        pnlTextDisplay.add(lblFeeValue, gbc); // Tiền cọc
         gbc.gridx = 2;
         gbc.insets = new Insets(5, 200, 5, 30);
-        JLabel lblTotalRevenueValue = new JLabel("1.153.570");
+        lblTotalRevenueValue = new JLabel("1.153.570");
         lblTotalRevenueValue.setFont(CustomUI.smallFont);
         lblTotalRevenueValue.setForeground(CustomUI.black);
         pnlTextDisplay.add(lblTotalRevenueValue, gbc); // Tổng doanh thu
@@ -214,19 +367,19 @@ public class RevenueStatisticPanel extends JPanel {
         gbc.gridx = 0;
         gbc.insets = new Insets(25, 200, 5, 30);
         gbc.weightx = 1.0;
-        JLabel lblServiceValue = new JLabel("396.200");
+        lblServiceValue = new JLabel("396.200");
         lblServiceValue.setFont(CustomUI.smallFont);
         lblServiceValue.setForeground(CustomUI.black);
         pnlTextDisplay.add(lblServiceValue, gbc); // Dịch vụ
         gbc.gridx = 1;
         gbc.insets = new Insets(25, 180, 5, 30);
-        JLabel lblRoomValue = new JLabel("652.500");
+        lblRoomValue = new JLabel("652.500");
         lblRoomValue.setFont(CustomUI.smallFont);
         lblRoomValue.setForeground(CustomUI.black);
         pnlTextDisplay.add(lblRoomValue, gbc); // Tiền phòng
         gbc.gridx = 2;
         gbc.insets = new Insets(25, 200, 5, 30);
-        JLabel lblTaxValue = new JLabel("0");
+        lblTaxValue = new JLabel("0");
         lblTaxValue.setFont(CustomUI.smallFont);
         lblTaxValue.setForeground(CustomUI.black);
         pnlTextDisplay.add(lblTaxValue, gbc); // Thuế
@@ -236,8 +389,8 @@ public class RevenueStatisticPanel extends JPanel {
     }
 
     private void createTableResult(){
-        String[] cols = {"Mã hóa đơn", "Khách hàng", "Nhân viên", "Ngày lập", "Tiền phòng","Dịch vụ", "Thuế", "Tổng tiền"};
-        DefaultTableModel model = new DefaultTableModel(null, cols) {
+        String[] cols = {"Mã hóa đơn", "Khách hàng", "Ngày lập", "Tiền phòng","Dịch vụ", "Phụ phí","Thuế", "Tổng tiền"};
+        model = new DefaultTableModel(null, cols) {
             @Override public boolean isCellEditable(int row, int column) { return false; } // Không cho phép chỉnh sửa thông tin trong các ô của table
         };
 
@@ -286,6 +439,13 @@ public class RevenueStatisticPanel extends JPanel {
         scrollPane.getViewport().setBackground(CustomUI.white);
 
         pnlVisualDisplay.add(scrollPane, "table");
+    }
+
+    private void fillTable(List<InvoiceStatistic> danhSachHoaDon){
+        model.setRowCount(0);
+        for(InvoiceStatistic hd : danhSachHoaDon){
+            model.addRow(hd.getObject());
+        }
     }
 
     private void createCharPanel(){

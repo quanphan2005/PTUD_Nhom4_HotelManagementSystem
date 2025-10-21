@@ -121,6 +121,10 @@ public class PhongDungDichVu {
         return BigDecimal.valueOf(giaThoiDiemDo).multiply(BigDecimal.valueOf(soLuong));
     }
 
+    public void setTongTien(BigDecimal tongTien) {
+        this.tongTien = tongTien;
+    }
+
     public BigDecimal getTongTien() {
         if(!this.duocTang){
             if(tongTien != null){
