@@ -6,6 +6,7 @@ import vn.iuh.dto.response.CustomerInfoResponse;
 import vn.iuh.dto.response.EventResponse;
 import vn.iuh.dto.response.PreReservationResponse;
 import vn.iuh.dto.response.ReservationResponse;
+import vn.iuh.dto.response.ReservationInfoDetailResponse;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -22,4 +23,5 @@ public interface BookingService {
     boolean cancelRoomReservation(String maDatPhong, String maPhong);
     List<ReservationResponse> getAllReservationsWithStatus();
     List<ReservationResponse> getAllReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate);
+    ReservationInfoDetailResponse getReservationDetailInfo(String maDonDatPhong);
 }

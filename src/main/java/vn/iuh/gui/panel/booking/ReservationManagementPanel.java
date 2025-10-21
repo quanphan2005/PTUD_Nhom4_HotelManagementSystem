@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.RoomEndType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.ReservationResponse;
+import vn.iuh.dto.response.ReservationInfoDetailResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
@@ -41,6 +42,10 @@ public class ReservationManagementPanel extends JPanel {
     private List<ReservationResponse> allReservations;
     private List<ReservationResponse> filteredReservations;
 
+    // Parent container for panel navigation
+    private JPanel parentContainer;
+    private String panelName = "reservationManagement";
+
     public ReservationManagementPanel() {
         bookingService = new BookingServiceImpl();
 
@@ -50,6 +55,14 @@ public class ReservationManagementPanel extends JPanel {
         // Load data
         loadReservationData();
         applyFilters(); // Apply default filter on load
+    }
+
+    public void setParentContainer(JPanel parentContainer) {
+        this.parentContainer = parentContainer;
+    }
+
+    public void setPanelName(String panelName) {
+        this.panelName = panelName;
     }
 
     private void loadReservationData() {
@@ -262,17 +275,23 @@ public class ReservationManagementPanel extends JPanel {
         reservationTable.setDefaultRenderer(Object.class, new AlternatingRowRenderer());
 
         // Set column widths
-        TableColumnModel columnModel = reservationTable.getColumnModel();
         reservationTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        reservationTable.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int tableWidth = reservationTable.getWidth();
+                TableColumnModel columnModel = reservationTable.getColumnModel();
 
-        columnModel.getColumn(0).setPreferredWidth(120); // Số CCCD
-        columnModel.getColumn(1).setPreferredWidth(150); // Khách hàng
-        columnModel.getColumn(2).setPreferredWidth(120); // Mã đơn
-        columnModel.getColumn(3).setPreferredWidth(80);  // Phòng
-        columnModel.getColumn(4).setPreferredWidth(130); // Checkin
-        columnModel.getColumn(5).setPreferredWidth(130); // Checkout
-        columnModel.getColumn(6).setPreferredWidth(120); // Trạng thái
-        columnModel.getColumn(7).setPreferredWidth(150); // Thao tác
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Số CCCD
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Khách hàng
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Mã đơn
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Phòng
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Checkin
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Checkout
+                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Trạng thái
+                columnModel.getColumn(7).setPreferredWidth((int) (tableWidth * 0.15)); // 10% - Thao tác
+            }
+        });
 
         // Set cell renderer and editor for action column
         reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
@@ -474,14 +493,60 @@ public class ReservationManagementPanel extends JPanel {
     private void handleViewDetail(ReservationResponse reservation) {
         if (reservation == null) return;
 
-        // TODO: Implement view detail functionality
-        JOptionPane.showMessageDialog(this,
-            "Xem chi tiết đơn: " + reservation.getMaDonDatPhong() +
-            "\nKhách hàng: " + reservation.getCustomerName() +
-            "\nPhòng: " + reservation.getRoomName() +
-            "\nTrạng thái: " + reservation.getStatus(),
-            "Chi tiết đơn lưu trú",
-            JOptionPane.INFORMATION_MESSAGE);
+        try {
+            // Fetch detailed reservation information from service
+            ReservationInfoDetailResponse detailInfo = bookingService.getReservationDetailInfo(reservation.getMaDonDatPhong());
+            
+            if (detailInfo == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Không thể tải thông tin chi tiết đơn đặt phòng.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Create detail panel
+            ReservationInfoDetailPanel detailPanel = new ReservationInfoDetailPanel(detailInfo, this);
+            
+            // Navigate to detail panel using CardLayout
+            if (parentContainer != null) {
+                // Check if detail panel already exists, if so remove it
+                Component[] components = parentContainer.getComponents();
+                for (Component comp : components) {
+                    if (comp instanceof ReservationInfoDetailPanel) {
+                        parentContainer.remove(comp);
+                        break;
+                    }
+                }
+                
+                // Add new detail panel
+                parentContainer.add(detailPanel, "reservationDetail");
+                
+                // Show detail panel
+                CardLayout layout = (CardLayout) parentContainer.getLayout();
+                layout.show(parentContainer, "reservationDetail");
+            } else {
+                // Fallback: Open in dialog if parent container is not set
+                JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Đơn " + reservation.getMaDonDatPhong(), true);
+
+                // Wrap detail panel in a scroll pane
+                JScrollPane scrollPane = new JScrollPane(detailPanel);
+                scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+                scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+                scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+                dialog.setContentPane(scrollPane);
+                dialog.setSize(1000, 700); // Reduced width from 1200 to 1000
+                dialog.setLocationRelativeTo(null); // Center on screen
+                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                dialog.setResizable(false);
+                dialog.setVisible(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Có lỗi xảy ra khi tải thông tin chi tiết: " + e.getMessage(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void refreshPanel() {
