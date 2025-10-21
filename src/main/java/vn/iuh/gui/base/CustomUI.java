@@ -43,4 +43,8 @@ public class CustomUI {
     public static final Color ROW_EVEN = new Color(247, 249, 250); // Very light gray for alternating rows
     public static final Color ROW_ODD = Color.WHITE;
     public static final Color ROW_SELECTED_COLOR = new Color(210, 230, 255); // Light blue selection
+
+    // Collapsible panel colors
+    public static final Color COLLAPSIBLE_BG = new Color(240, 245, 250); // Very light blue-gray
+    public static final Color COLLAPSIBLE_HOVER = new Color(225, 235, 245); // Slightly darker on hover
 }
