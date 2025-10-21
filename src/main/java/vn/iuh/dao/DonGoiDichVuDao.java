@@ -178,6 +178,7 @@ public class DonGoiDichVuDao {
                 PhongDungDichVu pddv = chuyenKetQuaThanhPhongDungDichVu(rs);
                 pddv.setTenDichVu(rs.getString("ten_dich_vu"));
                 pddv.setTenPhong(rs.getString("ten_phong"));
+                pddv.setTongTien(rs.getBigDecimal("tong_tien"));
                 danhSachPhongDungDichVu.add(pddv);
             }
         }catch(SQLException e){

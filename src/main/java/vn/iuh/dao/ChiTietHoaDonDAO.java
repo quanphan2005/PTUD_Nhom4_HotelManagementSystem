@@ -74,6 +74,7 @@ public class ChiTietHoaDonDAO {
         chiTietHoaDon.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
         chiTietHoaDon.setMaPhong(rs.getString("ma_phong"));
         chiTietHoaDon.setDonGiaPhongHienTai(rs.getBigDecimal("don_gia_phong"));
+        chiTietHoaDon.setTongTien(rs.getBigDecimal("tong_tien"));
         return chiTietHoaDon;
     }
 

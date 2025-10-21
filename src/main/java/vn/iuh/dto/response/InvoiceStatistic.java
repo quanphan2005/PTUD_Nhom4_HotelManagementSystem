@@ -6,27 +6,46 @@ import java.sql.Timestamp;
 public class InvoiceStatistic {
     private String maHoaDon;
     private String tenKhachHang;
-    private String tenNhanVien;
+    private boolean laHoaDonDatCoc;
     private Timestamp ngayLap;
     private BigDecimal tienPhong;
     private BigDecimal tienDichVu;
     private BigDecimal tienThue;
+    private BigDecimal phuPhi;
     private BigDecimal tongHoaDon;
 
 
-    public InvoiceStatistic(String maHoaDon, String tenKhachHang, String tenNhanVien, Timestamp ngayLap, BigDecimal tienPhong, BigDecimal tienDichVu, BigDecimal tienThue, BigDecimal tongHoaDon) {
+    public InvoiceStatistic(String maHoaDon, String tenKhachHang,  boolean laHoaDonDatCoc,Timestamp ngayLap, BigDecimal tienPhong, BigDecimal tienDichVu,BigDecimal phuPhi, BigDecimal tienThue, BigDecimal tongHoaDon) {
         this.maHoaDon = maHoaDon;
         this.tenKhachHang = tenKhachHang;
-        this.tenNhanVien = tenNhanVien;
         this.ngayLap = ngayLap;
+        this.phuPhi = phuPhi;
+        this.laHoaDonDatCoc = laHoaDonDatCoc;
         this.tienPhong = tienPhong;
         this.tienDichVu = tienDichVu;
         this.tienThue = tienThue;
         this.tongHoaDon = tongHoaDon;
     }
 
+    public BigDecimal getPhuPhi() {
+        return phuPhi;
+    }
+
+    public void setPhuPhi(BigDecimal phuPhi) {
+        this.phuPhi = phuPhi;
+    }
+
     public String getMaHoaDon() {
         return maHoaDon;
+    }
+
+
+    public boolean isLaHoaDonDatCoc() {
+        return laHoaDonDatCoc;
+    }
+
+    public void setLaHoaDonDatCoc(boolean laHoaDonDatCoc) {
+        this.laHoaDonDatCoc = laHoaDonDatCoc;
     }
 
     public void setMaHoaDon(String maHoaDon) {
@@ -41,13 +60,6 @@ public class InvoiceStatistic {
         this.tenKhachHang = tenKhachHang;
     }
 
-    public String getTenNhanVien() {
-        return tenNhanVien;
-    }
-
-    public void setTenNhanVien(String tenNhanVien) {
-        this.tenNhanVien = tenNhanVien;
-    }
 
     public Timestamp getNgayLap() {
         return ngayLap;
@@ -87,5 +99,18 @@ public class InvoiceStatistic {
 
     public void setTongHoaDon(BigDecimal tongHoaDon) {
         this.tongHoaDon = tongHoaDon;
+    }
+
+    public Object[] getObject(){
+        return new Object[]{
+            this.maHoaDon,
+            this.tenKhachHang,
+            this.ngayLap,
+            this.tienPhong,
+            this.tienDichVu,
+            this.phuPhi,
+            this.tienThue,
+            this.tongHoaDon
+        };
     }
 }
