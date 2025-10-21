@@ -1,6 +1,5 @@
 package vn.iuh.dao;
 
-import vn.iuh.dto.event.update.InvoicePricingUpdate;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -66,15 +65,13 @@ public class HoaDonDAO {
         return null;
     }
 
-    public boolean boSungGiaTien(InvoicePricingUpdate pricing){
-        String sql = "Update HoaDon set tong_tien = ?, tien_thue = ? , tong_hoa_don = ? where ma_hoa_don = ?";
+    public boolean updateTinhTrangThanhToan(HoaDon hoaDon){
+        String sql = "Update HoaDon set phuong_thuc_thanh_toan = ? , tinh_trang_thanh_toan = ? where ma_hoa_don = ?";
         try {
             PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setBigDecimal(1, pricing.getTongTien());
-            ps.setBigDecimal(2, pricing.getTienThue());
-            ps.setBigDecimal(3, pricing.getTongHoaDon());
-            ps.setString(4, pricing.getMaHoaDon());
-
+            ps.setString(1, hoaDon.getPhuongThucThanhToan());
+            ps.setString(2, hoaDon.getTinhTrangThanhToan());
+            ps.setString(3, hoaDon.getMaHoaDon());
             int rs = ps.executeUpdate();
             return rs > 0;
         } catch (SQLException e) {
@@ -104,6 +101,26 @@ public class HoaDonDAO {
         return null;
     }
 
+    public HoaDon timHoaTheoMaDonDatPhong(String maDonDatPhong, String kieuHoaDon){
+        String query = "SELECT TOP 1 * FROM HoaDon where ma_don_dat_phong = ? and kieu_hoa_don = ?";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+            ps.setString(2, kieuHoaDon);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return chuyenKetQuaThanhHoaDon(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
     private HoaDon chuyenKetQuaThanhHoaDon(ResultSet rs) throws SQLException {
         HoaDon hoaDon = new HoaDon();
         try {
@@ -115,6 +132,9 @@ public class HoaDonDAO {
             hoaDon.setMaDonDatPhong(rs.getString("ma_don_dat_phong"));
             hoaDon.setMaKhachHang(rs.getString("ma_khach_hang"));
             hoaDon.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
+            hoaDon.setTongTien(rs.getBigDecimal("tong_tien"));
+            hoaDon.setTongTien(rs.getBigDecimal("tien_thue"));
+            hoaDon.setTongTien(rs.getBigDecimal("tong_hoa_don"));
 
             return hoaDon;
         } catch (SQLException e) {
@@ -140,7 +160,8 @@ public class HoaDonDAO {
     }
 
     public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maNhanVien){
-        String sql = "select * from HoaDon where getdate() between ? and ? order by ma_hoa_don and  (? IS NULL OR ma_nhan_vien = ?)";
+        String sql = "select * from HoaDon where (thoi_gian_tao between ? and ?) and  (? IS NULL OR ma_nhan_vien = ?)" +
+                "order by ma_hoa_don ";
 
         List<HoaDon> danhSachHoaDon = new ArrayList<>();
         try {

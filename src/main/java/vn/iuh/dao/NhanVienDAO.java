@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NhanVienDAO {
     private final Connection connection;
@@ -37,6 +39,23 @@ public class NhanVienDAO {
         }
 
         return null;
+    }
+
+    public List<NhanVien> layDanhSachNhanVien(){
+        String query = "SELECT * FROM NhanVien WHERE da_xoa = 0";
+        List<NhanVien> danhSachNhanVien = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                danhSachNhanVien.add(chuyenKetQuaThanhNhanVien(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return danhSachNhanVien;
     }
 
     public NhanVien themNhanVien(NhanVien nhanVien) {
