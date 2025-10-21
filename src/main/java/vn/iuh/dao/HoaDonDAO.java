@@ -1,7 +1,5 @@
 package vn.iuh.dao;
 
-import vn.iuh.constraint.InvoiceType;
-import vn.iuh.dto.event.update.InvoiceStatusUpdate;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
