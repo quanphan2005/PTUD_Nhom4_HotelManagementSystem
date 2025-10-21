@@ -3,17 +3,24 @@ package vn.iuh.gui.panel.booking;
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
+import vn.iuh.dao.LoaiPhongDAO;
+import vn.iuh.dao.PhongDAO;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
+import vn.iuh.entity.LoaiPhong;
+import vn.iuh.entity.Phong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
+import vn.iuh.gui.panel.DoiPhongDiaLog;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.CheckOutService;
+import vn.iuh.service.DoiPhongService;
 import vn.iuh.service.RoomService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CheckOutServiceImpl;
+import vn.iuh.service.impl.DoiPhongServiceImpl;
 import vn.iuh.service.impl.RoomServiceImpl;
 import vn.iuh.util.IconUtil;
 import vn.iuh.util.PriceFormat;
@@ -1020,17 +1027,89 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void handleTransferRoom() {
-        String newRoom = JOptionPane.showInputDialog(this,
-                                                     "Nhập số phòng muốn chuyển đến:",
-                                                     "Chuyển phòng", JOptionPane.QUESTION_MESSAGE);
+        if (selectedRoom == null) return;
 
-        if (newRoom != null && !newRoom.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                                          "Đã chuyển khách từ phòng " + selectedRoom.getRoomName() + " đến phòng " +
-                                          newRoom,
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        // 1) chuẩn bị service
+        DoiPhongService doiPhongService = new DoiPhongServiceImpl();
+
+        // 2) Lấy id phòng hiện tại
+        String currentRoomId = selectedRoom != null ? selectedRoom.getRoomId() : null;
+        if (currentRoomId == null) {
+            JOptionPane.showMessageDialog(this, "Không xác định được phòng hiện tại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        // 3) Tính fromTime và toTime (khoảng thời gian mà khách sử dụng phòng)
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Timestamp timeIn = selectedRoom.getTimeIn();
+        Timestamp fromTime = (timeIn == null) ? now : (timeIn.after(now) ? timeIn : now);
+        Timestamp toTime = selectedRoom.getTimeOut();
+
+        // 4) Lấy số người cần và tên loại phòng
+        int neededPersons = doiPhongService.timSoNguoiCan(currentRoomId);
+        String roomType = doiPhongService.timTenLoaiPhong(currentRoomId);
+
+        // 5) Tìm danh sách phòng ứng viên
+        List<BookingResponse> candidates;
+        try {
+            candidates = doiPhongService.timPhongPhuHopChoDoiPhong(currentRoomId, neededPersons, fromTime, toTime);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tìm phòng phù hợp: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (candidates == null || candidates.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy phòng phù hợp (cùng loại, đủ sức chứa và trống trong khoảng thời gian yêu cầu).",
+                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // 6) Tạo BookingResponse mô phỏng currentBooking (để dialog hiển thị đúng roomType và số người)
+        BookingResponse currentBooking = new BookingResponse(
+                selectedRoom.getRoomId(),
+                selectedRoom.getRoomName(),
+                selectedRoom.isActive(),
+                selectedRoom.getRoomStatus() != null ? selectedRoom.getRoomStatus() : RoomStatus.ROOM_USING_STATUS.getStatus(),
+                roomType != null && !roomType.isEmpty() ? roomType : (candidates.get(0).getRoomType() != null ? candidates.get(0).getRoomType() : ""),
+                String.valueOf(neededPersons),
+                selectedRoom.getDailyPrice(),
+                selectedRoom.getHourlyPrice(),
+                selectedRoom.getCustomerName(),
+                selectedRoom.getMaChiTietDatPhong(),
+                selectedRoom.getTimeIn(),
+                selectedRoom.getTimeOut()
+        );
+
+        // 7) Tạo dialog đổi phòng
+        DoiPhongDiaLog doiPhongPanel = new DoiPhongDiaLog(currentBooking, candidates);
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Đổi phòng", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dialog.getContentPane().add(doiPhongPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+
+        // 8) Callback: khi dialog báo đổi thành công -> đóng dialog + refresh UI
+        doiPhongPanel.setChangeRoomCallback(new DoiPhongDiaLog.ChangeRoomCallback() {
+            @Override
+            public void onChangeRoom(String oldRoomId, BookingResponse newRoom, boolean applyFee) {
+                dialog.dispose();
+                RefreshManager.refreshAfterBooking();
+            }
+
+            @Override
+            public void onCancel() {
+                dialog.dispose();
+            }
+        });
+
+        dialog.setVisible(true);
     }
+
 
     private void handleExtendBooking() {
         String[] options = {"1 giờ", "2 giờ", "3 giờ", "Tùy chỉnh"};
