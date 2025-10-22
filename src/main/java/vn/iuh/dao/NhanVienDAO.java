@@ -41,6 +41,44 @@ public class NhanVienDAO {
         return null;
     }
 
+    public List<NhanVien> timNhanVienBangTen(String tenNhanVien){
+        String query = "select * from NhanVien where ten_nhan_vien = ? and da_xoa = 0";
+        List<NhanVien> nhanVienList = new ArrayList<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, tenNhanVien);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                nhanVienList.add(chuyenKetQuaThanhNhanVien(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return nhanVienList;
+    }
+
+    public NhanVien timNhanVienBangSDT(String sdt){
+        String query = "select * from NhanVien where so_dien_thoai = ? and da_xoa = 0";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, sdt);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhNhanVien(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
     public List<NhanVien> layDanhSachNhanVien(){
         String query = "SELECT * FROM NhanVien WHERE da_xoa = 0";
         List<NhanVien> danhSachNhanVien = new ArrayList<>();
@@ -104,13 +142,15 @@ public class NhanVienDAO {
         return null;
     }
 
+
+
     public boolean xoaNhanVien(String id) {
         if (timNhanVien(id) == null) {
             System.out.println("Không tìm thấy nhân viên có mã: " + id);
             return false;
         }
 
-        String query = "UPDATE NhanVien SET da_xoa = 0 WHERE ma_nhan_vien = ?";
+        String query = "UPDATE NhanVien SET da_xoa = 1 WHERE ma_nhan_vien = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, id);

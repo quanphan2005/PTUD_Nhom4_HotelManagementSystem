@@ -14,22 +14,43 @@ public class NhanVienServiceImpl implements EmployeeService {
 
     @Override
     public NhanVien getEmployeeByID(String id) {
-        return null;
+        return nhanVienDAO.timNhanVien(id);
+    }
+
+    @Override
+    public List<NhanVien> getEmployeeByName(String name) {
+        return nhanVienDAO.timNhanVienBangTen(name);
+    }
+
+    @Override
+    public NhanVien getEmployeeByCCCD(String cccd) {
+        return nhanVienDAO.timNhanVienBangCCCD(cccd);
+    }
+
+    @Override
+    public NhanVien getEmployeeBySDT(String sdt) {
+        return nhanVienDAO.timNhanVienBangSDT(sdt);
     }
 
     @Override
     public NhanVien createEmployee(NhanVien nhanVien) {
-        return null;
+        return nhanVienDAO.themNhanVien(nhanVien);
     }
 
     @Override
     public NhanVien updateEmployee(NhanVien nhanVien) {
-        return null;
+        return nhanVienDAO.capNhatNhanVien(nhanVien);
     }
 
     @Override
     public boolean deleteEmployeeByID(String id) {
-        return false;
+        return nhanVienDAO.xoaNhanVien(id);
     }
+
+    @Override
+    public List<NhanVien> getAllEmployee() {
+        return nhanVienDAO.layDanhSachNhanVien();
+    }
+
 
 }

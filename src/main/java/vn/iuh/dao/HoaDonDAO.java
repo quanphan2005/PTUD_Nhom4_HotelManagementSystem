@@ -134,7 +134,7 @@ public class HoaDonDAO {
             hoaDon.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             hoaDon.setTongTien(rs.getBigDecimal("tong_tien"));
             hoaDon.setTienThue(rs.getBigDecimal("tien_thue"));
-            hoaDon.setTongTien(rs.getBigDecimal("tong_hoa_don"));
+            hoaDon.setTongHoaDon(rs.getBigDecimal("tong_hoa_don"));
 
             return hoaDon;
         } catch (SQLException e) {

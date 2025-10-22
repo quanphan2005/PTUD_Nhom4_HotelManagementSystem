@@ -216,6 +216,7 @@ public class Main extends JFrame {
         PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
         RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
         QuanLyHoaDonPanel pnlQuanLyHoaDon = new QuanLyHoaDonPanel();
+        QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
@@ -230,6 +231,7 @@ public class Main extends JFrame {
         pnlCenter.add(preReservationManagementPanel, PanelName.PRE_RESERVATION_MANAGEMENT.getName());
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
         pnlCenter.add(pnlQuanLyHoaDon, "Tìm hóa đơn");
+        pnlCenter.add(pnlQuanLyNhanVien, "Quản lý nhân viên");
 //        showCard("Quản lý đặt phòng");
 
         showCenterCard("Quản lý đặt phòng");
