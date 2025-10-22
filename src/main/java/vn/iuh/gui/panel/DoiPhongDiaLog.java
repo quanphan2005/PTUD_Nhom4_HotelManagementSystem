@@ -42,13 +42,9 @@ public class DoiPhongDiaLog extends JPanel {
 
     // Callback để thông báo khi người dùng xác nhận đổi phòng
     public interface ChangeRoomCallback {
-        // abstract method duy nhất -> cho phép dùng lambda (functional interface)
         void onChangeRoom(String oldRoomId, BookingResponse newRoom, boolean applyFee);
 
-        // default implementation để tránh bắt buộc override khi không cần xử lý cancel
-        default void onCancel() {
-            // mặc định không làm gì; caller có thể override nếu muốn đóng dialog hoặc refresh.
-        }
+        default void onCancel() {}
     }
 
     // Giao diện đổi phòng

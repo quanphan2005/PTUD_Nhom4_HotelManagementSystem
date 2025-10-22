@@ -244,4 +244,24 @@ public class ChiTietDatPhongDAO {
         }
     }
 
+    // Tìm chi tiết tiếp theo so với chi tiết hiện tại để tính thời gian tối đa có thể book thêm giờ
+    public ChiTietDatPhong timChiTietDatPhongTiepTheoCuaPhong(String maPhong, Timestamp sauThoiGian) {
+        if (maPhong == null || sauThoiGian == null) return null;
+        String sql = "SELECT TOP 1 * FROM ChiTietDatPhong " +
+                "WHERE ma_phong = ? AND tg_nhan_phong > ? AND ISNULL(da_xoa,0)=0 " +
+                "ORDER BY tg_nhan_phong ASC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maPhong);
+            ps.setTimestamp(2, sauThoiGian);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToChiTietDatPhong(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
 }
