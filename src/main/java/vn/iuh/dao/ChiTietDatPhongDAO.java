@@ -217,4 +217,31 @@ public class ChiTietDatPhongDAO {
             return false;
         }
     }
+
+    // Cập nhật ma_phong cho một ChiTietDatPhong (dùng cho đổi phòng trước checkin)
+    public boolean capNhatMaPhongChoChiTiet(String maChiTiet, String maPhongMoi, Timestamp thoiGianCapNhat) {
+        String sql = "UPDATE ChiTietDatPhong SET ma_phong = ?, thoi_gian_tao = ? WHERE ma_chi_tiet_dat_phong = ? AND ISNULL(da_xoa,0)=0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maPhongMoi);
+            ps.setTimestamp(2, thoiGianCapNhat);
+            ps.setString(3, maChiTiet);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Kết thúc (end) một ChiTietDatPhong: gán tg_tra_phong và kieu_ket_thuc
+    public boolean ketThucChiTietDatPhong(String maChiTiet, Timestamp tgTraPhongMoi, String kieuKetThuc) {
+        String sql = "UPDATE ChiTietDatPhong SET tg_tra_phong = ?, kieu_ket_thuc = ? WHERE ma_chi_tiet_dat_phong = ? AND ISNULL(da_xoa,0)=0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setTimestamp(1, tgTraPhongMoi);
+            ps.setString(2, kieuKetThuc);
+            ps.setString(3, maChiTiet);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

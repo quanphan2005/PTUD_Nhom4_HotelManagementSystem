@@ -1,11 +1,15 @@
 package vn.iuh.gui.panel;
 
 import vn.iuh.constraint.RoomStatus;
+import vn.iuh.dao.ChiTietDatPhongDAO;
 import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.gui.base.GridRoomPanel;
 import vn.iuh.gui.base.RoomItem;
+import vn.iuh.service.DoiPhongService;
+import vn.iuh.service.impl.DoiPhongServiceImpl;
+import vn.iuh.util.RefreshManager;
 import vn.iuh.util.TimeFormat;
 
 import javax.swing.*;
@@ -19,7 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 public class DoiPhongDiaLog extends JPanel {
     private final BookingResponse currentBooking; // Đơn đặt phòng hiện tại đang cần đổi phòng
@@ -35,15 +38,23 @@ public class DoiPhongDiaLog extends JPanel {
 
     private ChangeRoomCallback callback;
 
+    private final DoiPhongService doiPhongService;
+
     // Callback để thông báo khi người dùng xác nhận đổi phòng
     public interface ChangeRoomCallback {
+        // abstract method duy nhất -> cho phép dùng lambda (functional interface)
         void onChangeRoom(String oldRoomId, BookingResponse newRoom, boolean applyFee);
-        void onCancel();
+
+        // default implementation để tránh bắt buộc override khi không cần xử lý cancel
+        default void onCancel() {
+            // mặc định không làm gì; caller có thể override nếu muốn đóng dialog hoặc refresh.
+        }
     }
 
     // Giao diện đổi phòng
     public DoiPhongDiaLog(BookingResponse currentBooking, List<BookingResponse> candidateRooms) {
         this.currentBooking = currentBooking;
+        this.doiPhongService = new DoiPhongServiceImpl();
         this.originalCandidates = candidateRooms == null ? new ArrayList<>() : new ArrayList<>(candidateRooms);
         initUI(this.originalCandidates);
     }
@@ -189,7 +200,13 @@ public class DoiPhongDiaLog extends JPanel {
         btnCancel.setPreferredSize(new Dimension(120, 36));
         btnCancel.setFocusPainted(false);
         btnCancel.addActionListener(e -> {
-            if (callback != null) callback.onCancel();
+            if (callback != null) {
+                callback.onCancel();
+            } else {
+                // Nếu không có callback, đóng chính dialog đang chứa panel này (nếu có)
+                Window w = SwingUtilities.getWindowAncestor(DoiPhongDiaLog.this);
+                if (w instanceof JDialog) ((JDialog) w).dispose();
+            }
         });
 
         btnConfirm = new JButton("Xác nhận đổi phòng");
@@ -212,10 +229,8 @@ public class DoiPhongDiaLog extends JPanel {
                 return;
             }
 
-            if (callback != null) {
-                callback.onChangeRoom(currentBooking != null ? currentBooking.getRoomId() : null,
-                        chosen, chkApplyFee != null && chkApplyFee.isSelected());
-            }
+            // Dialog tự xử lý đổi phòng (gọi service)
+            performChangeRoom(chosen);
         });
 
         rightBtns.add(btnCancel);
@@ -282,10 +297,8 @@ public class DoiPhongDiaLog extends JPanel {
 
                             if (btnConfirm != null) btnConfirm.setEnabled(true);
 
-                            if (callback != null) {
-                                callback.onChangeRoom(currentBooking != null ? currentBooking.getRoomId() : null,
-                                        ri.getBookingResponse(), chkApplyFee != null && chkApplyFee.isSelected());
-                            }
+                            // Thay vì đẩy cho callback, dialog tự handle việc gọi service
+                            performChangeRoom(ri.getBookingResponse());
                         }
                     }
                 });
@@ -331,4 +344,87 @@ public class DoiPhongDiaLog extends JPanel {
     public void setChangeRoomCallback(ChangeRoomCallback callback) {
         this.callback = callback;
     }
+
+    private void performChangeRoom(BookingResponse chosen) {
+        if (chosen == null) return;
+
+        if (doiPhongService == null) {
+            // Nếu service chưa được khai báo thì báo lỗi
+            JOptionPane.showMessageDialog(this,
+                    "Service đổi phòng chưa được khởi tạo. Vui lòng kiểm tra cấu hình.",
+                    "Lỗi cấu hình", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // 1) Hỏi tính phụ phí đổi phòng
+        boolean applyFee = chkApplyFee != null && chkApplyFee.isSelected();
+        if (!applyFee) {
+            int feeChoice = JOptionPane.showConfirmDialog(this,
+                    "Bạn có muốn tính phụ phí đổi phòng 100.000 VND không?",
+                    "Phụ phí đổi phòng", JOptionPane.YES_NO_OPTION);
+            applyFee = (feeChoice == JOptionPane.YES_OPTION);
+        }
+
+        // 2) Xác nhận tính phụ phí
+        String feeText = applyFee ? "\n(Phụ phí 100.000 VND sẽ được tính.)" : "";
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Xác nhận đổi phòng từ " + (currentBooking != null ? currentBooking.getRoomName() : "") +
+                        " sang " + chosen.getRoomName() + "?" + feeText,
+                "Xác nhận", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        // 3) Gọi service
+        boolean success = false;
+        try {
+            // Tìm mã đơn đặt phòng
+            String maDonDatPhongToSend = null;
+            if (currentBooking != null) {
+
+                try {
+                    String maChiTietDatPhongToFind = currentBooking.getMaChiTietDatPhong();
+                    maDonDatPhongToSend = doiPhongService.layMaDonDatPhong(maChiTietDatPhongToFind);
+                } catch (NoSuchMethodError | RuntimeException ignored) { }
+
+                // 2) Nếu vẫn null thì cố gắng tìm từ chiTietDatPhong
+                if ((maDonDatPhongToSend == null || maDonDatPhongToSend.isEmpty())
+                        && currentBooking.getMaChiTietDatPhong() != null) {
+                    maDonDatPhongToSend = currentBooking.getMaChiTietDatPhong();
+                }
+            }
+
+            String oldRoomId = currentBooking != null ? currentBooking.getRoomId() : null;
+            String newRoomId = chosen.getRoomId();
+
+            // Nếu vẫn null thì báo lỗi
+            if (maDonDatPhongToSend == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không xác định được mã đơn đặt phòng (ma_don_dat_phong). Không thể đổi phòng.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            success = doiPhongService.changeRoom(maDonDatPhongToSend, oldRoomId, newRoomId, applyFee);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 4) Hậu xử lý
+        if (success) {
+            JOptionPane.showMessageDialog(this, "Đổi phòng thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            // refresh UI
+            RefreshManager.refreshAfterCancelReservation();
+            // thông báo callback
+            if (callback != null) callback.onChangeRoom(currentBooking != null ? currentBooking.getRoomId() : null, chosen, applyFee);
+            // đóng dialog
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof JDialog) ((JDialog) w).dispose();
+        } else {
+            String err = null;
+            try { err = doiPhongService.getLastError(); } catch (Exception ignored) {}
+            if (err == null || err.trim().isEmpty()) err = "Đổi phòng thất bại, vui lòng thử lại.";
+            JOptionPane.showMessageDialog(this, err, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
 }

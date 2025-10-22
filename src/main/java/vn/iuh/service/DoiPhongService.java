@@ -6,7 +6,11 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public interface DoiPhongService {
-    public boolean changeRoom(String maDonDatPhong, String maPhongMoi, String maPhongCu);
+    boolean changeRoom(String reservationId, String oldRoomId, String newRoomId, boolean applyFee);
     String getLastError();
     List<BookingResponse> timPhongPhuHopChoDoiPhong(String currentRoomId, int neededPersons, Timestamp fromTime, Timestamp toTime);
+    String layMaDonDatPhong(String maChiTietDatPhong);
+    int timSoNguoiCan(String roomId);
+    String timTenLoaiPhong(String roomId);
+
 }

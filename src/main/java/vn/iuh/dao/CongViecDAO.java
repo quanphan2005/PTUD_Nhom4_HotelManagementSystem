@@ -315,4 +315,18 @@ public class CongViecDAO {
 
         return false;
     }
+
+    // Cập nhật trường ma_phong cho một CongViec (cập nhập luôn thoi_gian_tao)
+    public boolean capNhatMaPhongChoCongViec(String maCongViec, String maPhongMoi, Timestamp thoiGianCapNhat) {
+        String sql = "UPDATE CongViec SET ma_phong = ?, thoi_gian_tao = ? WHERE ma_cong_viec = ? AND ISNULL(da_xoa,0)=0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maPhongMoi);
+            ps.setTimestamp(2, thoiGianCapNhat);
+            ps.setString(3, maCongViec);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("Lỗi cập nhật ma_phong cho CongViec " + maCongViec + ": " + e.getMessage());
+            return false;
+        }
+    }
 }

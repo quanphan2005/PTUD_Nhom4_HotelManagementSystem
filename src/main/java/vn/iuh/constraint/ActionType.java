@@ -7,7 +7,9 @@ public enum ActionType {
     CHECKOUT("TRẢ PHÒNG"),
     CANCEL("HỦY PHÒNG"),
     EXTEND("GIA HẠN THỜI GIAN LƯU TRÚ"),
-    CANCEL_RESERVATION("HỦY ĐẶT PHÒNG");
+    CANCEL_RESERVATION("HỦY ĐẶT PHÒNG"),
+    CHANGE_ROOM_BEFORE_CHECKIN("ĐỔI PHÒNG TRƯỚC KHI CHECKIN"),
+    CHANGE_ROOM_AFTER_CHECKIN("ĐỔI PHÒNG SAU KHI CHECKIN");
 
     public String actionName;
 
