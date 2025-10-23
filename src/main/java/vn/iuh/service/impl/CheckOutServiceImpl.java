@@ -5,6 +5,7 @@ import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.InvoiceCreationEvent;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.dto.repository.ThongTinSuDungPhong;
+import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.*;
 import vn.iuh.exception.BusinessException;
 import vn.iuh.gui.base.Main;
@@ -13,6 +14,7 @@ import vn.iuh.service.CongViecService;
 import vn.iuh.service.HoaDonService;
 import vn.iuh.service.LoaiPhongService;
 import vn.iuh.util.EntityUtil;
+import vn.iuh.util.PriceFormat;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -88,15 +90,16 @@ public class CheckOutServiceImpl implements CheckOutService {
 
 
     @Override
-    public boolean checkOutReservation(String reservationId){
+    public InvoiceResponse checkOutReservation(String reservationId) {
+        InvoiceResponse response = null;
         try {
             datPhongDAO.khoiTaoGiaoTac();
-        //Tìm đơn đặt phòng
+            //Tìm đơn đặt phòng
             var reservation = validateDonDatPhong(reservationId);
 
-    //      Lấy tất cả chi tiết thông tin sử dụng phòng của đơn đặt phòng
+            //      Lấy tất cả chi tiết thông tin sử dụng phòng của đơn đặt phòng
             List<ThongTinSuDungPhong> chiTietSuDungList = filterUsageRoom(reservationId);
-            if(chiTietSuDungList.isEmpty()){
+            if (chiTietSuDungList.isEmpty()) {
                 throw new BusinessException("Không tìm thấy thông tin sử dụng của đơn đặt phòng này");
             }
 
@@ -104,15 +107,13 @@ public class CheckOutServiceImpl implements CheckOutService {
             List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
             List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
 
-            InvoiceCreationEvent invoiceCreationEvent = null;
-
 
             //Tạo hóa đơn thanh toán
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
 
             String maChiTietHoaDonMoiNhat = null;
             boolean isCheckOutTre = false;
-            double thoiGianCheckOutTre =0 ;
+            double thoiGianCheckOutTre = 0;
 
 
             for (ThongTinSuDungPhong ct : chiTietSuDungList) {
@@ -132,24 +133,24 @@ public class CheckOutServiceImpl implements CheckOutService {
                 BigDecimal finalDonGiaHienThi;
                 BigDecimal thanhTien;
 
-                if(thoiGianSuDung > 12){
+                if (thoiGianSuDung > 12) {
                     // tính theo ngày + giờ lẻ
                     finalDonGiaHienThi = donGiaNgay;
-                    int soNgay = (int) Math.floor(thoiGianSuDung/24);
+                    int soNgay = (int) Math.floor(thoiGianSuDung / 24);
                     double soGio = thoiGianSuDung % 24;
 
-                    if(soNgay == 0){
+                    if (soNgay == 0) {
                         thanhTien = donGiaNgay;
-                    }else{
+                    } else {
                         thanhTien = donGiaNgay.multiply(BigDecimal.valueOf(soNgay));
-                        if(soGio > 0 && soGio <= 12){
+                        if (soGio > 0 && soGio <= 12) {
                             BigDecimal tienGioLe = donGiaGio.multiply(BigDecimal.valueOf(soGio));
                             thanhTien = thanhTien.add(tienGioLe);
-                        }else if(soGio > 12){
+                        } else if (soGio > 12) {
                             thanhTien = donGiaNgay.multiply(BigDecimal.valueOf(soNgay + 1));
                         }
                     }
-                }else{   // tính theo giờ
+                } else {   // tính theo giờ
                     finalDonGiaHienThi = donGiaGio;
                     thanhTien = donGiaGio.multiply(BigDecimal.valueOf(thoiGianSuDung));
                 }
@@ -160,7 +161,7 @@ public class CheckOutServiceImpl implements CheckOutService {
                     Timestamp thoiDiemHienTai = new Timestamp(System.currentTimeMillis());
                     if (thoiDiemHienTai.after(ct.getTgTraPhong())) {
                         isCheckOutTre = true;
-                        thoiGianCheckOutTre = tinhKhoangCachGio(ct.getTgTraPhong(),thoiDiemHienTai);
+                        thoiGianCheckOutTre = tinhKhoangCachGio(ct.getTgTraPhong(), thoiDiemHienTai);
                     }
                 }
                 ChiTietHoaDon chiTietHoaDon = createInvoiceDetailFromEntity(ct, hoaDonThanhToan.getMaHoaDon(), finalDonGiaHienThi, thoiGianSuDung, maChiTietHoaDonMoiNhat);
@@ -182,7 +183,7 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             //tạo các job dọn dẹp cho phòng vừa sử dụng
             List<CongViec> danhSachCongViecMoi = createCleaningJobForRoom(danhSachMaPhongDangSuDung);
-            if(danhSachCongViecMoi != null){
+            if (danhSachCongViecMoi != null) {
                 congViecDAO.themDanhSachCongViec(danhSachCongViecMoi);
             }
 
@@ -190,14 +191,14 @@ public class CheckOutServiceImpl implements CheckOutService {
             LichSuThaoTac lichSuCheckOut = createWorkingHistory(reservationId, danhSachMaPhongDangSuDung);
             lichSuThaoTacDAO.themLichSuThaoTac(lichSuCheckOut);
 
-            // tìm các dịch vụ mà phòng sửu dụng
-            List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangDonDatPhong(hoaDonThanhToan.getMaDonDatPhong());
+            // tìm các dịch vụ mà phòng sử dụng
+            List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangDonDatPhong(reservation.getMaDonDatPhong());
 
             //tìm phụ phí
-            List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon(hoaDonThanhToan.getMaHoaDon());
+            List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = phongTinhPhuPhiDAO.timPhuPhiTheoMaDonDatPhong(reservation.getMaDonDatPhong());
 
             //Thêm phụ phí check-out trễ nếu có
-            if(isCheckOutTre){
+            if (isCheckOutTre) {
                 List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhiMoi = createLateCheckOutFee(danhSachMaChiTietDatPhong, danhSachMaPhongDangSuDung, thoiGianCheckOutTre);
                 phongTinhPhuPhiDAO.themDanhSachPhuPhiChoCacPhong(danhSachPhongTinhPhuPhiMoi);
                 danhSachPhongTinhPhuPhi.addAll(danhSachPhongTinhPhuPhiMoi);
@@ -205,17 +206,17 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             BigDecimal tongTien = BigDecimal.ZERO;
 
-            for(ChiTietHoaDon cthd : danhSachChiTietHoaDon){
+            for (ChiTietHoaDon cthd : danhSachChiTietHoaDon) {
                 tongTien = tongTien.add(cthd.getTongTien());
             }
 
-            for(PhongDungDichVu pddv : danhSachPhongDungDichVu){
-                if(!pddv.getDuocTang()){
+            for (PhongDungDichVu pddv : danhSachPhongDungDichVu) {
+                if (!pddv.getDuocTang()) {
                     tongTien = tongTien.add(pddv.tinhThanhTien());
                 }
             }
 
-            for(PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi){
+            for (PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi) {
                 tongTien = tongTien.add(ptpp.getTongTien());
             }
 
@@ -223,7 +224,7 @@ public class CheckOutServiceImpl implements CheckOutService {
             HoaDon hoaDonDatCoc = hoaDonDAO.timHoaTheoMaDonDatPhong(reservationId,
                     InvoiceType.DEPOSIT_INVOICE.getStatus());
 
-            if(hoaDonDatCoc != null){
+            if (hoaDonDatCoc != null) {
                 tongTien = tongTien.subtract(hoaDonDatCoc.getTongTien());
             }
 
@@ -244,29 +245,25 @@ public class CheckOutServiceImpl implements CheckOutService {
             String maKhachHang = reservation.getMaKhachHang();
             KhachHang khachHang = khachHangDAO.timKhachHang(maKhachHang);
             NhanVien nhanVien = nhanVienDAO.layNVTheoMaPhienDangNhap(Main.getCurrentLoginSession());
-            invoiceCreationEvent = new InvoiceCreationEvent(maPhienDangNhap,
-                                            hoaDonDatCoc != null ? hoaDonDatCoc.getTongTien() : BigDecimal.ZERO,
-                                            reservation,
-                                            khachHang,
-                                            hoaDonThanhToan,
-                                            nhanVien,
-                                            danhSachChiTietHoaDon,
-                                            danhSachPhongDungDichVu,
-                                            danhSachPhongTinhPhuPhi);
-
-            HoaDonService hoaDonService = new HoaDonServiceImpl();
-            hoaDonService.createInvoice(invoiceCreationEvent);
-
-        }catch (BusinessException e){
+            response = new InvoiceResponse(maPhienDangNhap,
+                    hoaDonDatCoc != null ? hoaDonDatCoc.getTongTien() : BigDecimal.ZERO,
+                    reservation,
+                    khachHang,
+                    hoaDonThanhToan,
+                    nhanVien,
+                    danhSachChiTietHoaDon,
+                    danhSachPhongDungDichVu,
+                    danhSachPhongTinhPhuPhi);
+        } catch (BusinessException e) {
             System.out.println(e.getMessage());
             datPhongDAO.hoanTacGiaoTac();
             System.out.println("Lỗi khi check out");
-            return false;
-        } catch (Exception e){
+            return null;
+        } catch (Exception e) {
             e.printStackTrace();
         }
         datPhongDAO.thucHienGiaoTac();
-        return true;
+        return response;
     }
 
     private LichSuThaoTac createWorkingHistory(String maDonDatPhong, List<String> maPhongSuDung){
@@ -435,7 +432,7 @@ public class CheckOutServiceImpl implements CheckOutService {
         );
     }
 
-    public boolean checkOutByReservationDetail(String reservationDetail){
+    public InvoiceResponse checkOutByReservationDetail(String reservationDetail){
         String maDonDatPhong = chiTietDatPhongDAO.findFormIDByDetail(reservationDetail);
         System.out.println("trả phòng cho " + maDonDatPhong);
         return this.checkOutReservation(maDonDatPhong);
@@ -444,13 +441,14 @@ public class CheckOutServiceImpl implements CheckOutService {
     public boolean createHoaDonForAutoCheckout(String reservationDetail){
         try {
             datPhongDAO.khoiTaoGiaoTac();
+            //Tìm đơn đặt phòng theo chi tiết đặt phòng
             String reservationId = chiTietDatPhongDAO.findFormIDByDetail(reservationDetail);
             //Tìm đơn đặt phòng
             var reservation = validateDonDatPhong(reservationId);
 
             //      Lấy tất cả chi tiết thông tin sử dụng phòng của đơn đặt phòng
             List<ThongTinSuDungPhong> chiTietSuDungList = filterUsageRoom(reservationId);
-            if(chiTietSuDungList.isEmpty()){
+            if (chiTietSuDungList.isEmpty()) {
                 throw new BusinessException("Không tìm thấy thông tin sử dụng của đơn đặt phòng này");
             }
 
@@ -464,7 +462,7 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             String maChiTietHoaDonMoiNhat = null;
             boolean isCheckOutTre = false;
-            double thoiGianCheckOutTre =0 ;
+            double thoiGianCheckOutTre = 0;
 
 
             for (ThongTinSuDungPhong ct : chiTietSuDungList) {
@@ -484,24 +482,24 @@ public class CheckOutServiceImpl implements CheckOutService {
                 BigDecimal finalDonGiaHienThi;
                 BigDecimal thanhTien;
 
-                if(thoiGianSuDung > 12){
+                if (thoiGianSuDung > 12) {
                     // tính theo ngày + giờ lẻ
                     finalDonGiaHienThi = donGiaNgay;
-                    int soNgay = (int) Math.floor(thoiGianSuDung/24);
+                    int soNgay = (int) Math.floor(thoiGianSuDung / 24);
                     double soGio = thoiGianSuDung % 24;
 
-                    if(soNgay == 0){
+                    if (soNgay == 0) {
                         thanhTien = donGiaNgay;
-                    }else{
+                    } else {
                         thanhTien = donGiaNgay.multiply(BigDecimal.valueOf(soNgay));
-                        if(soGio > 0 && soGio <= 12){
+                        if (soGio > 0 && soGio <= 12) {
                             BigDecimal tienGioLe = donGiaGio.multiply(BigDecimal.valueOf(soGio));
                             thanhTien = thanhTien.add(tienGioLe);
-                        }else if(soGio > 12){
+                        } else if (soGio > 12) {
                             thanhTien = donGiaNgay.multiply(BigDecimal.valueOf(soNgay + 1));
                         }
                     }
-                }else{   // tính theo giờ
+                } else {   // tính theo giờ
                     finalDonGiaHienThi = donGiaGio;
                     thanhTien = donGiaGio.multiply(BigDecimal.valueOf(thoiGianSuDung));
                 }
@@ -512,7 +510,7 @@ public class CheckOutServiceImpl implements CheckOutService {
                     Timestamp thoiDiemHienTai = new Timestamp(System.currentTimeMillis());
                     if (thoiDiemHienTai.after(ct.getTgTraPhong())) {
                         isCheckOutTre = true;
-                        thoiGianCheckOutTre = tinhKhoangCachGio(ct.getTgTraPhong(),thoiDiemHienTai);
+                        thoiGianCheckOutTre = tinhKhoangCachGio(ct.getTgTraPhong(), thoiDiemHienTai);
                     }
                 }
                 ChiTietHoaDon chiTietHoaDon = createInvoiceDetailFromEntity(ct, hoaDonThanhToan.getMaHoaDon(), finalDonGiaHienThi, thoiGianSuDung, maChiTietHoaDonMoiNhat);
@@ -525,7 +523,6 @@ public class CheckOutServiceImpl implements CheckOutService {
             //Thêm danh sách chi tiết hóa đơn vào hóa đơn entity
             hoaDonThanhToan.setChiTietHoaDonList(danhSachChiTietHoaDon);
 
-
             //Cập nhật ChiTietDatPhong thành trả phòng
             chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
 
@@ -537,29 +534,28 @@ public class CheckOutServiceImpl implements CheckOutService {
             List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangDonDatPhong(hoaDonThanhToan.getMaDonDatPhong());
 
             //tìm phụ phí
-            List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon(hoaDonThanhToan.getMaHoaDon());
+            List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = phongTinhPhuPhiDAO.timPhuPhiTheoMaDonDatPhong(reservation.getMaDonDatPhong());
 
             //Thêm phụ phí check-out trễ nếu có
-            if(isCheckOutTre){
+            if (isCheckOutTre) {
                 List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhiMoi = createLateCheckOutFee(danhSachMaChiTietDatPhong, danhSachMaPhongDangSuDung, thoiGianCheckOutTre);
                 phongTinhPhuPhiDAO.themDanhSachPhuPhiChoCacPhong(danhSachPhongTinhPhuPhiMoi);
                 danhSachPhongTinhPhuPhi.addAll(danhSachPhongTinhPhuPhiMoi);
-                System.out.println("Số lượng " + danhSachPhongTinhPhuPhi.size());
             }
 
             BigDecimal tongTien = BigDecimal.ZERO;
 
-            for(ChiTietHoaDon cthd : danhSachChiTietHoaDon){
+            for (ChiTietHoaDon cthd : danhSachChiTietHoaDon) {
                 tongTien = tongTien.add(cthd.getTongTien());
             }
 
-            for(PhongDungDichVu pddv : danhSachPhongDungDichVu){
-                if(!pddv.getDuocTang()){
+            for (PhongDungDichVu pddv : danhSachPhongDungDichVu) {
+                if (!pddv.getDuocTang()) {
                     tongTien = tongTien.add(pddv.tinhThanhTien());
                 }
             }
 
-            for(PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi){
+            for (PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi) {
                 tongTien = tongTien.add(ptpp.getTongTien());
             }
 
@@ -567,7 +563,7 @@ public class CheckOutServiceImpl implements CheckOutService {
             HoaDon hoaDonDatCoc = hoaDonDAO.timHoaTheoMaDonDatPhong(reservationId,
                     InvoiceType.DEPOSIT_INVOICE.getStatus());
 
-            if(hoaDonDatCoc != null){
+            if (hoaDonDatCoc != null) {
                 tongTien = tongTien.subtract(hoaDonDatCoc.getTongTien());
             }
 
@@ -577,6 +573,7 @@ public class CheckOutServiceImpl implements CheckOutService {
             hoaDonThanhToan.setTongTien(tongTien);
             hoaDonThanhToan.setTienThue(tienThue);
             hoaDonThanhToan.setTongHoaDon(tongTien.add(tienThue));
+
             hoaDonDAO.createInvoice(hoaDonThanhToan);
 
             //Chèn danh sách chi tiết hóa đơn đã tạo

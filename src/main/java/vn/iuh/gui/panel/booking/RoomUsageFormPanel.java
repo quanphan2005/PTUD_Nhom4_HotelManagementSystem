@@ -10,10 +10,18 @@ import vn.iuh.dto.repository.BookThemGioInfo;
 import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
+import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.entity.Phong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
+import vn.iuh.gui.dialog.InvoiceDialog2;
+import vn.iuh.service.BookingService;
+import vn.iuh.service.CheckOutService;
+import vn.iuh.service.RoomService;
+import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.CheckOutServiceImpl;
+import vn.iuh.service.impl.RoomServiceImpl;
 import vn.iuh.gui.dialog.BookThemGioDialog;
 import vn.iuh.gui.panel.DoiPhongDiaLog;
 import vn.iuh.service.*;
@@ -1003,17 +1011,19 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void handleCheckOut() {
-        System.out.println("Check out");
         int result = JOptionPane.showConfirmDialog(null,
                 "Xác nhận trả phòng " + selectedRoom.getRoomName() + "?",
                 "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
-            boolean success = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
-
-            if (success) {
-                RefreshManager.refreshAfterBooking();
-                Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
+            InvoiceResponse invoiceResponse = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
+            if (invoiceResponse != null) {
+                SwingUtilities.invokeLater(() -> {
+                    InvoiceDialog2 dialog = new InvoiceDialog2(invoiceResponse);
+                    dialog.setVisible(true);
+                    RefreshManager.refreshAfterBooking();
+                    Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
+                });
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Trả phòng thất bại cho " + selectedRoom.getRoomName(),

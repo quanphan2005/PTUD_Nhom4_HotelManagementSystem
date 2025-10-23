@@ -1,12 +1,14 @@
 package vn.iuh.service.impl;
 
 import vn.iuh.constraint.InvoiceType;
+import vn.iuh.constraint.PaymentStatus;
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.response.InvoiceStatistic;
 import vn.iuh.entity.*;
 import vn.iuh.gui.panel.statistic.FilterStatistic;
 import vn.iuh.service.LoaiPhongService;
+import vn.iuh.util.PriceFormat;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -33,39 +35,42 @@ public class RevenueStatisticService {
         this.phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO();
     }
 
-
-    public List<InvoiceStatistic> layThongKeVoiDieuKien(FilterStatistic dieuKien){
+    public List<InvoiceStatistic> layThongKeVoiDieuKien(FilterStatistic dieuKien) {
         var danhSachHoaDon = hoaDonDAO.layDanhSachHoaDonTrongKhoang(dieuKien.getStartDate(), dieuKien.getEndDate(), dieuKien.getEmployeeName());
         List<InvoiceStatistic> danhSachKetQua = new ArrayList<>();
 
-        for(HoaDon hd : danhSachHoaDon){
-            var danhSachChiTietHoaDon = chiTietHoaDonDAO.getInvoiceDetaiByInvoiceId(hd.getMaHoaDon());
-            var danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangDonDatPhong(hd.getMaDonDatPhong());
-            var danhSachPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon(hd.getMaHoaDon());
-            BigDecimal tongTienPhong = danhSachChiTietHoaDon.stream()
-                    .map(ChiTietHoaDon::getTongTien)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        for (HoaDon hd : danhSachHoaDon) {
+            if (InvoiceType.PAYMENT_INVOICE.getStatus().equalsIgnoreCase(hd.getKieuHoaDon())
+                    && PaymentStatus.PAID.getStatus().equalsIgnoreCase(hd.getTinhTrangThanhToan())
+            ) {
+                var danhSachChiTietHoaDon = chiTietHoaDonDAO.getInvoiceDetaiByInvoiceId(hd.getMaHoaDon());
+                var danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangDonDatPhong(hd.getMaDonDatPhong());
+                var danhSachPhongTinhPhuPhi = phongTinhPhuPhiDAO.timPhuPhiTheoMaDonDatPhong(hd.getMaDonDatPhong());
+                BigDecimal tongTienPhong = danhSachChiTietHoaDon.stream()
+                        .map(ChiTietHoaDon::getTongTien)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal tongTienDichVu = danhSachPhongDungDichVu.stream()
-                    .map(PhongDungDichVu::getTongTien)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal tongTienDichVu = danhSachPhongDungDichVu.stream()
+                        .map(PhongDungDichVu::getTongTien)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal tongPhuPhi  = danhSachPhongTinhPhuPhi.stream()
-                    .map(PhongTinhPhuPhi::getTongTien)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal tongPhuPhi = danhSachPhongTinhPhuPhi.stream()
+                        .map(PhongTinhPhuPhi::getTongTien)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            KhachHang kh  = khachHangDAO.timKhachHang(hd.getMaKhachHang());
-            danhSachKetQua.add(new InvoiceStatistic(hd.getMaHoaDon(),
-                                                    kh.getTenKhachHang(),
-                                                    hd.getKieuHoaDon().equalsIgnoreCase(InvoiceType.DEPOSIT_INVOICE.getStatus()) ,
-                                                    hd.getThoiGianTao(),
-                                                    tongTienPhong,
-                                                    tongTienDichVu,
-                                                    tongPhuPhi,
-                                                    hd.getTienThue(),
-                                                    hd.getTongHoaDon()));
+                KhachHang kh = khachHangDAO.timKhachHang(hd.getMaKhachHang());
+                danhSachKetQua.add(new InvoiceStatistic(hd.getMaHoaDon(),
+                                kh.getTenKhachHang(),
+                                hd.getKieuHoaDon().equalsIgnoreCase(InvoiceType.DEPOSIT_INVOICE.getStatus()),
+                                hd.getThoiGianTao(),
+                                PriceFormat.lamTronDenHangNghin(tongTienPhong),
+                                PriceFormat.lamTronDenHangNghin(tongTienDichVu),
+                                PriceFormat.lamTronDenHangNghin(tongPhuPhi),
+                                PriceFormat.lamTronDenHangNghin(hd.getTienThue()),
+                                PriceFormat.lamTronDenHangNghin(hd.getTongHoaDon())
+                ));
+            }
         }
         return danhSachKetQua;
     }
-
 }
