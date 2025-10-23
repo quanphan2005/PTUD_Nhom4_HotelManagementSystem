@@ -5,26 +5,21 @@ import com.formdev.flatlaf.ui.FlatLineBorder;
 import vn.iuh.constraint.Fee;
 import vn.iuh.constraint.InvoiceType;
 import vn.iuh.dao.HoaDonDAO;
-import vn.iuh.dto.event.create.InvoiceCreationEvent;
+//import vn.iuh.dto.event.create.InvoiceCreationEvent;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
+import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
 import vn.iuh.gui.base.Main;
-import vn.iuh.gui.dialog.InvoiceDialog;
-import vn.iuh.service.HoaDonService;
-import vn.iuh.service.impl.HoaDonServiceImpl;
+import vn.iuh.gui.dialog.InvoiceDialog2;
 import vn.iuh.dao.*;
 import vn.iuh.entity.*;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
-import java.math.BigDecimal;
-
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -32,10 +27,6 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -68,7 +59,6 @@ public class QuanLyHoaDonPanel extends JPanel{
     private DateChooser datePickerEnd;
     private JPanel inputPanel; // Panel CardLayout
     private final JButton searchButton = new JButton("TÌM");
-    private JButton addButton;
 
     private DefaultTableModel tableModel;
     private JTable table;
@@ -92,24 +82,26 @@ public class QuanLyHoaDonPanel extends JPanel{
         this.khachHangDAO = new KhachHangDAO();
         this.nhanVienDAO = new NhanVienDAO();
         this.hoaDonDAO = new HoaDonDAO();
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS)); // Bố cục Y_AXIS
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(CustomUI.white);
         init();
-        loadInvoiceData(); // Tải dữ liệu lần đầu
+        loadInvoiceData();
     }
 
     private void init() {
-        initButtons(); // Khởi tạo nút "Thêm"
         createTopPanel();
         add(Box.createVerticalStrut(10));
-        createSearchAndActionPanel(); // Panel 2 cột (Trái: Tìm/Thêm, Phải: Ngày)
+        createSearchAndActionPanel();
         add(Box.createVerticalStrut(10));
-        createInvoiceListPanel(); // Bảng Hóa đơn
-    }
+        createInvoiceListPanel();
 
-    // Khởi tạo các nút hành động (chỉ nút Thêm)
-    private void initButtons() {
-        addButton = createActionButtonAsync("Thêm hóa đơn", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                // Tự động gọi refreshData() mỗi khi panel này được hiển thị
+                refreshData();
+            }
+        });
     }
 
     // Panel tiêu đề
@@ -125,33 +117,30 @@ public class QuanLyHoaDonPanel extends JPanel{
         add(pnlTop);
     }
 
-    /**
-     * Tạo panel chính chứa 2 cột: Trái (Tìm kiếm & Thêm) và Phải (Lọc ngày)
-     */
     private void createSearchAndActionPanel() {
         JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS)); // Bố cục X_AXIS
-        mainPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200)); // Cố định chiều cao
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
+        mainPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
         mainPanel.setBackground(CustomUI.white);
 
-        mainPanel.add(createLeftSearchPanel()); // Panel bên trái
+        mainPanel.add(createLeftSearchPanel());
         mainPanel.add(Box.createHorizontalGlue());
-        mainPanel.add(Box.createHorizontalStrut(20)); // Khoảng cách
-        mainPanel.add(createRightDatePanel()); // Panel bên phải
+        mainPanel.add(Box.createHorizontalStrut(20));
+        mainPanel.add(createRightDatePanel());
 
         add(mainPanel);
     }
 
     /**
-     * Tạo panel bên trái (Tìm kiếm, ComboBox, Nút Thêm)
+     * Tạo panel bên trái (ComboBox, Nút Thêm)
      */
     private JPanel createLeftSearchPanel() {
         JPanel pnlLeft = new JPanel();
         pnlLeft.setLayout(new BoxLayout(pnlLeft, BoxLayout.Y_AXIS));
         pnlLeft.setBackground(CustomUI.white);
         pnlLeft.setBorder(new FlatLineBorder(new Insets(12, 12, 12, 12), Color.decode("#CED4DA"), 2, 30));
-        pnlLeft.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
-        pnlLeft.setPreferredSize(new Dimension(600, 200));
+        pnlLeft.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        pnlLeft.setPreferredSize(new Dimension(600, 100));
 
         // --- Hàng 1: Tìm kiếm ---
         JPanel row1 = new JPanel();
@@ -188,26 +177,17 @@ public class QuanLyHoaDonPanel extends JPanel{
         // Nút Tìm
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
-        searchButton.addActionListener(e -> handleSearch()); // Thêm sự kiện
-
+        searchButton.addActionListener(e -> handleSearch());
         row1.add(searchTypeComboBox);
         row1.add(Box.createHorizontalStrut(10));
         row1.add(inputPanel);
         row1.add(Box.createHorizontalStrut(10));
         row1.add(searchButton);
 
-        // --- Hàng 2: Nút Thêm ---
-        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10)); // Căn trái
-        row2.setBackground(CustomUI.white);
-        row2.add(addButton); // Thêm nút "Thêm"
-
         pnlLeft.add(Box.createVerticalStrut(8));
         pnlLeft.add(row1);
-        pnlLeft.add(Box.createVerticalStrut(10));
-        pnlLeft.add(row2);
-        pnlLeft.add(Box.createVerticalGlue()); // Đẩy các hàng lên trên
+        pnlLeft.add(Box.createVerticalGlue());
 
-        // Listener cho ComboBox (PHẢI đặt sau khi các component đã được tạo)
         searchTypeComboBox.addActionListener(e -> updateSearchPanelState());
 
         return pnlLeft;
@@ -276,6 +256,15 @@ public class QuanLyHoaDonPanel extends JPanel{
         datePickerEnd.setEnabled(isDateSearch);
     }
 
+    public void refreshData() {
+        searchTypeComboBox.setSelectedIndex(0);
+
+        txtSearchMaHoaDon.setText("Nhập mã hóa đơn...");
+        txtSearchMaHoaDon.setForeground(Color.GRAY);
+
+        updateSearchPanelState();
+        loadInvoiceData();
+    }
     /**
      * Tạo bảng danh sách hóa đơn
      */
@@ -348,7 +337,7 @@ public class QuanLyHoaDonPanel extends JPanel{
     }
     private void configureSearchTextField(JTextField field, Dimension size, String placeholder) {
         field.setPreferredSize(size);
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, size.height)); // Cho phép mở rộng
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, size.height));
         field.setMinimumSize(new Dimension(120, size.height));
         field.setFont(FONT_LABEL);
         field.putClientProperty(FlatClientProperties.STYLE, "arc: 12");
@@ -394,9 +383,6 @@ public class QuanLyHoaDonPanel extends JPanel{
         button.setOpaque(true);
         button.putClientProperty(FlatClientProperties.STYLE, "arc: 20; borderWidth: 2; borderColor:" + borderHex);
 
-//        loadIconAsync(iconPath, 20, 20, icon -> {
-//            if (icon != null) button.setIcon(icon);
-//        });
         return button;
     }
 
@@ -406,9 +392,9 @@ public class QuanLyHoaDonPanel extends JPanel{
         if ("Mã hóa đơn".equals(searchType)) {
             String maHD = txtSearchMaHoaDon.getText();
             if (maHD.isEmpty() || maHD.equals("Nhập mã hóa đơn...")) {
-                loadInvoiceData(); // Tải tất cả nếu ô trống
+                loadInvoiceData();
             } else {
-                loadInvoiceData(maHD); // Tải theo mã
+                loadInvoiceData(maHD);
             }
         } else { // "Theo ngày"
             LocalDate startLocal = datePickerStart.getDate();
@@ -418,11 +404,11 @@ public class QuanLyHoaDonPanel extends JPanel{
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn cả ngày bắt đầu và kết thúc.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            java.util.Date startDate = java.util.Date.from(startLocal.atStartOfDay(ZoneId.systemDefault()).toInstant()); // [cite: 430, 447]
-            java.util.Date endDate   = java.util.Date.from(endLocal.atStartOfDay(ZoneId.systemDefault()).toInstant()); // [cite: 430, 447]
-
+            java.util.Date startDate = java.util.Date.from(startLocal.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            java.time.LocalDateTime endLocalTime = endLocal.atTime(23, 59, 59);
+            java.util.Date endDate = java.util.Date.from(endLocalTime.atZone(ZoneId.systemDefault()).toInstant());
             // 4. Kiểm tra logic ngày
-            if (startDate.after(endDate)) { // [cite: 432, 449]
+            if (startDate.after(endDate)) {
                 JOptionPane.showMessageDialog(this, "Ngày bắt đầu không thể sau ngày kết thúc.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -445,7 +431,7 @@ public class QuanLyHoaDonPanel extends JPanel{
                 java.util.Date toUtil   = (java.util.Date) params[1];
                 Timestamp from = new Timestamp(fromUtil.getTime());
                 Timestamp to = new Timestamp(toUtil.getTime());
-                dsHoaDon = hoaDonDAO.layDanhSachHoaDonTrongKhoang(from, to, Main.getCurrentLoginSession());
+                dsHoaDon = hoaDonDAO.danhSachHoaDonTrongKhoang(from, to);
             }
 
             if (dsHoaDon != null) {
@@ -461,53 +447,6 @@ public class QuanLyHoaDonPanel extends JPanel{
             e.printStackTrace();
         }
     }
-
-    // --- Các hàm tải Icon (Lấy từ QuanLyLoaiPhongPanel) ---
-//    private static String iconCacheKey(String path, int w, int h, int arc) {
-//        return path + "|" + w + "x" + h + "|arc:" + arc;
-//    }
-//
-//    private static synchronized ImageIcon getCachedIcon(String key) {
-//        return ICON_CACHE.get(key);
-//    }
-
-//    private static void loadIconAsync(String path, int w, int h, Invoice<ImageIcon> callback) {
-//        String key = iconCacheKey(path, w, h, 0);
-//        synchronized (ICON_CACHE) {
-//            ImageIcon cached = ICON_CACHE.get(key);
-//            if (cached != null) {
-//                SwingUtilities.invokeLater(() -> callback.accept(cached));
-//                return;
-//            }
-//        }
-//        SwingWorker<ImageIcon, Void> wk = new SwingWorker<>() {
-//            @Override
-//            protected ImageIcon doInBackground() {
-//                try (InputStream is = QuanLyLoaiPhongPanel.class.getResourceAsStream(path)) {
-//                    if (is == null) return null;
-//                    BufferedImage img = ImageIO.read(is);
-//                    if (img == null) return null;
-//                    Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-//                    ImageIcon ic = new ImageIcon(scaled);
-//                    synchronized (ICON_CACHE) {
-//                        ICON_CACHE.put(iconCacheKey(path, w, h, 0), ic);
-//                    }
-//                    return ic;
-//                } catch (Exception ex) {
-//                    return null;
-//                }
-//            }
-//            @Override
-//            protected void done() {
-//                try {
-//                    ImageIcon ic = get();
-//                    if (ic != null) callback.accept(ic);
-//                } catch (Exception ignored) {}
-//            }
-//        };
-//        wk.execute();
-//    }
-
 
     private void showInvoiceDetails(String maHoaDon){
         try{
@@ -531,7 +470,7 @@ public class QuanLyHoaDonPanel extends JPanel{
 
             List<PhongTinhPhuPhi> dsPhongTinhPhuPhi = phongTinhPhuPhiDAO.getPhuPhiTheoMaHoaDon(maHoaDon);
 
-            InvoiceCreationEvent invoiceCreationEvent = new InvoiceCreationEvent(
+            InvoiceResponse invoiceResponse = new InvoiceResponse(
                     hoaDon.getMaPhienDangNhap(),
                     hoaDon.getTongTien(),
                     ddp,
@@ -543,7 +482,7 @@ public class QuanLyHoaDonPanel extends JPanel{
                     dsPhongTinhPhuPhi
             );
             SwingUtilities.invokeLater(() -> {
-                InvoiceDialog dialog = new InvoiceDialog(invoiceCreationEvent);
+                InvoiceDialog2 dialog = new InvoiceDialog2(invoiceResponse);
                 dialog.setVisible(true);
             });
 

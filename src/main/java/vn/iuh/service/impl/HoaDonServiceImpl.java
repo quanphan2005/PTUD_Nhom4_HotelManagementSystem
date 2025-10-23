@@ -2,8 +2,10 @@ package vn.iuh.service.impl;
 
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.InvoiceCreationEvent;
+import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.*;
-import vn.iuh.gui.dialog.InvoiceDialog;
+//import vn.iuh.gui.dialog.InvoiceDialog;
+import vn.iuh.gui.dialog.InvoiceDialog2;
 import vn.iuh.service.HoaDonService;
 
 import javax.swing.*;
@@ -33,9 +35,9 @@ public class HoaDonServiceImpl implements HoaDonService {
     }
 
     @Override
-    public InvoiceCreationEvent createInvoice(InvoiceCreationEvent event) {
+    public InvoiceResponse createInvoice(InvoiceResponse event) {
         SwingUtilities.invokeLater(() -> {
-            InvoiceDialog dialog = new InvoiceDialog(event);
+            InvoiceDialog2 dialog = new InvoiceDialog2(event);
             dialog.setVisible(true);
         });
         return event;

@@ -100,18 +100,14 @@ public class QuanLyTaiKhoanPanel extends JPanel {
     private void initButtons() {
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
-        // Nút Thêm/Sửa/Xóa
         addButton = createActionButtonAsync("Thêm", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
         editButton = createActionButtonAsync("Sửa", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
         deleteButton = createActionButtonAsync("Xóa", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
 
-        // Nút lọc Chức vụ
         leTanButton = createCategoryButton("Lễ tân", "#34D399", CATEGORY_BUTTON_SIZE);
         quanLyButton = createCategoryButton("Quản lý", "#FB923C", CATEGORY_BUTTON_SIZE);
         adminButton = createCategoryButton("Admin", "#A78BFA", CATEGORY_BUTTON_SIZE);
         allCategoryButton = createCategoryButton("Tất cả", "#3B82F6", CATEGORY_BUTTON_SIZE);
-
-        // Trong QuanLyTaiKhoanPanel.java
 
         addButton.addActionListener(e -> {
 
@@ -121,7 +117,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
 
             if (!isNhanVienTabActive) {
                 // CHẾ ĐỘ 1: Đang ở tab TÀI KHOẢN
-                // Tải dữ liệu, chuyển tab và thông báo
 
                 // Tải lại danh sách nhân viên CHƯA có tài khoản
                 loadNhanVienData();
@@ -137,9 +132,8 @@ public class QuanLyTaiKhoanPanel extends JPanel {
             }
 
             // CHẾ ĐỘ 2: Đang ở tab NHÂN VIÊN
-            // -> Nhiệm vụ: Xử lý người được chọn
 
-            // 2. Lấy nhân viên đang chọn (KHÔNG load lại data)
+            // 2. Lấy nhân viên đang chọn
             int selectedRow = tblNhanVien.getSelectedRow();
 
             if(selectedRow == -1) {
@@ -147,7 +141,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
                 return;
             }
 
-            // 3. Xử lý logic như cũ
             int modelRow = tblNhanVien.convertRowIndexToModel(selectedRow);
             String maNhanVien = (String) modelNhanVien.getValueAt(modelRow, 0);
 
@@ -174,7 +167,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
                 if (addDialog.isSaved()) {
                     TaiKhoan newTaiKhoan = addDialog.getTaiKhoan();
 
-                    // Giả sử tên hàm của bạn là themTaiKhoan
                     boolean success = taiKhoanDAO.themTaiKhoan(newTaiKhoan);
                     if (success) {
                         JOptionPane.showMessageDialog(this, "Tạo tài khoản thành công.");
