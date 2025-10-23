@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.dto.repository.RoomUsageServiceInfo;
 import vn.iuh.dto.repository.ThongTinDichVu;
 import vn.iuh.entity.Phong;
 import vn.iuh.entity.PhongDungDichVu;
@@ -7,10 +8,7 @@ import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -203,6 +201,65 @@ public class DonGoiDichVuDao {
         }
 
         return danhSachPhongDungDichVu;
+    }
+
+    public List<RoomUsageServiceInfo> timDonGoiDichVuBangDanhSachChiTietDatPhong(ArrayList<String> danhSachMaChiTietDatPhong) {
+        if (danhSachMaChiTietDatPhong.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder queryBuilder = new StringBuilder(
+                "SELECT pddv.*, dv.ten_dich_vu, p.ten_phong " +
+                "FROM PhongDungDichVu pddv " +
+                "JOIN DichVu dv ON pddv.ma_dich_vu = dv.ma_dich_vu " +
+                "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                "WHERE pddv.ma_chi_tiet_dat_phong IN ("
+        );
+        for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
+            queryBuilder.append("?");
+            if (i < danhSachMaChiTietDatPhong.size() - 1)
+                queryBuilder.append(", ");
+        }
+        queryBuilder.append(")");
+        String query = queryBuilder.toString();
+
+        List<RoomUsageServiceInfo> danhSachPhongDungDichVu = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
+                ps.setString(i + 1, danhSachMaChiTietDatPhong.get(i));
+            }
+
+            var rs = ps.executeQuery();
+            while (rs.next())
+                danhSachPhongDungDichVu.add(chuyenKetQuaThanhRoomUsageServiceInfo(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return danhSachPhongDungDichVu;
+    }
+
+    private RoomUsageServiceInfo chuyenKetQuaThanhRoomUsageServiceInfo(ResultSet rs) {
+        try {
+            return new RoomUsageServiceInfo(
+                    rs.getString("ma_phong_dung_dich_vu"),
+                    rs.getInt("so_luong"),
+                    rs.getDouble("gia_thoi_diem_do"),
+                    rs.getBoolean("duoc_tang"),
+                    rs.getString("ma_chi_tiet_dat_phong"),
+                    rs.getString("ten_phong"),
+                    rs.getString("ma_dich_vu"),
+                    rs.getString("ma_phien_dang_nhap"),
+                    rs.getTimestamp("thoi_gian_tao"),
+                    rs.getString("ten_dich_vu"),
+                    rs.getBigDecimal("tong_tien"));
+        } catch (SQLException e) {
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành RoomUsageServiceInfo: " + e.getMessage());
+        }
     }
 
     public void huyDanhSachPhongDungDichVu(List<String> ids) {

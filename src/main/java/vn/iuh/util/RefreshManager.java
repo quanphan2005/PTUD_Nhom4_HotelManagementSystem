@@ -79,6 +79,30 @@ public class RefreshManager {
         refreshPreReservationSearchPanel();
     }
 
+    public static void refreshAfterCheckIn() {
+        System.out.println("RefreshManager: Refreshing after CheckIn operation...");
+        refreshBookingManagementPanel();
+        refreshReservationManagementPanel();
+        refreshPreReservationManagementPanel();
+        refreshPreReservationSearchPanel();
+    }
+
+    public static void refreshAfterTransfer() {
+        System.out.println("RefreshManager: Refreshing after transfer room operation...");
+        refreshBookingManagementPanel();
+        refreshReservationManagementPanel();
+        refreshPreReservationManagementPanel();
+        refreshPreReservationSearchPanel();
+    }
+
+    public static void refreshAfterCheckout() {
+        System.out.println("RefreshManager: Refreshing after Checkout operation...");
+        refreshBookingManagementPanel();
+        refreshReservationManagementPanel();
+        refreshPreReservationManagementPanel();
+        refreshPreReservationSearchPanel();
+    }
+
     public static void refreshAfterCleaning() {
         System.out.println("RefreshManager: Refreshing after cleaning operation...");
         refreshBookingManagementPanel();

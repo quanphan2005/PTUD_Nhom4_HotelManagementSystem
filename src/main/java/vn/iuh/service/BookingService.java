@@ -22,6 +22,7 @@ public interface BookingService {
     boolean cancelReservation(String maDatPhong);
     boolean cancelRoomReservation(String maDatPhong, String maPhong);
     List<ReservationResponse> getAllReservationsWithStatus();
-    List<ReservationResponse> getAllReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate);
+    List<ReservationResponse> getAllCurrentReservationsWithStatus();
+    List<ReservationResponse> getAllPastReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate);
     ReservationInfoDetailResponse getReservationDetailInfo(String maDonDatPhong);
 }

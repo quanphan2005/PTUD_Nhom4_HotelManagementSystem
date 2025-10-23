@@ -447,7 +447,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         for (RoomUsageServiceResponse service : reservationInfo.getServices()) {
             Object[] rowData = new Object[5];
-            rowData[0] = service.getRoomId();
+            rowData[0] = service.getRoomUsageServiceId();
             rowData[1] = service.getRoomName();
             rowData[2] = service.getServiceName();
             rowData[3] = service.getQuantity();

@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LichSuDiVaoDAO {
     private final Connection connection;
@@ -36,20 +38,19 @@ public class LichSuDiVaoDAO {
         }
     }
 
-    public LichSuDiVao timLichSuDiVaoBangMaChiTietDatPhong(String maChiTietDatPhong) {
-        String query = "SELECT * FROM LichSuDiVao WHERE ma_chi_tiet_dat_phong = ? AND la_lan_dau_tien = ? AND da_xoa = 0";
+    public List<LichSuDiVao> timLichSuDiVaoBangMaChiTietDatPhong(String maChiTietDatPhong) {
+        String query = "SELECT * FROM LichSuDiVao WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maChiTietDatPhong);
-            ps.setInt(2, 1);
 
+            List<LichSuDiVao> lichSuDiVaoList = new java.util.ArrayList<>();
             var rs = ps.executeQuery();
-            if (rs.next())
-                return chuyenKetQuaThanhLichSuDiVao(rs);
-            else
-                return null;
+            while (rs.next())
+                lichSuDiVaoList.add(chuyenKetQuaThanhLichSuDiVao(rs));
 
+            return lichSuDiVaoList;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -70,6 +71,39 @@ public class LichSuDiVaoDAO {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<LichSuDiVao> timLichSuDiVaoBangDanhSachMaChiTietDatPhong(List<String> danhSachMaChiTietDatPhong) {
+        if (danhSachMaChiTietDatPhong.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM LichSuDiVao WHERE da_xoa = 0 AND ma_chi_tiet_dat_phong IN (");
+        for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
+            queryBuilder.append("?");
+            if (i < danhSachMaChiTietDatPhong.size() - 1) {
+                queryBuilder.append(", ");
+            }
+        }
+        queryBuilder.append(")");
+        String query = queryBuilder.toString();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
+                ps.setString(i + 1, danhSachMaChiTietDatPhong.get(i));
+            }
+
+            List<LichSuDiVao> lichSuDiVaoList = new ArrayList<>();
+            var rs = ps.executeQuery();
+            while (rs.next())
+                lichSuDiVaoList.add(chuyenKetQuaThanhLichSuDiVao(rs));
+
+            return lichSuDiVaoList;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private LichSuDiVao chuyenKetQuaThanhLichSuDiVao(ResultSet rs) {

@@ -4,10 +4,7 @@ import vn.iuh.constraint.*;
 import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
-import vn.iuh.dto.repository.CustomerInfo;
-import vn.iuh.dto.repository.PhieuDatPhong;
-import vn.iuh.dto.repository.ThongTinDatPhong;
-import vn.iuh.dto.repository.ThongTinPhong;
+import vn.iuh.dto.repository.*;
 import vn.iuh.dto.response.*;
 import vn.iuh.entity.*;
 import vn.iuh.service.BookingService;
@@ -16,15 +13,14 @@ import vn.iuh.util.TimeFormat;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class BookingServiceImpl implements BookingService {
     private final DatPhongDAO datPhongDAO;
     private final DonGoiDichVuDao donGoiDichVuDao;
     private final KhachHangDAO khachHangDAO;
     private final LichSuDiVaoDAO lichSuDiVaoDAO;
+    private final LichSuRaNgoaiDAO lichSuRaNgoaiDAO;
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private final CongViecDAO congViecDAO;
     private final HoaDonDAO hoaDonDAO;
@@ -34,6 +30,7 @@ public class BookingServiceImpl implements BookingService {
         this.donGoiDichVuDao = new DonGoiDichVuDao();
         this.khachHangDAO = new KhachHangDAO();
         this.lichSuDiVaoDAO = new LichSuDiVaoDAO();
+        this.lichSuRaNgoaiDAO = new LichSuRaNgoaiDAO();
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecDAO = new CongViecDAO();
         this.hoaDonDAO = new HoaDonDAO();
@@ -484,12 +481,14 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // 2.1 Check weather ReservationDetail has been checked-in
-        LichSuDiVao lichSuDiVao =
+        List<LichSuDiVao> lichSuDiVao =
                 lichSuDiVaoDAO.timLichSuDiVaoBangMaChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
-        if (lichSuDiVao != null && lichSuDiVao.getLaLanDauTien()) {
-            System.out.println("Không thể hủy đặt phòng cho mã đặt phòng: " + maDatPhong + " và mã phòng: " + maPhong +
-                               " vì đã thực hiện check-in.");
-            return false;
+        for (LichSuDiVao ls : lichSuDiVao) {
+            if (ls.getLaLanDauTien()) {
+                System.out.println("Không thể hủy đặt phòng cho mã đặt phòng: " + maDatPhong + " và mã phòng: " + maPhong +
+                                   " vì đã thực hiện check-in.");
+                return false;
+            }
         }
 
         try {
@@ -559,6 +558,72 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    @Override
+    public List<ReservationResponse> getAllReservationsWithStatus() {
+        List<ReservationResponse> allReservationsWithStatus = datPhongDAO.getAllReservationsWithStatus();
+        for (ReservationResponse reservation : allReservationsWithStatus) {
+            if (reservation.isDeleted())
+                reservation.setStatus(ReservationStatus.CANCELLED.getStatus());
+            else
+                if (!reservation.isDeleted() && reservation.getStatus() == null)
+                    reservation.setStatus(ReservationStatus.COMPLETED.getStatus());
+        }
+        return allReservationsWithStatus;
+    }
+
+    @Override
+    public List<ReservationResponse> getAllCurrentReservationsWithStatus() {
+        List<ReservationResponse> allCurrentReservationsWithStatusInRange =
+                datPhongDAO.getAllCurrentReservationsWithStatus();
+
+        System.out.println("Found " + allCurrentReservationsWithStatusInRange.size() + " current reservations in range.");
+        return allCurrentReservationsWithStatusInRange;
+    }
+
+    @Override
+    public List<ReservationResponse> getAllPastReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate) {
+        List<ReservationResponse> allPassReservationsWithStatusInRange =
+                datPhongDAO.getAllPassReservationsWithStatusInRange(startDate, endDate);
+        for (ReservationResponse reservation : allPassReservationsWithStatusInRange) {
+            if (reservation.isDeleted()) {
+                reservation.setStatus(ReservationStatus.CANCELLED.getStatus());
+            } else {
+                reservation.setStatus(ReservationStatus.COMPLETED.getStatus());
+            }
+        }
+
+        System.out.println("Found " + allPassReservationsWithStatusInRange.size() + " past reservations in range.");
+        return allPassReservationsWithStatusInRange;
+    }
+
+    @Override
+    public ReservationInfoDetailResponse getReservationDetailInfo(String maDonDatPhong) {
+        // 1. Find customer info by ReservationForm ID
+        CustomerInfo customerInfo = datPhongDAO.timThongTinKhachHangBangMaDonDatPhong(maDonDatPhong);
+
+        // 2. Find ReservationForm by ID
+        DonDatPhong donDatPhong = datPhongDAO.getDonDatPhongById(maDonDatPhong, true);
+
+        // 3. Find all ReservationDetail IDs by ReservationForm ID
+        Set<String> danhSachMaChiTietDatPhong = new HashSet<>();
+        List<ReservationDetailRepository> danhSachChiTietDatPhong = datPhongDAO.getReservationDetailByReservationId(maDonDatPhong);
+        for (ReservationDetailRepository chiTietDatPhong : danhSachChiTietDatPhong) {
+            danhSachMaChiTietDatPhong.add(chiTietDatPhong.getReservationDetailId());
+        }
+
+        // 4. Find all related info by ReservationDetail IDs (usage services, check-in history, check-out history)
+        List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong = lichSuDiVaoDAO.timLichSuDiVaoBangDanhSachMaChiTietDatPhong(new ArrayList<>(danhSachMaChiTietDatPhong));
+        List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong = lichSuRaNgoaiDAO.timLichSuRaNgoaiBangDanhSachMaChiTietDatPhong(new ArrayList<>(danhSachMaChiTietDatPhong));
+        List<RoomUsageServiceInfo> phongDungDichVuTheoChiTietDatPhong = donGoiDichVuDao.timDonGoiDichVuBangDanhSachChiTietDatPhong(new ArrayList<>(danhSachMaChiTietDatPhong));
+
+        return createReservationInfoDetailResponse(customerInfo,
+                                                   donDatPhong,
+                                                   danhSachChiTietDatPhong,
+                                                   lichSuDiVaoTheoChiTietDatPhong,
+                                                   lichSuDiRaTheoChiTietDatPhong,
+                                                   phongDungDichVuTheoChiTietDatPhong);
+    }
+
     private DonDatPhong createReservationFormEntity(BookingCreationEvent bookingCreationEvent,
                                                     String donDatPhongMoiNhat,
                                                     String customerId) {
@@ -580,9 +645,12 @@ public class BookingServiceImpl implements BookingService {
                 bookingCreationEvent.getTongTienDuTinh(),
                 bookingCreationEvent.getTienDatCoc(),
                 bookingCreationEvent.isDaDatTruoc(),
+                bookingCreationEvent.getDanhSachMaPhong().size() > 1
+                        ? ReservationType.MULTI.getType() : ReservationType.SINGLE.getType(),
                 customerId,
                 bookingCreationEvent.getMaPhienDangNhap(),
-                null
+                null,
+                false
         );
     }
 
@@ -689,42 +757,200 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    @Override
-    public List<ReservationResponse> getAllReservationsWithStatus() {
-        List<ReservationResponse> allReservationsWithStatus = datPhongDAO.getAllReservationsWithStatus();
-        for (ReservationResponse reservation : allReservationsWithStatus) {
-            if (reservation.isDeleted())
-                reservation.setStatus(RoomEndType.HUY_PHONG.getStatus());
-            else
-                if (!reservation.isDeleted() && reservation.getStatus() == null)
-                    reservation.setStatus(RoomEndType.TRA_PHONG.getStatus());
-        }
-        return allReservationsWithStatus;
-    }
+//    private ReservationInfoDetailResponse createReservationInfoDetailResponse(DonDatPhong donDatPhong,
+//                                                                              List<ReservationDetailRepository> danhSachChiTietDatPhong,
+//                                                                              Map<String, List<LichSuDiVao>> lichSuDiVaoTheoChiTietDatPhong,
+//                                                                              Map<String, List<LichSuRaNgoai>> lichSuDiRaTheoChiTietDatPhong,
+//                                                                              Map<String, List<PhongDungDichVu>> phongDungDichVuTheoChiTietDatPhong)
+//    {
+//        List<ReservationDetailResponse> reservationDetailResponses = new ArrayList<>();
+//        for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
+//            reservationDetailResponses.add(new ReservationDetailResponse(
+//                    reservationDetailRepository.getReservationDetailId(),
+//                    reservationDetailRepository.getRoomId(),
+//                    reservationDetailRepository.getRoomName(),
+//                    reservationDetailRepository.getTimeOut(),
+//                    reservationDetailRepository.getTimeOut()
+//            ));
+//        }
+//
+//        List<RoomUsageServiceResponse> roomUsageServiceResponses = new ArrayList<>();
+//
+//        ReservationInfoDetailResponse response = new ReservationInfoDetailResponse();
+//
+//        return response;
+//    }
 
-    @Override
-    public List<ReservationResponse> getAllReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate) {
-        List<ReservationResponse> allReservationsWithStatusInRange =
-                datPhongDAO.getAllReservationsWithStatusInRange(startDate, endDate);
-        for (ReservationResponse reservation : allReservationsWithStatusInRange) {
-            if (reservation.isDeleted()) {
-                reservation.setStatus(RoomEndType.HUY_PHONG.getStatus());
+    private ReservationInfoDetailResponse createReservationInfoDetailResponse(CustomerInfo thongTinKhachHang,
+                                                                              DonDatPhong donDatPhong,
+                                                                              List<ReservationDetailRepository> danhSachChiTietDatPhong,
+                                                                              List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong,
+                                                                              List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong,
+                                                                              List<RoomUsageServiceInfo> phongDungDichVuTheoChiTietDatPhong
+                                                                              )
+    {
+
+        // 1. Create base response
+        List<ReservationDetailResponse> reservationDetailResponses = new ArrayList<>();
+        for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
+            reservationDetailResponses.add(new ReservationDetailResponse(
+                    reservationDetailRepository.getReservationDetailId(),
+                    reservationDetailRepository.getRoomId(),
+                    reservationDetailRepository.getRoomName(),
+                    reservationDetailRepository.getTimeIn(),
+                    reservationDetailRepository.getTimeOut()
+            ));
+        }
+
+        // 2. Create list of RoomUsageServiceResponse
+        List<RoomUsageServiceResponse> roomUsageServiceResponses = new ArrayList<>();
+        for (RoomUsageServiceInfo phongDungDichVu : phongDungDichVuTheoChiTietDatPhong) {
+            roomUsageServiceResponses.add(new RoomUsageServiceResponse(
+                    phongDungDichVu.getMaPhongDungDichVu(),
+                    phongDungDichVu.getTenPhong(),
+                    phongDungDichVu.getTenDichVu(),
+                    phongDungDichVu.getSoLuong(),
+                    phongDungDichVu.isDuocTang()
+            ));
+        }
+
+        // 3. Create list of MovingHistoryResponse
+        Map<String, String> reservationIdToRoomId = new HashMap<>();
+        Map<String, String> reservationIdToRoomName = new HashMap<>();
+
+        for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
+            reservationIdToRoomId.put(reservationDetailRepository.getReservationDetailId(),
+                                      reservationDetailRepository.getRoomId());
+
+            reservationIdToRoomName.put(reservationDetailRepository.getReservationDetailId(),
+                                        reservationDetailRepository.getRoomName());
+        }
+
+        List<MovingHistoryResponse> movingHistoryResponses = new ArrayList<>();
+        int i = 0;
+        int j = 0;
+
+        // 3.1 Merge two check-in and check-out history lists
+        while (i < lichSuDiVaoTheoChiTietDatPhong.size() && j < lichSuDiRaTheoChiTietDatPhong.size()) {
+            LichSuDiVao lsdv = lichSuDiVaoTheoChiTietDatPhong.get(i);
+            LichSuRaNgoai lsrn = lichSuDiRaTheoChiTietDatPhong.get(j);
+
+            if (lsdv.getLaLanDauTien()) {
+                // Handle first check-in separately
+                movingHistoryResponses.add(new MovingHistoryResponse(
+                        lsdv.getMaChiTietDatPhong(),
+                        reservationIdToRoomId.get(lsdv.getMaChiTietDatPhong()),
+                        reservationIdToRoomName.get(lsdv.getMaChiTietDatPhong()),
+                        lsdv.getThoiGianTao(),
+                        null,
+                        "Checkin"
+                ));
+                i++;
+                continue;
             }
-            else
-                if (!reservation.isDeleted()
-                    && reservation.getStatus() == null
-                    || reservation.getStatus().equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
-                    reservation.setStatus(RoomEndType.TRA_PHONG.getStatus());
-                }
 
+            if (lsrn.isLaLanCuoiCung()) {
+                // Handle last check-out separately
+                movingHistoryResponses.add(new MovingHistoryResponse(
+                        lsrn.getMaChiTietDatPhong(),
+                        reservationIdToRoomId.get(lsrn.getMaChiTietDatPhong()),
+                        reservationIdToRoomName.get(lsrn.getMaChiTietDatPhong()),
+                        null,
+                        lsrn.getThoiGianTao(),
+                        "Checkout"
+                ));
+                j++;
+                continue;
+            }
+
+            // Handle normal case: both check-in and check-out
+            String maChiTietDatPhongIn =
+                    Objects.equals(lsdv.getMaChiTietDatPhong(), lsrn.getMaChiTietDatPhong())
+                            ? lsrn.getMaChiTietDatPhong()
+                            : null;
+
+            movingHistoryResponses.add(new MovingHistoryResponse(
+                    maChiTietDatPhongIn,
+                    reservationIdToRoomId.get(maChiTietDatPhongIn),
+                    reservationIdToRoomName.get(maChiTietDatPhongIn),
+                    lsdv.getThoiGianTao(),
+                    lsrn.getThoiGianTao(),
+                    null
+            ));
+
+            i++;
+            j++;
         }
 
-        System.out.println("Found " + allReservationsWithStatusInRange.size() + " reservations in range.");
-        return allReservationsWithStatusInRange;
-    }
+        // 3.2 Add remaining check-in history if any
+        if (i < lichSuDiVaoTheoChiTietDatPhong.size()) {
+            while (i < lichSuDiVaoTheoChiTietDatPhong.size()) {
+                LichSuDiVao lsdv = lichSuDiVaoTheoChiTietDatPhong.get(i);
+                movingHistoryResponses.add(new MovingHistoryResponse(
+                        lsdv.getMaChiTietDatPhong(),
+                        reservationIdToRoomId.get(lsdv.getMaChiTietDatPhong()),
+                        reservationIdToRoomName.get(lsdv.getMaChiTietDatPhong()),
+                        lsdv.getThoiGianTao(),
+                        null,
+                        "Checkin"
+                ));
+                i++;
+            }
+        }
 
-    @Override
-    public ReservationInfoDetailResponse getReservationDetailInfo(String maDonDatPhong) {
-        return datPhongDAO.getReservationDetailInfo(maDonDatPhong);
+        // 3.3 Add remaining check-out history if any
+        if (j < lichSuDiRaTheoChiTietDatPhong.size()) {
+            while (j < lichSuDiRaTheoChiTietDatPhong.size()) {
+                LichSuRaNgoai lsrn = lichSuDiRaTheoChiTietDatPhong.get(j);
+                movingHistoryResponses.add(new MovingHistoryResponse(
+                        lsrn.getMaChiTietDatPhong(),
+                        reservationIdToRoomId.get(lsrn.getMaChiTietDatPhong()),
+                        reservationIdToRoomName.get(lsrn.getMaChiTietDatPhong()),
+                        null,
+                        lsrn.getThoiGianTao(),
+                        "Checkout"
+                ));
+                j++;
+            }
+        }
+
+        // 4. Check this reservation is completed or canceled or still in progress
+        String status = null;
+        if (donDatPhong.isDaXoa())
+            status = ReservationStatus.CANCELLED.getStatus();
+        else if (lichSuDiVaoTheoChiTietDatPhong.size() == 0)
+            status = ReservationStatus.CHECKED_IN.getStatus();
+        else {
+            boolean allCheckedOut = true;
+            for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
+                boolean hasCheckedOut = false;
+                for (LichSuRaNgoai lsrn : lichSuDiRaTheoChiTietDatPhong) {
+                    if (Objects.equals(lsrn.getMaChiTietDatPhong(), reservationDetailRepository.getReservationDetailId())
+                        && lsrn.isLaLanCuoiCung()) {
+                        hasCheckedOut = true;
+                        break;
+                    }
+                }
+                if (!hasCheckedOut) {
+                    allCheckedOut = false;
+                    break;
+                }
+            }
+            if (allCheckedOut)
+                status = ReservationStatus.COMPLETED.getStatus();
+            else
+                status = ReservationStatus.USING.getStatus();
+        }
+
+        return new ReservationInfoDetailResponse(
+            thongTinKhachHang.getCCCD(),
+            thongTinKhachHang.getTenKhachHang(),
+            donDatPhong.getMaDonDatPhong(),
+            status,
+            donDatPhong.isDaDatTruoc(),
+            reservationDetailResponses,
+            roomUsageServiceResponses,
+            movingHistoryResponses
+        );
     }
 }

@@ -6,8 +6,7 @@ public class ReservationResponse {
     private String CCCD;
     private String customerName;
     private String maDonDatPhong;
-    private String roomId;
-    private String roomName;
+    private String type;
     private Timestamp timeIn;
     private Timestamp timeOut;
     private String status;
@@ -16,13 +15,12 @@ public class ReservationResponse {
     public ReservationResponse() {
     }
 
-    public ReservationResponse(String CCCD, String customerName, String maDonDatPhong, String roomId, String roomName,
+    public ReservationResponse(String CCCD, String customerName, String maDonDatPhong, String type,
                                Timestamp timeIn, Timestamp timeOut, String status, boolean isDeleted) {
         this.CCCD = CCCD;
         this.customerName = customerName;
         this.maDonDatPhong = maDonDatPhong;
-        this.roomId = roomId;
-        this.roomName = roomName;
+        this.type = type;
         this.timeIn = timeIn;
         this.timeOut = timeOut;
         this.status = status;
@@ -41,12 +39,8 @@ public class ReservationResponse {
         return maDonDatPhong;
     }
 
-    public String getRoomId() {
-        return roomId;
-    }
-
-    public String getRoomName() {
-        return roomName;
+    public String getType() {
+        return type;
     }
 
     public Timestamp getTimeIn() {

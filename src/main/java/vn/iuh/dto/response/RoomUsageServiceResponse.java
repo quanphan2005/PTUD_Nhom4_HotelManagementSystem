@@ -2,7 +2,6 @@ package vn.iuh.dto.response;
 
 public class RoomUsageServiceResponse {
     private String RoomUsageServiceId;
-    private String roomId;
     private String roomName;
     private String serviceName;
     private int quantity;
@@ -11,10 +10,9 @@ public class RoomUsageServiceResponse {
     public RoomUsageServiceResponse() {
     }
 
-    public RoomUsageServiceResponse(String roomUsageServiceId, String roomId, String roomName, String serviceName,
+    public RoomUsageServiceResponse(String roomUsageServiceId, String roomName, String serviceName,
                                     int quantity, boolean isGifted) {
         RoomUsageServiceId = roomUsageServiceId;
-        this.roomId = roomId;
         this.roomName = roomName;
         this.serviceName = serviceName;
         this.quantity = quantity;
@@ -23,10 +21,6 @@ public class RoomUsageServiceResponse {
 
     public String getRoomUsageServiceId() {
         return RoomUsageServiceId;
-    }
-
-    public String getRoomId() {
-        return roomId;
     }
 
     public String getRoomName() {

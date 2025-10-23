@@ -415,7 +415,7 @@ public class PreReservationManagementPanel extends JPanel {
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
                 // Làm mới UI
-                RefreshManager.refreshAfterCancelReservation();
+                RefreshManager.refreshAfterCheckIn();
             } else {
                 // Lấy lỗi từ service nếu có
                 String err = null;
@@ -533,7 +533,7 @@ public class PreReservationManagementPanel extends JPanel {
                         JOptionPane.showMessageDialog(dialog,
                                 "Đổi phòng thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                         dialog.dispose();
-                        RefreshManager.refreshAfterCancelReservation();
+                        RefreshManager.refreshAfterTransfer();
                     } else {
                         String err = null;
                         try { err = doiPhongService.getLastError(); } catch (Exception ignored) {}

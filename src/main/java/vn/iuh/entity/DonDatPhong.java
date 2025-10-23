@@ -10,16 +10,18 @@ public class DonDatPhong {
     private double tongTienDuTinh;
     private double tienDatCoc;
     private boolean daDatTruoc;
+    private String loai;
     private String maKhachHang;
     private String maPhienDangNhap;
     private String thoiGianTao;
+    private boolean daXoa;
 
     public DonDatPhong() {
     }
 
     public DonDatPhong(String maDonDatPhong, String moTa, Timestamp tgNhanPhong, Timestamp tgTraPhong,
-                       double tongTienDuTinh, double tienDatCoc, boolean daDatTruoc, String maKhachHang,
-                       String maPhienDangNhap, String thoiGianTao) {
+                       double tongTienDuTinh, double tienDatCoc, boolean daDatTruoc, String loai, String maKhachHang,
+                       String maPhienDangNhap, String thoiGianTao, boolean daXoa) {
         this.maDonDatPhong = maDonDatPhong;
         this.moTa = moTa;
         this.tgNhanPhong = tgNhanPhong;
@@ -27,9 +29,11 @@ public class DonDatPhong {
         this.tongTienDuTinh = tongTienDuTinh;
         this.tienDatCoc = tienDatCoc;
         this.daDatTruoc = daDatTruoc;
+        this.loai = loai;
         this.maKhachHang = maKhachHang;
         this.maPhienDangNhap = maPhienDangNhap;
         this.thoiGianTao = thoiGianTao;
+        this.daXoa = daXoa;
     }
 
     public String getMaDonDatPhong() {
@@ -80,12 +84,16 @@ public class DonDatPhong {
         this.tienDatCoc = tienDatCoc;
     }
 
-    public boolean getDaDatTruoc() {
+    public boolean isDaDatTruoc() {
         return daDatTruoc;
     }
 
     public void setDaDatTruoc(boolean daDatTruoc) {
         this.daDatTruoc = daDatTruoc;
+    }
+
+    public String getLoai() {
+        return loai;
     }
 
     public String getMaKhachHang() {
@@ -110,5 +118,9 @@ public class DonDatPhong {
 
     public void setThoiGianTao(String thoiGianTao) {
         this.thoiGianTao = thoiGianTao;
+    }
+
+    public boolean isDaXoa() {
+        return daXoa;
     }
 }

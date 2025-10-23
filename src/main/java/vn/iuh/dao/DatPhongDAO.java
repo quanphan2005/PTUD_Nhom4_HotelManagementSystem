@@ -3,11 +3,9 @@ package vn.iuh.dao;
 import vn.iuh.constraint.RoomEndType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.constraint.WorkTimeCost;
-import vn.iuh.dto.repository.CustomerInfo;
-import vn.iuh.dto.repository.PhieuDatPhong;
-import vn.iuh.dto.repository.ThongTinDatPhong;
-import vn.iuh.dto.repository.ThongTinPhong;
+import vn.iuh.dto.repository.*;
 import vn.iuh.dto.response.ReservationResponse;
+import vn.iuh.dto.response.RoomUsageServiceResponse;
 import vn.iuh.entity.LichSuDiVao;
 import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.ChiTietDatPhong;
@@ -62,8 +60,8 @@ public class DatPhongDAO {
     public boolean themDonDatPhong(DonDatPhong donDatPhongEntity) {
         String query = "INSERT INTO DonDatPhong" +
                        " (ma_don_dat_phong, mo_ta, tg_nhan_phong, tg_tra_phong, tong_tien_du_tinh, tien_dat_coc" +
-                       ", da_dat_truoc, ma_khach_hang, ma_phien_dang_nhap)" +
-                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                       ", da_dat_truoc, loai, ma_khach_hang, ma_phien_dang_nhap)" +
+                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -73,9 +71,10 @@ public class DatPhongDAO {
             ps.setTimestamp(4, donDatPhongEntity.getTgTraPhong());
             ps.setDouble(5, donDatPhongEntity.getTongTienDuTinh());
             ps.setDouble(6, donDatPhongEntity.getTienDatCoc());
-            ps.setBoolean(7, donDatPhongEntity.getDaDatTruoc());
-            ps.setString(8, donDatPhongEntity.getMaKhachHang());
-            ps.setString(9, donDatPhongEntity.getMaPhienDangNhap());
+            ps.setBoolean(7, donDatPhongEntity.isDaDatTruoc());
+            ps.setString(8, donDatPhongEntity.getLoai());
+            ps.setString(9, donDatPhongEntity.getMaKhachHang());
+            ps.setString(10, donDatPhongEntity.getMaPhienDangNhap());
 
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
@@ -229,6 +228,36 @@ public class DatPhongDAO {
 
         return danhSachPhieuDatPhong;
     }
+
+    public CustomerInfo timThongTinKhachHangBangMaDonDatPhong(String maDonDatPhong) {
+        String query = "SELECT kh.ma_khach_hang, kh.CCCD, kh.ten_khach_hang, kh.so_dien_thoai" +
+                       " FROM DonDatPhong ddp" +
+                       " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
+                       " WHERE ddp.ma_don_dat_phong = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return new CustomerInfo(
+                        rs.getString("ma_khach_hang"),
+                        rs.getString("CCCD"),
+                        rs.getString("ten_khach_hang"),
+                        rs.getString("so_dien_thoai")
+                );
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
+    }
+
 
     public CustomerInfo timThongTinKhachHangBangMaChiTietDatPhong(String maChiTietDatPhong) {
         String query = "SELECT kh.ma_khach_hang, kh.CCCD, kh.ten_khach_hang, kh.so_dien_thoai" +
@@ -701,6 +730,29 @@ public class DatPhongDAO {
         }
     }
 
+    public DonDatPhong getDonDatPhongById(String maDonDatPhong, boolean includeDeleted) {
+        String query = "SELECT * FROM DonDatPhong WHERE ma_don_dat_phong = ?";
+        if (!includeDeleted) {
+            query += " AND da_xoa = 0";
+        }
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhDonDatPhong(rs);
+            else
+                return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
+    }
+
     public List<vn.iuh.dto.response.ReservationResponse> getAllReservationsWithStatus() {
         String query =
                 "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
@@ -712,6 +764,7 @@ public class DatPhongDAO {
                 "JOIN Phong p ON p.ma_phong = ctdp.ma_phong " +
                 "LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
                 "    AND cv.da_xoa = 0 " +
+                "WHERE cv.tg_bat_dau = ctdp.tg_nhan_phong " +
                 "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
 
         List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
@@ -731,25 +784,62 @@ public class DatPhongDAO {
         return reservations;
     }
 
-    public List<vn.iuh.dto.response.ReservationResponse> getAllReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate) {
+    public List<vn.iuh.dto.response.ReservationResponse> getAllCurrentReservationsWithStatus() {
         String query =
                 "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
-                "p.ma_phong, p.ten_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
+                "ddp.loai, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
                 "cv.ten_trang_thai, ddp.da_xoa " +
                 "FROM DonDatPhong ddp " +
                 "JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
                 "JOIN ChiTietDatPhong ctdp ON ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong " +
                 "JOIN Phong p ON p.ma_phong = ctdp.ma_phong " +
-                "LEFT JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
+                "LEFT JOIN CongViec cv ON cv.ma_phong = ctdp.ma_phong " +
                 "    AND cv.da_xoa = 0 " +
-                "WHERE ctdp.tg_nhan_phong BETWEEN ? AND ? " +
+                "WHERE cv.da_xoa = 0 AND ddp.da_xoa = 0 " +
+                "AND cv.ten_trang_thai != ? " +
+                "AND ((GETDATE() <= ctdp.tg_nhan_phong) OR (GETDATE() <= ctdp.tg_tra_phong)) " +
                 "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
 
         List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setTimestamp(1, startDate);
-            ps.setTimestamp(2, endDate);
+            ps.setString(1, RoomStatus.ROOM_CLEANING_STATUS.getStatus());
+            var rs = ps.executeQuery();
+
+            while (rs.next()) {
+                reservations.add(chuyenKetQuaThanhReservationResponse(rs));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error fetching reservations with status: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        return reservations;
+    }
+
+    public List<ReservationResponse> getAllPassReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate) {
+        String query =
+                "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
+                "ddp.loai, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
+                "null as ten_trang_thai, ddp.da_xoa " +
+                "FROM DonDatPhong ddp " +
+                "JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
+                "JOIN ChiTietDatPhong ctdp ON ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong " +
+                "WHERE (ddp.da_xoa = ? OR ctdp.kieu_ket_thuc = ?)" +
+                "AND ((ctdp.tg_nhan_phong BETWEEN ? AND ?) " +
+                "OR (ctdp.tg_tra_phong BETWEEN ? AND ?)) " +
+                "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
+
+        List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setBoolean(1, true);
+            ps.setString(2, RoomEndType.TRA_PHONG.getStatus());
+            ps.setTimestamp(3, startDate);
+            ps.setTimestamp(4, endDate);
+            ps.setTimestamp(5, startDate);
+            ps.setTimestamp(6, endDate);
             var rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -770,8 +860,7 @@ public class DatPhongDAO {
                     rs.getString("CCCD"),
                     rs.getString("ten_khach_hang"),
                     rs.getString("ma_don_dat_phong"),
-                    rs.getString("ma_phong"),
-                    rs.getString("ten_phong"),
+                    rs.getString("loai"),
                     rs.getTimestamp("tg_nhan_phong"),
                     rs.getTimestamp("tg_tra_phong"),
                     rs.getString("ten_trang_thai"),
@@ -839,9 +928,11 @@ public class DatPhongDAO {
                     rs.getDouble("tong_tien_du_tinh"),
                     rs.getDouble("tien_dat_coc"),
                     rs.getBoolean("da_dat_truoc"),
+                    rs.getString("loai"),
                     rs.getString("ma_khach_hang"),
                     rs.getString("ma_phien_dang_nhap"),
-                    rs.getString("thoi_gian_tao")
+                    rs.getString("thoi_gian_tao"),
+                    rs.getBoolean("da_xoa")
             );
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành DonDatPhong" + e.getMessage());
@@ -950,9 +1041,8 @@ public class DatPhongDAO {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                services.add(new vn.iuh.dto.response.RoomUsageServiceResponse(
+                services.add(new RoomUsageServiceResponse(
                         rs.getString("ma_phong_dung_dich_vu"),
-                        rs.getString("ma_phong"),
                         rs.getString("ten_phong"),
                         rs.getString("ten_dich_vu"),
                         rs.getInt("so_luong"),
@@ -995,5 +1085,35 @@ public class DatPhongDAO {
 
         return histories;
     }
+
+    public List<ReservationDetailRepository> getReservationDetailByReservationId(String maDonDatPhong) {
+        List<ReservationDetailRepository> reservationDetails = new ArrayList<>();
+        String query = "SELECT ctdp.ma_chi_tiet_dat_phong, ctdp.ma_phong, p.ten_phong, " +
+                       "ctdp.tg_nhan_phong, ctdp.tg_tra_phong " +
+                       "FROM ChiTietDatPhong ctdp " +
+                       "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                       "WHERE ctdp.ma_don_dat_phong = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, maDonDatPhong);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                reservationDetails.add(new ReservationDetailRepository(
+                        rs.getString("ma_chi_tiet_dat_phong"),
+                        rs.getString("ma_phong"),
+                        rs.getString("ten_phong"),
+                        rs.getTimestamp("tg_nhan_phong"),
+                        rs.getTimestamp("tg_tra_phong")
+                ));
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi khi lấy chi tiết phòng: " + e.getMessage());
+        }
+
+        return reservationDetails;
+    }
+
+
 }
 

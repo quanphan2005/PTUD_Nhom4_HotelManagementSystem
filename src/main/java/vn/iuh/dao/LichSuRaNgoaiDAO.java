@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class LichSuRaNgoaiDAO {
@@ -57,6 +58,24 @@ public class LichSuRaNgoaiDAO {
         }
     }
 
+    public List<LichSuRaNgoai> timLichSuRaNgoaiBangMaChiTietDatPhong(String maChiTietDatPhong) {
+        String query = "SELECT * FROM LichSuRaNgoai WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+
+            List<LichSuRaNgoai> lichSuRaNgoaiList = new java.util.ArrayList<>();
+            var rs = ps.executeQuery();
+            while (rs.next())
+                lichSuRaNgoaiList.add(chuyenKetQuaThanhLichSuRaNgoai(rs));
+
+            return lichSuRaNgoaiList;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public LichSuRaNgoai timLichSuRaNgoaiMoiNhat() {
         String query = "SELECT TOP 1 * FROM LichSuRaNgoai ORDER BY ma_lich_su_ra_ngoai DESC";
 
@@ -69,6 +88,38 @@ public class LichSuRaNgoaiDAO {
             else
                 return null;
 
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<LichSuRaNgoai> timLichSuRaNgoaiBangDanhSachMaChiTietDatPhong(List<String> danhSachMaChiTietDatPhong) {
+        if (danhSachMaChiTietDatPhong.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM LichSuRaNgoai WHERE ma_chi_tiet_dat_phong IN (");
+        for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
+            queryBuilder.append("?");
+            if (i < danhSachMaChiTietDatPhong.size() - 1) {
+                queryBuilder.append(", ");
+            }
+        }
+        queryBuilder.append(") AND da_xoa = 0");
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(queryBuilder.toString());
+            for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
+                ps.setString(i + 1, danhSachMaChiTietDatPhong.get(i));
+            }
+
+            List<LichSuRaNgoai> lichSuRaNgoaiList = new ArrayList<>();
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                lichSuRaNgoaiList.add(chuyenKetQuaThanhLichSuRaNgoai(rs));
+            }
+
+            return lichSuRaNgoaiList;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

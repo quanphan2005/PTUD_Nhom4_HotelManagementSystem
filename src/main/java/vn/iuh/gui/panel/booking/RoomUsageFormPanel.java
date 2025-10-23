@@ -1009,7 +1009,7 @@ public class RoomUsageFormPanel extends JPanel {
             boolean success = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
 
             if (success) {
-                RefreshManager.refreshAfterBooking();
+                RefreshManager.refreshAfterCheckout();
                 Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
             } else {
                 JOptionPane.showMessageDialog(this,
@@ -1029,6 +1029,7 @@ public class RoomUsageFormPanel extends JPanel {
                                           "Đã chuyển khách từ phòng " + selectedRoom.getRoomName() + " đến phòng " +
                                           newRoom,
                                           "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            RefreshManager.refreshAfterTransfer();
         }
     }
 
@@ -1056,6 +1057,7 @@ public class RoomUsageFormPanel extends JPanel {
             JOptionPane.showMessageDialog(this,
                                           "Khách đã nhận phòng " + selectedRoom.getRoomName(),
                                           "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            RefreshManager.refreshAfterCheckIn();
         }
     }
 

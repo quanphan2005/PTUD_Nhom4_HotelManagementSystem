@@ -168,7 +168,7 @@ public class LoginPanelV2 extends JPanel implements ActionListener {
             // TODO: Implement forgot password functionality
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 // Quick test purpose only
-                Main.setCurrenLoginSession("PH00000002");
+                Main.setCurrenLoginSession("PN00000002");
                 Main.showRootCard("MainUI");
 
 //                JOptionPane.showMessageDialog(LoginPanelV2.this,
