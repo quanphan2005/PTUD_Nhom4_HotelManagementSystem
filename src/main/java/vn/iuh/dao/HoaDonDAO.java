@@ -133,8 +133,8 @@ public class HoaDonDAO {
             hoaDon.setMaKhachHang(rs.getString("ma_khach_hang"));
             hoaDon.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             hoaDon.setTongTien(rs.getBigDecimal("tong_tien"));
-            hoaDon.setTongTien(rs.getBigDecimal("tien_thue"));
-            hoaDon.setTongTien(rs.getBigDecimal("tong_hoa_don"));
+            hoaDon.setTienThue(rs.getBigDecimal("tien_thue"));
+            hoaDon.setTongHoaDon(rs.getBigDecimal("tong_hoa_don"));
 
             return hoaDon;
         } catch (SQLException e) {
@@ -160,8 +160,12 @@ public class HoaDonDAO {
     }
 
     public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maNhanVien){
-        String sql = "select * from HoaDon where (thoi_gian_tao between ? and ?) and  (? IS NULL OR ma_nhan_vien = ?)" +
-                "order by ma_hoa_don ";
+        String sql = "select hd.*, nv.ten_nhan_vien from HoaDon hd \n" +
+                    "left join PhienDangNhap pdn on pdn.ma_phien_dang_nhap = hd.ma_phien_dang_nhap\n" +
+                    "left join TaiKhoan tk on pdn.ma_tai_khoan = tk.ma_tai_khoan\n" +
+                    "left join NhanVien nv on nv.ma_nhan_vien = tk.ma_nhan_vien\n" +
+                    "where (hd.thoi_gian_tao between ? and ?) and  (? IS NULL OR nv.ma_nhan_vien =?)\n" +
+                    "order by ma_hoa_don";
 
         List<HoaDon> danhSachHoaDon = new ArrayList<>();
         try {

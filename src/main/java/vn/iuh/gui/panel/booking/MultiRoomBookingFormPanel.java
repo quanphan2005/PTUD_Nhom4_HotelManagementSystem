@@ -962,8 +962,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
 
         try {
-            Double.parseDouble(txtTotalInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
-            Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
+            Double.parseDouble(txtTotalInitialPrice.getText().replace("VNĐ", "").replace(",", ""));
+            Double.parseDouble(txtDepositPrice.getText().replace("VNĐ", "").replace(",", ""));
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Giá phòng và tiền đặt cọc phải là số!",
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
