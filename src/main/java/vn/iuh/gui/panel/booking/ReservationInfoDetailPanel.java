@@ -42,7 +42,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     private JButton btnBack;
     private JButton btnPrintInvoice;
     private JButton btnPrintReceipt;
-    private JButton btnExtendRoom;
+    private JButton btnTranferRoomHistory;
 
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
     private NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -92,6 +92,10 @@ public class ReservationInfoDetailPanel extends JPanel {
             BorderFactory.createEmptyBorder(5, 15, 5, 15)
         ));
 
+        infoPanel.setMinimumSize(new Dimension(0, 150));
+        infoPanel.setPreferredSize(new Dimension(0, 150));
+        infoPanel.setMaximumSize(new Dimension(0, 200));
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
         gbc.anchor = GridBagConstraints.WEST;
@@ -99,22 +103,22 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         // Initialize labels
         lblCCCD = new JLabel();
-        lblCCCD.setFont(CustomUI.normalFont);
+        lblCCCD.setFont(CustomUI.smallFont);
 
         lblCustomerName = new JLabel();
-        lblCustomerName.setFont(CustomUI.normalFont);
+        lblCustomerName.setFont(CustomUI.smallFont);
 
         lblReservationCode = new JLabel();
-        lblReservationCode.setFont(CustomUI.normalFont);
+        lblReservationCode.setFont(CustomUI.smallFont);
 
         lblStatus = new JLabel();
-        lblStatus.setFont(CustomUI.normalFont);
+        lblStatus.setFont(CustomUI.smallFont);
 
         lblType = new JLabel();
-        lblType.setFont(CustomUI.normalFont);
+        lblType.setFont(CustomUI.smallFont);
 
         lblAdvance = new JLabel();
-        lblAdvance.setFont(CustomUI.normalFont);
+        lblAdvance.setFont(CustomUI.smallFont);
 
         // Row 1: CCCD and Customer Name
         addInfoRow(infoPanel, gbc, 0, 0, "CCCD:", lblCCCD);
@@ -167,19 +171,20 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         // Button 3 - Row 2
         gbc.gridy = 2;
-        btnExtendRoom = new JButton("Xem lịch sử đổi phòng");
-        btnExtendRoom.setFont(CustomUI.verySmallFont);
-        btnExtendRoom.setBackground(CustomUI.orange);
-        btnExtendRoom.setForeground(CustomUI.white);
-        btnExtendRoom.setPreferredSize(new Dimension(220, 35));
-        btnExtendRoom.setFocusPainted(false);
-        btnExtendRoom.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
-        btnExtendRoom.addActionListener(e -> handleExtendRoom());
-        infoPanel.add(btnExtendRoom, gbc);
+        btnTranferRoomHistory = new JButton("Xem lịch sử đổi phòng");
+        btnTranferRoomHistory.setFont(CustomUI.verySmallFont);
+        btnTranferRoomHistory.setBackground(CustomUI.orange);
+        btnTranferRoomHistory.setForeground(CustomUI.white);
+        btnTranferRoomHistory.setPreferredSize(new Dimension(220, 35));
+        btnTranferRoomHistory.setFocusPainted(false);
+        btnTranferRoomHistory.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+        btnTranferRoomHistory.addActionListener(e -> handleExtendRoom());
+        infoPanel.add(btnTranferRoomHistory, gbc);
 
         JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.add(infoPanel, BorderLayout.CENTER);
+
         wrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        wrapper.add(infoPanel, BorderLayout.CENTER);
 
         add(wrapper);
     }
@@ -196,7 +201,10 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         gbc.gridx = startCol + 1;
         gbc.weightx = 0.5;
-        panel.add(valueLabel, gbc);
+
+        JLabel valueLabelCopy = valueLabel;
+        label.setFont(CustomUI.smallFont);
+        panel.add(valueLabelCopy, gbc);
     }
 
     private void createRoomDetailsTable() {
@@ -540,6 +548,8 @@ public class ReservationInfoDetailPanel extends JPanel {
     private class RoomActionButtonRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
         private JButton btnCheckIn;
         private JButton btnChangeRoom;
+        private JButton btnExtendTime;
+        private JButton btnCheckout;
         private JButton btnCancel;
 
         public RoomActionButtonRenderer() {
@@ -547,7 +557,7 @@ public class ReservationInfoDetailPanel extends JPanel {
             setOpaque(true);
 
             // Check-in button
-            btnCheckIn = new JButton("Check-in");
+            btnCheckIn = new JButton("Checkin");
             btnCheckIn.setFont(CustomUI.verySmallFont);
             btnCheckIn.setBackground(CustomUI.darkGreen);
             btnCheckIn.setForeground(Color.WHITE);
@@ -563,6 +573,24 @@ public class ReservationInfoDetailPanel extends JPanel {
             btnChangeRoom.setPreferredSize(new Dimension(100, 30));
             btnChangeRoom.setFocusPainted(false);
             btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
+
+            // Change Extend time button
+            btnExtendTime = new JButton("Book thêm");
+            btnExtendTime.setFont(CustomUI.verySmallFont);
+            btnExtendTime.setBackground(CustomUI.orange);
+            btnExtendTime.setForeground(Color.WHITE);
+            btnExtendTime.setPreferredSize(new Dimension(100, 30));
+            btnExtendTime.setFocusPainted(false);
+            btnExtendTime.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
+
+            // Change room button
+            btnCheckout = new JButton("Trả phòng");
+            btnCheckout.setFont(CustomUI.verySmallFont);
+            btnCheckout.setBackground(CustomUI.lightBlue);
+            btnCheckout.setForeground(Color.WHITE);
+            btnCheckout.setPreferredSize(new Dimension(100, 30));
+            btnCheckout.setFocusPainted(false);
+            btnCheckout.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
 
             // Cancel button (small square with trash icon)
             ImageIcon trashIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/bin.png")));

@@ -293,9 +293,9 @@ public class ReservationManagementPanel extends JPanel {
                 columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Khách hàng
                 columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Mã đơn
                 columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Phòng
-                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Checkin
-                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Checkout
-                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Trạng thái
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.12)); // 15% - Checkin
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.12)); // 15% - Checkout
+                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.12)); // 10% - Trạng thái
                 columnModel.getColumn(7).setPreferredWidth((int) (tableWidth * 0.15)); // 10% - Thao tác
             }
         });
