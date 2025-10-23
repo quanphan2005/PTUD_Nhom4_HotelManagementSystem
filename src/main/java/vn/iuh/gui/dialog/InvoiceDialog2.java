@@ -11,19 +11,23 @@ import vn.iuh.constraint.PaymentMethod;
 import vn.iuh.constraint.PaymentStatus;
 import vn.iuh.dao.HoaDonDAO;
 import vn.iuh.dto.event.create.InvoiceCreationEvent;
+import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.ChiTietHoaDon;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.entity.PhongTinhPhuPhi;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.util.PriceFormat;
 
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.JTableHeader;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 
-public class InvoiceDialog extends JDialog {
-    private InvoiceCreationEvent invoiceData;
+public class InvoiceDialog2 extends JDialog {
+    private InvoiceResponse response;
     private JTable tblPhong, tblDichVu;
     private JTable tblPhuPhi;
     private JLabel lblTitle;
@@ -33,8 +37,9 @@ public class InvoiceDialog extends JDialog {
     private HoaDonDAO hoaDonDAO;
     private JComboBox<String> cmbPaymentMethod;
 
-    public InvoiceDialog(InvoiceCreationEvent invoiceCreationEvent) {
-        this.invoiceData = invoiceCreationEvent;
+    public InvoiceDialog2(InvoiceResponse response) {
+        super((Frame) null, "Hóa đơn", true);
+        this.response = response;
         getContentPane().setBackground(Color.WHITE);
         setSize(800, 700);
         setLocationRelativeTo(null);
@@ -61,7 +66,7 @@ public class InvoiceDialog extends JDialog {
 
         JLabel lblKhachHangTitle = new JLabel("Khách hàng: ");
         lblKhachHangTitle.setFont(CustomUI.smallFont);
-        JLabel lblKhachHangValue = new JLabel(invoiceData.getKhachHang().getTenKhachHang());
+        JLabel lblKhachHangValue = new JLabel(response.getKhachHang().getTenKhachHang());
         JPanel pnlKhachHang = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         pnlKhachHang.add(lblKhachHangTitle);
         pnlKhachHang.add(lblKhachHangValue);
@@ -69,7 +74,7 @@ public class InvoiceDialog extends JDialog {
 // --- CCCD ---
         JLabel lblCCCDTitle = new JLabel("CCCD: ");
         lblCCCDTitle.setFont(CustomUI.smallFont);
-        JLabel lblCCCDValue = new JLabel(invoiceData.getKhachHang().getCCCD());
+        JLabel lblCCCDValue = new JLabel(response.getKhachHang().getCCCD());
         JPanel pnlCCCD = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         pnlCCCD.add(lblCCCDTitle);
         pnlCCCD.add(lblCCCDValue);
@@ -77,7 +82,7 @@ public class InvoiceDialog extends JDialog {
 // --- SĐT ---
         JLabel lblSDTTitle = new JLabel("SĐT: ");
         lblSDTTitle.setFont(CustomUI.smallFont);
-        JLabel lblSDTValue = new JLabel(invoiceData.getKhachHang().getSoDienThoai());
+        JLabel lblSDTValue = new JLabel(response.getKhachHang().getSoDienThoai());
         JPanel pnlSDT = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         pnlSDT.add(lblSDTTitle);
         pnlSDT.add(lblSDTValue);
@@ -93,7 +98,7 @@ public class InvoiceDialog extends JDialog {
 // --- Nhân viên ---
         JLabel lblNhanVienTitle = new JLabel("Nhân viên: ");
         lblNhanVienTitle.setFont(CustomUI.smallFont);
-        JLabel lblNhanVienValue = new JLabel(invoiceData.getTenNhanVien().getTenNhanVien());
+        JLabel lblNhanVienValue = new JLabel(response.getTenNhanVien().getTenNhanVien());
         JPanel pnlNhanVien = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         pnlNhanVien.add(lblNhanVienTitle);
         pnlNhanVien.add(lblNhanVienValue);
@@ -101,7 +106,7 @@ public class InvoiceDialog extends JDialog {
         // --- Ngày đến ---
         JLabel lblNgayDenTitle = new JLabel("Ngày đến: ");
         lblNgayDenTitle.setFont(CustomUI.smallFont);
-        JLabel lblNgayDenValue = new JLabel(invoiceData.getDonDatPhong().getTgNhanPhong().toString());
+        JLabel lblNgayDenValue = new JLabel(response.getDonDatPhong().getTgNhanPhong().toString());
         JPanel pnlNgayDen = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         pnlNgayDen.add(lblNgayDenTitle);
         pnlNgayDen.add(lblNgayDenValue);
@@ -109,7 +114,7 @@ public class InvoiceDialog extends JDialog {
         // --- Ngày đi ---
         JLabel lblNgayDiTitle = new JLabel("Ngày đi: ");
         lblNgayDiTitle.setFont(CustomUI.smallFont);
-        JLabel lblNgayDiValue = new JLabel(invoiceData.getDonDatPhong().getTgTraPhong().toString());
+        JLabel lblNgayDiValue = new JLabel(response.getDonDatPhong().getTgTraPhong().toString());
         JPanel pnlNgayDi = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         pnlNgayDi.add(lblNgayDiTitle);
         pnlNgayDi.add(lblNgayDiValue);
@@ -166,24 +171,34 @@ public class InvoiceDialog extends JDialog {
 
         // ===== Tổng tiền =====
         pnlSouth = new JPanel();
-        pnlSouth.setLayout(new GridLayout(3,2,10,10));
+        pnlSouth.setLayout(new GridLayout(5,2));
 
         JLabel lblTotalTitle = new JLabel("Tổng tiền: ");
         lblTotalTitle.setFont(CustomUI.smallFont);
-        JLabel lblTotalValue = new JLabel(formatCurrency(invoiceData.getHoaDon().getTongTien()));
+        JLabel lblTotalValue = new JLabel(getStringPrice(response.getHoaDon().getTongTien().add(response.getTienCoc())));
         lblTotalValue.setFont(CustomUI.smallFont);
+
+        JLabel lblDeposit = new JLabel("Tiền cọc: ");
+        lblDeposit.setFont(CustomUI.smallFont);
+        JLabel lblDepositValue = new JLabel("-".concat(getStringPrice(response.getTienCoc())));
+        lblDepositValue.setFont(CustomUI.smallFont);
+
+        JLabel lblRealTotal = new JLabel("Tiền phải thanh toán: ");
+        lblRealTotal.setFont(CustomUI.smallFont);
+        JLabel lblRealTotalValue = new JLabel(getStringPrice(response.getHoaDon().getTongTien()));
+        lblRealTotalValue.setFont(CustomUI.smallFont);
 
 // --- Thuế VAT ---
         double taxPercent = FeeValue.TAX.getValue() * 100;
         JLabel lblTaxFeeTitle = new JLabel("Thuế VAT(" + taxPercent + "%): ");
         lblTaxFeeTitle.setFont(CustomUI.smallFont);
-        JLabel lblTaxFeeValue = new JLabel(formatCurrency(invoiceData.getHoaDon().getTienThue()));
+        JLabel lblTaxFeeValue = new JLabel(getStringPrice(response.getHoaDon().getTienThue()));
         lblTaxFeeValue.setFont(CustomUI.smallFont);
 
 // --- Tổng hóa đơn ---
         JLabel lblTotalInvoiceTitle = new JLabel("Tổng hóa đơn: ");
         lblTotalInvoiceTitle.setFont(CustomUI.smallFont);
-        JLabel lblTotalInvoiceValue = new JLabel(formatCurrency(invoiceData.getHoaDon().getTongHoaDon()));
+        JLabel lblTotalInvoiceValue = new JLabel(getStringPrice(response.getHoaDon().getTongHoaDon()));
         lblTotalInvoiceValue.setFont(CustomUI.smallFont);
 
         //Chọn phương thức thanh toán
@@ -217,8 +232,8 @@ public class InvoiceDialog extends JDialog {
         btnConfirm.setBackground(CustomUI.darkGreen);
         btnConfirm.setForeground(CustomUI.white);
         btnConfirm.setFont(CustomUI.verySmallFont);
-        if(!PaymentStatus.UNPAID.getStatus().equalsIgnoreCase(this.invoiceData.getHoaDon().getTinhTrangThanhToan()) &&
-            this.invoiceData.getHoaDon().getTinhTrangThanhToan() != null
+        if(!PaymentStatus.UNPAID.getStatus().equalsIgnoreCase(this.response.getHoaDon().getTinhTrangThanhToan()) &&
+                this.response.getHoaDon().getTinhTrangThanhToan() != null
         ){
             btnConfirm.setEnabled(false);
         }
@@ -236,9 +251,15 @@ public class InvoiceDialog extends JDialog {
         pnlSouth.add(lblTotalTitle);
         pnlSouth.add(lblTotalValue);
         pnlSouth.add(cmbPaymentMethod);
+        pnlSouth.add(lblDeposit);
+        pnlSouth.add(lblDepositValue);
+        pnlSouth.add(Box.createHorizontalGlue());
+        pnlSouth.add(lblRealTotal);
+        pnlSouth.add(lblRealTotalValue);
+        pnlSouth.add(btnPrint);
         pnlSouth.add(lblTaxFeeTitle);
         pnlSouth.add(lblTaxFeeValue);
-        pnlSouth.add(btnPrint);
+        pnlSouth.add(Box.createHorizontalGlue());
         pnlSouth.add(lblTotalInvoiceTitle);
         pnlSouth.add(lblTotalInvoiceValue);
         pnlSouth.add(btnConfirm);
@@ -256,9 +277,13 @@ public class InvoiceDialog extends JDialog {
         add(mainPanel);
     }
 
+    private String getStringPrice(BigDecimal price){
+        return PriceFormat.lamTronDenHangNghin(price).toString();
+    }
+
 
     private void fillRoomTable(DefaultTableModel model) {
-        for (ChiTietHoaDon cthd : invoiceData.getChiTietHoaDonList()) {
+        for (ChiTietHoaDon cthd : response.getChiTietHoaDonList()) {
             double thoiGianSuDung = cthd.getThoiGianSuDung();
             int soNgay = (int) (thoiGianSuDung / 24); // số ngày
             double phanDuSauNgay = thoiGianSuDung % 24;
@@ -294,16 +319,16 @@ public class InvoiceDialog extends JDialog {
     }
 
     private void fillServiceTable(DefaultTableModel model) {
-        if (invoiceData.getPhongDungDichVuList() != null) {
-            for (PhongDungDichVu pddv : invoiceData.getPhongDungDichVuList()) {
+        if (response.getPhongDungDichVuList() != null) {
+            for (PhongDungDichVu pddv : response.getPhongDungDichVuList()) {
                 model.addRow(pddv.getSimpleObject());
             }
         }
     }
 
     private void fillFeeTable(DefaultTableModel model) {
-        if (invoiceData.getPhongTinhPhuPhiList() != null) {
-            for (PhongTinhPhuPhi pp : invoiceData.getPhongTinhPhuPhiList()) {
+        if (response.getPhongTinhPhuPhiList() != null) {
+            for (PhongTinhPhuPhi pp : response.getPhongTinhPhuPhiList()) {
                 model.addRow(new Object[]{
                         pp.getTenPhong(),
                         pp.getTenPhuPhi(),
@@ -321,9 +346,9 @@ public class InvoiceDialog extends JDialog {
 
     private boolean confirmPayment(){
         String phuongThucThanhToan = (String) cmbPaymentMethod.getSelectedItem();
-        this.invoiceData.getHoaDon().setPhuongThucThanhToan(phuongThucThanhToan);
-        this.invoiceData.getHoaDon().setTinhTrangThanhToan(PaymentStatus.PAID.getStatus());
-        return hoaDonDAO.updateTinhTrangThanhToan(this.invoiceData.getHoaDon());
+        this.response.getHoaDon().setPhuongThucThanhToan(phuongThucThanhToan);
+        this.response.getHoaDon().setTinhTrangThanhToan(PaymentStatus.PAID.getStatus());
+        return hoaDonDAO.updateTinhTrangThanhToan(this.response.getHoaDon());
     }
 }
 

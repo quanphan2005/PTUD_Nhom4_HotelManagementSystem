@@ -77,6 +77,37 @@ public class PhongTinhPhuPhiDAO {
         return null;
     }
 
+    public List<PhongTinhPhuPhi> timPhuPhiTheoMaDonDatPhong(String donDatPhong){
+        List<PhongTinhPhuPhi> danhSachPhuPhi = new ArrayList<>();
+
+        String query  = "select ptpp.*, pp.ten_phu_phi, p.ten_phong from PhongTinhPhuPhi ptpp\n" +
+                "join PhuPhi pp on pp.ma_phu_phi = ptpp.ma_phu_phi\n" +
+                "join ChiTietDatPhong ctdp on ctdp.ma_chi_tiet_dat_phong = ptpp.ma_chi_tiet_dat_phong\n" +
+                "join Phong p on p.ma_phong = ctdp.ma_phong\n" +
+                "join DonDatPhong ddp on ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong\n" +
+                "where ddp.ma_don_dat_phong = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+
+            ps.setString(1, donDatPhong);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PhongTinhPhuPhi phuPhi = mapResultSet(rs);
+                    phuPhi.setTenPhuPhi(rs.getString("ten_phu_phi"));
+                    phuPhi.setTenPhong(rs.getString("ten_phong"));
+                    phuPhi.setTongTien(rs.getBigDecimal("tong_tien"));
+                    danhSachPhuPhi.add(phuPhi);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch e) {
+            System.out.println(e.getMessage());
+        }
+        return danhSachPhuPhi;
+    }
+
     public List<PhongTinhPhuPhi> getPhuPhiTheoMaHoaDon(String maHoaDon){
         List<PhongTinhPhuPhi> danhSachPhuPhi = new ArrayList<>();
 
@@ -96,6 +127,7 @@ public class PhongTinhPhuPhiDAO {
                     PhongTinhPhuPhi phuPhi = mapResultSet(rs);
                     phuPhi.setTenPhuPhi(rs.getString("ten_phu_phi"));
                     phuPhi.setTenPhong(rs.getString("ten_phong"));
+                    phuPhi.setTongTien(rs.getBigDecimal("tong_tien"));
                     danhSachPhuPhi.add(phuPhi);
                 }
             }

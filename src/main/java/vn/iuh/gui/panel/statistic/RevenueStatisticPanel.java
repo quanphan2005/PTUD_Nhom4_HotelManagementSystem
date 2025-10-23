@@ -21,10 +21,8 @@ import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 
 
 public class RevenueStatisticPanel extends JPanel {
@@ -54,6 +52,7 @@ public class RevenueStatisticPanel extends JPanel {
     private JLabel lblServiceValue;
     private JLabel lblRoomValue;
     private JLabel lblTaxValue;
+    private List<InvoiceStatistic> danhSachKetQua;
 
     private void init(){
         createTopPanel();
@@ -72,6 +71,7 @@ public class RevenueStatisticPanel extends JPanel {
     public RevenueStatisticPanel() {
         this.nhanVienDAO = new NhanVienDAO();
         this.revenueStatisticService = new RevenueStatisticService();
+        this.danhSachKetQua = new ArrayList<>();
         setLayout(new BorderLayout());
         init();
     }
