@@ -38,7 +38,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             InvoiceDialog dialog = new InvoiceDialog(event);
             dialog.setVisible(true);
         });
-
         return event;
     }
 

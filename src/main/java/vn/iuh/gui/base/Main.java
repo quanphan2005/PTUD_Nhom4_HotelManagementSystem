@@ -217,6 +217,7 @@ public class Main extends JFrame {
         RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
         QuanLyHoaDonPanel pnlQuanLyHoaDon = new QuanLyHoaDonPanel();
         QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
+        QuanLyTaiKhoanPanel pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
@@ -229,6 +230,7 @@ public class Main extends JFrame {
         pnlCenter.add(bookingManagementPanel, PanelName.BOOKING_MANAGEMENT.getName());
         pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
         pnlCenter.add(preReservationManagementPanel, PanelName.PRE_RESERVATION_MANAGEMENT.getName());
+        pnlCenter.add(pnlQuanLyTaiKhoan, "Quản lý tài khoản");
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
         pnlCenter.add(pnlQuanLyHoaDon, "Tìm hóa đơn");
         pnlCenter.add(pnlQuanLyNhanVien, "Quản lý nhân viên");

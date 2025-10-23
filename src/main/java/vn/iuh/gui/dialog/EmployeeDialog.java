@@ -259,7 +259,7 @@ public class EmployeeDialog extends JDialog {
      */
     private void onCancel() {
         isSaved = false;
-        dispose(); // Đóng dialog
+        dispose();
     }
 
     /**
@@ -285,7 +285,7 @@ public class EmployeeDialog extends JDialog {
             this.nhanVien.setSoDienThoai(txtSDT.getText().trim());
 
             // --- Chuyển đổi LocalDate sang java.util.Date (để lưu vào DB) ---
-            // 1. Lấy LocalDate từ DateChooser của bạn [cite: 229]
+            // 1. Lấy LocalDate từ DateChooser của bạn
             LocalDate localDate = datePickerNgaySinh.getDate();
 
             if (localDate != null) {

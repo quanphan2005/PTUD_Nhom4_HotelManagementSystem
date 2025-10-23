@@ -163,7 +163,7 @@ public class QuanLyNhanVienPanel extends JPanel {
                 // Gọi Service để cập nhật
                 if (employeeService.updateEmployee(updatedEmployee) != null) {
                     JOptionPane.showMessageDialog(this, "Cập nhật thành công.");
-                    loadDataToTable(); // Tải lại bảng
+                    loadDataToTable();
                 } else {
                     JOptionPane.showMessageDialog(this, "Cập nhật thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
@@ -200,10 +200,9 @@ public class QuanLyNhanVienPanel extends JPanel {
     }
 
     private void configureSearchTextField(JTextField field, Dimension size, String placeholder) {
-        // (Giữ nguyên code của bạn)
         field.setPreferredSize(size);
         field.setMinimumSize(new Dimension(120, size.height));
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, size.height)); // cho phép mở rộng chiều rộng
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, size.height));
         field.setFont(FONT_LABEL);
         field.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
         field.setForeground(Color.GRAY);
@@ -227,7 +226,6 @@ public class QuanLyNhanVienPanel extends JPanel {
     }
 
     private void configureSearchButton(JButton btn, Dimension size) {
-        // (Giữ nguyên code của bạn)
         btn.setPreferredSize(size);
         btn.setMinimumSize(size);
         btn.setMaximumSize(size);
@@ -370,7 +368,7 @@ public class QuanLyNhanVienPanel extends JPanel {
 
         row2.add(addButton);
         row2.add(editButton);
-        row2.add(refreshButton); // Thêm vào panel
+        row2.add(refreshButton);
         row2.add(deleteButton);
 
         searchPanel.add(row2);

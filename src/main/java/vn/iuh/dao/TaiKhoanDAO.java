@@ -1,5 +1,7 @@
 package vn.iuh.dao;
 
+import vn.iuh.entity.DonDatPhong;
+import vn.iuh.entity.NhanVien;
 import vn.iuh.entity.TaiKhoan;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -36,7 +38,7 @@ public class TaiKhoanDAO {
         return null;
     }
 
-    public TaiKhoan themTaiKhoan(TaiKhoan taiKhoan) {
+    public boolean themTaiKhoan(TaiKhoan taiKhoan) {
         String query  = "INSERT INTO TaiKhoan (ma_tai_khoan, ten_dang_nhap, mat_khau, ma_chuc_vu, ma_nhan_vien)" +
                 "VALUES (?, ?, ?, ?, ?)";
 
@@ -48,12 +50,31 @@ public class TaiKhoanDAO {
             ps.setString(4, taiKhoan.getMaChucVu());
             ps.setString(5, taiKhoan.getMaNhanVien());
 
-            ps.executeUpdate();
-            return taiKhoan;
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return false;
         }
+    }
+
+    // tìm xem nhân viên đã có tài khoản hay chưa
+    public TaiKhoan findByMaNhanVien(String maNhanVien) {
+        String query = "select * from TaiKhoan tk where tk.ma_nhan_vien = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maNhanVien);
+
+            var rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhTaiKhoan(rs);
+            }
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+
         return null;
     }
 
@@ -147,6 +168,7 @@ public class TaiKhoanDAO {
 
         return null;
     }
+
 
     public List<TaiKhoan> getAllTaiKhoan() {
         List<TaiKhoan> list = new ArrayList<>();

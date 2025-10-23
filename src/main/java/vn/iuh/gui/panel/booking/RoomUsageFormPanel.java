@@ -6,22 +6,26 @@ import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.dao.PhongDAO;
 import vn.iuh.dto.event.create.DonGoiDichVu;
+import vn.iuh.dto.repository.BookThemGioInfo;
 import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.CustomerInfoResponse;
+import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.entity.Phong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
-import vn.iuh.gui.panel.DoiPhongDiaLog;
+import vn.iuh.gui.dialog.InvoiceDialog2;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.CheckOutService;
-import vn.iuh.service.DoiPhongService;
 import vn.iuh.service.RoomService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CheckOutServiceImpl;
-import vn.iuh.service.impl.DoiPhongServiceImpl;
 import vn.iuh.service.impl.RoomServiceImpl;
+import vn.iuh.gui.dialog.BookThemGioDialog;
+import vn.iuh.gui.panel.DoiPhongDiaLog;
+import vn.iuh.service.*;
+import vn.iuh.service.impl.*;
 import vn.iuh.util.IconUtil;
 import vn.iuh.util.PriceFormat;
 import vn.iuh.util.RefreshManager;
@@ -1007,17 +1011,19 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void handleCheckOut() {
-        System.out.println("Check out");
         int result = JOptionPane.showConfirmDialog(null,
                 "Xác nhận trả phòng " + selectedRoom.getRoomName() + "?",
                 "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
-            boolean success = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
-
-            if (success) {
-                RefreshManager.refreshAfterBooking();
-                Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
+            InvoiceResponse invoiceResponse = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
+            if (invoiceResponse != null) {
+                SwingUtilities.invokeLater(() -> {
+                    InvoiceDialog2 dialog = new InvoiceDialog2(invoiceResponse);
+                    dialog.setVisible(true);
+                    RefreshManager.refreshAfterBooking();
+                    Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
+                });
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Trả phòng thất bại cho " + selectedRoom.getRoomName(),
@@ -1112,18 +1118,69 @@ public class RoomUsageFormPanel extends JPanel {
 
 
     private void handleExtendBooking() {
-        String[] options = {"1 giờ", "2 giờ", "3 giờ", "Tùy chỉnh"};
-        String choice = (String) JOptionPane.showInputDialog(this,
-                                                             "Chọn thời gian gia hạn:",
-                                                             "Book thêm giờ",
-                                                             JOptionPane.QUESTION_MESSAGE,
-                                                             null, options, options[0]);
+        // 1) Tạo service
+        BookThemGioService bookThemGioService = new BookThemGioServiceImpl();
 
-        if (choice != null) {
+        // 2) Lấy thông tin cần thiết từ service
+        BookThemGioInfo thongTin = bookThemGioService.layThongTinChoBookThemGio(
+                selectedRoom.getMaChiTietDatPhong(),
+                selectedRoom.getRoomId()
+        );
+
+        // 3) Fallback về selectedRoom nếu service không có dữ liệu
+        Timestamp tgNhan = (thongTin != null && thongTin.getTgNhanPhong() != null)
+                ? thongTin.getTgNhanPhong() : selectedRoom.getTimeIn();
+        Timestamp tgTra = (thongTin != null && thongTin.getTgTraPhong() != null)
+                ? thongTin.getTgTraPhong() : selectedRoom.getTimeOut();
+
+        // 4) Xử lý giá trị gioToiDa theo quy ước: -1 = unlimited, 0 = không thể gia hạn, >0 = số giờ được phép
+        int gioToiDa = (thongTin != null) ? thongTin.getGioToiDaChoPhep() : -1;
+
+        if (gioToiDa == 0) {
             JOptionPane.showMessageDialog(this,
-                                          "Đã gia hạn phòng " + selectedRoom.getRoomName() + " thêm " + choice,
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    "Không thể gia hạn thời gian trả phòng vì đã có đặt phòng tiếp theo hoặc giới hạn là 0 giờ.",
+                    "Không thể gia hạn", JOptionPane.INFORMATION_MESSAGE);
+            return;
         }
+
+        // 5) Tạo một BookingResponse tạm để truyền vào dialog (dialog dùng thông tin này để hiển thị)
+        BookingResponse dialogBooking = new BookingResponse(
+                selectedRoom.getRoomId(),
+                selectedRoom.getRoomName(),
+                selectedRoom.isActive(),
+                selectedRoom.getRoomStatus() != null ? selectedRoom.getRoomStatus() : RoomStatus.ROOM_USING_STATUS.getStatus(),
+                selectedRoom.getRoomType(),
+                String.valueOf(selectedRoom.getNumberOfCustomers()),
+                selectedRoom.getDailyPrice(),
+                selectedRoom.getHourlyPrice(),
+                selectedRoom.getCustomerName(),
+                selectedRoom.getMaChiTietDatPhong(),
+                tgNhan,
+                tgTra
+        );
+
+        // 6) Mở dialog BookThemGioDialog
+        BookThemGioDialog dlg = new BookThemGioDialog(
+                SwingUtilities.getWindowAncestor(this),
+                dialogBooking,
+                thongTin
+        );
+
+        // 7) Thiết lập callback
+        dlg.setCallback(new BookThemGioDialog.BookThemGioCallback() {
+            // Chỉ refresh UI vì service và Dialog đã xử lí và hiển thị thông báo rồi
+            @Override
+            public void onXacNhan(long thoiGianThemMillis) {
+                RefreshManager.refreshAfterBooking();
+            }
+
+            @Override
+            public void onHuy() {
+            }
+        });
+
+        dlg.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
+        dlg.setVisible(true);
     }
 
     private void handleCheckIn() {

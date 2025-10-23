@@ -14,13 +14,10 @@ public class PhongTinhPhuPhi {
     private BigDecimal tongTien;
 
     public BigDecimal getTongTien() {
-        if(tongTien != null){
-            return tongTien;
-        }
-        else {
-            this.tongTien = this.donGiaPhuPhi;
-            return this.tongTien;
-        }
+       if(tongTien == null){
+           this.tongTien = this.donGiaPhuPhi;
+       }
+       return this.tongTien;
     }
 
     public void setTongTien(BigDecimal tongTien) {

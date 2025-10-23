@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import vn.iuh.entity.NhanVien;
+import vn.iuh.entity.TaiKhoan;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -77,6 +78,22 @@ public class NhanVienDAO {
         }
 
         return null;
+    }
+
+    public List<NhanVien> dsNhanVienChuaCoTaiKhoan() {
+        String query = "select * from NhanVien nv left join TaiKhoan tk on nv.ma_nhan_vien = tk.ma_nhan_vien where tk.ma_tai_khoan is null";
+        List<NhanVien> dsNhanVienChuaCoTaiKhoan = new ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                dsNhanVienChuaCoTaiKhoan.add(chuyenKetQuaThanhNhanVien(rs));
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+        return dsNhanVienChuaCoTaiKhoan;
     }
 
     public List<NhanVien> layDanhSachNhanVien(){
