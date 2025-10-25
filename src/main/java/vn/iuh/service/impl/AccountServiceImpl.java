@@ -9,8 +9,8 @@ import vn.iuh.entity.NhanVien;
 import vn.iuh.entity.TaiKhoan;
 import vn.iuh.service.AccountService;
 
-import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,45 +40,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountResponse getAllAccount() {
+    public List<TaiKhoan> getAllAccount() {
         List<TaiKhoan> tk = taiKhoanDAO.getAllTaiKhoan();
-        if(tk.isEmpty()){
-            return new AccountResponse(false, null);
-        }
-        return new AccountResponse(true, tk);
+        return tk;
     }
-
-
-    public void loadTableTaiKhoan(DefaultTableModel model) {
-        model.setRowCount(0);
-        String[] columns = {"Mã tài khoản", "Tên tài khoản", "Chức vụ", "Mã nhân viên"};
-        model.setColumnIdentifiers(columns);
-
-        for (TaiKhoan tk : taiKhoanDAO.getAllTaiKhoan()) {
-            model.addRow(new Object[]{
-                    tk.getMaTaiKhoan(),
-                    tk.getTenDangNhap(),
-                    tk.getMaChucVu().trim().equals("CV001") ? "Lễ tân" : "Quản lý",
-                    tk.getMaNhanVien()
-            });
-        }
-    }
-
-    public void loadTableNhanVienChuaCoTaiKhoan(DefaultTableModel model) {
-        model.setRowCount(0);
-        String[] columns = {"Mã", "Tên nhân viên", "CCCD", "Số điện thoại"};
-        model.setColumnIdentifiers(columns);
-
-        for (NhanVien nv : List.of(new NhanVienDAO().timNhanVienMoiNhat())) {
-            model.addRow(new Object[]{
-                    nv.getMaNhanVien(),
-                    nv.getTenNhanVien(),
-                    nv.getCCCD(),
-                    nv.getSoDienThoai()
-            });
-        }
-    }
-
 
     // handle login
     @Override

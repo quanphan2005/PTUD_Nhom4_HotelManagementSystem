@@ -174,7 +174,7 @@ public class DonGoiDichVuDao {
             ps.setString(1,maDonDatPhong);
             var rs = ps.executeQuery();
             while(rs.next()){
-                PhongDungDichVu pddv = chuyenKetQuaThanhPhongDungDichVu(rs);
+                PhongDungDichVu pddv = mapResultSet(rs);
                 pddv.setTenDichVu(rs.getString("ten_dich_vu"));
                 pddv.setTenPhong(rs.getString("ten_phong"));
                 pddv.setTongTien(rs.getBigDecimal("tong_tien"));
@@ -304,6 +304,23 @@ public class DonGoiDichVuDao {
             return new ThongTinDichVu(maDichVu, tenDichVu, tonKho, coTheTang, giaMoi, tenLoaiDichVu);
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi khi chuyển kết quả sang ThongTinDichVu: " + e.getMessage());
+        }
+    }
+
+    private PhongDungDichVu mapResultSet(ResultSet rs){
+        PhongDungDichVu phongDungDichVu = new PhongDungDichVu();
+
+        try{
+            phongDungDichVu.setMaPhongDungDichVu(rs.getString("ma_phong_dung_dich_vu"));
+            phongDungDichVu.setSoLuong(rs.getInt("so_luong"));
+            phongDungDichVu.setGiaThoiDiemDo(rs.getDouble("gia_thoi_diem_do"));
+            phongDungDichVu.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
+            phongDungDichVu.setMaDichVu(rs.getString("ma_dich_vu"));
+            phongDungDichVu.setMaPhienDangNhap(rs.getString("ma_phien_dang_nhap"));
+            phongDungDichVu.setTongTien(BigDecimal.valueOf(rs.getDouble("tong_tien")));
+            return phongDungDichVu;
+        }catch (SQLException e) {
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành PhongDungDichVu" + e.getMessage());
         }
     }
 

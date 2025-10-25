@@ -1,6 +1,5 @@
 package vn.iuh.dto.event.create;
 
-import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.entity.*;
 
 import java.math.BigDecimal;
@@ -11,18 +10,18 @@ public class InvoiceCreationEvent {
     private DonDatPhong donDatPhong;
     private KhachHang khachHang;
     private HoaDon hoaDon;
-    private NhanVien tenNhanVien;
+    private NhanVien nhanVien;
     private BigDecimal tienCoc;
     private List<ChiTietHoaDon> chiTietHoaDonList;
     private List<PhongDungDichVu> phongDungDichVuList;
     private List<PhongTinhPhuPhi> phongTinhPhuPhiList;
 
-    public InvoiceCreationEvent(String maPhienDangNhap, BigDecimal tienCoc, DonDatPhong donDatPhong,KhachHang khachHang, HoaDon hoaDon, NhanVien tenNhanVien, List<ChiTietHoaDon> chiTietHoaDonList, List<PhongDungDichVu> phongDungDichVuList, List<PhongTinhPhuPhi> phongTinhPhuPhiList) {
+    public InvoiceCreationEvent(String maPhienDangNhap, BigDecimal tienCoc, DonDatPhong donDatPhong,KhachHang khachHang, HoaDon hoaDon, NhanVien nhanVien, List<ChiTietHoaDon> chiTietHoaDonList, List<PhongDungDichVu> phongDungDichVuList, List<PhongTinhPhuPhi> phongTinhPhuPhiList) {
         this.maPhienDangNhap = maPhienDangNhap;
         this.donDatPhong = donDatPhong;
         this.khachHang = khachHang;
         this.hoaDon = hoaDon;
-        this.tenNhanVien = tenNhanVien;
+        this.nhanVien = nhanVien;
         this.tienCoc = tienCoc;
         this.chiTietHoaDonList = chiTietHoaDonList;
         this.phongDungDichVuList = phongDungDichVuList;
@@ -69,12 +68,12 @@ public class InvoiceCreationEvent {
         this.hoaDon = hoaDon;
     }
 
-    public NhanVien getTenNhanVien() {
-        return tenNhanVien;
+    public NhanVien getNhanVien() {
+        return nhanVien;
     }
 
-    public void setTenNhanVien(NhanVien tenNhanVien) {
-        this.tenNhanVien = tenNhanVien;
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
     }
 
     public List<ChiTietHoaDon> getChiTietHoaDonList() {

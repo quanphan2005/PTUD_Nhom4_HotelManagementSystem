@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import vn.iuh.entity.NhanVien;
+import vn.iuh.entity.TaiKhoan;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
@@ -39,6 +40,60 @@ public class NhanVienDAO {
         }
 
         return null;
+    }
+
+    public List<NhanVien> timNhanVienBangTen(String tenNhanVien){
+        String query = "select * from NhanVien where ten_nhan_vien = ? and da_xoa = 0";
+        List<NhanVien> nhanVienList = new ArrayList<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, tenNhanVien);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                nhanVienList.add(chuyenKetQuaThanhNhanVien(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return nhanVienList;
+    }
+
+    public NhanVien timNhanVienBangSDT(String sdt){
+        String query = "select * from NhanVien where so_dien_thoai = ? and da_xoa = 0";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, sdt);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhNhanVien(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return null;
+    }
+
+    public List<NhanVien> dsNhanVienChuaCoTaiKhoan() {
+        String query = "select * from NhanVien nv left join TaiKhoan tk on nv.ma_nhan_vien = tk.ma_nhan_vien where tk.ma_tai_khoan is null";
+        List<NhanVien> dsNhanVienChuaCoTaiKhoan = new ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                dsNhanVienChuaCoTaiKhoan.add(chuyenKetQuaThanhNhanVien(rs));
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+        return dsNhanVienChuaCoTaiKhoan;
     }
 
     public List<NhanVien> layDanhSachNhanVien(){
@@ -104,13 +159,15 @@ public class NhanVienDAO {
         return null;
     }
 
+
+
     public boolean xoaNhanVien(String id) {
         if (timNhanVien(id) == null) {
             System.out.println("Không tìm thấy nhân viên có mã: " + id);
             return false;
         }
 
-        String query = "UPDATE NhanVien SET da_xoa = 0 WHERE ma_nhan_vien = ?";
+        String query = "UPDATE NhanVien SET da_xoa = 1 WHERE ma_nhan_vien = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, id);

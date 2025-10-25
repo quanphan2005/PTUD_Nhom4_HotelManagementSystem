@@ -159,6 +159,59 @@ public class HoaDonDAO {
         return null;
     }
 
+    public List<HoaDon> layDanhSachHoaDon(){
+        List<HoaDon> list = new ArrayList<>();
+        String query = "select * from HoaDon";
+        try (PreparedStatement ps = connection.prepareStatement(query);
+
+             var rs = ps.executeQuery()) {
+            while (rs.next()) {
+
+                HoaDon hoaDon = chuyenKetQuaThanhHoaDon(rs);
+                list.add(hoaDon);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi lấy tất cả hóa đơn: " + e.getMessage(), e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+
+        return list;
+    }
+
+
+
+    public List<HoaDon> danhSachHoaDonTrongKhoang(Timestamp from, Timestamp to) {
+        String query = "SELECT hd.ma_hoa_don, hd.kieu_hoa_don, hd.ma_don_dat_phong, hd.ma_khach_hang " +
+                "FROM HoaDon hd WHERE hd.thoi_gian_tao BETWEEN ? AND ?";
+
+        List<HoaDon> danhSachHoaDon = new ArrayList<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+
+            ps.setTimestamp(1, from);
+            ps.setTimestamp(2, to);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    HoaDon hd = new HoaDon();
+                    hd.setMaHoaDon(rs.getString("ma_hoa_don"));
+                    hd.setKieuHoaDon(rs.getString("kieu_hoa_don"));
+                    hd.setMaDonDatPhong(rs.getString("ma_don_dat_phong"));
+                    hd.setMaKhachHang(rs.getString("ma_khach_hang"));
+
+                    danhSachHoaDon.add(hd);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return danhSachHoaDon;
+    }
+
     public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maNhanVien){
         String sql = "select hd.*, nv.ten_nhan_vien from HoaDon hd \n" +
                     "left join PhienDangNhap pdn on pdn.ma_phien_dang_nhap = hd.ma_phien_dang_nhap\n" +

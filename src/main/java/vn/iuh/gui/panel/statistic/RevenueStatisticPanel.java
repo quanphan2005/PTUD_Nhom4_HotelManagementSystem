@@ -11,6 +11,7 @@ import vn.iuh.entity.NhanVien;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
 import vn.iuh.service.impl.RevenueStatisticService;
+import vn.iuh.util.ExportWriter;
 import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
@@ -64,6 +65,9 @@ public class RevenueStatisticPanel extends JPanel {
     private JLabel lblOption;
     private JPanel pnlOption;
     private JPanel chartPanel;
+    private JTextField txtFolderPath;
+    private JButton btnChooseFolder;
+    private JButton btnExport;
 
     private void init(){
         createTopPanel();
@@ -91,7 +95,7 @@ public class RevenueStatisticPanel extends JPanel {
         lblTop = new JLabel("Thống kê doanh thu");
         lblTop.setFont(CustomUI.normalFont);
         lblTop.setForeground(CustomUI.white);
-        pnlTop.setBackground(CustomUI.lightBlue);
+        pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop);
         pnlTop.setPreferredSize(new Dimension(0, 35));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
@@ -146,15 +150,37 @@ public class RevenueStatisticPanel extends JPanel {
         btnReLoad.setFont(CustomUI.smallFont);
         btnReLoad.setForeground(CustomUI.white);
         btnReLoad.setBackground(CustomUI.purple);
-        JButton btnSearch = new JButton("Xuất file");
-        btnSearch.setFont(CustomUI.smallFont);
-        btnSearch.setSize(new Dimension(20, 10));
-        btnSearch.setForeground(CustomUI.white);
-        btnSearch.setBackground(CustomUI.green);
+        btnExport = new JButton("Xuất file");
+        btnExport.setFont(CustomUI.smallFont);
+        btnExport.setSize(new Dimension(20, 10));
+        btnExport.setForeground(CustomUI.white);
+        btnExport.setBackground(CustomUI.green);
+
+        btnExport.addActionListener(e ->{
+            this.handleBtnExport();
+        });
+        txtFolderPath = new JTextField();
+        txtFolderPath.setPreferredSize(new Dimension(200, 30));
+
+        btnChooseFolder = new JButton("Chọn thư mục");
+        btnChooseFolder.setFont(CustomUI.smallFont);
+        btnChooseFolder.setBackground(CustomUI.blue);
+        btnChooseFolder.setForeground(CustomUI.white);
+
+        btnChooseFolder.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int result = chooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                txtFolderPath.setText(chooser.getSelectedFile().getAbsolutePath());
+            }
+        });
+
         pnlEmployee.add(lblEmployee);
         pnlEmployee.add(cmbEmployee);
+        pnlEmployee.add(btnExport);
         pnlEmployee.add(btnReLoad);
-        pnlEmployee.add(btnSearch);
+        pnlEmployee.add(btnChooseFolder);
         pnlEmployee.setBackground(CustomUI.white);
 
         // Ô [1,1] RadioButton group
@@ -176,23 +202,18 @@ public class RevenueStatisticPanel extends JPanel {
         pnlRadio.add(radTable);
         pnlRadio.setBackground(CustomUI.white);
 
-        btnOption = new JCheckBox("Tùy chọn");
-        btnOption.setForeground(CustomUI.black);
-        btnOption.setFont(CustomUI.smallFont);
+        lblOption = new JLabel("Tùy chọn");
+        lblOption.setForeground(CustomUI.black);
+        lblOption.setFont(CustomUI.smallFont);
         String[] options = {"Hôm nay", "Hôm qua", "Tuần này", "Tháng này", "Quý này","Năm nay"};
         cmbOption = new JComboBox<>(options);
-        cmbOption.setEnabled(false);
+        cmbOption.setEnabled(true);
         cmbOption.setPreferredSize(new Dimension(100, 30));
         pnlOption = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        pnlOption.add(btnOption);
+        pnlOption.add(lblOption);
         pnlOption.add(cmbOption);
         pnlOption.setBackground(CustomUI.white);
 
-
-        btnOption.addActionListener(e -> {
-            boolean selected = btnOption.isSelected();
-            cmbOption.setEnabled(selected);
-        });
 
         cmbOption.addActionListener( e->{
             String option = (String) cmbOption.getSelectedItem();
@@ -217,6 +238,7 @@ public class RevenueStatisticPanel extends JPanel {
         pnlMain.add(pnlFilter);
     }
 
+
     private void loadDanhSachNhanVien(){
         danhSachNhanVien = nhanVienDAO.layDanhSachNhanVien();
         cmbEmployee.removeAllItems();
@@ -226,6 +248,32 @@ public class RevenueStatisticPanel extends JPanel {
         }
     }
 
+    private void exportFileExcel(){
+        String folderPath = txtFolderPath.getText().trim();
+        if (!folderPath.isEmpty()) {
+            try {
+                String fileName = "ThongKeDoanhThu";
+                String filePath = folderPath + "/ThongKeDoanhThu.xlsx";
+                ExportWriter.exportTableToExcel(model, filePath,fileName);
+                JOptionPane.showMessageDialog(this, "Xuất file Excel thành công:\n" + filePath);
+            } catch (Exception ex1) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất Excel: " + ex1.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                ex1.printStackTrace();
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn thư mục để lưu file Excel!", "Thiếu đường dẫn", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void handleBtnExport(){
+        int rowCount = this.model.getRowCount();
+        if(rowCount > 0){
+            exportFileExcel();
+        }
+        else {
+            JOptionPane.showMessageDialog(null, "Chưa có kết quả thống kê");
+        }
+    }
 
     private void validateTime(){
         LocalDate startDate = datePickerStart.getDate();

@@ -2,16 +2,19 @@ package vn.iuh.gui.dialog;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfWriter;
 import net.miginfocom.swing.MigLayout;
 import vn.iuh.constraint.FeeValue;
 import vn.iuh.constraint.PaymentMethod;
 import vn.iuh.constraint.PaymentStatus;
 import vn.iuh.dao.HoaDonDAO;
-import vn.iuh.dto.event.create.InvoiceCreationEvent;
 import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.ChiTietHoaDon;
 import vn.iuh.entity.PhongDungDichVu;
@@ -22,11 +25,16 @@ import vn.iuh.util.TimeFormat;
 
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.JTableHeader;
+import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
 
 public class InvoiceDialog2 extends JDialog {
     private InvoiceResponse response;
@@ -237,7 +245,7 @@ public class InvoiceDialog2 extends JDialog {
         btnPrint.setBackground(CustomUI.blue);
         btnPrint.setForeground(CustomUI.white);
         btnPrint.setFont(CustomUI.verySmallFont);
-        btnPrint.addActionListener(e -> JOptionPane.showMessageDialog(this, "in hóa đơn"));
+        btnPrint.addActionListener(e -> exportInvoiceToPDF());
 
         JButton btnConfirm = new JButton("Xác nhận thanh toán");
         btnConfirm.setBackground(CustomUI.darkGreen);
@@ -289,37 +297,41 @@ public class InvoiceDialog2 extends JDialog {
     private void fillRoomTable(DefaultTableModel model) {
         for (ChiTietHoaDon cthd : response.getChiTietHoaDonList()) {
             double thoiGianSuDung = cthd.getThoiGianSuDung();
-            int soNgay = (int) (thoiGianSuDung / 24); // số ngày
-            double phanDuSauNgay = thoiGianSuDung % 24;
-
-            int soGio = (int) phanDuSauNgay; // số giờ
-            double phanDuSauGio = (phanDuSauNgay - soGio) * 60;
-
-            int soPhut = (int) phanDuSauGio; // số phút
-
-            StringBuilder builder = new StringBuilder();
-            if(soNgay > 0){
-                builder.append(soNgay);
-                builder.append(" Ngày ");
-            }
-
-            if(soGio > 0){
-                builder.append(soGio);
-                builder.append(" Giờ ");
-            }
-
-            if(soPhut > 0){
-                builder.append(soPhut);
-                builder.append(" Phút ");
-            }
-
             model.addRow(new Object[]{
                     cthd.getTenPhong(),
                     formatCurrency(cthd.getDonGiaPhongHienTai()),
-                    builder.toString(),
+                    getStringThoiGianSuDung(thoiGianSuDung),
                     formatCurrency(cthd.getTongTien())
             });
         }
+    }
+
+    private String getStringThoiGianSuDung(double thoiGianSuDung){
+        int soNgay = (int) (thoiGianSuDung / 24); // số ngày
+        double phanDuSauNgay = thoiGianSuDung % 24;
+
+        int soGio = (int) phanDuSauNgay; // số giờ
+        double phanDuSauGio = (phanDuSauNgay - soGio) * 60;
+
+        int soPhut = (int) phanDuSauGio; // số phút
+
+        StringBuilder builder = new StringBuilder();
+        if(soNgay > 0){
+            builder.append(soNgay);
+            builder.append(" Ngày ");
+        }
+
+        if(soGio > 0){
+            builder.append(soGio);
+            builder.append(" Giờ ");
+        }
+
+        if(soPhut > 0){
+            builder.append(soPhut);
+            builder.append(" Phút ");
+        }
+
+        return builder.toString();
     }
 
     private void fillServiceTable(DefaultTableModel model) {
@@ -354,6 +366,159 @@ public class InvoiceDialog2 extends JDialog {
         this.response.getHoaDon().setPhuongThucThanhToan(phuongThucThanhToan);
         this.response.getHoaDon().setTinhTrangThanhToan(PaymentStatus.PAID.getStatus());
         return hoaDonDAO.updateTinhTrangThanhToan(this.response.getHoaDon());
+    }
+
+    private void exportInvoiceToPDF() {
+        Document document = new Document(PageSize.A4, 50, 50, 50, 50);
+
+        try {
+            // ===== Đường dẫn file =====
+            String filePath = System.getProperty("user.home") + "\\Documents\\HoaDon_"
+                    + response.getHoaDon().getMaHoaDon() + ".pdf";
+
+            PdfWriter.getInstance(document, new FileOutputStream(filePath));
+            document.open();
+
+            // ===== Font Unicode (tiếng Việt) =====
+            String fontPath = "C:\\Windows\\Fonts\\arial.ttf";
+            BaseFont itextBaseFont = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+
+            com.itextpdf.text.Font itextTitleFont =
+                    new com.itextpdf.text.Font(itextBaseFont, 18, com.itextpdf.text.Font.BOLD, BaseColor.BLACK);
+            com.itextpdf.text.Font itextBoldFont =
+                    new com.itextpdf.text.Font(itextBaseFont, 12, com.itextpdf.text.Font.BOLD, BaseColor.BLACK);
+            com.itextpdf.text.Font itextNormalFont =
+                    new com.itextpdf.text.Font(itextBaseFont, 12, com.itextpdf.text.Font.NORMAL, BaseColor.BLACK);
+            com.itextpdf.text.Font itextSmallGrayFont =
+                    new com.itextpdf.text.Font(itextBaseFont, 10, com.itextpdf.text.Font.NORMAL, BaseColor.GRAY);
+
+            // ===== Tiêu đề =====
+            Paragraph title = new Paragraph("HÓA ĐƠN THANH TOÁN", itextTitleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+            document.add(new Paragraph("\n"));
+
+            // ===== Thông tin khách hàng =====
+            PdfPTable infoTable = new PdfPTable(2);
+            infoTable.setWidthPercentage(100); // full chiều ngang
+            infoTable.setSpacingBefore(10f);
+            infoTable.setSpacingAfter(10f);
+            infoTable.getDefaultCell().setBorder(Rectangle.NO_BORDER); // bỏ viền ô
+
+// --- Cột trái ---
+            PdfPTable leftTable = new PdfPTable(1);
+            leftTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            leftTable.addCell(new Phrase("Đơn vị: Khách sạn Hai Quân Đức Thịnh", itextBoldFont));
+            leftTable.addCell(new Phrase("Mã hóa đơn: " + response.getHoaDon().getMaHoaDon(), itextNormalFont));
+            leftTable.addCell(new Phrase("Nhân viên: " + response.getTenNhanVien().getTenNhanVien(), itextNormalFont));
+            leftTable.addCell(new Phrase("Ngày tạo hóa đơn: " + TimeFormat.formatTime(new Timestamp(System.currentTimeMillis())), itextNormalFont));
+            if(response.getHoaDon().getPhuongThucThanhToan() != null || response.getHoaDon().getTinhTrangThanhToan() != null){
+                leftTable.addCell(new Phrase("Phương thức thanh toán: ".concat(response.getHoaDon().getPhuongThucThanhToan()), itextNormalFont));
+                leftTable.addCell(new Phrase("Tình trạng thanh toán: " + response.getHoaDon().getTinhTrangThanhToan(), itextNormalFont));
+            }
+// --- Cột phải ---
+            PdfPTable rightTable = new PdfPTable(1);
+            rightTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            rightTable.addCell(new Phrase("Khách hàng: " + response.getKhachHang().getTenKhachHang(), itextNormalFont));
+            rightTable.addCell(new Phrase("SĐT: " + response.getKhachHang().getSoDienThoai(), itextNormalFont));
+            rightTable.addCell(new Phrase("Ngày đến: " + TimeFormat.formatTime(response.getDonDatPhong().getTgNhanPhong()), itextNormalFont));
+            rightTable.addCell(new Phrase("Ngày đi: " + TimeFormat.formatTime(response.getDonDatPhong().getTgTraPhong()), itextNormalFont));
+
+// --- Thêm 2 cột vào bảng cha ---
+            PdfPCell leftCell = new PdfPCell(leftTable);
+            PdfPCell rightCell = new PdfPCell(rightTable);
+            leftCell.setBorder(Rectangle.NO_BORDER);
+            rightCell.setBorder(Rectangle.NO_BORDER);
+
+            infoTable.addCell(leftCell);
+            infoTable.addCell(rightCell);
+
+// --- Thêm bảng thông tin vào tài liệu ---
+            document.add(infoTable);
+
+            // ===== Bảng chi tiết phòng =====
+            document.add(new Paragraph("Chi tiết phòng:", itextBoldFont));
+            document.add(new Paragraph("\n"));
+            PdfPTable tablePhong = new PdfPTable(4);
+            tablePhong.setWidthPercentage(100);
+            addTableHeader(tablePhong, new String[]{"Tên phòng", "Đơn giá", "Thời gian", "Thành tiền"}, itextBoldFont);
+            for (ChiTietHoaDon cthd : response.getChiTietHoaDonList()) {
+                tablePhong.addCell(new PdfPCell(new Phrase(cthd.getTenPhong(), itextNormalFont)));
+                tablePhong.addCell(new PdfPCell(new Phrase(formatCurrency(cthd.getDonGiaPhongHienTai()), itextNormalFont)));
+                tablePhong.addCell(new PdfPCell(new Phrase(getStringThoiGianSuDung(cthd.getThoiGianSuDung()), itextNormalFont)));
+                tablePhong.addCell(new PdfPCell(new Phrase(formatCurrency(cthd.getTongTien()), itextNormalFont)));
+            }
+            document.add(tablePhong);
+            document.add(new Paragraph("\n"));
+
+            // ===== Bảng dịch vụ =====
+            document.add(new Paragraph("Dịch vụ đã sử dụng:", itextBoldFont));
+            document.add(new Paragraph("\n"));
+            PdfPTable tableDV = new PdfPTable(6);
+            tableDV.setWidthPercentage(100);
+            addTableHeader(tableDV, new String[]{"Phòng", "Tên dịch vụ", "Đơn giá", "Số lượng", "Thành tiền", "Ghi chú"}, itextBoldFont);
+            if (response.getPhongDungDichVuList() != null) {
+                for (var pddv : response.getPhongDungDichVuList()) {
+                    Object[] data = pddv.getSimpleObject();
+                    for (Object cell : data) {
+                        tableDV.addCell(new PdfPCell(new Phrase(cell != null ? cell.toString() : "", itextNormalFont)));
+                    }
+                }
+            }
+            document.add(tableDV);
+            document.add(new Paragraph("\n"));
+
+            // ===== Phụ phí =====
+            document.add(new Paragraph("Phụ phí phát sinh:", itextBoldFont));
+            document.add(new Paragraph("\n"));
+            PdfPTable tablePhuPhi = new PdfPTable(3);
+            tablePhuPhi.setWidthPercentage(100);
+            addTableHeader(tablePhuPhi, new String[]{"Phòng", "Tên phụ phí", "Đơn giá"}, itextBoldFont);
+            if (response.getPhongTinhPhuPhiList() != null) {
+                for (var pp : response.getPhongTinhPhuPhiList()) {
+                    tablePhuPhi.addCell(new PdfPCell(new Phrase(pp.getTenPhong(), itextNormalFont)));
+                    tablePhuPhi.addCell(new PdfPCell(new Phrase(pp.getTenPhuPhi(), itextNormalFont)));
+                    tablePhuPhi.addCell(new PdfPCell(new Phrase(formatCurrency(pp.getTongTien()), itextNormalFont)));
+                }
+            }
+            document.add(tablePhuPhi);
+            document.add(new Paragraph("\n"));
+
+            // ===== Tổng kết =====
+            document.add(new Paragraph("Tổng tiền dự tính: " + formatCurrency(response.getHoaDon().getTongTien().add(response.getTienCoc())), itextNormalFont));
+            document.add(new Paragraph("Tiền cọc: -" + formatCurrency(response.getTienCoc()), itextNormalFont));
+            document.add(new Paragraph("Tổng tiền trước thuế: " + formatCurrency(response.getHoaDon().getTongTien()), itextNormalFont));
+            document.add(new Paragraph("Thuế VAT (" + (FeeValue.TAX.getValue() * 100) + "%): " + formatCurrency(response.getHoaDon().getTienThue()), itextNormalFont));
+            document.add(new Paragraph("Tổng hóa đơn sau thuế: " + formatCurrency(response.getHoaDon().getTongHoaDon()), itextBoldFont));
+            document.add(new Paragraph("\n"));
+
+            // ===== Footer =====
+            Paragraph greeting = new Paragraph("Cảm ơn quý khách đã sử dụng dịch vụ!", itextSmallGrayFont);
+            greeting.setAlignment(Element.ALIGN_CENTER);
+            document.add(greeting);
+
+            document.close();
+
+            // ===== Thông báo & tự mở file =====
+            JOptionPane.showMessageDialog(this, "Xuất file PDF thành công tại:\n" + filePath);
+            File file = new File(filePath);
+            if (file.exists()) {
+                Desktop.getDesktop().open(file);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi khi xuất PDF: " + e.getMessage());
+        }
+    }
+
+    private void addTableHeader(PdfPTable table, String[] headers, com.itextpdf.text.Font font) {
+        for (String header : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(header, font));
+            cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(cell);
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import vn.iuh.entity.ChiTietHoaDon;
+import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -107,6 +108,30 @@ public class ChiTietHoaDonDAO {
         }
         return null;
     }
+
+    public List<ChiTietHoaDon> layChiTietHoaDonBangMaHoaDon(String maHoaDon){
+        String query = "select cthd.*, p.ten_phong from ChiTietHoaDon cthd join Phong p on cthd.ma_phong = p.ma_phong where cthd.ma_hoa_don = ?";
+
+        List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maHoaDon);
+
+            var rs = ps.executeQuery();
+            while(rs.next()){
+                ChiTietHoaDon cthd = mapResultSet(rs);
+                cthd.setTenPhong(rs.getString("ten_phong"));
+                danhSachChiTietHoaDon.add(cthd);
+            }
+        }catch(SQLException e) {
+            throw new RuntimeException(e);
+        }catch (TableEntityMismatch e){
+            System.out.print(e.getMessage());
+        }
+        return danhSachChiTietHoaDon;
+    }
+
     public List<ChiTietHoaDon> getInvoiceDetaiByInvoiceId(String maHoaDon){
         String query = "select * from ChiTietHoaDon where ma_hoa_don = ?";
         List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();

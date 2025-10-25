@@ -1,7 +1,6 @@
 package vn.iuh.gui.panel.statistic;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -10,9 +9,9 @@ import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
-import vn.iuh.gui.base.Main;
 import vn.iuh.service.LoaiPhongService;
 import vn.iuh.service.impl.LoaiPhongServiceImpl;
+import vn.iuh.util.ExportWriter;
 import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
@@ -30,7 +29,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RoomProductivityPanel extends JPanel {
     private JPanel pnlTop;
@@ -85,6 +83,8 @@ public class RoomProductivityPanel extends JPanel {
     private JLabel lblTongDoanhThuValue;
     private JPanel pnlThoiGian;
     private JPanel pnlDoanhThu;
+    private JTextField txtFolderPath;
+    private JButton btnChooseFolder;
 
     private void init(){
         createTopPanel();
@@ -115,7 +115,7 @@ public class RoomProductivityPanel extends JPanel {
         lblTop = new JLabel("Thống kê hiệu suất phòng");
         lblTop.setFont(CustomUI.normalFont);
         lblTop.setForeground(CustomUI.white);
-        pnlTop.setBackground(CustomUI.lightBlue);
+        pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop);
         pnlTop.setPreferredSize(new Dimension(0, 35));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
@@ -205,6 +205,23 @@ public class RoomProductivityPanel extends JPanel {
             }
             reloadForAllCategory();
         });
+
+        txtFolderPath = new JTextField();
+        txtFolderPath.setPreferredSize(new Dimension(200, 30));
+
+        btnChooseFolder = new JButton("Chọn thư mục");
+        btnChooseFolder.setFont(CustomUI.smallFont);
+        btnChooseFolder.setBackground(CustomUI.blue);
+        btnChooseFolder.setForeground(CustomUI.white);
+
+        btnChooseFolder.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int result = chooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                txtFolderPath.setText(chooser.getSelectedFile().getAbsolutePath());
+            }
+        });
         btnXuat = new JButton("Xuất Excel");
         btnXuat.setBackground(CustomUI.darkGreen);
         btnXuat.setFont(CustomUI.verySmallFont);
@@ -214,6 +231,11 @@ public class RoomProductivityPanel extends JPanel {
         pnlButton.setOpaque(false);
         pnlButton.add(btnTaiLai);
         pnlButton.add(btnXuat);
+        pnlButton.add(btnChooseFolder);
+
+        btnXuat.addActionListener( e->{
+            handleBtnExport();
+        });
 
 
         filterPanel.add(pnlKhoang);
@@ -224,6 +246,32 @@ public class RoomProductivityPanel extends JPanel {
         filterPanel.add(pnlButton);
 
         pnlMain.add(filterPanel);
+    }
+    private void handleBtnExport(){
+        int rowCount = this.model.getRowCount();
+        if(rowCount > 0){
+            exportFileExcel();
+        }
+        else {
+            JOptionPane.showMessageDialog(null, "Chưa có kết quả thống kê");
+        }
+    }
+
+    private void exportFileExcel(){
+        String folderPath = txtFolderPath.getText().trim();
+        if (!folderPath.isEmpty()) {
+            try {
+                String fileName = "ThongKeHieuSuatPhong";
+                String filePath = folderPath + "/ThongKeHieuSuatPhong.xlsx";
+                ExportWriter.exportTableToExcel(model, filePath,fileName);
+                JOptionPane.showMessageDialog(this, "Xuất file Excel thành công:\n" + filePath);
+            } catch (Exception ex1) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất Excel: " + ex1.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                ex1.printStackTrace();
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn thư mục để lưu file Excel!", "Thiếu đường dẫn", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     private void loadRoomCategoryList(){

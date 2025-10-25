@@ -18,6 +18,10 @@ public class PhongDungDichVu {
     private String tenDichVu;
     private BigDecimal tongTien;
 
+    public void setTongTien(BigDecimal tongTien) {
+        this.tongTien = tongTien;
+    }
+
     public PhongDungDichVu() {}
 
     public String getTenPhong() {
@@ -48,7 +52,6 @@ public class PhongDungDichVu {
         this.maPhienDangNhap = maPhienDangNhap;
         this.thoiGianTao = thoiGianTao;
     }
-
 
     public String getMaPhongDungDichVu() {
         return maPhongDungDichVu;
@@ -116,10 +119,6 @@ public class PhongDungDichVu {
 
     public BigDecimal tinhThanhTien(){
         return BigDecimal.valueOf(giaThoiDiemDo).multiply(BigDecimal.valueOf(soLuong));
-    }
-
-    public void setTongTien(BigDecimal tongTien) {
-        this.tongTien = tongTien;
     }
 
     public BigDecimal getTongTien() {
