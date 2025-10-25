@@ -178,8 +178,8 @@ public class RevenueStatisticPanel extends JPanel {
 
         pnlEmployee.add(lblEmployee);
         pnlEmployee.add(cmbEmployee);
-        pnlEmployee.add(btnExport);
         pnlEmployee.add(btnReLoad);
+        pnlEmployee.add(btnExport);
         pnlEmployee.add(btnChooseFolder);
         pnlEmployee.setBackground(CustomUI.white);
 
