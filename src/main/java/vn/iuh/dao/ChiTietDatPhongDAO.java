@@ -8,6 +8,7 @@ import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ChiTietDatPhongDAO {
@@ -39,7 +40,7 @@ public class ChiTietDatPhongDAO {
         return null;
     }
 
-    public int capNhatKetThucCTDP(List<String> chiTietDatPhongs) {
+    public int capNhatKetThucCTDP(List<String> chiTietDatPhongs, String kieuKetThuc) {
         if (chiTietDatPhongs == null || chiTietDatPhongs.isEmpty()) return 0;
 
         StringBuilder query = new StringBuilder("UPDATE ChiTietDatPhong SET kieu_ket_thuc = ? WHERE ma_chi_tiet_dat_phong IN (");
@@ -51,7 +52,7 @@ public class ChiTietDatPhongDAO {
 
         try (var ps = connection.prepareStatement(query.toString())) {
             // Set kieu_ket_thuc parameter
-            ps.setString(1, RoomEndType.TRA_PHONG.getStatus());
+            ps.setString(1, kieuKetThuc);
             // Set ma_chi_tiet_dat_phong parameters
             for (int i = 0; i < chiTietDatPhongs.size(); i++) {
                 ps.setString(i + 2, chiTietDatPhongs.get(i));
@@ -117,7 +118,7 @@ public class ChiTietDatPhongDAO {
                 "left join LichSuDiVao dv on dv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong\n" +
                 "left join Phong p on p.ma_phong = ctdp.ma_phong\n" +
                 "left join LoaiPhong lp on lp.ma_loai_phong = p.ma_loai_phong\n" +
-                "where dv.la_lan_dau_tien is not null and ddp.ma_don_dat_phong = ?";
+                "where ddp.ma_don_dat_phong = ?";
 
         List<ThongTinSuDungPhong> thongTinSuDungPhongList = new ArrayList<>();
         try {
@@ -264,4 +265,15 @@ public class ChiTietDatPhongDAO {
         return null;
     }
 
+    public void capNhatCTDPTheoMaDonDatPhong(String maDonDatPhong, String kieuKetThuc){
+        String sql = "UPDATE ChiTietDatPhong SET kieu_ket_thuc = ? WHERE ma_don_dat_phong = ? and kieu_ket_thuc is null";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, kieuKetThuc);
+            ps.setString(2, maDonDatPhong);
+
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

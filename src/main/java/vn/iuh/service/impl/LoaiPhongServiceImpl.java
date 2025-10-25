@@ -5,6 +5,8 @@ import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.exception.BusinessException;
+import vn.iuh.gui.panel.statistic.FillterRoomStatistic;
+import vn.iuh.gui.panel.statistic.RoomStatistic;
 import vn.iuh.service.LoaiPhongService;
 
 import java.math.BigDecimal;
@@ -73,5 +75,9 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
                 loaiPhong.getSoLuongKhach(),
                 loaiPhong.getPhanLoai()
         );
+    }
+
+    public List<RoomStatistic> getListRoomCategoryByFilter(FillterRoomStatistic filter){
+        return loaiPhongDao.layThongKeTheoLoaiPhong(filter.getStartDate(), filter.getEndDate());
     }
 }

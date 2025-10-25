@@ -3,10 +3,13 @@ package vn.iuh.dao;
 import com.github.lgooddatepicker.zinternaltools.Pair;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.exception.TableEntityMismatch;
+import vn.iuh.gui.panel.statistic.RoomCategoryStatistic;
+import vn.iuh.gui.panel.statistic.RoomStatistic;
 import vn.iuh.util.DatabaseUtil;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,8 @@ public class LoaiPhongDAO {
         return null;
     }
 
+
+
     public List<LoaiPhong> layTatCaLoaiPhong() {
         String query = "SELECT * FROM LoaiPhong WHERE da_xoa = 0";
         List<LoaiPhong> danhSachLoaiPhong = new java.util.ArrayList<>();
@@ -60,6 +65,41 @@ public class LoaiPhongDAO {
         }
 
         return danhSachLoaiPhong;
+    }
+
+    public List<RoomStatistic> layThongKeTheoLoaiPhong(Timestamp startTime, Timestamp endTime) {
+        String query = "select lp.ma_loai_phong, lp.ten_loai_phong, p.ma_phong, p.ten_phong,count(ctdp.ma_chi_tiet_dat_phong) as so_luot_dat,sum(cthd.thoi_gian_su_dung) as thoi_gian_dat ,sum(cthd.tong_tien) as doanh_thu from LoaiPhong lp\n" +
+                "left join Phong p on p.ma_loai_phong = lp.ma_loai_phong\n" +
+                "left join ChiTietDatPhong ctdp on ctdp.ma_phong  = p.ma_phong\n" +
+                "left join ChiTietHoaDon cthd on ctdp.ma_chi_tiet_dat_phong = cthd.ma_chi_tiet_dat_phong\n" +
+                "where cthd.thoi_gian_tao between ? and ? " +
+                "group by lp.ma_loai_phong, lp.ten_loai_phong, p.ma_phong, p.ten_phong\n" +
+                "order by thoi_gian_dat desc, doanh_thu desc, so_luot_dat desc";
+        List<RoomStatistic> danhSachPhong = new java.util.ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setTimestamp(1, startTime);
+            ps.setTimestamp(2, endTime);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                danhSachPhong.add(new RoomStatistic(
+                        rs.getString("ma_loai_phong"),
+                        rs.getString("ten_loai_phong"),
+                        rs.getString(("ma_phong")),
+                        rs.getString("ten_phong"),
+                        rs.getInt("so_luot_dat"),
+                        rs.getDouble("thoi_gian_dat"),
+                        rs.getBigDecimal("doanh_thu")
+                ));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+
+        return danhSachPhong;
     }
 
     public LoaiPhong themLoaiPhong(LoaiPhong loaiPhong) {

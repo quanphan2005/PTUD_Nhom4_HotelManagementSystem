@@ -1,29 +1,90 @@
 package vn.iuh.gui.panel.statistic;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.general.DefaultPieDataset;
+import vn.iuh.dao.LoaiPhongDAO;
+import vn.iuh.entity.LoaiPhong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
+import vn.iuh.gui.base.Main;
+import vn.iuh.service.LoaiPhongService;
+import vn.iuh.service.impl.LoaiPhongServiceImpl;
+import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class RoomProductivityPanel extends JPanel {
     private JPanel pnlTop;
     private JLabel lblTop;
     private JPanel pnlMain;
-    private DateChooser datePickerStart;
-    private DateChooser datePickerEnd;
-    private JPanel pnlSelectRoom;
-    private JLabel lblRoom;
-    private JLabel lblDisplayType;
-    private CardLayout cardLayout;
-    private JPanel pnlResult;
-    private JPanel pnlVisualDisplay;
-    private JPanel pnlTextDisplay;
     private DefaultTableModel model;
     private JTable table;
     private JScrollPane scrollTable;
+    private JComboBox<String> cmbRoomCate;
+    private final LoaiPhongDAO loaiPhongDAO;
+    private DateChooser startChooser;
+    private DateChooser endChooser;
+    private JPanel pnlPhong;
+    private JPanel pnlTo;
+    private JPanel filterPanel;
+    private JPanel pnlKhoang;
+    private JRadioButton rdoKhoang;
+    private JPanel pnlNam;
+    private JRadioButton rdoNam;
+    private JComboBox<String> cboNam;
+    private JComboBox<String> cboQuy;
+    private JPanel pnlLoaiPhong;
+    private JComboBox<String> cboLoaiPhong;
+    private JPanel pnlMaPhong;
+    private JComboBox<String> cboMaPhong;
+    private JButton btnTaiLai;
+    private JButton btnXuat;
+    private JLabel lblStartDate;
+    private JLabel lblNam;
+    private JLabel lblEndDate;
+    private JLabel lblLoaiPhong;
+    private JPanel pnlButton;
+    private List<RoomStatistic> danhSachKetQua;
+    private LoaiPhongService loaiPhongService;
+    private List<LoaiPhong> danhSachLoaiPhong;
+    private DefaultPieDataset datasetUsage;
+    private DefaultPieDataset datasetRevenue;
+    private JPanel chartPanel;
+    private JFreeChart chartUsage;
+    private JFreeChart chartRevenue;
+    private ChartPanel usagePanel;
+    private ChartPanel revenuePanel;
+    private JLabel lblTongSoLanValue;
+    private JPanel pnlTongSoLan;
+    private JScrollPane pnlScroll;
+    private FillterRoomStatistic baseFilter;
+    private JLabel lblThoiGian;
+    private JLabel lblTongSoLan;
+    private JPanel bottomPanel;
+    private JLabel lblTongDoanhThu;
+    private JLabel lblThoiGianValue;
+    private JLabel lblTongDoanhThuValue;
+    private JPanel pnlThoiGian;
+    private JPanel pnlDoanhThu;
 
     private void init(){
         createTopPanel();
@@ -33,17 +94,25 @@ public class RoomProductivityPanel extends JPanel {
     public void createMainPanel() {
         pnlMain = new JPanel();
         pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
-        createFilterPanel();
-//        createResultPanel();
-        this.add(pnlMain, BorderLayout.CENTER);
+        pnlScroll = new JScrollPane();
+        pnlScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        pnlScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        pnlScroll.setViewportView(pnlMain);
+        pnlScroll.getVerticalScrollBar().setUnitIncrement(16);
+        createFilterPanel2();
+        createResultPanel2();
+        createTableResult();
+        this.add(pnlScroll, BorderLayout.CENTER);
     }
     public RoomProductivityPanel() {
         setLayout(new BorderLayout());
+        this.loaiPhongDAO = new LoaiPhongDAO();
+        this.loaiPhongService = new LoaiPhongServiceImpl();
         init();
     }
     private void createTopPanel(){
         pnlTop = new JPanel();
-        lblTop = new JLabel("Thống kê doanh thu");
+        lblTop = new JLabel("Thống kê hiệu suất phòng");
         lblTop.setFont(CustomUI.normalFont);
         lblTop.setForeground(CustomUI.white);
         pnlTop.setBackground(CustomUI.lightBlue);
@@ -53,200 +122,358 @@ public class RoomProductivityPanel extends JPanel {
         this.add(pnlTop, BorderLayout.NORTH);
     }
 
-    private void createFilterPanel(){
-        JPanel pnlFilter = new JPanel(new GridLayout(2, 2, 5, 5));
+    private void createFilterPanel2(){
+        filterPanel = new JPanel(new GridLayout(2, 2, 15, 10)); // 3 dòng, 3 cột, khoảng cách ngang-dọc
+        filterPanel.setBackground(Color.WHITE);
+        filterPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(CustomUI.tableBorder),
+                BorderFactory.createEmptyBorder(5,10, 5,10)));
 
-        // Ô [0,0] StartTime
-        JPanel pnlStartTime = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblStartTime = new JLabel("Thời gian bắt đầu: ");
-        lblStartTime.setFont(CustomUI.smallFont);
-        datePickerStart = new DateChooser();
+        // === Hàng 1 ===
+        pnlKhoang = new JPanel();
+        pnlKhoang.setOpaque(false);
+        lblStartDate = new JLabel("Ngày bắt đầu");
+        lblStartDate.setFont(CustomUI.smallFont);
+        startChooser = new DateChooser();
+        endChooser = new DateChooser();
+        pnlKhoang.add(lblStartDate);
+        pnlKhoang.add(startChooser);
+        pnlTo = new JPanel();
+        pnlTo.setOpaque(false);
+        lblEndDate = new JLabel("Ngày kết thúc");
+        lblEndDate.setFont(CustomUI.smallFont);
+        pnlTo.add(lblEndDate);
+        pnlTo.add(endChooser);
 
-        pnlStartTime.add(lblStartTime);
-        pnlStartTime.add(datePickerStart);
-        pnlStartTime.setBackground(CustomUI.white);
+        pnlNam = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        pnlNam.setOpaque(false);
+        lblNam = new JLabel("Tùy chọn");
+        lblNam.setFont(CustomUI.smallFont);
+        pnlNam.setBorder(BorderFactory.createEmptyBorder(8,0,0,0));
+        cboNam = new JComboBox<>(new String[]{"2023", "2024", "2025"});
+        cboNam.setPreferredSize(new Dimension(100, 30));
+        cboNam.addActionListener(e ->{
+            handlePeriodTime();
+        });
 
-        // Ô [1,0] EndTime
-        JPanel pnlEndTime = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblEndTime = new JLabel("Thời gian kết thúc:");
-        lblEndTime.setFont(CustomUI.smallFont);
-        datePickerEnd = new DateChooser();
-        pnlEndTime.add(lblEndTime);
-        pnlEndTime.add(datePickerEnd);
-        pnlEndTime.setBackground(CustomUI.white);
-
-        // Ô [0,1] Employee + Button
-        pnlSelectRoom = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        lblRoom = new JLabel("Chọn phòng:     ");
-        lblRoom.setFont(CustomUI.smallFont);
-        lblRoom.setForeground(CustomUI.black);
-        JComboBox<String> cmbEmployee = new JComboBox<>(new String[]{"Alice", "Bob", "Charlie"});
-        JButton btnReLoad = new JButton("Tải lại");
-        btnReLoad.setSize(new Dimension(20, 10));
-        btnReLoad.setFont(CustomUI.smallFont);
-        btnReLoad.setForeground(CustomUI.white);
-        btnReLoad.setBackground(CustomUI.purple);
-        JButton btnSearch = new JButton("Xuất file");
-        btnSearch.setFont(CustomUI.smallFont);
-        btnSearch.setSize(new Dimension(20, 10));
-        btnSearch.setForeground(CustomUI.white);
-        btnSearch.setBackground(CustomUI.green);
-        pnlSelectRoom.add(lblRoom);
-        pnlSelectRoom.add(cmbEmployee);
-        pnlSelectRoom.add(btnReLoad);
-        pnlSelectRoom.add(btnSearch);
-        pnlSelectRoom.setBackground(CustomUI.white);
-
-        // Ô [1,1] RadioButton group
-        JPanel pnlRadio = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        lblDisplayType = new JLabel("Chọn dạng hiển thị");
-        lblDisplayType.setFont(CustomUI.smallFont);
-        lblDisplayType.setForeground(CustomUI.black);
-        JRadioButton radGraph = new JRadioButton("Dạng biểu đồ");
-        JRadioButton radTable = new JRadioButton("Dạng bảng");
-        ButtonGroup group = new ButtonGroup();
-        group.add(radGraph);
-        group.add(radTable);
-        pnlRadio.add(lblDisplayType);
-        pnlRadio.add(radGraph);
-        pnlRadio.add(radTable);
-        pnlRadio.setBackground(CustomUI.white);
-
-        // Thêm ActionListener để chuyển đổi giữa hai card panel
-        radGraph.addActionListener(e -> cardLayout.show(pnlVisualDisplay, "chart"));
-        radTable.addActionListener(e -> cardLayout.show(pnlVisualDisplay, "table"));
-        radTable.setSelected(true); // Mặc định hiển thị bảng
-
-        // Thêm tất cả vào pnlFilter
-        pnlFilter.add(pnlStartTime);   // [0,0]
-        pnlFilter.add(pnlSelectRoom);    // [0,1]
-        pnlFilter.add(pnlEndTime);     // [1,0]
-        pnlFilter.add(pnlRadio);       // [1,1]
-
-        pnlFilter.setBackground(CustomUI.white);
-        pnlMain.add(pnlFilter);
+        cboQuy = new JComboBox<>(new String[]{"Quý 1", "Quý 2", "Quý 3", "Quý 4"});
+        cboQuy.setPreferredSize(new Dimension(100, 30));
+        cboQuy.addActionListener(e ->{
+            handlePeriodTime();
+        });
+        pnlNam.add(lblNam);
+        pnlNam.add(cboNam);
+        pnlNam.add(cboQuy);
 
 
+        // === Hàng 2 ===
+        pnlLoaiPhong = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        pnlLoaiPhong.setOpaque(false);
+        lblLoaiPhong = new JLabel("Loại phòng");
+        lblLoaiPhong.setFont(CustomUI.smallFont);
+        pnlLoaiPhong.add(lblLoaiPhong);
+        cboLoaiPhong = new JComboBox<>();
+        cboLoaiPhong.setPreferredSize(new Dimension(200,30 ));
+        loadRoomCategoryList();
+        cboLoaiPhong.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                loadRoomCategoryList();
+            }
+
+            @Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+            @Override public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
+        pnlLoaiPhong.add(cboLoaiPhong);
+
+        pnlPhong = new JPanel();
+        pnlPhong.add(pnlLoaiPhong);
+        pnlPhong.setOpaque(false);
+
+
+
+        btnTaiLai = new JButton("Tải lại");
+        btnTaiLai.setPreferredSize(new Dimension(100, 30));
+        btnTaiLai.setBackground(CustomUI.blue);
+        btnTaiLai.setFont(CustomUI.verySmallFont);
+        btnTaiLai.setForeground(CustomUI.white);
+
+        btnTaiLai.addActionListener(e ->{
+            FillterRoomStatistic filter = validateTime();
+            if(!filter.equals(this.baseFilter)){
+                getListRoomCategoryByFilter(filter);
+            }
+            reloadForAllCategory();
+        });
+        btnXuat = new JButton("Xuất Excel");
+        btnXuat.setBackground(CustomUI.darkGreen);
+        btnXuat.setFont(CustomUI.verySmallFont);
+        btnXuat.setForeground(CustomUI.white);
+        btnXuat.setPreferredSize(new Dimension(100, 30));
+        pnlButton = new JPanel();
+        pnlButton.setOpaque(false);
+        pnlButton.add(btnTaiLai);
+        pnlButton.add(btnXuat);
+
+
+        filterPanel.add(pnlKhoang);
+        filterPanel.add(pnlTo);
+        filterPanel.add(pnlNam);
+
+        filterPanel.add(pnlPhong);
+        filterPanel.add(pnlButton);
+
+        pnlMain.add(filterPanel);
     }
 
-    private void createResultPanel(){
-        pnlResult = new JPanel(new BorderLayout());
-        pnlVisualDisplay = new JPanel();
-        cardLayout = new CardLayout();
-        pnlVisualDisplay.setLayout(cardLayout);
-        createTableResult();
-        createCharPanel();
-        pnlResult.add(pnlVisualDisplay, BorderLayout.CENTER);
-
-        // Tạo panel text display với GridBagLayout, 2 hàng 3 cột
-        pnlTextDisplay = new JPanel(new GridBagLayout());
-        pnlTextDisplay.setBackground(CustomUI.lightGray);
-        pnlTextDisplay.setPreferredSize(new Dimension(0, 120));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 30, 5, 30);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-
-        // Hàng 1
-        gbc.gridy = 0;
-        gbc.gridx = 0;
-        JLabel lblTotalInvoice = new JLabel("Tổng số hóa đơn:");
-        lblTotalInvoice.setFont(CustomUI.smallFont);
-        lblTotalInvoice.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblTotalInvoice, gbc);
-        gbc.gridx = 1;
-        JLabel lblDeposit = new JLabel("Tiền cọc:");
-        lblDeposit.setFont(CustomUI.smallFont);
-        lblDeposit.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblDeposit, gbc);
-        gbc.gridx = 2;
-        JLabel lblTotalRevenue = new JLabel("Tổng doanh thu:");
-        lblTotalRevenue.setFont(CustomUI.smallFont);
-        lblTotalRevenue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblTotalRevenue, gbc);
-
-        // Hàng 2
-        gbc.insets = new Insets(25, 30, 5, 30);
-        gbc.gridy = 1;
-        gbc.gridx = 0;
-        JLabel lblService = new JLabel("Doanh thu dịch vụ:");
-        lblService.setFont(CustomUI.smallFont);
-        lblService.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblService, gbc);
-        gbc.gridx = 1;
-        JLabel lblRoom = new JLabel("Tiền phòng:");
-        lblRoom.setFont(CustomUI.smallFont);
-        lblRoom.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblRoom, gbc);
-        gbc.gridx = 2;
-        JLabel lblTax = new JLabel("Tổng thu thuế:");
-        lblTax.setFont(CustomUI.smallFont);
-        lblTax.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblTax, gbc);
-
-        // Hàng 1 - Giá trị
-        gbc.gridy = 0;
-        gbc.gridx = 0;
-        gbc.insets = new Insets(5, 200, 5, 30);
-        gbc.weightx = 1.0;
-        JLabel lblTotalInvoiceValue = new JLabel("30");
-        lblTotalInvoiceValue.setFont(CustomUI.smallFont);
-        lblTotalInvoiceValue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblTotalInvoiceValue, gbc); // Tổng số hóa đơn
-        gbc.gridx = 1;
-        gbc.insets = new Insets(5, 180, 5, 30);
-        JLabel lblDepositValue = new JLabel("25.380.000");
-        lblDepositValue.setFont(CustomUI.smallFont);
-        lblDepositValue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblDepositValue, gbc); // Tiền cọc
-        gbc.gridx = 2;
-        gbc.insets = new Insets(5, 200, 5, 30);
-        JLabel lblTotalRevenueValue = new JLabel("1.153.570");
-        lblTotalRevenueValue.setFont(CustomUI.smallFont);
-        lblTotalRevenueValue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblTotalRevenueValue, gbc); // Tổng doanh thu
-
-        // Hàng 2 - Giá trị
-        gbc.gridy = 1;
-        gbc.gridx = 0;
-        gbc.insets = new Insets(25, 200, 5, 30);
-        gbc.weightx = 1.0;
-        JLabel lblServiceValue = new JLabel("396.200");
-        lblServiceValue.setFont(CustomUI.smallFont);
-        lblServiceValue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblServiceValue, gbc); // Dịch vụ
-        gbc.gridx = 1;
-        gbc.insets = new Insets(25, 180, 5, 30);
-        JLabel lblRoomValue = new JLabel("652.500");
-        lblRoomValue.setFont(CustomUI.smallFont);
-        lblRoomValue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblRoomValue, gbc); // Tiền phòng
-        gbc.gridx = 2;
-        gbc.insets = new Insets(25, 200, 5, 30);
-        JLabel lblTaxValue = new JLabel("0");
-        lblTaxValue.setFont(CustomUI.smallFont);
-        lblTaxValue.setForeground(CustomUI.black);
-        pnlTextDisplay.add(lblTaxValue, gbc); // Thuế
-
-        pnlResult.add(pnlTextDisplay, BorderLayout.SOUTH);
-        pnlMain.add(pnlResult);
+    private void loadRoomCategoryList(){
+        List<LoaiPhong> danhSachLoaiPhong = loaiPhongDAO.layTatCaLoaiPhong();
+        this.cboLoaiPhong.removeAllItems();
+        this.cboLoaiPhong.addItem("Tất cả");
+        for(LoaiPhong lp : danhSachLoaiPhong){
+            this.cboLoaiPhong.addItem(lp.getTenLoaiPhong());
+        }
+        this.danhSachLoaiPhong = danhSachLoaiPhong;
     }
+
+    private void reloadForAllCategory() {
+        String tenLoaiPhong = (String) cboLoaiPhong.getSelectedItem();
+        int tongSoLuotDat = 0;
+        double tongThoiGianDat = 0;
+        datasetUsage.clear();
+        datasetRevenue.clear();
+
+        if ("Tất cả".equalsIgnoreCase(tenLoaiPhong)) {
+            // Gom theo tên loại phòng
+            Map<String, RoomStatistic> mapLoaiPhong = new HashMap<>();
+
+            for (RoomStatistic rs : this.danhSachKetQua) {
+                String key = rs.getMaLoaiPhong();
+                if (!mapLoaiPhong.containsKey(key)) {
+                    mapLoaiPhong.put(key, new RoomStatistic());
+                    mapLoaiPhong.get(key).setMaLoaiPhong(key);
+                    mapLoaiPhong.get(key).setTenLoaiPhong(rs.getTenLoaiPhong());
+                    mapLoaiPhong.get(key).setSoLuotDat(0);
+                    mapLoaiPhong.get(key).setThoiGianDat(0);
+                    mapLoaiPhong.get(key).setDoanhThu(BigDecimal.ZERO);
+                }
+
+                RoomStatistic loai = mapLoaiPhong.get(key);
+                loai.setSoLuotDat(loai.getSoLuotDat() + rs.getSoLuotDat());
+                loai.setThoiGianDat(loai.getThoiGianDat() + rs.getThoiGianDat());
+                loai.setDoanhThu(loai.getDoanhThu().add(rs.getDoanhThu()));
+            }
+
+            // Đưa dữ liệu vào dataset
+            for (RoomStatistic loai : mapLoaiPhong.values()) {
+                tongSoLuotDat += loai.getSoLuotDat();
+                tongThoiGianDat += loai.getThoiGianDat();
+                datasetUsage.setValue(loai.getTenLoaiPhong(), loai.getSoLuotDat());
+                datasetRevenue.setValue(loai.getTenLoaiPhong(), loai.getThoiGianDat());
+            }
+
+            List<RoomStatistic> list = new ArrayList<>(mapLoaiPhong.values());
+            list = list.stream().sorted(Comparator.comparingDouble(RoomStatistic::getThoiGianDat).reversed()).toList();
+            fillTable(list);
+        } else {
+            // Chỉ lấy theo phòng trong loại được chọn
+            for (RoomStatistic rs : this.danhSachKetQua) {
+                if (tenLoaiPhong.equalsIgnoreCase(rs.getTenLoaiPhong())) {
+                    tongSoLuotDat += rs.getSoLuotDat();
+                    tongThoiGianDat += rs.getThoiGianDat();
+                    datasetUsage.setValue(rs.getTenPhong(), rs.getSoLuotDat());
+                    datasetRevenue.setValue(rs.getTenPhong(), rs.getThoiGianDat());
+                }
+            }
+            fillTable(null);
+        }
+    }
+
+    private void handlePeriodTime(){
+        int year = Integer.parseInt((String) Objects.requireNonNull(this.cboNam.getSelectedItem()));
+        String selectedQuarter = (String) Objects.requireNonNull(this.cboQuy.getSelectedItem());
+
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+
+        switch (selectedQuarter) {
+            case "Quý 1" -> {
+                startDate = LocalDate.of(year, 1, 1);
+                endDate = LocalDate.of(year, 3, 31);
+            }
+            case "Quý 2" -> {
+                startDate = LocalDate.of(year, 4, 1);
+                endDate = LocalDate.of(year, 6, 30);
+            }
+            case "Quý 3" -> {
+                startDate = LocalDate.of(year, 7, 1);
+                endDate = LocalDate.of(year, 9, 30);
+            }
+            case "Quý 4" -> {
+                startDate = LocalDate.of(year, 10, 1);
+                endDate = LocalDate.of(year, 12, 31);
+            }
+            default -> throw new IllegalArgumentException("Quý không hợp lệ: " + selectedQuarter);
+        }
+        this.startChooser.setDate(startDate);
+        this.endChooser.setDate(endDate);
+    }
+
+    private void getListRoomCategoryByFilter(FillterRoomStatistic filter){
+        this.danhSachKetQua = loaiPhongService.getListRoomCategoryByFilter(filter);
+    }
+
+    private FillterRoomStatistic validateTime(){
+        LocalDate startDate = startChooser.getDate();
+        LocalDate endDate = endChooser.getDate();
+        LocalDate today = LocalDate.now();
+
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc");
+        }
+        if (startDate.isAfter(today)) {
+            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày hiện tại");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày kết thúc");
+        }
+
+        return new FillterRoomStatistic(
+            Timestamp.valueOf(startDate.atTime(LocalTime.MIN)),
+                Timestamp.valueOf(endDate.atTime(LocalTime.MAX))
+        );
+    }
+
+    private void createResultPanel2() {
+        // Panel chứa 2 biểu đồ (chia đôi ngang)
+        chartPanel = new JPanel(new GridLayout(1, 2, 20, 10));
+        chartPanel.setBackground(CustomUI.white);
+
+        // === Dataset cho 2 biểu đồ ===
+        datasetUsage = new DefaultPieDataset();
+        datasetRevenue = new DefaultPieDataset();
+
+        // === Biểu đồ 1: Tỉ lệ sử dụng phòng ===
+        chartUsage = ChartFactory.createPieChart(
+                "Biểu đồ thống kê số lượt sử dụng phòng",
+                datasetUsage,
+                true, true, false
+        );
+
+        // === Biểu đồ 2: Tỉ lệ doanh thu phòng ===
+        chartRevenue = ChartFactory.createPieChart(
+                "Biểu đồ thống kê tỉ lệ thời gian sử dụng",
+                datasetRevenue,
+                true, true, false
+        );
+
+        // Panel chứa từng biểu đồ
+        usagePanel = new ChartPanel(chartUsage);
+        revenuePanel = new ChartPanel(chartRevenue);
+        usagePanel.setPreferredSize(new Dimension(400, 300));
+        revenuePanel.setPreferredSize(new Dimension(400, 300));
+
+        chartPanel.add(usagePanel);
+        chartPanel.add(revenuePanel);
+
+        pnlMain.add(chartPanel);
+    }
+
+
+    private void fillTable(List<RoomStatistic> listCategory){
+        model.setRowCount(0);
+        if(listCategory == null){
+            List<RoomStatistic> danhSachKetQua = this.danhSachKetQua;
+            String selectedCategory = (String) this.cboLoaiPhong.getSelectedItem();
+            if(!"Tất cả".equalsIgnoreCase(selectedCategory)){
+                danhSachKetQua = this.danhSachKetQua.stream()
+                        .filter(rs -> rs.getTenLoaiPhong().equalsIgnoreCase(selectedCategory))
+                        .sorted(Comparator.comparing(RoomStatistic::getSoLuotDat).reversed())
+                                .toList();
+
+
+                if(danhSachKetQua.isEmpty()){
+                    JOptionPane.showMessageDialog(null, "Không tìm thấy kết quả");
+                    return;
+                }
+            }
+            for(RoomStatistic rs : danhSachKetQua){
+                model.addRow(rs.getObject());
+            }
+        }
+        else {
+            for(RoomStatistic rs : listCategory){
+                model.addRow(new Object[]{
+                        rs.getMaLoaiPhong(),
+                        rs.getTenLoaiPhong(),
+                        null,
+                        null,
+                        rs.getSoLuotDat() +" lượt",
+                        rs.getThoiGianDat() + " giờ",
+                        formatCurrency(rs.getDoanhThu())
+                });
+            }
+        }
+    }
+
 
     private void createTableResult(){
-        String[] cols = {"Mã phòng", "Tên phòng","Phân loại","Khách hàng", "Tiền phòng", "Số giờ", "Tổng tiền"};
-        model = new DefaultTableModel(null, cols);
-        table = new JTable(model);
-        scrollTable = new JScrollPane(table);
-        pnlVisualDisplay.add(scrollTable, "table");
+        String[] cols = {"Mã loại phòng", "Tên loại phòng", "Mã phòng", "Tên phòng", "Số lượt đặt phòng", "Số giờ sử dụng", "Tổng doanh thu"};
+        model = new DefaultTableModel(null, cols) {
+            @Override public boolean isCellEditable(int row, int column) { return false; } // Không cho phép chỉnh sửa thông tin trong các ô của table
+        };
+
+        JTable table = new JTable(model) { // Tạo JTable mới dựa trên model
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
+                Component c = super.prepareRenderer(renderer, row, column);
+
+                // reuse font constant (không new font mỗi cell)
+                c.setFont(CustomUI.TABLE_FONT);
+
+                if (!isRowSelected(row)) {
+                    // reuse color constant
+                    c.setBackground(row % 2 == 0 ? CustomUI.ROW_ODD : CustomUI.ROW_EVEN);
+                } else {
+                    c.setBackground(CustomUI.ROW_SELECTED_COLOR);
+                }
+                return c;
+            }
+        };
+
+        table.setRowHeight(48);
+        table.setFont(CustomUI.TABLE_FONT);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setFillsViewportHeight(true);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JTableHeader header = table.getTableHeader();
+        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 42));
+        header.setBackground(CustomUI.TABLE_HEADER_BACKGROUND);
+        header.setForeground(CustomUI.TABLE_HEADER_FOREGROUND);
+        header.setFont(CustomUI.HEADER_FONT);
+        header.setReorderingAllowed(false);
+
+        // Căn giữa cho thông tin trong các cột
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(CustomUI.white);
+
+        pnlMain.add(scrollPane);
     }
 
-    private void createCharPanel(){
-        JPanel chartPanel = new JPanel();
-        chartPanel.setLayout(new BorderLayout());
-        JLabel lblChart = new JLabel("Biểu đồ hiệu suất", SwingConstants.CENTER);
-        lblChart.setFont(CustomUI.normalFont);
-        chartPanel.add(lblChart, BorderLayout.CENTER);
-        pnlVisualDisplay.add(chartPanel, "chart");
+    private String formatCurrency(BigDecimal value) {
+        if (value == null) return "0 VND";
+        value = PriceFormat.lamTronDenHangNghin(value);
+        DecimalFormat df = new DecimalFormat("#,### VND");
+        return df.format(value);
     }
 }

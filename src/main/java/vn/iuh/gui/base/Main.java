@@ -14,6 +14,7 @@ import vn.iuh.gui.panel.booking.PreReservationManagementPanel;
 import vn.iuh.gui.panel.booking.BookingManagementPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
+import vn.iuh.gui.panel.statistic.RoomProductivityPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -218,7 +219,7 @@ public class Main extends JFrame {
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
-
+        RoomProductivityPanel pnlRoomProductivity = new RoomProductivityPanel();
         pnlCenter.add(pink, "dsadsa");
         pnlCenter.add(blue, "Inbox");
 //        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
@@ -228,6 +229,7 @@ public class Main extends JFrame {
         pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
         pnlCenter.add(preReservationManagementPanel, PanelName.PRE_RESERVATION_MANAGEMENT.getName());
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
+        pnlCenter.add(pnlRoomProductivity, "Thống kê hiệu suất");
 //        showCard("Quản lý đặt phòng");
 
         showCenterCard("Quản lý đặt phòng");

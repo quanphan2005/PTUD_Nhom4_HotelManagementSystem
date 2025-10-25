@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.entity.PhongTinhPhuPhi;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -10,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PhongTinhPhuPhiDAO {
@@ -108,6 +110,8 @@ public class PhongTinhPhuPhiDAO {
         return danhSachPhuPhi;
     }
 
+
+
     public List<PhongTinhPhuPhi> getPhuPhiTheoMaHoaDon(String maHoaDon){
         List<PhongTinhPhuPhi> danhSachPhuPhi = new ArrayList<>();
 
@@ -146,6 +150,7 @@ public class PhongTinhPhuPhiDAO {
             phong.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
             phong.setMaPhuPhi(rs.getString("ma_phu_phi"));
             phong.setDonGiaPhuPhi(BigDecimal.valueOf(rs.getDouble("don_gia_phu_phi")));
+            phong.setTongTien(BigDecimal.valueOf(rs.getDouble("tong_tien")));
             return phong;
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành Phong" + e.getMessage());
@@ -164,5 +169,43 @@ public class PhongTinhPhuPhiDAO {
             throw new RuntimeException(e);
         }
         return false;
+    }
+
+    public List<PhongTinhPhuPhi> timPhongTinhPhuPhiBangChiTietDatPhong(List<String> maChiTietDatPhongList) {
+        if (maChiTietDatPhongList == null || maChiTietDatPhongList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(maChiTietDatPhongList.size(), "?"));
+        String query  = "select ptpp.*, pp.ten_phu_phi, p.ten_phong from PhongTinhPhuPhi ptpp\n" +
+                "join PhuPhi pp on pp.ma_phu_phi = ptpp.ma_phu_phi\n" +
+                "join ChiTietDatPhong ctdp on ctdp.ma_chi_tiet_dat_phong = ptpp.ma_chi_tiet_dat_phong\n" +
+                "join Phong p on p.ma_phong = ctdp.ma_phong\n" +
+                "WHERE ctdp.ma_chi_tiet_dat_phong  IN (" + placeholders + ")"+
+                " ORDER BY ma_phong_tinh_phu_phi DESC";
+
+        List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = new ArrayList<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            for (int i = 0; i < maChiTietDatPhongList.size(); i++) {
+                ps.setString(i + 1, maChiTietDatPhongList.get(i));
+            }
+
+            var rs = ps.executeQuery();
+            while (rs.next()) {
+                PhongTinhPhuPhi phuPhi = mapResultSet(rs);
+                phuPhi.setTenPhuPhi(rs.getString("ten_phu_phi"));
+                phuPhi.setTenPhong(rs.getString("ten_phong"));
+                phuPhi.setTongTien(rs.getBigDecimal("tong_tien"));
+                danhSachPhongTinhPhuPhi.add(phuPhi);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return danhSachPhongTinhPhuPhi;
     }
 }

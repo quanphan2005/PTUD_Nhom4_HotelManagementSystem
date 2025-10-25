@@ -1,12 +1,17 @@
 package vn.iuh.gui.panel.statistic;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.category.DefaultCategoryDataset;
 import vn.iuh.dao.NhanVienDAO;
 import vn.iuh.dto.response.InvoiceStatistic;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
 import vn.iuh.service.impl.RevenueStatisticService;
+import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
@@ -14,15 +19,16 @@ import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class RevenueStatisticPanel extends JPanel {
@@ -53,6 +59,11 @@ public class RevenueStatisticPanel extends JPanel {
     private JLabel lblRoomValue;
     private JLabel lblTaxValue;
     private List<InvoiceStatistic> danhSachKetQua;
+    private JComboBox<String> cmbOption;
+    private JCheckBox btnOption;
+    private JLabel lblOption;
+    private JPanel pnlOption;
+    private JPanel chartPanel;
 
     private void init(){
         createTopPanel();
@@ -88,7 +99,7 @@ public class RevenueStatisticPanel extends JPanel {
     }
 
     private void createFilterPanel(){
-        JPanel pnlFilter = new JPanel(new GridLayout(2, 2, 5, 5));
+        JPanel pnlFilter = new JPanel(new GridLayout(3, 2, 5, 5));
 
         // Ô [0,0] StartTime
         JPanel pnlStartTime = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -115,6 +126,7 @@ public class RevenueStatisticPanel extends JPanel {
         lblEmployee.setFont(CustomUI.smallFont);
         lblEmployee.setForeground(CustomUI.black);
         cmbEmployee = new JComboBox<>();
+        cmbEmployee.setPreferredSize(new Dimension(100, 30));
         loadDanhSachNhanVien();
         cmbEmployee.addPopupMenuListener(new PopupMenuListener() {
             @Override
@@ -154,11 +166,40 @@ public class RevenueStatisticPanel extends JPanel {
         JRadioButton radTable = new JRadioButton("Dạng bảng");
         ButtonGroup group = new ButtonGroup();
         group.add(radGraph);
+        radGraph.addActionListener(e ->{
+            Map<String, BigDecimal> grouped = groupInvoicesByOption(danhSachKetQua);
+            showBarChart(grouped, "Thống kê doanh thu");
+        });
         group.add(radTable);
         pnlRadio.add(lblDisplayType);
         pnlRadio.add(radGraph);
         pnlRadio.add(radTable);
         pnlRadio.setBackground(CustomUI.white);
+
+        btnOption = new JCheckBox("Tùy chọn");
+        btnOption.setForeground(CustomUI.black);
+        btnOption.setFont(CustomUI.smallFont);
+        String[] options = {"Hôm nay", "Hôm qua", "Tuần này", "Tháng này", "Quý này","Năm nay"};
+        cmbOption = new JComboBox<>(options);
+        cmbOption.setEnabled(false);
+        cmbOption.setPreferredSize(new Dimension(100, 30));
+        pnlOption = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        pnlOption.add(btnOption);
+        pnlOption.add(cmbOption);
+        pnlOption.setBackground(CustomUI.white);
+
+
+        btnOption.addActionListener(e -> {
+            boolean selected = btnOption.isSelected();
+            cmbOption.setEnabled(selected);
+        });
+
+        cmbOption.addActionListener( e->{
+            String option = (String) cmbOption.getSelectedItem();
+            setDateRangeByOption(option);
+        });
+        
+        
 
         // Thêm ActionListener để chuyển đổi giữa hai card panel
         radGraph.addActionListener(e -> cardLayout.show(pnlVisualDisplay, "chart"));
@@ -170,6 +211,7 @@ public class RevenueStatisticPanel extends JPanel {
         pnlFilter.add(pnlEmployee);    // [0,1]
         pnlFilter.add(pnlEndTime);     // [1,0]
         pnlFilter.add(pnlRadio);       // [1,1]
+        pnlFilter.add(pnlOption);
 
         pnlFilter.setBackground(CustomUI.white);
         pnlMain.add(pnlFilter);
@@ -235,6 +277,54 @@ public class RevenueStatisticPanel extends JPanel {
             ex.printStackTrace();
         }
 
+    }
+
+    private void setDateRangeByOption(String option) {
+        if(option == null) return;
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today;
+        LocalDate endDate = today;
+
+        switch (option) {
+            case "Hôm nay":
+                startDate = today;
+                endDate = today;
+                break;
+
+            case "Hôm qua":
+                startDate = today.minusDays(1);
+                endDate = today.minusDays(1);
+                break;
+
+            case "Tuần này":
+                startDate = today.with(DayOfWeek.MONDAY);
+                endDate = today.with(DayOfWeek.SUNDAY);
+                break;
+
+            case "Tháng này":
+                startDate = today.withDayOfMonth(1);
+                endDate = today.withDayOfMonth(today.lengthOfMonth());
+                break;
+
+            case "Quý này":
+                int currentQuarter = (today.getMonthValue() - 1) / 3 + 1;
+                int startMonth = (currentQuarter - 1) * 3 + 1;
+                int endMonth = startMonth + 2;
+
+                startDate = LocalDate.of(today.getYear(), startMonth, 1);
+                endDate = LocalDate.of(today.getYear(), endMonth,
+                        YearMonth.of(today.getYear(), endMonth).lengthOfMonth());
+                break;
+
+            case "Năm nay":
+                startDate = LocalDate.of(today.getYear(), 1, 1);
+                endDate = LocalDate.of(today.getYear(), 12, 31);
+                break;
+        }
+
+        // Gán vào 2 datePicker
+        datePickerStart.setDate(startDate);
+        datePickerEnd.setDate(endDate);
     }
 
 
@@ -396,7 +486,7 @@ public class RevenueStatisticPanel extends JPanel {
 
         JTable table = new JTable(model) { // Tạo JTable mới dựa trên model
             @Override
-            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
                 Component c = super.prepareRenderer(renderer, row, column);
 
@@ -448,12 +538,66 @@ public class RevenueStatisticPanel extends JPanel {
         }
     }
 
+    private void showBarChart(Map<String, BigDecimal> data ,String title) {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        data.forEach((key, value) -> dataset.addValue(value.doubleValue(), "Doanh thu", key));
+        JFreeChart barChart = ChartFactory.createBarChart(
+                title,
+                "Thời gian",
+                "Tổng tiền (VNĐ)",
+                dataset
+        );
+
+        ChartPanel chartPanel = new ChartPanel(barChart);
+        this.chartPanel.add(chartPanel, BorderLayout.CENTER);
+        cardLayout.show(pnlVisualDisplay, "chart");
+    }
+
+    private Map<String, BigDecimal> groupInvoicesByOption(List<InvoiceStatistic> list) {
+        String option = (String) this.cmbOption.getSelectedItem();
+        return list.stream().collect(Collectors.groupingBy(
+                invoice -> {
+                    LocalDate date = invoice.getNgayLap().toLocalDateTime().toLocalDate();
+                    switch (option) {
+                        case "Hôm nay":
+                        case "Hôm qua":
+                            return date.toString();
+
+                        case "Tuần này":
+                            return date.getDayOfWeek().toString();
+
+                        case "Tháng này":
+                            return String.valueOf(date.getDayOfMonth());
+
+                        case "Quý này":
+                            return date.getMonth().toString();
+
+                        case "Năm nay":
+                            return date.getMonth().toString();
+
+                        default:
+                            return date.toString();
+                    }
+                },
+                Collectors.reducing(
+                        BigDecimal.ZERO,
+                        InvoiceStatistic::getTongHoaDon,
+                        BigDecimal::add
+                )
+        ));
+    }
+
     private void createCharPanel(){
-        JPanel chartPanel = new JPanel();
+        chartPanel = new JPanel();
         chartPanel.setLayout(new BorderLayout());
-        JLabel lblChart = new JLabel("Biểu đồ doanh thu", SwingConstants.CENTER);
-        lblChart.setFont(CustomUI.normalFont);
-        chartPanel.add(lblChart, BorderLayout.CENTER);
         pnlVisualDisplay.add(chartPanel, "chart");
+    }
+
+    private String formatCurrency(BigDecimal value) {
+        if (value == null) return "0 VND";
+        value = PriceFormat.lamTronDenHangNghin(value);
+        DecimalFormat df = new DecimalFormat("#,### VND");
+        return df.format(value);
     }
 }

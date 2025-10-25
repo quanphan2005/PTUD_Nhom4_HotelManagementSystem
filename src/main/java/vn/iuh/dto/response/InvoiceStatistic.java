@@ -1,7 +1,11 @@
 package vn.iuh.dto.response;
 
+import vn.iuh.util.PriceFormat;
+import vn.iuh.util.TimeFormat;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 
 public class InvoiceStatistic {
     private String maHoaDon;
@@ -105,12 +109,20 @@ public class InvoiceStatistic {
         return new Object[]{
             this.maHoaDon,
             this.tenKhachHang,
-            this.ngayLap,
+            TimeFormat.formatTime(this.ngayLap),
             this.tienPhong,
             this.tienDichVu,
             this.phuPhi,
             this.tienThue,
-            this.tongHoaDon
+                formatCurrency(this.tongHoaDon)
         };
     }
+    private String formatCurrency(BigDecimal value) {
+        if (value == null) return "0 VND";
+        value = PriceFormat.lamTronDenHangNghin(value);
+        DecimalFormat df = new DecimalFormat("#,### VND");
+        return df.format(value);
+    }
+
+
 }

@@ -68,7 +68,7 @@ public class CheckOutServiceImpl implements CheckOutService {
         if(reservation == null){
             throw new BusinessException("Không tìm thấy đơn đặt phòng");
         }
-//
+
 //        if(existingInvoice != null){
 //            throw new BusinessException("Đã tạo hóa đơn thanh toán cho đơn đặt phòng này");
 //        }
@@ -106,8 +106,7 @@ public class CheckOutServiceImpl implements CheckOutService {
             List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
             List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
             List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
-
-
+            List<String> danhSachMaPhongKhongSuDung = new ArrayList<>();
             //Tạo hóa đơn thanh toán
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
 
@@ -115,8 +114,11 @@ public class CheckOutServiceImpl implements CheckOutService {
             boolean isCheckOutTre = false;
             double thoiGianCheckOutTre = 0;
 
-
             for (ThongTinSuDungPhong ct : chiTietSuDungList) {
+                if(ct.getGioCheckIn() == null){
+                    danhSachMaPhongKhongSuDung.add(ct.getMaPhong());
+                    continue;
+                }
                 Timestamp tgBatDau;
                 if (ct.getTgNhanPhong().after(ct.getGioCheckIn()))
                     tgBatDau = ct.getGioCheckIn();
@@ -175,7 +177,13 @@ public class CheckOutServiceImpl implements CheckOutService {
             hoaDonThanhToan.setChiTietHoaDonList(danhSachChiTietHoaDon);
 
             //Cập nhật ChiTietDatPhong thành trả phòng
-            chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
+            chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong, RoomEndType.TRA_PHONG.getStatus());
+
+            if(!danhSachMaPhongKhongSuDung.isEmpty()){
+                //Xóa các job tại phòng ko được checkin
+                xoaCongViecChoCheckIn(danhSachMaPhongKhongSuDung);
+                chiTietDatPhongDAO.capNhatCTDPTheoMaDonDatPhong(reservation.getMaDonDatPhong(), RoomEndType.KHONG_NHAN_PHONG.getStatus());
+            }
 
             //Thêm danh sách ra ngoài lần cuối cùng
             List<LichSuRaNgoai> danhSachLichSuRaNgoaiLanCuoi = taoDanhSachRaNgoaiLanCuoi(danhSachMaChiTietDatPhong);
@@ -264,6 +272,15 @@ public class CheckOutServiceImpl implements CheckOutService {
         }
         datPhongDAO.thucHienGiaoTac();
         return response;
+    }
+
+    private void xoaCongViecChoCheckIn(List<String> danhSachMaPhong){
+        if(danhSachMaPhong.isEmpty()) return;
+
+        List<CongViec> danhSachCongViec = congViecDAO.layCongViecHienTaiCuaCacPhong(danhSachMaPhong);
+        List<String> danhSachMaCongViec = danhSachCongViec.stream().map(CongViec::getMaCongViec).toList();
+
+        congViecDAO.xoaDanhSachCongViec(danhSachMaCongViec);
     }
 
     private LichSuThaoTac createWorkingHistory(String maDonDatPhong, List<String> maPhongSuDung){
@@ -441,7 +458,6 @@ public class CheckOutServiceImpl implements CheckOutService {
     public boolean createHoaDonForAutoCheckout(String reservationDetail){
         try {
             datPhongDAO.khoiTaoGiaoTac();
-            //Tìm đơn đặt phòng theo chi tiết đặt phòng
             String reservationId = chiTietDatPhongDAO.findFormIDByDetail(reservationDetail);
             //Tìm đơn đặt phòng
             var reservation = validateDonDatPhong(reservationId);
@@ -456,14 +472,12 @@ public class CheckOutServiceImpl implements CheckOutService {
             List<String> danhSachMaPhongDangSuDung = new ArrayList<>();
             List<String> danhSachMaChiTietDatPhong = new ArrayList<>();
 
-
             //Tạo hóa đơn thanh toán
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
 
             String maChiTietHoaDonMoiNhat = null;
             boolean isCheckOutTre = false;
             double thoiGianCheckOutTre = 0;
-
 
             for (ThongTinSuDungPhong ct : chiTietSuDungList) {
                 Timestamp tgBatDau;
@@ -524,14 +538,14 @@ public class CheckOutServiceImpl implements CheckOutService {
             hoaDonThanhToan.setChiTietHoaDonList(danhSachChiTietHoaDon);
 
             //Cập nhật ChiTietDatPhong thành trả phòng
-            chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong);
+            chiTietDatPhongDAO.capNhatKetThucCTDP(danhSachMaChiTietDatPhong, RoomEndType.TRA_PHONG.getStatus());
 
             //Thêm danh sách ra ngoài lần cuối cùng
             List<LichSuRaNgoai> danhSachLichSuRaNgoaiLanCuoi = taoDanhSachRaNgoaiLanCuoi(danhSachMaChiTietDatPhong);
             lichSuRaNgoaiDAO.themDanhSachLichSuRaNgoai(danhSachLichSuRaNgoaiLanCuoi);
 
-            // tìm các dịch vụ mà phòng sửu dụng
-            List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangDonDatPhong(hoaDonThanhToan.getMaDonDatPhong());
+            // tìm các dịch vụ mà phòng sử dụng
+            List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangDonDatPhong(reservation.getMaDonDatPhong());
 
             //tìm phụ phí
             List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = phongTinhPhuPhiDAO.timPhuPhiTheoMaDonDatPhong(reservation.getMaDonDatPhong());

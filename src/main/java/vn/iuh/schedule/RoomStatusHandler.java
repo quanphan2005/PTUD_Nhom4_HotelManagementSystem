@@ -1,8 +1,10 @@
 package vn.iuh.schedule;
 
 import org.quartz.*;
+import vn.iuh.constraint.RoomEndType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.constraint.WorkTimeCost;
+import vn.iuh.dao.ChiTietDatPhongDAO;
 import vn.iuh.dao.CongViecDAO;
 import vn.iuh.dao.DatPhongDAO;
 import vn.iuh.dto.repository.RoomJob;
@@ -32,6 +34,7 @@ public class RoomStatusHandler implements Job {
     private final BookingService bookingService = new BookingServiceImpl();
     private final CheckOutService checkOutService = new CheckOutServiceImpl();
     private final CongViecDAO jobDAO = new CongViecDAO();
+    private final ChiTietDatPhongDAO chiTietDatPhongDAO = new ChiTietDatPhongDAO();
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
@@ -149,6 +152,8 @@ public class RoomStatusHandler implements Job {
         List<CongViec> congViecCanThem = new ArrayList<>();
         List<String> congViecCanKetThuc = new ArrayList<>();
 
+        List<String> maCTDPCapNhat = new ArrayList<>();
+
         Timestamp pivot = new Timestamp(System.currentTimeMillis() + 35_000);
         String maCongViecMoiNhat = congViecService.taoMaCongViecMoi(null);
 
@@ -196,6 +201,9 @@ public class RoomStatusHandler implements Job {
                         currentStatus.equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
                                 currentStatus.equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus())
                 ) {
+                    if(currentStatus.equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus())){
+                        maCTDPCapNhat.add(res.getMaChiTietDatPhong());
+                    }
                     congViecService.removeOutDateJob(rj.getJobId());
                     res.setRoomStatus(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
                     updatedBookingResponse.add(res);
@@ -242,10 +250,23 @@ public class RoomStatusHandler implements Job {
         if (!congViecCanThem.isEmpty()) {
             jobDAO.themDanhSachCongViec(congViecCanThem);
         }
+
+        //cập nhật kiểu kết thúc của các CTDP không nhận phòng
+        // do quá thời gian checck-in thành "Không nhận phòng"
+        if(!maCTDPCapNhat.isEmpty()){
+            updateCTDPForLateCheckIn(maCTDPCapNhat);
+        }
+
+
         //Cập nhật giao diện
         gridRoomPanel.updateRoomItemStatus(updatedBookingResponse);
         System.out.printf("Đã thêm %d công việc mới, xóa %d công việc cũ%n",
                 congViecCanThem.size(), congViecCanKetThuc.size());
+    }
+
+    private void updateCTDPForLateCheckIn(List<String> maCTDPKetThuc){
+        if(maCTDPKetThuc == null || maCTDPKetThuc.isEmpty()) return;
+        chiTietDatPhongDAO.capNhatKetThucCTDP(maCTDPKetThuc, RoomEndType.KHONG_NHAN_PHONG.status);
     }
 
     private void createMessageForLateCheckOut(String roomId){

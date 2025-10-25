@@ -10,6 +10,7 @@ import vn.iuh.util.DatabaseUtil;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DonGoiDichVuDao {
@@ -321,5 +322,42 @@ public class DonGoiDichVuDao {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành PhongDungDichVu: " + e.getMessage());
         }
+    }
+
+    public List<PhongDungDichVu> timDonGoiDichVuBangChiTietDatPhong(List<String> maChiTietDatPhongList) {
+        if (maChiTietDatPhongList == null || maChiTietDatPhongList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(maChiTietDatPhongList.size(), "?"));
+        String query = "SELECT pddv.*, dv.ten_dich_vu, p.ten_phong FROM PhongDungDichVu pddv " +
+                "JOIN DichVu dv ON pddv.ma_dich_vu = dv.ma_dich_vu " +
+                "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong "+
+                "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                "WHERE ctdp.ma_chi_tiet_dat_phong IN (" + placeholders + ")";
+
+        List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            for (int i = 0; i < maChiTietDatPhongList.size(); i++) {
+                ps.setString(i + 1, maChiTietDatPhongList.get(i));
+            }
+
+            var rs = ps.executeQuery();
+            while (rs.next()) {
+                PhongDungDichVu pddv = chuyenKetQuaThanhPhongDungDichVu(rs);
+                pddv.setTenDichVu(rs.getString("ten_dich_vu"));
+                pddv.setTenPhong(rs.getString("ten_phong"));
+                pddv.setTongTien(rs.getBigDecimal("tong_tien"));
+                danhSachPhongDungDichVu.add(pddv);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return danhSachPhongDungDichVu;
     }
 }
