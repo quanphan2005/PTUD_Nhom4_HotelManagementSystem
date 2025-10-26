@@ -1,9 +1,6 @@
 package vn.iuh.schedule;
 
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.SchedulerException;
+import org.quartz.*;
 import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.dao.CongViecDAO;
 import vn.iuh.dao.PhongDAO;
@@ -18,18 +15,25 @@ import java.time.LocalDateTime;
 
 public class SendMessageAutoCheckOut implements Job {
     private final ThongBaoDAO thongBaoDAO = new ThongBaoDAO();
-    private final PhongDAO phongDAO = new PhongDAO();
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
-            String roomId = context.getMergedJobDataMap().get("roomId").toString();
-            ThongBao thongBaoMoi = createThongBao(roomId);
+            JobDataMap dataMap = context.getMergedJobDataMap();
+            boolean isBatch = dataMap.getBoolean("isBatch");
+
+            ThongBao thongBaoMoi;
+            if (isBatch) {
+                String roomNames = dataMap.getString("roomNames");
+                thongBaoMoi = createThongBaoGop(roomNames);
+            } else {
+                String roomId = dataMap.getString("roomId");
+                thongBaoMoi = createThongBao(roomId);
+            }
             thongBaoDAO.themThongBao(thongBaoMoi);
             Main.getBtnBell().addNotification(thongBaoMoi.getNoiDung());
             AudioPlayer.playDefaultNotification();
         } finally {
-            // Xoá job sau khi hoàn thành
             try {
                 context.getScheduler().deleteJob(context.getJobDetail().getKey());
             } catch (SchedulerException e) {
@@ -38,22 +42,41 @@ public class SendMessageAutoCheckOut implements Job {
         }
     }
 
+    private ThongBao createThongBaoGop(String roomNames) {
+        synchronized (thongBaoDAO) {  // Đảm bảo thread-safe
+            var latest = thongBaoDAO.timThongBaoMoiNhat();
+            String maThongBaoMoiNhat = latest == null ? null : latest.getMaThongBao();
+            String maThongBao = EntityUtil.increaseEntityID(
+                    maThongBaoMoiNhat,
+                    EntityIDSymbol.NOTIFICATION_PREFIX.getPrefix(),
+                    EntityIDSymbol.NOTIFICATION_PREFIX.getLength()
+            );
 
-    private ThongBao createThongBao(String roomId){
+            return new ThongBao(maThongBao,
+                    "Các phòng " + roomNames + " đã tự động check-out",
+                    Main.getCurrentLoginSession(),
+                    Timestamp.valueOf(LocalDateTime.now()));
+        }
+    }
 
-        var latest = thongBaoDAO.timThongBaoMoiNhat();
-        String maThongBaoMoiNhat = latest == null ? null : latest.getMaThongBao();
-        String maThongBao = EntityUtil.increaseEntityID(
-                maThongBaoMoiNhat,
-                EntityIDSymbol.NOTIFICATION_PREFIX.getPrefix(),
-                EntityIDSymbol.NOTIFICATION_PREFIX.getLength()
-        );
+    private ThongBao createThongBao(String roomId) {
+        synchronized (thongBaoDAO) {  // Đảm bảo thread-safe
+            var latest = thongBaoDAO.timThongBaoMoiNhat();
+            String maThongBaoMoiNhat = latest == null ? null : latest.getMaThongBao();
+            String maThongBao = EntityUtil.increaseEntityID(
+                    maThongBaoMoiNhat,
+                    EntityIDSymbol.NOTIFICATION_PREFIX.getPrefix(),
+                    EntityIDSymbol.NOTIFICATION_PREFIX.getLength()
+            );
 
-        var tenPhong = phongDAO.timPhong(roomId).getTenPhong();
+            var phongDAO = new PhongDAO();
+            var tenPhong = phongDAO.timPhong(roomId).getTenPhong();
 
-        return new ThongBao(maThongBao,
-                "Phòng " + tenPhong + " tự động check-out"
-                ,Main.getCurrentLoginSession(), Timestamp.valueOf(LocalDateTime.now()));
+            return new ThongBao(maThongBao,
+                    "Phòng " + tenPhong + " tự động check-out",
+                    Main.getCurrentLoginSession(),
+                    Timestamp.valueOf(LocalDateTime.now()));
+        }
     }
 
 }
