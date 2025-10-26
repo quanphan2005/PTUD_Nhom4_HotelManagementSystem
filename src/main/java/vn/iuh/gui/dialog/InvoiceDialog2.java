@@ -11,10 +11,11 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 import net.miginfocom.swing.MigLayout;
-import vn.iuh.constraint.FeeValue;
+import vn.iuh.constraint.Fee;
 import vn.iuh.constraint.PaymentMethod;
 import vn.iuh.constraint.PaymentStatus;
 import vn.iuh.dao.HoaDonDAO;
+import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.dto.response.InvoiceResponse;
 import vn.iuh.entity.ChiTietHoaDon;
 import vn.iuh.entity.PhongDungDichVu;
@@ -194,12 +195,12 @@ public class InvoiceDialog2 extends JDialog {
 
         JLabel lblTotalTitle = new JLabel("Tổng tiền dự tính: ");
         lblTotalTitle.setFont(CustomUI.smallFont);
-        JLabel lblTotalValue = new JLabel(formatCurrency(response.getHoaDon().getTongTien().add(response.getTienCoc())));
+        JLabel lblTotalValue = new JLabel(formatCurrency(response.getHoaDon().getTongTien().add(BigDecimal.valueOf(this.response.getDonDatPhong().getTienDatCoc()))));
         lblTotalValue.setFont(CustomUI.smallFont);
 
         JLabel lblDeposit = new JLabel("Tiền cọc đã trả: ");
         lblDeposit.setFont(CustomUI.smallFont);
-        JLabel lblDepositValue = new JLabel("-".concat(formatCurrency(response.getTienCoc())));
+        JLabel lblDepositValue = new JLabel("-".concat(formatCurrency(BigDecimal.valueOf(response.getDonDatPhong().getTienDatCoc()))));
         lblDepositValue.setFont(CustomUI.smallFont);
 
         JLabel lblRealTotal = new JLabel("Tổng tiền trước thuế: ");
@@ -208,7 +209,7 @@ public class InvoiceDialog2 extends JDialog {
         lblRealTotalValue.setFont(CustomUI.smallFont);
 
 // --- Thuế VAT ---
-        double taxPercent = FeeValue.TAX.getValue() * 100;
+        double taxPercent = getTaxPrice();
         JLabel lblTaxFeeTitle = new JLabel("Thuế VAT(" + taxPercent + "%): ");
         lblTaxFeeTitle.setFont(CustomUI.smallFont);
         JLabel lblTaxFeeValue = new JLabel(formatCurrency(response.getHoaDon().getTienThue()));
@@ -485,10 +486,13 @@ public class InvoiceDialog2 extends JDialog {
             document.add(new Paragraph("\n"));
 
             // ===== Tổng kết =====
-            document.add(new Paragraph("Tổng tiền dự tính: " + formatCurrency(response.getHoaDon().getTongTien().add(response.getTienCoc())), itextNormalFont));
-            document.add(new Paragraph("Tiền cọc: -" + formatCurrency(response.getTienCoc()), itextNormalFont));
+
+            document.add(new Paragraph("Tổng tiền dự tính: " + formatCurrency(response.getHoaDon().getTongTien()
+                    .add(BigDecimal.valueOf(this.response.getDonDatPhong().getTienDatCoc()))),
+                    itextNormalFont));
+            document.add(new Paragraph("Tiền cọc: -" + formatCurrency(BigDecimal.valueOf(this.response.getDonDatPhong().getTienDatCoc())), itextNormalFont));
             document.add(new Paragraph("Tổng tiền trước thuế: " + formatCurrency(response.getHoaDon().getTongTien()), itextNormalFont));
-            document.add(new Paragraph("Thuế VAT (" + (FeeValue.TAX.getValue() * 100) + "%): " + formatCurrency(response.getHoaDon().getTienThue()), itextNormalFont));
+            document.add(new Paragraph("Thuế VAT (" + getTaxPrice() + "%): " + formatCurrency(response.getHoaDon().getTienThue()), itextNormalFont));
             document.add(new Paragraph("Tổng hóa đơn sau thuế: " + formatCurrency(response.getHoaDon().getTongHoaDon()), itextBoldFont));
             document.add(new Paragraph("\n"));
 
@@ -519,6 +523,11 @@ public class InvoiceDialog2 extends JDialog {
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell);
         }
+    }
+
+    public double getTaxPrice(){
+        ThongTinPhuPhi thue = vn.iuh.util.FeeValue.getInstance().get(Fee.THUE);
+        return thue.getGiaHienTai().doubleValue();
     }
 }
 
