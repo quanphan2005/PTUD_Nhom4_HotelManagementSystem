@@ -121,14 +121,14 @@ public class BookingManagementPanel extends JPanel {
         JPanel pnlTop = new JPanel();
         JLabel lblTop = new JLabel("QUẢN LÝ ĐẶT PHÒNG", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
-        lblTop.setFont(CustomUI.normalFont);
+        lblTop.setFont(CustomUI.bigFont);
 
         pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop);
 
-        pnlTop.setPreferredSize(new Dimension(0, 50));
-        pnlTop.setMinimumSize(new Dimension(0, 50));
-        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        pnlTop.setPreferredSize(new Dimension(0, 40));
+        pnlTop.setMinimumSize(new Dimension(0, 40));
+        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
 
         add(pnlTop);

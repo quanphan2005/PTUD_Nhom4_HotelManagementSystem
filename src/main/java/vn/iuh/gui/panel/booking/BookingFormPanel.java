@@ -166,8 +166,8 @@ public class BookingFormPanel extends JPanel {
     private void setupLayout() {
         // Header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setPreferredSize(new Dimension(0, 50));
-        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 20");
+        headerPanel.setPreferredSize(new Dimension(0, 40));
+        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         headerPanel.setBackground(CustomUI.blue);
 
         // Title Panel
@@ -176,20 +176,20 @@ public class BookingFormPanel extends JPanel {
 
         // Title with room name
         JLabel titleLabel = new JLabel("ĐẶT PHÒNG " + selectedRoom.getRoomName(), SwingConstants.CENTER);
-        titleLabel.setFont(CustomUI.veryBigFont);
+        titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
         titlePanel.add(titleLabel);
 
         closeButton = new JButton("x");
-        closeButton.setFont(CustomUI.veryBigFont);
+        closeButton.setFont(CustomUI.bigFont);
         closeButton.setBackground(Color.RED);
         closeButton.setForeground(Color.WHITE);
-        closeButton.setPreferredSize(new Dimension(60, 20));
+        closeButton.setPreferredSize(new Dimension(50, 20));
         closeButton.setFocusPainted(false);
         closeButton.addActionListener(e -> handleCloseReservation());
-        closeButton.putClientProperty(FlatClientProperties.STYLE, "arc: 20");
+        closeButton.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         headerPanel.add(titlePanel, BorderLayout.CENTER);
         headerPanel.add(closeButton, BorderLayout.EAST);

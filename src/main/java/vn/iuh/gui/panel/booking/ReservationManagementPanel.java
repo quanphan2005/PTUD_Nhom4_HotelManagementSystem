@@ -122,9 +122,9 @@ public class ReservationManagementPanel extends JPanel {
         lblTop.setFont(CustomUI.bigFont);
 
         pnlTop.setBackground(CustomUI.blue);
-        pnlTop.setPreferredSize(new Dimension(0, 50));
-        pnlTop.setMinimumSize(new Dimension(0, 50));
-        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        pnlTop.setPreferredSize(new Dimension(0, 40));
+        pnlTop.setMinimumSize(new Dimension(0, 40));
+        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
 
         pnlTop.add(lblTop, BorderLayout.CENTER);

@@ -591,7 +591,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         for (ReservationDetailResponse detail : reservationInfo.getDetails()) {
             Object[] rowData = new Object[6];
-            rowData[0] = detail.getRoomId();
+            rowData[0] = detail.getReservationDetailId();
             rowData[1] = detail.getRoomName();
             rowData[2] = detail.getTimeIn() != null ? dateFormat.format(detail.getTimeIn()) : "N/A";
             rowData[3] = detail.getTimeOut() != null ? dateFormat.format(detail.getTimeOut()) : "N/A";
@@ -627,7 +627,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         for (MovingHistoryResponse history : reservationInfo.getMovingHistories()) {
             Object[] rowData = new Object[5];
-            rowData[0] = history.getRoomId();
+            rowData[0] = history.getReservationDetailId();
             rowData[1] = history.getRoomName();
             rowData[2] = history.getTimeIn() != null ? dateFormat.format(history.getTimeIn()) : "N/A";
             rowData[3] = history.getTimeOut() != null ? dateFormat.format(history.getTimeOut()) : "N/A";

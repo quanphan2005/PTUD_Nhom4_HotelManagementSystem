@@ -154,8 +154,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
     private void setupLayout() {
         // Header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setPreferredSize(new Dimension(0, 50));
-        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 20");
+        headerPanel.setPreferredSize(new Dimension(0, 40));
+        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         headerPanel.setBackground(CustomUI.blue);
 
         // Title Panel
@@ -164,7 +164,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
 
         // Title for multi-room booking
         JLabel titleLabel = new JLabel("Đặt nhiều phòng (" + selectedRooms.size() + " phòng)", SwingConstants.CENTER);
-        titleLabel.setFont(CustomUI.veryBigFont);
+        titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
@@ -177,7 +177,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         closeButton.setPreferredSize(new Dimension(60, 20));
         closeButton.setFocusPainted(false);
         closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
-        closeButton.putClientProperty(FlatClientProperties.STYLE, "arc: 20");
+        closeButton.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         headerPanel.add(titlePanel, BorderLayout.CENTER);
         headerPanel.add(closeButton, BorderLayout.EAST);

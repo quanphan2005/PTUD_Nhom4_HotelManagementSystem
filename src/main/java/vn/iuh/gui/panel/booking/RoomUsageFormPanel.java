@@ -102,7 +102,7 @@ public class RoomUsageFormPanel extends JPanel {
     private JPanel actionMenuContent;
 
     // Close button
-    private JButton closeButton;
+    private JButton btnClose;
 
     public RoomUsageFormPanel(BookingResponse roomInfo) {
         this.checkOutService = new CheckOutServiceImpl();
@@ -203,8 +203,8 @@ public class RoomUsageFormPanel extends JPanel {
     private void setupLayout() {
         // Header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setPreferredSize(new Dimension(0, 50));
-        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 20");
+        headerPanel.setPreferredSize(new Dimension(0, 40));
+        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         headerPanel.setBackground(CustomUI.blue);
 
         // Title Panel
@@ -213,34 +213,33 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Title with room name
         JLabel titleLabel = new JLabel("THÔNG TIN PHÒNG " + selectedRoom.getRoomName(), SwingConstants.CENTER);
-        titleLabel.setFont(CustomUI.veryBigFont);
+        titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
         // Check-in and Check-out icons
         ImageIcon checkinIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/get_in.png")));
-        checkinIcon = new ImageIcon(checkinIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+        checkinIcon = new ImageIcon(checkinIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
         JButton checkInButton = new JButton(checkinIcon);
 
         ImageIcon checkoutIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/leaving.png")));
-        checkoutIcon = new ImageIcon(checkoutIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+        checkoutIcon = new ImageIcon(checkoutIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
         JButton checkoutButton = new JButton(checkoutIcon);
 
         titlePanel.add(checkInButton);
         titlePanel.add(titleLabel);
         titlePanel.add(checkoutButton);
 
-        closeButton = new JButton("x");
-        closeButton.setFont(CustomUI.veryBigFont);
-        closeButton.setBackground(Color.RED);
-        closeButton.setForeground(Color.WHITE);
-        closeButton.setPreferredSize(new Dimension(60, 20));
-        closeButton.setFocusPainted(false);
-        closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
-        closeButton.putClientProperty(FlatClientProperties.STYLE, "arc: 20");
+        btnClose = new JButton("x");
+        btnClose.setFont(CustomUI.bigFont);
+        btnClose.setBackground(Color.RED);
+        btnClose.setForeground(Color.WHITE);
+        btnClose.setPreferredSize(new Dimension(50, 20));
+        btnClose.setFocusPainted(false);
+        btnClose.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         headerPanel.add(titlePanel, BorderLayout.CENTER);
-        headerPanel.add(closeButton, BorderLayout.EAST);
+        headerPanel.add(btnClose, BorderLayout.EAST);
 
         // Create main content panel with overlay capability for service panel
         mainContentPanel = new JPanel();
@@ -992,7 +991,7 @@ public class RoomUsageFormPanel extends JPanel {
     // Setup event handlers for buttons
     private void setupEventHandlers() {
         btnCancel.addActionListener(e -> handleCancel());
-        closeButton.addActionListener(e -> Main.showCard(PanelName.BOOKING_MANAGEMENT.getName()));
+        btnClose.addActionListener(e -> Main.showCard(PanelName.BOOKING_MANAGEMENT.getName()));
         btnCreateReservationForm.addActionListener(e -> handleCreateReservationForm());
         reservationButton.addActionListener(e -> handleShowReservationManagement());
     }
