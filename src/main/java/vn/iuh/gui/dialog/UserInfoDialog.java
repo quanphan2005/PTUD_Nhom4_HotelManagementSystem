@@ -213,6 +213,7 @@ public class UserInfoDialog extends JDialog {
 
     private JTextField createTextField() {
         JTextField txt = new JTextField();
+        txt.setFocusable(false);
         txt.setFont(FONT_FIELD);
         txt.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
         return txt;
