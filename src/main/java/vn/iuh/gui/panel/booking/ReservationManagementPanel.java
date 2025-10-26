@@ -435,8 +435,9 @@ public class ReservationManagementPanel extends JPanel {
         spnEndDate.setValue(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000));
         chkCurrentReservations.setSelected(true);
 
-        filteredReservations = new ArrayList<>(currentReservations);
-        applyFilters();
+//        filteredReservations = new ArrayList<>(currentReservations);
+//        applyFilters();
+        refreshPanel();
     }
 
     private void populateTable() {

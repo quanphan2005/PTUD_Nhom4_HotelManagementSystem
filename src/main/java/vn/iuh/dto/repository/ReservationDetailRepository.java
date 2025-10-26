@@ -13,15 +13,6 @@ public class ReservationDetailRepository {
     public ReservationDetailRepository() {
     }
 
-    public ReservationDetailRepository(String reservationDetailId, String roomId, String roomName,
-                                       Timestamp timeIn, Timestamp timeOut) {
-        ReservationDetailId = reservationDetailId;
-        this.roomId = roomId;
-        this.roomName = roomName;
-        this.timeIn = timeIn;
-        this.timeOut = timeOut;
-    }
-
     public ReservationDetailRepository(String reservationDetailId, String roomId, String roomName, String endType,
                                        Timestamp timeIn, Timestamp timeOut) {
         ReservationDetailId = reservationDetailId;

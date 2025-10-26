@@ -801,30 +801,6 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-//    private ReservationInfoDetailResponse createReservationInfoDetailResponse(DonDatPhong donDatPhong,
-//                                                                              List<ReservationDetailRepository> danhSachChiTietDatPhong,
-//                                                                              Map<String, List<LichSuDiVao>> lichSuDiVaoTheoChiTietDatPhong,
-//                                                                              Map<String, List<LichSuRaNgoai>> lichSuDiRaTheoChiTietDatPhong,
-//                                                                              Map<String, List<PhongDungDichVu>> phongDungDichVuTheoChiTietDatPhong)
-//    {
-//        List<ReservationDetailResponse> reservationDetailResponses = new ArrayList<>();
-//        for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
-//            reservationDetailResponses.add(new ReservationDetailResponse(
-//                    reservationDetailRepository.getReservationDetailId(),
-//                    reservationDetailRepository.getRoomId(),
-//                    reservationDetailRepository.getRoomName(),
-//                    reservationDetailRepository.getTimeOut(),
-//                    reservationDetailRepository.getTimeOut()
-//            ));
-//        }
-//
-//        List<RoomUsageServiceResponse> roomUsageServiceResponses = new ArrayList<>();
-//
-//        ReservationInfoDetailResponse response = new ReservationInfoDetailResponse();
-//
-//        return response;
-//    }
-
     private ReservationInfoDetailResponse createReservationInfoDetailResponse(CustomerInfo thongTinKhachHang,
                                                                               DonDatPhong donDatPhong,
                                                                               List<ReservationDetailRepository> danhSachChiTietDatPhong,
