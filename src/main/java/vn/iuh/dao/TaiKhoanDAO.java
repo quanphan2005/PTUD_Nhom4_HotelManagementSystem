@@ -1,5 +1,7 @@
 package vn.iuh.dao;
 
+import org.mindrot.jbcrypt.BCrypt;
+import vn.iuh.config.SecurityConfig;
 import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.entity.TaiKhoan;
@@ -55,6 +57,39 @@ public class TaiKhoanDAO {
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return false;
+        }
+    }
+    public boolean kiemTraMatKhau(String maNhanVien, String matKhau) {
+        String sql = "SELECT mat_khau FROM TaiKhoan WHERE ma_nhan_vien = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maNhanVien);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String storedHashedPassword = rs.getString("mat_khau");
+                    return SecurityConfig.checkPassword(matKhau, storedHashedPassword);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean doiMatKhau(String maNhanVien, String matKhauMoi) {
+
+        String sql = "UPDATE TaiKhoan SET mat_khau = ? WHERE ma_nhan_vien = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            String hassPassword = SecurityConfig.hashPassword(matKhauMoi);
+            ps.setString(1, hassPassword);
+            ps.setString(2, maNhanVien);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
             return false;
         }
     }
@@ -146,6 +181,22 @@ public class TaiKhoanDAO {
             System.out.println(et.getMessage());
         }
 
+        return null;
+    }
+
+    public String getChucVuBangMaNhanVien(String maNhanVien) {
+        String query = "select ma_chuc_vu from TaiKhoan  where ma_nhan_vien = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)){
+            ps.setString(1, maNhanVien);
+
+            var rs = ps.executeQuery();
+            if(rs.next()) {
+                return rs.getString("ma_chuc_vu");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
