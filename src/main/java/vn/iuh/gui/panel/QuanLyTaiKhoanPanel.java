@@ -23,10 +23,6 @@ import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Panel quản lý Tài khoản và Nhân viên .
- * Chứa 2 bảng có thể chuyển đổi.
- */
 public class QuanLyTaiKhoanPanel extends JPanel {
 
     // --- Kích thước ---
@@ -43,35 +39,27 @@ public class QuanLyTaiKhoanPanel extends JPanel {
     private static final Font FONT_TABLE_HEADER = new Font("Arial", Font.BOLD, 15);
     private static final Font FONT_TABLE_CELL = new Font("Arial", Font.PLAIN, 14);
 
-    // --- Icon Cache ---
-    private static final Map<String, ImageIcon> ICON_CACHE = new HashMap<>();
-
-    // --- Thành phần UI ---
-    private JPanel pnlTimKiemCards; // Panel chứa các ô tìm kiếm
+    private JPanel pnlTimKiemCards;
     private CardLayout cardLayoutTimKiem;
-    private JTextField txtTimTenDN; // Ô tìm theo Tên Đăng Nhập
-    private JTextField txtTimMaTK; // Ô tìm theo Mã Tài Khoản
+    private JTextField txtTimTenDN;
+    private JTextField txtTimMaTK;
 
     private JComboBox<String> cmbTimKiem;
     private final JButton searchButton = new JButton("TÌM");
     private JButton addButton, editButton, deleteButton;
 
-    // Nút lọc
     private JButton leTanButton, quanLyButton, adminButton;
     private JButton allCategoryButton;
 
-    // Thành phần cho 2 bảng
-    private JPanel tableCardPanel; // Panel chứa 2 bảng (CardLayout)
+    private JPanel tableCardPanel;
     private CardLayout tableCardLayout;
-    private JLabel lblTabTaiKhoan, lblTabNhanVien; // Nhãn để chuyển tab
+    private JLabel lblTabTaiKhoan, lblTabNhanVien;
 
-    // Models cho bảng
     private DefaultTableModel modelTaiKhoan;
     private JTable tblTaiKhoan;
     private DefaultTableModel modelNhanVien;
     private JTable tblNhanVien;
 
-    // DAO
     private TaiKhoanDAO taiKhoanDAO;
     private NhanVienDAO nhanVienDAO;
 
@@ -100,9 +88,9 @@ public class QuanLyTaiKhoanPanel extends JPanel {
     private void initButtons() {
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
-        addButton = createActionButtonAsync("Thêm", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
-        editButton = createActionButtonAsync("Sửa", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
-        deleteButton = createActionButtonAsync("Xóa", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
+        addButton = createActionButtonAsync("Thêm",  ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
+        editButton = createActionButtonAsync("Sửa",  ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
+        deleteButton = createActionButtonAsync("Xóa",  ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
 
         leTanButton = createCategoryButton("Lễ tân", "#34D399", CATEGORY_BUTTON_SIZE);
         quanLyButton = createCategoryButton("Quản lý", "#FB923C", CATEGORY_BUTTON_SIZE);
@@ -121,19 +109,16 @@ public class QuanLyTaiKhoanPanel extends JPanel {
                 // Tải lại danh sách nhân viên CHƯA có tài khoản
                 loadNhanVienData();
 
-                // Chuyển sang tab Nhân viên
                 tableCardLayout.show(tableCardPanel, "NHAN_VIEN");
                 styleTabLabel(lblTabTaiKhoan, false);
                 styleTabLabel(lblTabNhanVien, true);
 
-                // Thông báo cho người dùng
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhân viên từ danh sách để tạo tài khoản.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 
             // CHẾ ĐỘ 2: Đang ở tab NHÂN VIÊN
 
-            // 2. Lấy nhân viên đang chọn
             int selectedRow = tblNhanVien.getSelectedRow();
 
             if(selectedRow == -1) {
@@ -145,25 +130,22 @@ public class QuanLyTaiKhoanPanel extends JPanel {
             String maNhanVien = (String) modelNhanVien.getValueAt(modelRow, 0);
 
             try {
-                // 3. (QUAN TRỌNG) Kiểm tra xem nhân viên này đã có tài khoản chưa
+                //  Kiểm tra xem nhân viên này đã có tài khoản chưa
                 if (taiKhoanDAO.findByMaNhanVien(maNhanVien) != null) {
                     JOptionPane.showMessageDialog(this, "Nhân viên này đã có tài khoản.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
 
-                // 4. Tạo Mã Tài Khoản mới
                 TaiKhoan tkMoiNhat = taiKhoanDAO.timTaiKhoanMoiNhat();
                 String maMoiNhat = (tkMoiNhat == null) ? null : tkMoiNhat.getMaTaiKhoan();
                 String newMaTaiKhoan = EntityUtil.increaseEntityID(maMoiNhat,
                         EntityIDSymbol.ACCOUNT_PREFIX.getPrefix(),
                         EntityIDSymbol.ACCOUNT_PREFIX.getLength());
 
-                // 5. Mở Dialog
                 Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
                 AccountDialog addDialog = new AccountDialog(owner, "Tạo tài khoản", newMaTaiKhoan, maNhanVien);
                 addDialog.setVisible(true);
 
-                // 6. Xử lý kết quả
                 if (addDialog.isSaved()) {
                     TaiKhoan newTaiKhoan = addDialog.getTaiKhoan();
 
@@ -187,12 +169,10 @@ public class QuanLyTaiKhoanPanel extends JPanel {
             }
         });
         editButton.addActionListener(e -> {
-            // 1. Chuyển sang tab Tài khoản
             tableCardLayout.show(tableCardPanel, "TAI_KHOAN");
             styleTabLabel(lblTabTaiKhoan, true);
             styleTabLabel(lblTabNhanVien, false);
 
-            // 2. Lấy tài khoản đang chọn
             int selectedRow = tblTaiKhoan.getSelectedRow();
 
             if(selectedRow == -1) {
@@ -204,23 +184,20 @@ public class QuanLyTaiKhoanPanel extends JPanel {
             String maTaiKhoan = (String) modelTaiKhoan.getValueAt(modelRow, 0);
 
             try {
-                // 3. Lấy thông tin đầy đủ của tài khoản từ CSDL
                 TaiKhoan existingTaiKhoan = taiKhoanDAO.timTaiKhoan(maTaiKhoan);
                 if (existingTaiKhoan == null) {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy tài khoản để sửa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                // 4. Mở Dialog ở chế độ "Sửa"
+                // Mở Dialog ở chế độ "Sửa"
                 Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
                 AccountDialog editDialog = new AccountDialog(owner, "Cập nhật tài khoản", existingTaiKhoan);
                 editDialog.setVisible(true);
 
-                // 5. Xử lý kết quả
                 if (editDialog.isSaved()) {
                     TaiKhoan updatedTaiKhoan = editDialog.getTaiKhoan();
 
-                    // Gọi DAO để cập nhật
                     TaiKhoan updatedtk = taiKhoanDAO.capNhatTaiKhoan(updatedTaiKhoan);
                     if (updatedtk != null) {
                         JOptionPane.showMessageDialog(this, "Cập nhật tài khoản thành công.");
@@ -244,11 +221,9 @@ public class QuanLyTaiKhoanPanel extends JPanel {
 
             int modelRow = tblTaiKhoan.convertRowIndexToModel(selectedRow);
 
-            // 3. Lấy thông tin từ model
             String maTaiKhoan = (String) modelTaiKhoan.getValueAt(modelRow, 0);
             String tenDangNhap = (String) modelTaiKhoan.getValueAt(modelRow, 1);
 
-            // 4. Hiển thị hộp thoại xác nhận
             int confirm = JOptionPane.showConfirmDialog(this,
                     "Bạn có chắc chắn muốn xóa tài khoản '" + tenDangNhap + "' (Mã: " + maTaiKhoan + ") không?",
                     "Xác nhận xóa",
@@ -272,8 +247,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         });
     }
 
-    // --- TẠO CÁC PANEL CHÍNH ---
-
     private void createTopPanel() {
         JPanel pnlTop = new JPanel(new BorderLayout());
         JLabel lblTop = new JLabel("Quản lý tài khoản", SwingConstants.CENTER);
@@ -289,9 +262,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         add(pnlTop);
     }
 
-    /**
-     * Panel bên trái: Tìm kiếm và các nút Thêm/Sửa/Xóa
-     */
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
@@ -300,7 +270,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         searchPanel.setBackground(CustomUI.white);
         searchPanel.setBorder(new FlatLineBorder(new Insets(12, 12, 12, 12), Color.decode("#CED4DA"), 2, 30));
 
-        // Hàng 1: Tìm kiếm
         JPanel row1 = new JPanel();
         row1.setLayout(new BoxLayout(row1, BoxLayout.X_AXIS));
         row1.setBackground(CustomUI.white);
@@ -328,6 +297,7 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         pnlTimKiemCards.setPreferredSize(textPanelSize);
         pnlTimKiemCards.setMaximumSize(textPanelSize);
         pnlTimKiemCards.setMinimumSize(textPanelSize);
+
         // 3. Tạo các ô nhập liệu với placeholder
         txtTimTenDN = new JTextField();
         configureSearchTextField(txtTimTenDN, SEARCH_TEXT_SIZE, "Nhập tên đăng nhập...");
@@ -345,16 +315,15 @@ public class QuanLyTaiKhoanPanel extends JPanel {
             cardLayoutTimKiem.show(pnlTimKiemCards, selected);
         });
 
-        // 5. Thêm các thành phần vào row1
         row1.add(cmbTimKiem);
         row1.add(Box.createHorizontalStrut(10));
         row1.add(pnlTimKiemCards);
         row1.add(Box.createHorizontalStrut(10));
         row1.add(searchButton);
         searchPanel.add(row1);
-        searchPanel.add(Box.createVerticalGlue()); // Đẩy hàng 2 xuống
+        searchPanel.add(Box.createVerticalGlue());
 
-        // Hàng 2: Nút Thêm/Sửa/Xóa
+
         JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         row2.setBackground(CustomUI.white);
         row2.add(addButton);
@@ -419,9 +388,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         }
     }
 
-    /**
-     * Panel bên phải: Lọc theo chức vụ
-     */
     private JPanel createCategoryPanel() {
         JPanel categoryPanel = new JPanel();
         categoryPanel.setLayout(new GridLayout(2, 2, 15, 15));
@@ -435,8 +401,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         categoryPanel.add(quanLyButton);
         categoryPanel.add(adminButton);
 
-        // TODO: Thêm ActionListener cho các nút lọc (leTanButton, quanLyButton...)
-
         allCategoryButton.addActionListener(e -> filterTaiKhoanTable("Tất cả"));
         leTanButton.addActionListener(e -> filterTaiKhoanTable("Lễ tân"));
         quanLyButton.addActionListener(e -> filterTaiKhoanTable("Quản lý"));
@@ -445,25 +409,18 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         return categoryPanel;
     }
 
-    /**
-     * Gộp panel Search (trái) và Category (phải)
-     */
     private void createSearchAndCategoryPanel() {
         JPanel searchAndCategoryPanel = new JPanel();
         searchAndCategoryPanel.setLayout(new BoxLayout(searchAndCategoryPanel, BoxLayout.X_AXIS));
-        searchAndCategoryPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 210)); // Đặt chiều cao max
+        searchAndCategoryPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 210));
         searchAndCategoryPanel.setBackground(CustomUI.white);
 
         searchAndCategoryPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-        searchAndCategoryPanel.add(createSearchPanel()); // Panel trái
-        //searchAndCategoryPanel.add(Box.createHorizontalGlue()); // Thêm Glue ở giữa
-        searchAndCategoryPanel.add(createCategoryPanel()); // Panel phải
+        searchAndCategoryPanel.add(createSearchPanel());
+        searchAndCategoryPanel.add(createCategoryPanel());
         add(searchAndCategoryPanel);
     }
 
-    /**
-     * Tạo Panel chính chứa 2 bảng (Tài khoản và Nhân viên)
-     */
     private void createListPanel() {
         JPanel listPanel = new JPanel(new BorderLayout(0, 10));
         listPanel.setBackground(CustomUI.white);
@@ -471,31 +428,24 @@ public class QuanLyTaiKhoanPanel extends JPanel {
 
         listPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        // 1. Tạo thanh chuyển đổi (Switcher)
         JPanel switcherPanel = createTableSwitcher();
 
-        // 2. Tạo CardPanel chứa 2 bảng
         tableCardLayout = new CardLayout();
         tableCardPanel = new JPanel(tableCardLayout);
         tableCardPanel.setBackground(CustomUI.white);
 
-        // 3. Tạo 2 bảng và thêm vào CardPanel
         JScrollPane spTaiKhoan = createTaiKhoanTable();
         JScrollPane spNhanVien = createNhanVienTable();
 
         tableCardPanel.add(spTaiKhoan, "TAI_KHOAN");
         tableCardPanel.add(spNhanVien, "NHAN_VIEN");
 
-        // 4. Thêm switcher và cardPanel vào
         listPanel.add(switcherPanel, BorderLayout.NORTH);
         listPanel.add(tableCardPanel, BorderLayout.CENTER);
 
         add(listPanel);
     }
 
-    /**
-     * Tạo thanh Tab (bằng JLabel) để chuyển đổi 2 bảng
-     */
     private JPanel createTableSwitcher() {
         JPanel switcherPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
         switcherPanel.setBackground(CustomUI.white);
@@ -503,11 +453,9 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         lblTabTaiKhoan = new JLabel("Danh sách tài khoản");
         lblTabNhanVien = new JLabel("Danh sách nhân viên");
 
-        // Style cho 2 tab
         styleTabLabel(lblTabTaiKhoan, true);
         styleTabLabel(lblTabNhanVien, false);
 
-        // Sự kiện click
         lblTabTaiKhoan.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -543,11 +491,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         }
     }
 
-    /**
-     * Chuyển đổi Mã Chức Vụ (ví dụ: CV001) sang Tên Chức Vụ (ví dụ: Lễ tân)
-     * @param maChucVu Mã chức vụ từ CSDL
-     * @return Tên chức vụ tương ứng
-     */
     private String convertMaChucVuToTen(String maChucVu) {
         if (maChucVu == null) return "";
 
@@ -561,9 +504,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         };
     }
 
-    /**
-     * Tạo bảng "Tài khoản"
-     */
     private JScrollPane createTaiKhoanTable() {
         String[] columns = {"Mã tài khoản", "Tên đăng nhập", "Chức vụ", "Mã nhân viên"};
         modelTaiKhoan = new DefaultTableModel(columns, 0) {
@@ -577,7 +517,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         sorterTaiKhoan = new TableRowSorter<>(modelTaiKhoan);
         tblTaiKhoan.setRowSorter(sorterTaiKhoan);
 
-        // --- Thêm ComboBox vào cột "Chức vụ" ---
         String[] roles = {"Lễ tân", "Quản lý", "Admin"};
         roleComboBox = new JComboBox<>(roles);
         roleComboBox.setFont(FONT_TABLE_CELL);
@@ -585,7 +524,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         TableColumn roleColumn = tblTaiKhoan.getColumnModel().getColumn(2); // Cột "Chức vụ"
         roleColumn.setCellEditor(new DefaultCellEditor(roleComboBox));
 
-        // Áp dụng style chung
         configureTable(tblTaiKhoan);
 
         JScrollPane scrollPane = new JScrollPane(tblTaiKhoan);
@@ -593,10 +531,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         return scrollPane;
     }
 
-    /**
-     * Lọc bảng tài khoản theo chức vụ (cột 2) và chuyển tab.
-     * @param role Chức vụ cần lọc ("Lễ tân", "Quản lý", "Admin") hoặc "Tất cả" để xóa bộ lọc.
-     */
     private void filterTaiKhoanTable(String role) {
         loadTaiKhoanData();
 
@@ -610,7 +544,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         styleTabLabel(lblTabTaiKhoan, true);
         styleTabLabel(lblTabNhanVien, false);
 
-        // 2. Áp dụng bộ lọc
         RowFilter<DefaultTableModel, Object> rf;
         if (role == null || role.equals("Tất cả")) {
             rf = null; // Xóa bộ lọc
@@ -625,9 +558,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         }
     }
 
-    /**
-     * Tạo bảng "Nhân viên"
-     */
     private JScrollPane createNhanVienTable() {
         String[] columns = {"Mã nhân viên", "Tên nhân viên", "CCCD", "Ngày sinh", "Điện thoại"};
         modelNhanVien = new DefaultTableModel(columns, 0) {
@@ -645,7 +575,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         return scrollPane;
     }
 
-    // --- Tải Dữ liệu ---
     private void loadTaiKhoanData() {
         modelTaiKhoan.setRowCount(0);
 
@@ -669,7 +598,7 @@ public class QuanLyTaiKhoanPanel extends JPanel {
     }
 
     private void loadNhanVienData() {
-        modelNhanVien.setRowCount(0); // Xóa dữ liệu cũ
+        modelNhanVien.setRowCount(0);
 
         List<NhanVien> dsNhanVien;
         try {
@@ -692,7 +621,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         }
     }
 
-    // --- CÁC HÀM TIỆN ÍCH ---
 
     private void configureTable(JTable table) {
         table.setRowHeight(40);
@@ -715,14 +643,10 @@ public class QuanLyTaiKhoanPanel extends JPanel {
 
         DefaultTableCellRenderer leftRenderer = new DefaultTableCellRenderer();
         leftRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-        leftRenderer.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0)); // Padding
+        leftRenderer.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 
         for (int i = 0; i < table.getColumnCount(); i++) {
-//            if (i == 1 || i == 2) { // Tên đăng nhập, Mật khẩu
-//                table.getColumnModel().getColumn(i).setCellRenderer(leftRenderer);
-//            } else {
-                table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-//            }
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
     }
 
@@ -737,7 +661,7 @@ public class QuanLyTaiKhoanPanel extends JPanel {
 
     private void configureSearchTextField(JTextField field, Dimension size, String placeholder) {
         field.setPreferredSize(size);
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, size.height)); // Cho phép mở rộng
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, size.height));
         field.setMinimumSize(new Dimension(120, size.height));
         field.setFont(FONT_LABEL);
         field.putClientProperty(FlatClientProperties.STYLE, "arc: 12");
@@ -785,7 +709,7 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         return button;
     }
 
-    private JButton createActionButtonAsync(String text, String iconPath, Dimension size, String bgHex, String borderHex) {
+    private JButton createActionButtonAsync(String text, Dimension size, String bgHex, String borderHex) {
         JButton button = new JButton(text);
         button.setPreferredSize(size);
         button.setMinimumSize(size);
@@ -797,55 +721,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         button.setOpaque(true);
         button.putClientProperty(FlatClientProperties.STYLE, "arc: 20; borderWidth: 2; borderColor:" + borderHex);
 
-//        loadIconAsync(iconPath, 20, 20, icon -> {
-//            if (icon != null) button.setIcon(icon);
-//        });
         return button;
     }
-
-//    // --- CÁC HÀM TẢI ICON (Giữ nguyên) ---
-//    private static String iconCacheKey(String path, int w, int h, int arc) {
-//        return path + "|" + w + "x" + h + "|arc:" + arc;
-//    }
-//
-//    private static synchronized ImageIcon getCachedIcon(String key) {
-//        return ICON_CACHE.get(key);
-//    }
-//
-//    private static void loadIconAsync(String path, int w, int h, Consumer<ImageIcon> callback) {
-//        String key = iconCacheKey(path, w, h, 0);
-//        synchronized (ICON_CACHE) {
-//            ImageIcon cached = ICON_CACHE.get(key);
-//            if (cached != null) {
-//                SwingUtilities.invokeLater(() -> callback.accept(cached));
-//                return;
-//            }
-//        }
-//        SwingWorker<ImageIcon, Void> wk = new SwingWorker<>() {
-//            @Override
-//            protected ImageIcon doInBackground() {
-//                try (InputStream is = QuanLyTaiKhoanPanel.class.getResourceAsStream(path)) {
-//                    if (is == null) return null;
-//                    BufferedImage img = ImageIO.read(is);
-//                    if (img == null) return null;
-//                    Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-//                    ImageIcon ic = new ImageIcon(scaled);
-//                    synchronized (ICON_CACHE) {
-//                        ICON_CACHE.put(iconCacheKey(path, w, h, 0), ic);
-//                    }
-//                    return ic;
-//                } catch (Exception ex) {
-//                    return null;
-//                }
-//            }
-//            @Override
-//            protected void done() {
-//                try {
-//                    ImageIcon ic = get();
-//                    if (ic != null) callback.accept(ic);
-//                } catch (Exception ignored) {}
-//            }
-//        };
-//        wk.execute();
-//    }
 }

@@ -1,4 +1,4 @@
-package vn.iuh.gui.panel;
+package vn.iuh.gui.dialog;
 
 import vn.iuh.entity.PhienDangNhap;
 import vn.iuh.gui.base.Main;
