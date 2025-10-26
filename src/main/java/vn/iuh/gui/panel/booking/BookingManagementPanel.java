@@ -361,12 +361,12 @@ public class BookingManagementPanel extends JPanel {
         statusBtn.setPreferredSize(new Dimension(160, 40));
         statusBtn.setMinimumSize(new Dimension(160, 40));
         statusBtn.setMaximumSize(new Dimension(160, 40));
-        statusBtn.setFocusPainted(false);
         statusBtn.putClientProperty(FlatClientProperties.STYLE,
                                     "arc: 10; " +
                                     "borderWidth: 1; " +
                                     "borderColor: #808080; " +
                                     "margin: 10,10,10,10"
+
         );
 
         statusBtn.addActionListener(e -> handleStatusFilter(statusValue));

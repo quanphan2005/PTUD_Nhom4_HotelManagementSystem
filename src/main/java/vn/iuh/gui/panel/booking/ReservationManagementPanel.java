@@ -413,30 +413,18 @@ public class ReservationManagementPanel extends JPanel {
                         continue;
                     }
                 }
+
+                spnStartDate.setEnabled(true);
+                spnEndDate.setEnabled(true);
+            } else {
+                spnStartDate.setEnabled(false);
+                spnEndDate.setEnabled(false);
             }
 
             filteredReservations.add(reservation);
         }
 
         populateTable();
-    }
-
-    private boolean isCurrentReservation(String status) {
-        // Current reservations include: "Chờ checkin", "Đang sử dụng", "Đang dọn dẹp"
-        return status != null && (
-            status.equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
-            status.equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus()) ||
-            status.equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus()) ||
-            status.equalsIgnoreCase(RoomStatus.ROOM_CHECKING_STATUS.getStatus())
-        );
-    }
-
-    private boolean isEndedReservation(String status) {
-        // Ended reservations include: "Đã trả phòng", "Checkout trễ", etc.
-        return status != null && (
-                status.equalsIgnoreCase(ReservationStatus.COMPLETED.getStatus())
-                || status.equalsIgnoreCase(ReservationStatus.CANCELLED.getStatus())
-        );
     }
 
     private void resetFilters() {
