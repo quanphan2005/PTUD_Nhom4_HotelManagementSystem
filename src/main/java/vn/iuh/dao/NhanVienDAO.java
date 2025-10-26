@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.dto.repository.ThongTinNhanVien;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.entity.TaiKhoan;
 import vn.iuh.exception.TableEntityMismatch;
@@ -232,6 +233,31 @@ public class NhanVienDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Không thể chuyển kết quả thành nhân viên: " + e.getMessage());
         }
+    }
+
+    public ThongTinNhanVien layThongTinNV(String maNhanVien) {
+        String query = "select nv.ten_nhan_vien, nv.CCCD, nv.ngay_sinh, nv.so_dien_thoai, tk.ma_chuc_vu from NhanVien nv join TaiKhoan tk"
+                + " on nv.ma_nhan_vien = tk.ma_nhan_vien where tk.ma_nhan_vien = ?" ;
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, maNhanVien);
+            var rs = ps.executeQuery();
+
+            if(rs.next()) {
+                ThongTinNhanVien ttnv = new ThongTinNhanVien();
+
+                ttnv.setTenNhanVien(rs.getString("ten_nhan_vien"));
+                ttnv.setCCCD(rs.getString("CCCD"));
+                ttnv.setSoDienThoai(rs.getString("so_dien_thoai"));
+                ttnv.setNgaySinh(rs.getTimestamp("ngay_sinh"));
+                ttnv.setChucVu(rs.getString("ma_chuc_vu"));
+
+                return ttnv;
+            }
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public NhanVien layNVTheoMaPhienDangNhap(String maPhienDangNhap){

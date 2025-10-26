@@ -6,12 +6,12 @@ public enum Fee {
     THUE("Thuế giá trị gia tăng"),
     DOI_PHONG("Đổi phòng");
 
-    public String status;
-    Fee(String status) {
-        this.status = status;
+    public String name;
+    Fee(String name) {
+        this.name = name;
     }
 
     public String getStatus() {
-        return status;
+        return name;
     }
 }

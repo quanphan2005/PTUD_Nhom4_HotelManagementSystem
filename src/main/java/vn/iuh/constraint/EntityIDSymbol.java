@@ -7,7 +7,7 @@ public enum EntityIDSymbol {
     HISTORY_CHECKIN_PREFIX("LV",8),
     ROOM_USAGE_SERVICE_PREFIX("PV",8),
     ACCOUNT_PREFIX("TK", 8),
-    AdditionalFee_PREFIX("PP", 8),
+    FEE_PREFIX("PP", 8),
     CUSTOMER_PREFIX("KH", 8),
     JOB_PREFIX("CV", 8),
     WORKING_HISTORY_PREFIX("LT", 8),
@@ -17,7 +17,9 @@ public enum EntityIDSymbol {
     ROOM_FEE("PP", 8),
     LOGIN_SESSION("PN", 8),
     NOTIFICATION_PREFIX("TB", 8),
-    EMPLOYEE_PREFIX("NV", 8);
+    EMPLOYEE_PREFIX("NV", 8),
+    FEE_LIST_PRICE("GP", 8)
+    ;
 //................... Other here
 
 

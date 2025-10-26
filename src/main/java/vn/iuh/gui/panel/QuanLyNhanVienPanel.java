@@ -23,33 +23,21 @@ import java.util.*;
 import java.util.List;
 
 public class QuanLyNhanVienPanel extends JPanel {
-
-    // Chuẩn hoá chiều cao cho các control tìm kiếm
     private static final int SEARCH_CONTROL_HEIGHT = 40; // chiều cao cố định cho combo, textfield, button
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(520, SEARCH_CONTROL_HEIGHT);
 
-    // Kích thước cụ thể (width) cho combo và nút tìm — text field
     private static final int SEARCH_TYPE_WIDTH = 180;
     private static final int SEARCH_BUTTON_WIDTH = 110;
     private static final Dimension SEARCH_BUTTON_SIZE = new Dimension(SEARCH_BUTTON_WIDTH, SEARCH_CONTROL_HEIGHT);
-
-    // Giảm kích thước nút action để chứa 4 nút
     private static final Dimension ACTION_BUTTON_SIZE = new Dimension(220, 50);
-
-    // Top panel height
     private static final int TOP_PANEL_HEIGHT = 40;
 
-    // Fonts & Colors tái sử dụng (tránh tạo mới trong render loop)
     private static final Font FONT_LABEL = new Font("Arial", Font.BOLD, 14);
     private static final Font FONT_ACTION = new Font("Arial", Font.BOLD, 18);
     private static final Font TABLE_FONT = FONT_LABEL;
     private static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 15);
     private static final Color ROW_ALT_COLOR = new Color(250, 247, 249);
     private static final Color ROW_SELECTED_COLOR = new Color(210, 230, 255);
-
-    // Simple in-memory cache cho icons (key = path + size)
-    private static final Map<String, ImageIcon> ICON_CACHE = new HashMap<>();
-
     private final JTextField searchTextField = new JTextField();
     private final JButton searchButton = new JButton("TÌM");
     private JButton addButton;
@@ -57,7 +45,6 @@ public class QuanLyNhanVienPanel extends JPanel {
     private JButton editButton;
     private JButton refreshButton; // Nút mới
 
-    // Components để load dữ liệu
     private JTable table;
     private DefaultTableModel tableModel;
     private NhanVienDAO nhanVienDao; // DAO
@@ -82,29 +69,24 @@ public class QuanLyNhanVienPanel extends JPanel {
         add(Box.createVerticalStrut(10));
         createSearchAndActionPanel();
         add(Box.createVerticalStrut(10));
-        createListNhanVienPanel(); // Đổi tên phương thức
+        createListNhanVienPanel();
     }
 
     private void initButtons() {
         configureSearchTextField(searchTextField, SEARCH_TEXT_SIZE, "Tên nhân viên");
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
-        // Tạo button mà **không** block UI để load icon
-        addButton = createActionButton("Thêm nhân viên", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
-        editButton = createActionButton("Sửa nhân viên", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
+        addButton = createActionButton("Thêm nhân viên" , ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
+        editButton = createActionButton("Sửa nhân viên", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
 
-        deleteButton = createActionButton("Xóa nhân viên", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
+        deleteButton = createActionButton("Xóa nhân viên",  ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
 
-        // Nút Refresh mới
-        refreshButton = createActionButton("Làm mới", "/icons/refresh.png", ACTION_BUTTON_SIZE, "#0891B2", "#67E8F9"); // Màu Cyan
+        refreshButton = createActionButton("Làm mới",  ACTION_BUTTON_SIZE, "#0891B2", "#67E8F9"); // Màu Cyan
 
-        // Thêm sự kiện cho nút làm mới
         refreshButton.addActionListener(e -> {
             loadDataToTable();
-            // TODO: Xóa nội dung trong các text field tìm kiếm nếu cần
         });
 
-        // TODO: Thêm sự kiện cho các nút Thêm, Sửa, Xóa, Tìm
         addButton.addActionListener(e -> {
 
             NhanVien nvMoiNhat = nhanVienDao.timNhanVienMoiNhat();
@@ -114,17 +96,14 @@ public class QuanLyNhanVienPanel extends JPanel {
                     EntityIDSymbol.EMPLOYEE_PREFIX.getPrefix(),
                     EntityIDSymbol.EMPLOYEE_PREFIX.getLength());
 
-            // Lấy Frame cha (thường là cửa sổ Main)
             Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
 
             EmployeeDialog addDialog = new EmployeeDialog(owner, "Thêm nhân viên mới", newMaNhanVien);
             addDialog.setVisible(true);
 
-            // Chỉ xử lý khi người dùng nhấn "Lưu"
             if (addDialog.isSaved()) {
                 NhanVien newEmployee = addDialog.getNhanVien();
 
-                // Gọi Service để thêm
                 if (employeeService.createEmployee(newEmployee) != null) {
                     JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công.");
                     loadDataToTable();
@@ -143,7 +122,6 @@ public class QuanLyNhanVienPanel extends JPanel {
 
             String employeeId = (String) tableModel.getValueAt(selectedRow, 0);
 
-            // 1. Lấy thông tin nhân viên đầy đủ từ CSDL
             NhanVien existingEmployee = employeeService.getEmployeeByID(employeeId);
             if (existingEmployee == null) {
                 JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên với mã " + employeeId, "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -152,15 +130,12 @@ public class QuanLyNhanVienPanel extends JPanel {
 
             Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
 
-            // 3. Mở dialog ở chế độ "Edit", truyền nhân viên vào
             EmployeeDialog editDialog = new EmployeeDialog(owner, "Cập nhật thông tin nhân viên", existingEmployee);
             editDialog.setVisible(true); 
 
-            // 4. Chỉ xử lý khi người dùng nhấn "Lưu"
             if (editDialog.isSaved()) {
                 NhanVien updatedEmployee = editDialog.getNhanVien();
 
-                // Gọi Service để cập nhật
                 if (employeeService.updateEmployee(updatedEmployee) != null) {
                     JOptionPane.showMessageDialog(this, "Cập nhật thành công.");
                     loadDataToTable();
@@ -237,8 +212,7 @@ public class QuanLyNhanVienPanel extends JPanel {
         btn.setAlignmentY(Component.CENTER_ALIGNMENT);
     }
 
-    private JButton createActionButton(String text, String iconPath, Dimension size, String bgHex, String borderHex) {
-        // (Giữ nguyên code của bạn)
+    private JButton createActionButton(String text, Dimension size, String bgHex, String borderHex) {
         JButton button = new JButton(text);
         button.setPreferredSize(size);
         button.setFont(FONT_ACTION);
@@ -246,22 +220,11 @@ public class QuanLyNhanVienPanel extends JPanel {
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.putClientProperty(FlatClientProperties.STYLE, "arc: 18; borderWidth: 2; borderColor:" + borderHex);
-
-//        String key = iconCacheKey(iconPath, 20, 20);
-//        ImageIcon cached = getCachedIcon(key);
-//        if (cached != null) {
-//            button.setIcon(cached);
-//        } else {
-//            loadIconAsync(iconPath, 20, 20, icon -> {
-//                if (icon != null) button.setIcon(icon);
-//            });
-//        }
         return button;
     }
 
     private void createTopPanel() {
         JPanel pnlTop = new JPanel(new BorderLayout());
-        // Thay đổi tiêu đề
         JLabel lblTop = new JLabel("Quản lý nhân viên", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.normalFont != null ? CustomUI.normalFont.deriveFont(Font.BOLD, 18f) : new Font("Arial", Font.BOLD, 18));
@@ -273,7 +236,6 @@ public class QuanLyNhanVienPanel extends JPanel {
     }
 
     private void createSearchAndActionPanel() {
-        // (Giữ nguyên code của bạn)
         JPanel container = new JPanel();
         container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
         container.setBackground(CustomUI.white);
@@ -291,8 +253,7 @@ public class QuanLyNhanVienPanel extends JPanel {
         searchPanel.setBackground(CustomUI.white);
         searchPanel.setBorder(new FlatLineBorder(new Insets(12, 12, 12, 12), Color.decode("#CED4DA"), 2, 25));
 
-        // Thay đổi tùy chọn tìm kiếm
-        String[] searchOptions = {"Tên nhân viên", "Mã nhân viên", "Số điện thoại"}; // Thêm SĐT
+        String[] searchOptions = {"Tên nhân viên", "Mã nhân viên", "Số điện thoại"};
         searchTypeComboBox = new JComboBox<>(searchOptions);
         Dimension comboSize = new Dimension(SEARCH_TYPE_WIDTH, SEARCH_CONTROL_HEIGHT);
         searchTypeComboBox.setPreferredSize(comboSize);
@@ -309,7 +270,6 @@ public class QuanLyNhanVienPanel extends JPanel {
         inputPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, SEARCH_CONTROL_HEIGHT));
         inputPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        // Cập nhật placeholder
         nameField = new JTextField();
         configureSearchTextField(nameField, new Dimension(520, SEARCH_CONTROL_HEIGHT), "Tên nhân viên");
 
@@ -357,13 +317,12 @@ public class QuanLyNhanVienPanel extends JPanel {
         searchPanel.add(row1);
         searchPanel.add(Box.createVerticalStrut(14));
 
-        // Hàng 2: Thêm nút Refresh
-        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 8)); // gap=20
+        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 8));
         row2.setBackground(CustomUI.white);
 
         addButton.setPreferredSize(ACTION_BUTTON_SIZE);
         editButton.setPreferredSize(ACTION_BUTTON_SIZE);
-        refreshButton.setPreferredSize(ACTION_BUTTON_SIZE); // set size
+        refreshButton.setPreferredSize(ACTION_BUTTON_SIZE);
         deleteButton.setPreferredSize(ACTION_BUTTON_SIZE);
 
         row2.add(addButton);
@@ -376,11 +335,7 @@ public class QuanLyNhanVienPanel extends JPanel {
         return searchPanel;
     }
 
-    /**
-     * Tải dữ liệu từ DAO vào tableModel.
-     */
     private void loadDataToTable() {
-        // Xóa dữ liệu cũ
         tableModel.setRowCount(0);
 
         List<NhanVien> dsNhanVien;
@@ -392,7 +347,6 @@ public class QuanLyNhanVienPanel extends JPanel {
             return;
         }
 
-        // Duyệt danh sách và thêm vào tableModel
         for (NhanVien nv : dsNhanVien) {
             Object[] row = {
                     nv.getMaNhanVien(),
@@ -417,14 +371,14 @@ public class QuanLyNhanVienPanel extends JPanel {
             } else if ("Mã nhân viên".equals(selectedType)) {
                 searchText = idField.getForeground().equals(Color.GRAY) ? "" : idField.getText().trim();
                 if (searchText.isEmpty()) {
-                    dsNhanVien = employeeService.getAllEmployee(); // Lấy tất cả nếu rỗng
+                    dsNhanVien = employeeService.getAllEmployee();
                 } else {
-                    NhanVien nv = employeeService.getEmployeeByID(searchText); // Gọi service
+                    NhanVien nv = employeeService.getEmployeeByID(searchText);
                     if (nv != null) dsNhanVien.add(nv);
                 }
             } else if ("Số điện thoại".equals(selectedType)) {
                 searchText = phoneField.getForeground().equals(Color.GRAY) ? "" : phoneField.getText().trim();
-                NhanVien nv = employeeService.getEmployeeBySDT(searchText); // Gọi service
+                NhanVien nv = employeeService.getEmployeeBySDT(searchText);
                 if(nv != null)  dsNhanVien.add(nv);
             }
         } catch (Exception ex) {
@@ -450,9 +404,6 @@ public class QuanLyNhanVienPanel extends JPanel {
         }
     }
 
-    /**
-     * Tạo panel chứa danh sách nhân viên (JTable).
-     */
     private void createListNhanVienPanel() {
         JPanel wrap = new JPanel(new BorderLayout());
         wrap.setBackground(CustomUI.white);
@@ -463,18 +414,15 @@ public class QuanLyNhanVienPanel extends JPanel {
         wrap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 750));
         wrap.setPreferredSize(new Dimension(0, 750));
 
-        // Cập nhật cột
         String[] columns = {"Mã nhân viên", "Tên nhân viên", "CCCD", "Ngày sinh", "Điện thoại" };
 
-        // Khởi tạo model với 0 hàng
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Không cho phép chỉnh sửa
+                return false;
             }
         };
 
-        // Khởi tạo JTable với tableModel
         table = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
@@ -506,17 +454,14 @@ public class QuanLyNhanVienPanel extends JPanel {
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Căn giữa cột Mã NV, CCCD, Điện thoại, Chức vụ
         table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
-
         table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
         table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
         table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
 
-        // Căn trái cột Tên NV
         DefaultTableCellRenderer leftRenderer = new DefaultTableCellRenderer();
         leftRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-        leftRenderer.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0)); // Thêm padding trái
+        leftRenderer.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         table.getColumnModel().getColumn(1).setCellRenderer(leftRenderer);
 
 
@@ -527,7 +472,6 @@ public class QuanLyNhanVienPanel extends JPanel {
         wrap.add(scrollPane, BorderLayout.CENTER);
         this.add(wrap);
 
-        // Tải dữ liệu lần đầu
         loadDataToTable();
     }
 }
