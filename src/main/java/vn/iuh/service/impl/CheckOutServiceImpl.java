@@ -241,6 +241,7 @@ public class CheckOutServiceImpl implements CheckOutService {
             hoaDonThanhToan.setTongTien(tongTien);
             hoaDonThanhToan.setTienThue(tienThue);
             hoaDonThanhToan.setTongHoaDon(tongTien.add(tienThue));
+            hoaDonThanhToan.setTinhTrangThanhToan(PaymentStatus.UNPAID.getStatus());
 
             hoaDonDAO.createInvoice(hoaDonThanhToan);
 
@@ -450,7 +451,9 @@ public class CheckOutServiceImpl implements CheckOutService {
         return this.checkOutReservation(maDonDatPhong);
     }
 
-    public boolean createHoaDonForAutoCheckout(String reservationDetail){
+    public List<String> createHoaDonForAutoCheckout(String reservationDetail){
+        List<String> danhSachMaCTDPDaCheckout = new ArrayList<>();
+
         try {
             datPhongDAO.khoiTaoGiaoTac();
             String reservationId = chiTietDatPhongDAO.findFormIDByDetail(reservationDetail);
@@ -489,7 +492,6 @@ public class CheckOutServiceImpl implements CheckOutService {
                 double thoiGianSuDung = tinhKhoangCachGio(tgBatDau, ct.getTgTraPhong());
 
                 //Lấy giá theo giờ hay theo ngày
-                //boolean isDatTheoNgay = thoiGianSuDung > 12;
                 BigDecimal donGiaNgay = loaiPhongService.layGiaTheoLoaiPhong(ct.getMaLoaiPhong(), true);
                 BigDecimal donGiaGio = loaiPhongService.layGiaTheoLoaiPhong(ct.getMaLoaiPhong(), false);
                 BigDecimal finalDonGiaHienThi;
@@ -520,6 +522,9 @@ public class CheckOutServiceImpl implements CheckOutService {
                 if (ct.getKieuKetThuc() == null) {
                     danhSachMaPhongDangSuDung.add(ct.getMaPhong());
                     danhSachMaChiTietDatPhong.add(ct.getMaChiTietDatPhong());
+                    // ===== Thu thập mã CTDP đã checkout =====
+                    danhSachMaCTDPDaCheckout.add(ct.getMaChiTietDatPhong());
+
                     Timestamp thoiDiemHienTai = new Timestamp(System.currentTimeMillis());
                     if (thoiDiemHienTai.after(ct.getTgTraPhong())) {
                         isCheckOutTre = true;
@@ -587,25 +592,28 @@ public class CheckOutServiceImpl implements CheckOutService {
             }
 
             //Tính thuế giá trị gia tăng
-
             ThongTinPhuPhi thue = vn.iuh.util.FeeValue.getInstance().get(Fee.THUE);
             BigDecimal tienThue = getPriceWithPercentFeeValue(tongTien, thue.getGiaHienTai());
 
             hoaDonThanhToan.setTongTien(tongTien);
             hoaDonThanhToan.setTienThue(tienThue);
             hoaDonThanhToan.setTongHoaDon(tongTien.add(tienThue));
+            hoaDonThanhToan.setTinhTrangThanhToan(PaymentStatus.UNPAID.getStatus());
 
             hoaDonDAO.createInvoice(hoaDonThanhToan);
 
             //Chèn danh sách chi tiết hóa đơn đã tạo
             chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
 
-        }catch (BusinessException e){
-            System.out.println("Lỗi khi tạo hóa đơn");
+            datPhongDAO.thucHienGiaoTac();
+
+        } catch (BusinessException e) {
+            System.out.println("Lỗi khi tạo hóa đơn: " + e.getMessage());
             datPhongDAO.hoanTacGiaoTac();
+            return new ArrayList<>();
         }
-        datPhongDAO.thucHienGiaoTac();
-        return true;
+
+        return danhSachMaCTDPDaCheckout;
     }
 
     private BigDecimal getPriceWithPercentFeeValue(BigDecimal price, BigDecimal percent){
