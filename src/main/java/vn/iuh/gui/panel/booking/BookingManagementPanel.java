@@ -500,7 +500,6 @@ public class BookingManagementPanel extends JPanel {
         roomFilter.checkInDate = checkin;
         roomFilter.roomType = roomFilter.roomType == null ? ALL_STATUS : roomFilter.roomType;
         roomFilter.capacity = roomFilter.capacity == null ? 1 : roomFilter.capacity;
-        roomFilter.roomStatus = roomFilter.roomStatus == null ? RoomStatus.ROOM_EMPTY_STATUS.getStatus() : roomFilter.roomStatus;
     }
 
     private void clearAllSelections() {

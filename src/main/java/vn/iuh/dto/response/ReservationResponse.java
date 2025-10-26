@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 public class ReservationResponse {
     private String CCCD;
     private String customerName;
+    private String maKhachHang;
     private String maDonDatPhong;
     private String type;
     private Timestamp timeIn;
@@ -35,6 +36,10 @@ public class ReservationResponse {
         return customerName;
     }
 
+    public String getMaKhachHang() {
+        return maKhachHang;
+    }
+
     public String getMaDonDatPhong() {
         return maDonDatPhong;
     }
@@ -61,5 +66,37 @@ public class ReservationResponse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public void setCCCD(String CCCD) {
+        this.CCCD = CCCD;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public void setMaKhachHang(String maKhachHang) {
+        this.maKhachHang = maKhachHang;
+    }
+
+    public void setMaDonDatPhong(String maDonDatPhong) {
+        this.maDonDatPhong = maDonDatPhong;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setTimeIn(Timestamp timeIn) {
+        this.timeIn = timeIn;
+    }
+
+    public void setTimeOut(Timestamp timeOut) {
+        this.timeOut = timeOut;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 }

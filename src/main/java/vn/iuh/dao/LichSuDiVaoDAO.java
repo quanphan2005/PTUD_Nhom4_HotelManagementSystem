@@ -106,6 +106,26 @@ public class LichSuDiVaoDAO {
 
     }
 
+    public List<LichSuDiVao> timTatCaLichSuDiVaoBangMaDatPhong(String maDonDatPhong) {
+        String query = "SELECT lsdv.* FROM LichSuDiVao lsdv " +
+                       "JOIN ChiTietDatPhong ctdp ON lsdv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                       "WHERE ctdp.ma_don_dat_phong = ? AND lsdv.da_xoa = 0";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+
+            List<LichSuDiVao> lichSuDiVaoList = new java.util.ArrayList<>();
+            var rs = ps.executeQuery();
+            while (rs.next())
+                lichSuDiVaoList.add(chuyenKetQuaThanhLichSuDiVao(rs));
+
+            return lichSuDiVaoList;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private LichSuDiVao chuyenKetQuaThanhLichSuDiVao(ResultSet rs) {
         try {
             String maLichSuDiVao = rs.getString("ma_lich_su_di_vao");

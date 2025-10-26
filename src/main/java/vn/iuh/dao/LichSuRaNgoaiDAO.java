@@ -93,6 +93,27 @@ public class LichSuRaNgoaiDAO {
         }
     }
 
+    public List<LichSuRaNgoai> timTatCaLichSuRaNgoaiBangMaDatPhong(String maDonDatPhong) {
+        String query = "SELECT * FROM LichSuRaNgoai lsrn " +
+                       "JOIN ChiTietDatPhong ctdp ON lsrn.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                       "WHERE ctdp.ma_don_dat_phong = ? AND ctdp.da_xoa = 0";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+
+            List<LichSuRaNgoai> lichSuRaNgoaiList = new ArrayList<>();
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                lichSuRaNgoaiList.add(chuyenKetQuaThanhLichSuRaNgoai(rs));
+            }
+
+            return lichSuRaNgoaiList;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public List<LichSuRaNgoai> timLichSuRaNgoaiBangDanhSachMaChiTietDatPhong(List<String> danhSachMaChiTietDatPhong) {
         if (danhSachMaChiTietDatPhong.isEmpty()) {
             return new ArrayList<>();

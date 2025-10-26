@@ -663,6 +663,7 @@ public class ReservationInfoDetailPanel extends JPanel {
                 panel.add(btnChangeRoom);
                 panel.add(btnCancel);
                 break;
+            case CHECKING:
             case USING:
                 panel.add(btnOrderService);
                 panel.add(btnExtendTime);

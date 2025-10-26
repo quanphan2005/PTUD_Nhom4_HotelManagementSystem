@@ -126,24 +126,49 @@ public class DonGoiDichVuDao {
     }
 
     public List<PhongDungDichVu> timDonGoiDichVuBangMaDatPhong(String maDatPhong) {
-        String query = "SELECT * FROM ChiTietDatPhong ctdp" +
-                       " JOIN PhongDungDichVu pddv" +
-                       " ON ctdp.ma_chi_tiet_dat_phong = pddv.ma_chi_tiet_dat_phong " +
+        String query = "SELECT pddv.* " +
+                       " FROM ChiTietDatPhong ctdp " +
+                       " JOIN PhongDungDichVu pddv ON ctdp.ma_chi_tiet_dat_phong = pddv.ma_chi_tiet_dat_phong " +
                        " WHERE ctdp.ma_don_dat_phong = ?";
 
-        List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
+        List<PhongDungDichVu> roomUsageServiceInfos = new ArrayList<>();
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maDatPhong);
             var rs = ps.executeQuery();
             while (rs.next())
-                danhSachPhongDungDichVu.add(chuyenKetQuaThanhPhongDungDichVu(rs));
+                roomUsageServiceInfos.add(chuyenKetQuaThanhPhongDungDichVu(rs));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } catch (TableEntityMismatch mismatchException) {
             System.out.println(mismatchException.getMessage());
         }
-        return danhSachPhongDungDichVu;
+
+        return roomUsageServiceInfos;
+    }
+
+    public List<RoomUsageServiceInfo> timTatCaDonGoiDichVuBangMaDatPhong(String maDatPhong) {
+        String query = "SELECT pddv.*, dv.ten_dich_vu, p.ten_phong " +
+                       "FROM ChiTietDatPhong ctdp" +
+                       " JOIN PhongDungDichVu pddv ON ctdp.ma_chi_tiet_dat_phong = pddv.ma_chi_tiet_dat_phong " +
+                       " JOIN DichVu dv ON pddv.ma_dich_vu = dv.ma_dich_vu " +
+                       " JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                       " WHERE ctdp.ma_don_dat_phong = ?";
+
+        List<RoomUsageServiceInfo> roomUsageServiceInfos = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDatPhong);
+            var rs = ps.executeQuery();
+            while (rs.next())
+                roomUsageServiceInfos.add(chuyenKetQuaThanhRoomUsageServiceInfo(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return roomUsageServiceInfos;
     }
 
     public void capNhatSoLuongTonKhoDichVu(String maDichVu, int soLuong) {

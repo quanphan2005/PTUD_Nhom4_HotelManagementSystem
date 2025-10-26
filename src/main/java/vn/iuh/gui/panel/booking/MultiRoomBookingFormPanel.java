@@ -764,12 +764,14 @@ public class MultiRoomBookingFormPanel extends JPanel {
             && TimeFilterHelper.getCheckinTime().after(new Date())) {
             spnCheckOutDate.setValue(TimeFilterHelper.getCheckoutTime());
             spnCheckInDate.setValue(TimeFilterHelper.getCheckinTime());
+            chkIsAdvanced.setSelected(true);
         } else {
             java.util.Date today = new Date();
             spnCheckOutDate.setValue(Date.from(today.toInstant().plus(1, ChronoUnit.DAYS)));
             spnCheckInDate.setValue(today);
+            chkIsAdvanced.setSelected(false);
         }
-
+        
         calculatePrice();
     }
 

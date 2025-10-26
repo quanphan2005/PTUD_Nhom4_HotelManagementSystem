@@ -2,6 +2,7 @@ package vn.iuh.constraint;
 
 public enum ReservationStatus {
     CHECKED_IN("CHỜ NHẬN PHÒNG"),
+    CHECKING("ĐANG NHẬN PHÒNG"),
     USING("ĐANG SỬ DỤNG"),
     CHECKOUT_LATE("CHECKOUT TRỄ"),
     COMPLETED("ĐÃ HOÀN THÀNH"),
