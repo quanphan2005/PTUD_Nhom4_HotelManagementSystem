@@ -31,8 +31,9 @@ public class LoginPanelV2 extends JPanel implements ActionListener {
     private final PlaceholderPassword txtPass;
     private final PhienDangNhapDAO phienDangNhapDao;
     private final TaiKhoanDAO taiKhoanDAO;
-
-    public LoginPanelV2() {
+    private final Main mainInstance;
+    public LoginPanelV2(Main mainInstance) {
+        this.mainInstance = mainInstance;
         this.phienDangNhapDao = new PhienDangNhapDAO();
         this.taiKhoanDAO = new TaiKhoanDAO();
 
@@ -242,7 +243,7 @@ public class LoginPanelV2 extends JPanel implements ActionListener {
 
                 phienDangNhapDao.themPhienDangNhap(phienDangNhap);
                 Main.setCurrenLoginSession(newMaPhienDangNhap);
-
+                mainInstance.refreshSidebar();
                 Main.showRootCard("MainUI");
             }else{
                 JOptionPane.showMessageDialog(this, "Tên đăng nhập hoặc mật khẩu không đúng", "Đăng nhập thất bại", JOptionPane.ERROR_MESSAGE);

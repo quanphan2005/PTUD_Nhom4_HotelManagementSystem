@@ -7,7 +7,11 @@ package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import vn.iuh.constraint.PanelName;
-import vn.iuh.gui.panel.LoginPanel;
+import vn.iuh.dao.NhanVienDAO;
+import vn.iuh.dao.TaiKhoanDAO;
+import vn.iuh.entity.NhanVien;
+import vn.iuh.gui.dialog.LogOutDialog;
+import vn.iuh.gui.dialog.UserInfoDialog;
 import vn.iuh.gui.dialog.WorkingHistoryDialog;
 import vn.iuh.gui.panel.*;
 import vn.iuh.gui.panel.booking.PreReservationManagementPanel;
@@ -18,6 +22,8 @@ import vn.iuh.gui.panel.statistic.RoomProductivityPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class Main extends JFrame {
     private JPanel pMain;
@@ -45,8 +51,12 @@ public class Main extends JFrame {
     private JButton btnWorkingHistory;
     private WorkingHistoryDialog workingHistoryDialog   ;
     private JPanel pnlTopRight;
+    private NhanVienDAO nhanVienDAO;
+    private TaiKhoanDAO taiKhoanDAO;
 
     public void init() {
+        this.taiKhoanDAO = new TaiKhoanDAO();
+        this.nhanVienDAO = new NhanVienDAO();
         //Set hiển thị mặc định toàn màn hình
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
         //Hiển thị chính giữa
@@ -71,7 +81,7 @@ public class Main extends JFrame {
         mainLayout = new CardLayout();
         pnlRoot = new JPanel(mainLayout);
 
-        LoginPanelV2 loginPanel = new LoginPanelV2();
+        LoginPanelV2 loginPanel = new LoginPanelV2(this);
         pnlRoot.add(loginPanel, "Login");
 
         pnlMainUI = new JPanel(new BorderLayout());
@@ -115,9 +125,16 @@ public class Main extends JFrame {
         scrollPanel.setBorder(null);
         scrollPanel.setBorder(BorderFactory.createEmptyBorder(0,4,0,0));
         scrollPanel.getVerticalScrollBar().setUnitIncrement(16);
-        
+
+        String session = Main.getCurrentLoginSession();
+        if(session == null) {
+            userInfo = new UserInfoPanel("Guest", "Pleasa log in");
+            JLabel lblDetail = userInfo.getLblDetail();
+            lblDetail.setText("");
+            lblDetail.setCursor(null);
+        }
         //Tạo phần khung nhỏ hiển thị tài khoảng đang đăng nhập
-        userInfo = new UserInfoPanel("Quản Lý", "Dickese Ng");
+        //userInfo = new UserInfoPanel("Quản Lý", "Dickese Ng");
         
         //Bọc phần userInfor bằng 1 panel khác để có thể tùy chỉnh border cách đều
         pnlLeftTopWrapper = new JPanel();
@@ -129,6 +146,61 @@ public class Main extends JFrame {
         
         
         return pnlLeftWrapper;
+    }
+
+    public void refreshSidebar() {
+        String session = Main.getCurrentLoginSession();
+        if (session == null) return;
+
+        NhanVien nv = nhanVienDAO.layNVTheoMaPhienDangNhap(session);
+        if (nv == null) {
+            System.err.println("Lỗi refreshSidebar: Không tìm thấy NV cho phiên " + session);
+            return;
+        }
+
+        String role = taiKhoanDAO.getChucVuBangMaNhanVien(nv.getMaNhanVien());
+
+        UserInfoPanel newUserInfo = new UserInfoPanel(convertMaChucVuToTen(role), nv.getTenNhanVien());
+
+        JLabel lblDetail = newUserInfo.getLblDetail();
+        lblDetail.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lblDetail.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(pnlLeftWrapper);
+                UserInfoDialog userInfoDialog = new UserInfoDialog(parentFrame, nv);
+                userInfoDialog.setLocationRelativeTo(parentFrame);
+                userInfoDialog.setVisible(true);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                lblDetail.setForeground(Color.CYAN);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                lblDetail.setForeground(Color.LIGHT_GRAY);
+            }
+        });
+
+        pnlLeftTopWrapper.remove(this.userInfo);
+        pnlLeftTopWrapper.add(newUserInfo);
+        pnlLeftTopWrapper.revalidate();
+        pnlLeftTopWrapper.repaint();
+
+        // cập nhật tham chiếu
+        this.userInfo = newUserInfo;
+    }
+
+    private String convertMaChucVuToTen(String maChucVu) {
+        if (maChucVu == null) return "Lễ tân";
+        return switch (maChucVu.trim().toUpperCase()) {
+            case "CV001" -> "Lễ tân";
+            case "CV002" -> "Quản lý";
+            case "CV003" -> "Admin";
+            default -> "Lễ tân";
+        };
     }
     private JPanel createTopCounting(){
         //Tạo phần top bằng 1 panel được custom lại
@@ -153,11 +225,6 @@ public class Main extends JFrame {
         btnLogOut.setFont(CustomUI.smallFont);
         btnLogOut.addActionListener(e -> LogOutDialog.handleLogout(this));
         createWoringHistoryButton();
-        btnLogOut  = new JButton("Đăng xuất");
-        btnLogOut.setBackground(CustomUI.red);
-        btnLogOut.setForeground(CustomUI.white);
-        btnLogOut.setFont(CustomUI.smallFont);
-        btnLogOut.addActionListener(e -> LogOutDialog.handleLogout(this));
         pnlTopRight.add(btnWorkingHistory);
         pnlTopRight.add(btnBell);
 
