@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PhuPhiDAO {
     private final Connection connection;
@@ -171,5 +173,28 @@ public class PhuPhiDAO {
     }
 
 
+    public List<ThongTinPhuPhi> getDanhSachPhuPhi() {
+        List<ThongTinPhuPhi> list = new ArrayList<>();
+        String sql = """
+            SELECT pp.ma_phu_phi, pp.ten_phu_phi, gpp.la_phan_tram, gpp.gia_hien_tai
+            FROM PhuPhi pp
+            OUTER APPLY (
+                SELECT TOP 1 gia_hien_tai, la_phan_tram, thoi_gian_tao
+                FROM GiaPhuPhi gpp
+                WHERE gpp.ma_phu_phi = pp.ma_phu_phi
+                ORDER BY gpp.thoi_gian_tao DESC
+            ) AS gpp
+        """;
 
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(chuyenKetQuaThanhThongTinPhuPhi(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 }

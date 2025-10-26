@@ -3,7 +3,6 @@ package vn.iuh.gui.panel;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.ui.FlatLineBorder;
 import vn.iuh.constraint.Fee;
-import vn.iuh.constraint.InvoiceType;
 import vn.iuh.dao.HoaDonDAO;
 //import vn.iuh.dto.event.create.InvoiceCreationEvent;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
@@ -15,6 +14,7 @@ import vn.iuh.gui.base.Main;
 import vn.iuh.gui.dialog.InvoiceDialog2;
 import vn.iuh.dao.*;
 import vn.iuh.entity.*;
+import vn.iuh.util.FeeValue;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -456,7 +456,7 @@ public class QuanLyHoaDonPanel extends JPanel{
             }
             String maDonDatPhong = hoaDon.getMaDonDatPhong();
 
-            ThongTinPhuPhi ttpp = phuPhiDAO.getThongTinPhuPhiByName(Fee.THUE.status);
+            ThongTinPhuPhi ttpp = FeeValue.getInstance().get(Fee.THUE);
 
             DonDatPhong ddp = datPhongDAO.getDonDatPhongById(maDonDatPhong);
 
@@ -472,7 +472,6 @@ public class QuanLyHoaDonPanel extends JPanel{
 
             InvoiceResponse invoiceResponse = new InvoiceResponse(
                     hoaDon.getMaPhienDangNhap(),
-                    hoaDon.getTongTien(),
                     ddp,
                     khachHang,
                     hoaDon,

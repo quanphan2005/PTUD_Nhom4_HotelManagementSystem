@@ -11,29 +11,19 @@ public class InvoiceResponse {
     private KhachHang khachHang;
     private HoaDon hoaDon;
     private NhanVien tenNhanVien;
-    private BigDecimal tienCoc;
     private List<ChiTietHoaDon> chiTietHoaDonList;
     private List<PhongDungDichVu> phongDungDichVuList;
     private List<PhongTinhPhuPhi> phongTinhPhuPhiList;
 
-    public InvoiceResponse(String maPhienDangNhap, BigDecimal tienCoc, DonDatPhong donDatPhong,KhachHang khachHang, HoaDon hoaDon, NhanVien tenNhanVien, List<ChiTietHoaDon> chiTietHoaDonList, List<PhongDungDichVu> phongDungDichVuList, List<PhongTinhPhuPhi> phongTinhPhuPhiList) {
+    public InvoiceResponse(String maPhienDangNhap, DonDatPhong donDatPhong,KhachHang khachHang, HoaDon hoaDon, NhanVien tenNhanVien, List<ChiTietHoaDon> chiTietHoaDonList, List<PhongDungDichVu> phongDungDichVuList, List<PhongTinhPhuPhi> phongTinhPhuPhiList) {
         this.maPhienDangNhap = maPhienDangNhap;
         this.donDatPhong = donDatPhong;
         this.khachHang = khachHang;
         this.hoaDon = hoaDon;
         this.tenNhanVien = tenNhanVien;
-        this.tienCoc = tienCoc;
         this.chiTietHoaDonList = chiTietHoaDonList;
         this.phongDungDichVuList = phongDungDichVuList;
         this.phongTinhPhuPhiList = phongTinhPhuPhiList;
-    }
-
-    public BigDecimal getTienCoc() {
-        return tienCoc;
-    }
-
-    public void setTienCoc(BigDecimal tienCoc) {
-        this.tienCoc = tienCoc;
     }
 
     public String getMaPhienDangNhap() {

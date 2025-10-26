@@ -12,6 +12,7 @@ import vn.iuh.util.EntityUtil;
 import vn.iuh.util.TimeFormat;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -665,8 +666,8 @@ public class BookingServiceImpl implements BookingService {
         hoaDon.setTinhTrangThanhToan(PaymentStatus.PAID.getStatus());
         hoaDon.setThoiGianTao(null);
         hoaDon.setTongTien(BigDecimal.valueOf(donDatPhong.getTienDatCoc()));
-        hoaDon.setTienThue(BigDecimal.valueOf(donDatPhong.getTienDatCoc() * FeeValue.TAX.getValue()));
-        hoaDon.setTongHoaDon(BigDecimal.valueOf(donDatPhong.getTienDatCoc() * (1 + FeeValue.TAX.getValue())));
+        hoaDon.setTienThue(calculatePriceWithTaxPrice(BigDecimal.valueOf(donDatPhong.getTienDatCoc())));
+        hoaDon.setTongHoaDon(hoaDon.getTongTien().add(hoaDon.getTienThue()));
         hoaDon.setChiTietHoaDonList(null);
 
         return hoaDon;
@@ -951,5 +952,11 @@ public class BookingServiceImpl implements BookingService {
             roomUsageServiceResponses,
             movingHistoryResponses
         );
+    }
+
+
+    private BigDecimal calculatePriceWithTaxPrice(BigDecimal price){
+        ThongTinPhuPhi thue = vn.iuh.util.FeeValue.getInstance().get(Fee.THUE);
+        return price.multiply(thue.getGiaHienTai()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
 }
