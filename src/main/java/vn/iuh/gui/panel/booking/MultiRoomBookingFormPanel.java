@@ -154,8 +154,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
     private void setupLayout() {
         // Header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setPreferredSize(new Dimension(0, 50));
-        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 20");
+        headerPanel.setPreferredSize(new Dimension(0, 40));
+        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         headerPanel.setBackground(CustomUI.blue);
 
         // Title Panel
@@ -164,7 +164,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
 
         // Title for multi-room booking
         JLabel titleLabel = new JLabel("Đặt nhiều phòng (" + selectedRooms.size() + " phòng)", SwingConstants.CENTER);
-        titleLabel.setFont(CustomUI.veryBigFont);
+        titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
@@ -177,7 +177,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         closeButton.setPreferredSize(new Dimension(60, 20));
         closeButton.setFocusPainted(false);
         closeButton.addActionListener(e -> Main.showCard("Quản lý đặt phòng"));
-        closeButton.putClientProperty(FlatClientProperties.STYLE, "arc: 20");
+        closeButton.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         headerPanel.add(titlePanel, BorderLayout.CENTER);
         headerPanel.add(closeButton, BorderLayout.EAST);
@@ -932,19 +932,46 @@ public class MultiRoomBookingFormPanel extends JPanel {
             return false;
         }
 
+        // Regex check for CCCD/CMND format (12 digits)
+//        String cccdPattern = "^[0-9]{12}$";
+//        if (!txtCCCD.getText().trim().matches(cccdPattern)) {
+//            JOptionPane.showMessageDialog(this, "CCCD/CMND không hợp lệ! Vui lòng nhập đúng định dạng 12 chữ số.",
+//                                          "Lỗi định dạng CCCD/CMND", JOptionPane.WARNING_MESSAGE);
+//            txtCCCD.requestFocus();
+//            return false;
+//        }
+
         if (txtCustomerName.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!",
-                "Lỗi", JOptionPane.WARNING_MESSAGE);
+                                          "Lỗi", JOptionPane.WARNING_MESSAGE);
             txtCustomerName.requestFocus();
             return false;
         }
 
+        // Simple name validation (Last name & first name, letters and spaces only)
+//        String namePattern = "^[A-ZÀ-ỹ][a-zà-ỹ]*(\\s[A-ZÀ-ỹ][a-zà-ỹ]*)+$";
+//        if (!txtCustomerName.getText().trim().matches(namePattern)) {
+//            JOptionPane.showMessageDialog(this, "Tên khách hàng không hợp lệ! Tên chỉ chứa ký tự và khoảng trắng.\nVui lòng nhập đầy đủ họ và tên.",
+//                                          "Lỗi định dạng tên khách hàng", JOptionPane.WARNING_MESSAGE);
+//            txtCustomerName.requestFocus();
+//            return false;
+//        }
+
         if (txtPhoneNumber.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập số điện thoại!",
-                "Lỗi", JOptionPane.WARNING_MESSAGE);
+                                          "Lỗi", JOptionPane.WARNING_MESSAGE);
             txtPhoneNumber.requestFocus();
             return false;
         }
+
+        // Simple phone number validation (digits only, length 10-15)
+//        String phonePattern = "^[0-9]{10,15}$";
+//        if (!txtPhoneNumber.getText().trim().matches(phonePattern)) {
+//            JOptionPane.showMessageDialog(this, "Số điện thoại không hợp lệ! Vui lòng nhập đúng định dạng từ 10 đến 15 chữ số.",
+//                                          "Lỗi định dạng số điện thoại", JOptionPane.WARNING_MESSAGE);
+//            txtPhoneNumber.requestFocus();
+//            return false;
+//        }
 
         // Check if customer with CCCD exists but have different name/phone
         KhachHang kh = customerService.getCustomerByCCCD(txtCCCD.getText().trim());

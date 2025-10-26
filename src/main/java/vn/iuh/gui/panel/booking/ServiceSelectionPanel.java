@@ -37,7 +37,7 @@ public class ServiceSelectionPanel extends JPanel {
     private JLabel lblTotalCost;
     private JButton btnReset;
     private JButton btnConfirm;
-    private JButton btnUndo;
+    private JButton btnClose;
 
     // Selected rooms
     private int selectedRooms;
@@ -83,7 +83,7 @@ public class ServiceSelectionPanel extends JPanel {
         txtSearchService.setFont(CustomUI.normalFont);
         txtSearchService.setPreferredSize(new Dimension(500, 35));
         txtSearchService.setMinimumSize(new Dimension(500, 35)); // Add minimum size
-        txtSearchService.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tìm kiếm");
+        txtSearchService.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tên dịch vụ");
 
         btnSearch = new JButton("Tìm kiếm");
         btnSearch.setBackground(new Color(200, 150, 255));
@@ -97,17 +97,18 @@ public class ServiceSelectionPanel extends JPanel {
         lblTotalServices = new JLabel("Tổng dịch vụ: 0");
         lblTotalServices.setFont(CustomUI.normalFont);
         lblTotalServices.setOpaque(true);
-        lblTotalServices.setBackground(new Color(100, 150, 255));
-        lblTotalServices.setForeground(Color.BLACK);
+        lblTotalServices.setBackground(CustomUI.blue);
+        lblTotalServices.setForeground(CustomUI.black);
         lblTotalServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         lblTotalServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
         lblTotalServices.setMinimumSize(new Dimension(150, 40)); // Fixed minimum
 
+
         lblAvailableServices = new JLabel("Dịch vụ khả dụng: 0");
         lblAvailableServices.setFont(CustomUI.normalFont);
         lblAvailableServices.setOpaque(true);
-        lblAvailableServices.setBackground(Color.GREEN);
-        lblAvailableServices.setForeground(Color.BLACK);
+        lblAvailableServices.setBackground(CustomUI.lightGreen);
+        lblAvailableServices.setForeground(CustomUI.black);
         lblAvailableServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         lblAvailableServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
         lblAvailableServices.setMinimumSize(new Dimension(150, 40)); // Fixed minimum
@@ -227,32 +228,30 @@ public class ServiceSelectionPanel extends JPanel {
 
         // Action buttons with fixed sizes
         btnReset = new JButton("Hoàn Tác");
-        btnReset.setBackground(Color.YELLOW);
-        btnReset.setForeground(Color.BLACK);
+        btnReset.setBackground(CustomUI.gray);
+        btnReset.setForeground(CustomUI.black);
         btnReset.setFont(CustomUI.normalFont);
-        btnReset.setPreferredSize(new Dimension(120, 40));
-        btnReset.setMinimumSize(new Dimension(120, 40)); // Fixed minimum
-        btnReset.setMaximumSize(new Dimension(120, 40)); // Fixed maximum
+        btnReset.setPreferredSize(new Dimension(280, 40));
+        btnReset.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
+        btnReset.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
         btnReset.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         btnConfirm = new JButton("Xác Nhận");
-        btnConfirm.setBackground(Color.GREEN);
-        btnConfirm.setForeground(Color.BLACK);
+        btnConfirm.setBackground(CustomUI.green);
+        btnConfirm.setForeground(CustomUI.black);
         btnConfirm.setFont(CustomUI.normalFont);
-        btnConfirm.setPreferredSize(new Dimension(120, 40));
-        btnConfirm.setMinimumSize(new Dimension(120, 40)); // Fixed minimum
-        btnConfirm.setMaximumSize(new Dimension(120, 40)); // Fixed maximum
+        btnConfirm.setPreferredSize(new Dimension(280, 40));
+        btnConfirm.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
+        btnConfirm.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
         btnConfirm.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
-        ImageIcon undoIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/undo.png")));
-        undoIcon = new ImageIcon(undoIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
-
-        btnUndo = new JButton();
-        btnUndo.setBackground(CustomUI.red);
-        btnUndo.setIcon(undoIcon);
-        btnUndo.setForeground(Color.WHITE);
-        btnUndo.setFont(CustomUI.normalFont);
-        btnUndo.setPreferredSize(new Dimension(60, 40));
+        btnClose = new JButton("x");
+        btnClose.setFont(CustomUI.bigFont);
+        btnClose.setBackground(Color.RED);
+        btnClose.setForeground(Color.WHITE);
+        btnClose.setPreferredSize(new Dimension(50, 20));
+        btnClose.setFocusPainted(false);
+        btnClose.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
 
         // Total cost label with fixed size and improved formatting
@@ -265,6 +264,7 @@ public class ServiceSelectionPanel extends JPanel {
         lblTotalCost.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
         lblTotalCost.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
         lblTotalCost.setHorizontalAlignment(SwingConstants.CENTER);
+        // radius
     }
 
     private void setupLayout() {
@@ -272,15 +272,17 @@ public class ServiceSelectionPanel extends JPanel {
 
         // Header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(65, 130, 255));
-        headerPanel.setPreferredSize(new Dimension(0, 60));
+        headerPanel.setPreferredSize(new Dimension(0, 40));
+        headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
+        headerPanel.setBackground(CustomUI.blue);
+
 
         JLabel titleLabel = new JLabel("Gọi dịch vụ (" + selectedRooms + " Phòng)", SwingConstants.CENTER);
-        titleLabel.setFont(CustomUI.veryBigFont);
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(CustomUI.bigFont);
+        titleLabel.setForeground(CustomUI.white);
 
-        headerPanel.add(btnUndo, BorderLayout.WEST);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
+        headerPanel.add(btnClose, BorderLayout.EAST);
 
         // Main content panel with GridBagLayout
         JPanel mainPanel = new JPanel(new GridBagLayout());
@@ -392,7 +394,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         btnConfirm.addActionListener(e -> confirmSelection());
 
-        btnUndo.addActionListener(e -> {Main.showCard(parentName);});
+        btnClose.addActionListener(e -> {Main.showCard(parentName);});
     }
 
     private void resetPanel() {

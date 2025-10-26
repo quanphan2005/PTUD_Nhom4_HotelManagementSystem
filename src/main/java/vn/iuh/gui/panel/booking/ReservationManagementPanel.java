@@ -122,9 +122,9 @@ public class ReservationManagementPanel extends JPanel {
         lblTop.setFont(CustomUI.bigFont);
 
         pnlTop.setBackground(CustomUI.blue);
-        pnlTop.setPreferredSize(new Dimension(0, 50));
-        pnlTop.setMinimumSize(new Dimension(0, 50));
-        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        pnlTop.setPreferredSize(new Dimension(0, 40));
+        pnlTop.setMinimumSize(new Dimension(0, 40));
+        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
 
         pnlTop.add(lblTop, BorderLayout.CENTER);
@@ -413,30 +413,18 @@ public class ReservationManagementPanel extends JPanel {
                         continue;
                     }
                 }
+
+                spnStartDate.setEnabled(true);
+                spnEndDate.setEnabled(true);
+            } else {
+                spnStartDate.setEnabled(false);
+                spnEndDate.setEnabled(false);
             }
 
             filteredReservations.add(reservation);
         }
 
         populateTable();
-    }
-
-    private boolean isCurrentReservation(String status) {
-        // Current reservations include: "Chờ checkin", "Đang sử dụng", "Đang dọn dẹp"
-        return status != null && (
-            status.equalsIgnoreCase(RoomStatus.ROOM_BOOKED_STATUS.getStatus()) ||
-            status.equalsIgnoreCase(RoomStatus.ROOM_USING_STATUS.getStatus()) ||
-            status.equalsIgnoreCase(RoomStatus.ROOM_CLEANING_STATUS.getStatus()) ||
-            status.equalsIgnoreCase(RoomStatus.ROOM_CHECKING_STATUS.getStatus())
-        );
-    }
-
-    private boolean isEndedReservation(String status) {
-        // Ended reservations include: "Đã trả phòng", "Checkout trễ", etc.
-        return status != null && (
-                status.equalsIgnoreCase(ReservationStatus.COMPLETED.getStatus())
-                || status.equalsIgnoreCase(ReservationStatus.CANCELLED.getStatus())
-        );
     }
 
     private void resetFilters() {
