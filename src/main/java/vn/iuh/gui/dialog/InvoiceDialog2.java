@@ -66,7 +66,7 @@ public class InvoiceDialog2 extends JDialog {
         pnlTitle.add(lblTitle);
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
 
-        JPanel infoPanel = new JPanel(new GridLayout(5, 2, 10, 5));
+        JPanel infoPanel = new JPanel(new GridLayout(6, 2, 10, 5));
 
         JLabel lblKhachSanTitle = new JLabel("Đơn vị: ");
         lblKhachSanTitle.setFont(CustomUI.smallFont);
@@ -130,6 +130,15 @@ public class InvoiceDialog2 extends JDialog {
         pnlNgayDi.add(lblNgayDiTitle);
         pnlNgayDi.add(lblNgayDiValue);
 
+
+        // --- Tình trạng thanh toán ---
+        JLabel lblTinhTrang = new JLabel("Tình trang thanh toán: ");
+        lblTinhTrang.setFont(CustomUI.smallFont);
+        JLabel lblTinhTrangValue = new JLabel(response.getHoaDon().getTinhTrangThanhToan());
+        JPanel pnlTinhTrang = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        pnlTinhTrang.add(lblTinhTrang);
+        pnlTinhTrang.add(lblTinhTrangValue);
+
         // Thêm các label vào panel
 
         infoPanel.add(pnlKhachSan);
@@ -144,6 +153,20 @@ public class InvoiceDialog2 extends JDialog {
         infoPanel.add(pnlNgayDen);
         infoPanel.add(pnlNgayDi);
 
+        infoPanel.add(pnlTinhTrang);
+
+        if(PaymentStatus.PAID.getStatus().equalsIgnoreCase(response.getHoaDon().getTinhTrangThanhToan())){
+            // --- Phương thức thanh toán ---
+            JLabel lblPhuongThuc = new JLabel("Phương thức thanh toán: ");
+            lblPhuongThuc.setFont(CustomUI.smallFont);
+            JLabel lblPhuongThucValue = new JLabel(response.getHoaDon().getPhuongThucThanhToan());
+            JPanel pnlPhuongThuc = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+            pnlPhuongThuc.add(lblPhuongThuc);
+            pnlPhuongThuc.add(lblPhuongThucValue);
+            infoPanel.add(pnlPhuongThuc);
+        }
+
+
 
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(pnlTitle, BorderLayout.NORTH);
@@ -155,6 +178,7 @@ public class InvoiceDialog2 extends JDialog {
         String[] colPhong = {"Tên phòng", "Đơn giá" ,"Thời gian", "Thành tiền"};
         DefaultTableModel modelPhong = new DefaultTableModel(colPhong, 0);
         tblPhong = new JTable(modelPhong);
+        modelPhong.setRowCount(4);
         fillRoomTable(modelPhong);
 
         JPanel roomPanel = new JPanel(new BorderLayout());
@@ -233,12 +257,13 @@ public class InvoiceDialog2 extends JDialog {
         cmbPaymentMethod.setBorder(border);
 
         // --- Thêm vào panel ---
-        add(cmbPaymentMethod);
+//        add(cmbPaymentMethod);
 
-        // --- Bắt sự kiện chọn ---
-        cmbPaymentMethod.addActionListener(e -> {
-            String selected = (String) cmbPaymentMethod.getSelectedItem();
-        });
+        if(PaymentStatus.PAID.getStatus().equalsIgnoreCase(response.getHoaDon().getTinhTrangThanhToan())){
+            cmbPaymentMethod.setSelectedItem(response.getHoaDon().getPhuongThucThanhToan());
+            cmbPaymentMethod.setEnabled(false);
+            cmbPaymentMethod.setRequestFocusEnabled(false);
+        }
 
 
         // ===== Nút in hóa đơn =====
