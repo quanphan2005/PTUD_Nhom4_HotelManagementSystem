@@ -8,6 +8,7 @@ import vn.iuh.dto.response.ReservationDetailResponse;
 import vn.iuh.dto.response.ReservationInfoDetailResponse;
 import vn.iuh.dto.response.RoomUsageServiceResponse;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -19,6 +20,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -50,6 +52,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     private JButton btnCheckoutAndPrintReceipt;
     private JButton btnTranferRoomHistory;
 
+    private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
     public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo, ReservationManagementPanel parentPanel) {
@@ -417,7 +420,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         JPanel titlePanel = createCollapsibleTitlePanel("Đơn gọi dịch vụ");
 
         // Create table
-        String[] columnNames = {"Đơn gọi DV", "Phòng", "Dịch vụ", "Số lượng", "Được tặng"};
+        String[] columnNames = {"Đơn DV", "Phòng", "Dịch vụ", "Số lượng", "Đơn giá", "Được tặng", "Thành tiền"};
         servicesModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -433,11 +436,13 @@ public class ReservationInfoDetailPanel extends JPanel {
             public void componentResized(ComponentEvent e) {
                 int tableWidth = tblServices.getWidth();
                 TableColumnModel columnModel = tblServices.getColumnModel();
-                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Đơn gọi DV
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.10)); // 15% - Đơn gọi DV
                 columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Phòng
-                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.40)); // 40% - Dịch vụ
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Dịch vụ
                 columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Số lượng
-                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Được tặng
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Đơn giá
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.10)); // 15% - Được tặng
+                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Thành tiền
             }
         });
 
@@ -609,12 +614,14 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         for (RoomUsageServiceResponse service : reservationInfo.getServices()) {
 
-            Object[] rowData = new Object[5];
+            Object[] rowData = new Object[7];
             rowData[0] = service.getRoomUsageServiceId();
             rowData[1] = service.getRoomName();
             rowData[2] = service.getServiceName();
             rowData[3] = service.getQuantity();
-            rowData[4] = service.isGifted() ? "Có" : "Không";
+            rowData[4] = priceFormatter.format(service.getPrice()) + " VND";
+            rowData[5] = service.isGifted() ? "Có" : "Không";
+            rowData[6] = priceFormatter.format(service.getPrice()) + " VND";
 
             servicesModel.addRow(rowData);
         }

@@ -5,6 +5,7 @@ import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
+import java.util.List;
 
 public class LoaiDichVuDAO {
     private final Connection connection;
@@ -37,22 +38,25 @@ public class LoaiDichVuDAO {
         return null;
     }
 
-    public boolean themLoaiDichVuDAO(LoaiDichVu loaiDichVuDAO) {
-        String query = "INSERT INTO LoaiDichVu " +
-                "(ma_loai_dich_vu, ten_loai_dich_vu) VALUES (?, ?)";
+    public List<LoaiDichVu> layDanhSachLoaiDichVu() {
+        String query = "SELECT * FROM LoaiDichVu WHERE da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, loaiDichVuDAO.getMaLoaiDichVu());
-            ps.setString(2, loaiDichVuDAO.getTenDichVu());
 
-            ps.executeUpdate();
-            return true;
+            ResultSet rs = ps.executeQuery();
+            List<LoaiDichVu> loaiDichVuList = new java.util.ArrayList<>();
+            while (rs.next()) {
+                loaiDichVuList.add(mapResultSetToServiceCategory(rs));
+            }
+            return loaiDichVuList;
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
         }
 
-        return false;
+        return null;
     }
 
     public LoaiDichVu capNhatLoaiDichVuDAO(LoaiDichVu loaiDichVu) {
@@ -123,7 +127,7 @@ public class LoaiDichVuDAO {
         LoaiDichVu loaiDichVu = new LoaiDichVu();
         try {
             loaiDichVu.setMaLoaiDichVu(rs.getString("ma_loai_dich_vu"));
-            loaiDichVu.setTenDichVu(rs.getString("ten_dich_vu"));
+            loaiDichVu.setTenDichVu(rs.getString("ten_loai_dich_vu"));
             loaiDichVu.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             return loaiDichVu;
         } catch (SQLException e) {

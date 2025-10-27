@@ -826,13 +826,15 @@ public class BookingServiceImpl implements BookingService {
 
         // 2. Create list of RoomUsageServiceResponse
         List<RoomUsageServiceResponse> roomUsageServiceResponses = new ArrayList<>();
-        for (RoomUsageServiceInfo phongDungDichVu : phongDungDichVuTheoChiTietDatPhong) {
+        for (RoomUsageServiceInfo roomUsageServiceInfo : phongDungDichVuTheoChiTietDatPhong) {
             roomUsageServiceResponses.add(new RoomUsageServiceResponse(
-                    phongDungDichVu.getMaPhongDungDichVu(),
-                    phongDungDichVu.getTenPhong(),
-                    phongDungDichVu.getTenDichVu(),
-                    phongDungDichVu.getSoLuong(),
-                    phongDungDichVu.isDuocTang()
+                    roomUsageServiceInfo.getMaPhongDungDichVu(),
+                    roomUsageServiceInfo.getTenPhong(),
+                    roomUsageServiceInfo.getTenDichVu(),
+                    roomUsageServiceInfo.getSoLuong(),
+                    roomUsageServiceInfo.getGiaThoiDiemDo(),
+                    roomUsageServiceInfo.isDuocTang(),
+                    roomUsageServiceInfo.getGiaThoiDiemDo() * roomUsageServiceInfo.getSoLuong()
             ));
         }
 

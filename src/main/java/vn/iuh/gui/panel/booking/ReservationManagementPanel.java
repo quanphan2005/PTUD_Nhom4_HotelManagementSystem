@@ -181,10 +181,6 @@ public class ReservationManagementPanel extends JPanel {
         btnReset.setPreferredSize(new Dimension(120, 35));
         filterPanel.add(btnReset, gbc);
 
-//        filterPanel.setPreferredSize(new Dimension(0, 250));
-//        filterPanel.setMinimumSize(new Dimension(0, 250));
-//        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
-
         // Create wrapper panel with spacing
         JPanel filterWrapper = new JPanel(new BorderLayout());
         filterWrapper.add(filterPanel, BorderLayout.CENTER);

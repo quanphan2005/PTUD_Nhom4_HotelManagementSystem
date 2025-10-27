@@ -1074,48 +1074,6 @@ public class DatPhongDAO {
         }
     }
 
-    public vn.iuh.dto.response.ReservationInfoDetailResponse getReservationDetailInfo(String maDonDatPhong) {
-        String query = "SELECT TOP 1 kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
-                       "COALESCE(cv.ten_trang_thai, CASE WHEN ctdp.kieu_ket_thuc IS NOT NULL THEN ctdp.kieu_ket_thuc ELSE N'Trả phòng' END) as trang_thai, " +
-                       "ddp.da_dat_truoc " +
-                       "FROM DonDatPhong ddp " +
-                       "JOIN KhachHang kh ON ddp.ma_khach_hang = kh.ma_khach_hang " +
-                       "LEFT JOIN ChiTietDatPhong ctdp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong " +
-                       "LEFT JOIN CongViec cv ON ctdp.ma_phong = cv.ma_phong AND cv.da_xoa = 0 " +
-                       "WHERE ddp.ma_don_dat_phong = ?";
-
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, maDonDatPhong);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                String cccd = rs.getString("CCCD");
-                String customerName = rs.getString("ten_khach_hang");
-                String status = rs.getString("trang_thai");
-                boolean isAdvance = rs.getBoolean("da_dat_truoc");
-
-                // Get room details
-                List<vn.iuh.dto.response.ReservationDetailResponse> details = getReservationDetails(maDonDatPhong);
-
-                // Get services
-                List<vn.iuh.dto.response.RoomUsageServiceResponse> services = getRoomUsageServices(maDonDatPhong);
-
-                // Get moving history
-                List<vn.iuh.dto.response.MovingHistoryResponse> movingHistories = getMovingHistory(maDonDatPhong);
-
-                return new vn.iuh.dto.response.ReservationInfoDetailResponse(
-                        cccd, customerName, maDonDatPhong, status, isAdvance,
-                        details, services, movingHistories
-                );
-            }
-        } catch (SQLException e) {
-            System.out.println("Lỗi khi lấy thông tin chi tiết đơn đặt phòng: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
     private List<vn.iuh.dto.response.ReservationDetailResponse> getReservationDetails(String maDonDatPhong) {
         List<vn.iuh.dto.response.ReservationDetailResponse> details = new ArrayList<>();
         String query = "SELECT ctdp.ma_chi_tiet_dat_phong, ctdp.ma_phong, p.ten_phong, " +
@@ -1147,11 +1105,12 @@ public class DatPhongDAO {
     private List<vn.iuh.dto.response.RoomUsageServiceResponse> getRoomUsageServices(String maDonDatPhong) {
         List<vn.iuh.dto.response.RoomUsageServiceResponse> services = new ArrayList<>();
         String query = "SELECT pddv.ma_phong_dung_dich_vu, ctdp.ma_phong, p.ten_phong, " +
-                       "dv.ten_dich_vu, pddv.so_luong, pddv.duoc_tang " +
+                       "dv.ten_dich_vu, pddv.so_luong, gdv.gia_moi, pddv.duoc_tang " +
                        "FROM PhongDungDichVu pddv " +
                        "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
                        "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
                        "JOIN DichVu dv ON pddv.ma_dich_vu = dv.ma_dich_vu " +
+                       "JOIN GiaDichVu gdv ON dv.ma_dich_vu = gdv.ma_dich_vu " +
                        "WHERE ctdp.ma_don_dat_phong = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
@@ -1164,6 +1123,7 @@ public class DatPhongDAO {
                         rs.getString("ten_phong"),
                         rs.getString("ten_dich_vu"),
                         rs.getInt("so_luong"),
+                        rs.getDouble("gia_moi"),
                         rs.getBoolean("duoc_tang")
                 ));
             }

@@ -3,10 +3,13 @@ package vn.iuh.gui.panel.booking;
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
+import vn.iuh.entity.LoaiDichVu;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.GoiDichVuService;
+import vn.iuh.service.ServiceCategoryService;
 import vn.iuh.service.impl.GoiDichVuServiceImpl;
+import vn.iuh.service.impl.ServiceCategoryServiceImpl;
 import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
@@ -23,21 +26,29 @@ import java.util.List;
 public class ServiceSelectionPanel extends JPanel {
     private String parentName;
 
+    private ServiceCategoryService serviceCategoryService;
     private GoiDichVuService goiDichVuService;
 
-    // Components
+    // Left Components
     private JTextField txtSearchService;
-    private JButton btnSearch;
+    private JComboBox<String> cmbServiceType;
+    private JButton btnOrderHistory;
     private JLabel lblTotalServices;
     private JLabel lblAvailableServices;
+
+    // Left table
     private JTable serviceTable;
     private DefaultTableModel serviceTableModel;
-    private JTable selectedServicesTable;
-    private DefaultTableModel selectedServicesTableModel;
+
+    // Right Components
     private JLabel lblTotalCost;
     private JButton btnReset;
     private JButton btnConfirm;
     private JButton btnClose;
+
+    // Right table
+    private JTable selectedServicesTable;
+    private DefaultTableModel selectedServicesTableModel;
 
     // Selected rooms
     private int selectedRooms;
@@ -56,6 +67,8 @@ public class ServiceSelectionPanel extends JPanel {
     // Formatters
     private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
 
+    private final String ALL_SERVICE = "Tất cả loại dịch vụ";
+
     public interface ServiceSelectionCallback {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
@@ -63,6 +76,7 @@ public class ServiceSelectionPanel extends JPanel {
     public ServiceSelectionPanel(String parentName, int selectedRooms, String maChiTietDatPhong, ServiceSelectionCallback callback) {
         this.parentName = parentName;
 
+        this.serviceCategoryService = new ServiceCategoryServiceImpl();
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
@@ -72,32 +86,36 @@ public class ServiceSelectionPanel extends JPanel {
         this.maChiTietDatPhong = maChiTietDatPhong;
 
         initializeComponents();
-        loadServices();
+        loadData();
         setupLayout();
         setupEventHandlers();
     }
 
     private void initializeComponents() {
         // Search components
+        cmbServiceType = new JComboBox<>();
+        cmbServiceType.setFont(CustomUI.smallFont);
+        cmbServiceType.setPreferredSize(new Dimension(200, 30));
+        cmbServiceType.setMinimumSize(new Dimension(180, 30));
+
         txtSearchService = new JTextField();
         txtSearchService.setFont(CustomUI.normalFont);
         txtSearchService.setPreferredSize(new Dimension(500, 35));
         txtSearchService.setMinimumSize(new Dimension(500, 35)); // Add minimum size
         txtSearchService.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tên dịch vụ");
 
-        btnSearch = new JButton("Tìm kiếm");
-        btnSearch.setBackground(new Color(200, 150, 255));
-        btnSearch.setForeground(Color.BLACK);
-        btnSearch.setFont(CustomUI.normalFont);
-        btnSearch.setPreferredSize(new Dimension(200, 35));
-        btnSearch.setMinimumSize(new Dimension(200, 35)); // Add minimum size
-        btnSearch.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+        btnOrderHistory = new JButton("Lịch sử gọi dịch vụ");
+        btnOrderHistory.setBackground(CustomUI.purple);
+        btnOrderHistory.setForeground(CustomUI.white);
+        btnOrderHistory.setFont(CustomUI.normalFont);
+        btnOrderHistory.setPreferredSize(new Dimension(200, 35));
+        btnOrderHistory.setMinimumSize(new Dimension(200, 35));
+        btnOrderHistory.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         // Info labels with fixed sizes
         lblTotalServices = new JLabel("Tổng dịch vụ: 0");
         lblTotalServices.setFont(CustomUI.normalFont);
         lblTotalServices.setOpaque(true);
-        lblTotalServices.setBackground(CustomUI.blue);
         lblTotalServices.setForeground(CustomUI.black);
         lblTotalServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         lblTotalServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
@@ -107,7 +125,6 @@ public class ServiceSelectionPanel extends JPanel {
         lblAvailableServices = new JLabel("Dịch vụ khả dụng: 0");
         lblAvailableServices.setFont(CustomUI.normalFont);
         lblAvailableServices.setOpaque(true);
-        lblAvailableServices.setBackground(CustomUI.lightGreen);
         lblAvailableServices.setForeground(CustomUI.black);
         lblAvailableServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         lblAvailableServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
@@ -316,7 +333,7 @@ public class ServiceSelectionPanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 2;
-        gbc.gridheight = 2;
+        gbc.gridheight = 3;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 0.6;
         gbc.weighty = 1.0;
@@ -345,8 +362,11 @@ public class ServiceSelectionPanel extends JPanel {
         gbc.anchor = GridBagConstraints.NORTH;
         mainPanel.add(lblTotalCost, gbc);
 
-        // Selected services table
         gbc.gridy = 3;
+        mainPanel.add(btnOrderHistory, gbc);
+
+        // Selected services table
+        gbc.gridy = 4;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 0.4;
         gbc.weighty = 1.0;
@@ -364,9 +384,23 @@ public class ServiceSelectionPanel extends JPanel {
     private JPanel createSearchPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.setBackground(Color.WHITE);
+        panel.add(cmbServiceType);
         panel.add(txtSearchService);
-        panel.add(btnSearch);
         return panel;
+    }
+
+    private void loadData() {
+        loadServiceType();
+        loadServices();
+    }
+
+    private void loadServiceType() {
+        List<LoaiDichVu> allServiceCategories = serviceCategoryService.getAllServiceCategories();
+        cmbServiceType.addItem(ALL_SERVICE);
+        for (LoaiDichVu category : allServiceCategories) {
+            cmbServiceType.addItem(category.getTenDichVu());
+        }
+        cmbServiceType.setSelectedIndex(0);
     }
 
     private void loadServices() {
@@ -381,12 +415,14 @@ public class ServiceSelectionPanel extends JPanel {
     }
 
     private void setupEventHandlers() {
-        btnSearch.addActionListener(e -> filterServices());
+        cmbServiceType.addActionListener(e -> handleCmbServiceChangeEvent());
+
+        btnOrderHistory.addActionListener(e -> filterServices());
 
         txtSearchService.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                filterServices();
+                handleSearchTextChangeEvent();
             }
         });
 
@@ -600,18 +636,37 @@ public class ServiceSelectionPanel extends JPanel {
                           .orElse(null);
     }
 
+    private void handleCmbServiceChangeEvent() {
+        filterServices();
+    }
+
+    private void handleSearchTextChangeEvent() {
+        filterServices();
+    }
+
     private void filterServices() {
+        String selectedCategory = (String) cmbServiceType.getSelectedItem();
         String searchText = txtSearchService.getText().toLowerCase().trim();
 
-        if (searchText.isEmpty()) {
-            filteredServices = new ArrayList<>(allServices);
-        } else {
-            filteredServices = allServices.stream()
-                                          .filter(service ->
-                                                          service.getTenDichVu().toLowerCase().contains(searchText) ||
-                                                          service.getTenLoaiDichVu().toLowerCase().contains(searchText)
-                                          )
-                                          .collect(java.util.stream.Collectors.toList());
+//        if (searchText.isEmpty()) {
+//            filteredServices = new ArrayList<>(allServices);
+//        } else {
+//            filteredServices = allServices.stream()
+//                                          .filter(service ->
+//                                                          service.getTenDichVu().toLowerCase().contains(searchText) ||
+//                                                          service.getTenLoaiDichVu().toLowerCase().contains(searchText)
+//                                          )
+//                                          .collect(java.util.stream.Collectors.toList());
+//        }
+        filteredServices = new ArrayList<>();
+        for (ThongTinDichVu service : allServices) {
+            boolean matchesSearch = service.getTenDichVu().toLowerCase().contains(searchText) ||
+                                    service.getTenLoaiDichVu().toLowerCase().contains(searchText);
+            boolean matchesCategory = selectedCategory.equals(ALL_SERVICE) ||
+                                      service.getTenLoaiDichVu().equals(selectedCategory);
+            if (matchesSearch && matchesCategory) {
+                filteredServices.add(service);
+            }
         }
 
         updateServiceTable();
