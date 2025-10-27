@@ -591,7 +591,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // 3. Get reservation status for reservation IDs
+        // 3. Get reservation status form reservation IDs
         List<ReservationStatusRepository> allCurrentReservationsWithStatus =
                 datPhongDAO.getAllCurrentReservationsWithStatus(currentReservationIds);
         for (ReservationResponse response : responses) {
@@ -606,14 +606,21 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private String getReservationStatus(ReservationStatusRepository statusRepository) {
+        // Not yet check-in
         if (statusRepository.isCheckin() == null || !statusRepository.isCheckin()) {
             return ReservationStatus.CHECKED_IN.getStatus();
-        } else if (statusRepository.getCheckinDate().getTime() <= new Date().getTime()
+        }
+        // Checkin time is within 30 minutes
+        if (statusRepository.getCheckinDate().getTime() <= new Date().getTime()
                    && statusRepository.getCheckinDate().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
             return ReservationStatus.CHECKING.getStatus();
-        } else if (statusRepository.getCheckoutTime().after(new Date())) {
+        }
+        // Already checked-in
+        if (statusRepository.getCheckoutTime().after(new Date())) {
             return ReservationStatus.USING.getStatus();
-        } else if (statusRepository.getCheckoutTime().before(new Date())) {
+        }
+        // Late checkout
+        if (statusRepository.getCheckoutTime().before(new Date())) {
             return ReservationStatus.CHECKOUT_LATE.getStatus();
         }
 
@@ -652,12 +659,8 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // 4. Find all related info by ReservationDetail IDs (usage services, check-in history, check-out history)
-//        List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong = lichSuDiVaoDAO.timLichSuDiVaoBangDanhSachMaChiTietDatPhong(new ArrayList<>(danhSachMaChiTietDatPhong));
         List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong = lichSuDiVaoDAO.timTatCaLichSuDiVaoBangMaDatPhong(donDatPhong.getMaDonDatPhong());
-
-//        List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong = lichSuRaNgoaiDAO.timLichSuRaNgoaiBangDanhSachMaChiTietDatPhong(new ArrayList<>(danhSachMaChiTietDatPhong));
         List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong = lichSuRaNgoaiDAO.timTatCaLichSuRaNgoaiBangMaDatPhong(donDatPhong.getMaDonDatPhong());
-
         List<RoomUsageServiceInfo> phongDungDichVuTheoChiTietDatPhong = donGoiDichVuDao.timTatCaDonGoiDichVuBangMaDatPhong(donDatPhong.getMaDonDatPhong());
 
         return createReservationInfoDetailResponse(customerInfo,
@@ -813,15 +816,15 @@ public class BookingServiceImpl implements BookingService {
         // 1. Create base response
         List<ReservationDetailResponse> reservationDetailResponses = new ArrayList<>();
         for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
-            if (reservationDetailRepository.getEndType() == null) {
-                reservationDetailResponses.add(new ReservationDetailResponse(
-                        reservationDetailRepository.getReservationDetailId(),
-                        reservationDetailRepository.getRoomId(),
-                        reservationDetailRepository.getRoomName(),
-                        reservationDetailRepository.getTimeIn(),
-                        reservationDetailRepository.getTimeOut()
-                ));
-            }
+            String status = getReservationDetailStatus(reservationDetailRepository);
+            reservationDetailResponses.add(new ReservationDetailResponse(
+                    reservationDetailRepository.getReservationDetailId(),
+                    reservationDetailRepository.getRoomId(),
+                    reservationDetailRepository.getRoomName(),
+                    reservationDetailRepository.getTimeIn(),
+                    reservationDetailRepository.getTimeOut(),
+                    status
+            ));
         }
 
         // 2. Create list of RoomUsageServiceResponse
@@ -947,6 +950,11 @@ public class BookingServiceImpl implements BookingService {
         else {
             boolean allCheckedOut = true;
             for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
+                // Skip if this room is one of the endType rooms
+                if (reservationDetailRepository.getEndType() != null) {
+                    continue;
+                }
+
                 boolean hasCheckedOut = false;
                 for (LichSuRaNgoai lsrn : lichSuDiRaTheoChiTietDatPhong) {
                     if (Objects.equals(lsrn.getMaChiTietDatPhong(), reservationDetailRepository.getReservationDetailId())
@@ -981,6 +989,55 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
+    private String getReservationDetailStatus(ReservationDetailRepository reservationDetailRepository) {
+        // CHECK FOR CURRENT RESERVATION STATUS
+        if (reservationDetailRepository.getEndType() == null) {
+            // Not yet check-in
+            if (reservationDetailRepository.isCheckin() == null || !reservationDetailRepository.isCheckin()) {
+                return ReservationStatus.CHECKED_IN.getStatus();
+            }
+
+            // Checkin time is within 30 minutes
+            if (reservationDetailRepository.getTimeIn().getTime() <= new Date().getTime()
+                       && reservationDetailRepository.getTimeIn().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
+                return ReservationStatus.CHECKING.getStatus();
+            }
+
+            // Already checked-in
+            if (reservationDetailRepository.getTimeOut().after(new Date())) {
+                return ReservationStatus.USING.getStatus();
+            }
+
+            // Late checkout
+            if (reservationDetailRepository.getTimeOut().before(new Date())) {
+                return ReservationStatus.CHECKOUT_LATE.getStatus();
+            }
+
+            return "UNKNOWN";
+        }
+
+        // CHECK FOR PAST RESERVATION STATUS
+        // End type indicates how the room reservation ended
+        // Transferred or checked out with issues
+        if (reservationDetailRepository.getEndType().equals(RoomEndType.DOI_PHONG.getStatus())
+        || reservationDetailRepository.getEndType().equals(RoomEndType.TRA_PHONG_LOI.getStatus())) {
+            return ReservationStatus.TRANSFERRED.getStatus();
+        }
+        // Completed normally
+        if (reservationDetailRepository.getEndType().equals(RoomEndType.TRA_PHONG.getStatus())) {
+            return ReservationStatus.COMPLETED.getStatus();
+        }
+        // No check-in after specified time
+        else if (reservationDetailRepository.getEndType().equals(RoomEndType.KHONG_NHAN_PHONG.getStatus())) {
+            return ReservationStatus.NO_CHECKIN.getStatus();
+        }
+        // Cancelled
+        if (reservationDetailRepository.getEndType().equals(RoomEndType.HUY_PHONG.getStatus())) {
+            return ReservationStatus.CANCELLED.getStatus();
+        }
+
+        return "UNKNOWN";
+    }
 
     private BigDecimal calculatePriceWithTaxPrice(BigDecimal price){
         ThongTinPhuPhi thue = vn.iuh.util.FeeValue.getInstance().get(Fee.THUE);

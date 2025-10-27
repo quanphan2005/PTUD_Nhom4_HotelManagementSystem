@@ -9,6 +9,7 @@ public class ReservationDetailResponse {
     private String roomName;
     private Timestamp timeIn;
     private Timestamp timeOut;
+    private String status;
 
     public ReservationDetailResponse() {
     }
@@ -20,6 +21,16 @@ public class ReservationDetailResponse {
         this.roomName = roomName;
         this.timeIn = timeIn;
         this.timeOut = timeOut;
+    }
+
+    public ReservationDetailResponse(String reservationDetailId, String roomId, String roomName, Timestamp timeIn,
+                                     Timestamp timeOut, String status) {
+        ReservationDetailId = reservationDetailId;
+        this.roomId = roomId;
+        this.roomName = roomName;
+        this.timeIn = timeIn;
+        this.timeOut = timeOut;
+        this.status = status;
     }
 
     public String getReservationDetailId() {
@@ -40,5 +51,9 @@ public class ReservationDetailResponse {
 
     public Timestamp getTimeOut() {
         return timeOut;
+    }
+
+    public String getStatus() {
+        return status;
     }
 }

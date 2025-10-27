@@ -600,7 +600,7 @@ public class ReservationInfoDetailPanel extends JPanel {
             rowData[1] = detail.getRoomName();
             rowData[2] = detail.getTimeIn() != null ? dateFormat.format(detail.getTimeIn()) : "N/A";
             rowData[3] = detail.getTimeOut() != null ? dateFormat.format(detail.getTimeOut()) : "N/A";
-            rowData[4] = reservationInfo.getStatus();
+            rowData[4] = detail.getStatus();
             rowData[5] = detail; // Store detail object for actions
 
             roomDetailsModel.addRow(rowData);
@@ -654,9 +654,15 @@ public class ReservationInfoDetailPanel extends JPanel {
         }
     }
 
-    public void attachButtons(JPanel panel) {
-        System.out.println("Visualizing buttons for status: " + reservationInfo.getStatus());
+    public void attachButtons(JPanel panel, String status) {
+        System.out.println("Visualizing buttons for status: " + status);
         panel.removeAll();
+
+        if (status == null) {
+            panel.revalidate();
+            panel.repaint();
+            return;
+        }
 
         JButton btnOrderService = createOrderServiceBtn();
         JButton btnCheckIn = createCheckinBtn();
@@ -664,7 +670,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         JButton btnExtendTime = createExtendTimeBtn();
         JButton btnCancel = createCancelBtn();
 
-        switch (ReservationStatus.fromStatus(reservationInfo.getStatus())) {
+        switch (ReservationStatus.fromStatus(status)) {
             case CHECKED_IN:
                 panel.add(btnCheckIn);
                 panel.add(btnChangeRoom);
@@ -677,9 +683,7 @@ public class ReservationInfoDetailPanel extends JPanel {
                 panel.add(btnChangeRoom);
                 break;
             case CHECKOUT_LATE:
-                break;
             case null:
-                break;
             default:
                 break;
         }
@@ -699,7 +703,8 @@ public class ReservationInfoDetailPanel extends JPanel {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             removeAll(); // Clear previous buttons
-            attachButtons(this); // Re-attach buttons for current state
+            ReservationDetailResponse detail = (ReservationDetailResponse) table.getValueAt(row, 5);
+            attachButtons(this, detail.getStatus()); // Re-attach buttons for current state
 
             if (isSelected) {
                 setBackground(table.getSelectionBackground());
@@ -729,7 +734,8 @@ public class ReservationInfoDetailPanel extends JPanel {
             currentDetail = (ReservationDetailResponse) value;
 
             panel.removeAll();
-            attachButtons(panel); // Populate panel with buttons
+            ReservationDetailResponse detail = (ReservationDetailResponse) table.getValueAt(row, 5);
+            attachButtons(panel, detail.getStatus()); // Populate panel with buttons
 
             return panel;
         }
