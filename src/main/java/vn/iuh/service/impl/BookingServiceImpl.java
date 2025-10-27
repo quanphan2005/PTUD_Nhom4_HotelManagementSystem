@@ -1011,6 +1011,11 @@ public class BookingServiceImpl implements BookingService {
     private String getReservationDetailStatus(ReservationDetailRepository reservationDetailRepository) {
         // CHECK FOR CURRENT RESERVATION STATUS
         if (reservationDetailRepository.getEndType() == null) {
+            // Cancelled
+            if (reservationDetailRepository.isDeleted() != null && reservationDetailRepository.isDeleted()) {
+                return ReservationStatus.CANCELLED.getStatus();
+            }
+
             // Not yet check-in
             if (reservationDetailRepository.isCheckin() == null || !reservationDetailRepository.isCheckin()) {
                 return ReservationStatus.CHECKED_IN.getStatus();

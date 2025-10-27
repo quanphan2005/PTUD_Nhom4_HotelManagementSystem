@@ -944,7 +944,7 @@ public class DatPhongDAO {
     public List<ReservationResponse> getAllPassReservationsWithStatusInRange(Timestamp startDate, Timestamp endDate) {
         String query =
                 "SELECT DISTINCT kh.CCCD, kh.ten_khach_hang, ddp.ma_don_dat_phong, " +
-                "ddp.loai, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, " +
+                "ddp.loai, ddp.tg_nhan_phong, ddp.tg_tra_phong, " +
                 "null as ten_trang_thai, ddp.da_xoa " +
                 "FROM DonDatPhong ddp " +
                 "JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang " +
@@ -952,7 +952,7 @@ public class DatPhongDAO {
                 "WHERE (ddp.da_xoa = ? OR ctdp.kieu_ket_thuc = ? OR ctdp.kieu_ket_thuc = ?)" +
                 "AND ((ctdp.tg_nhan_phong BETWEEN ? AND ?) " +
                 "OR (ctdp.tg_tra_phong BETWEEN ? AND ?)) " +
-                "ORDER BY ctdp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
+                "ORDER BY ddp.tg_nhan_phong ASC, ddp.ma_don_dat_phong ASC";
 
         List<vn.iuh.dto.response.ReservationResponse> reservations = new ArrayList<>();
         try {

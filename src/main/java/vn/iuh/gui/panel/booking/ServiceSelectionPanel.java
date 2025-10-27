@@ -1,8 +1,12 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.PanelName;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
+import vn.iuh.dto.response.ReservationInfoDetailResponse;
+import vn.iuh.dto.response.ReservationResponse;
+import vn.iuh.dto.response.RoomUsageServiceResponse;
 import vn.iuh.entity.LoaiDichVu;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
@@ -104,14 +108,6 @@ public class ServiceSelectionPanel extends JPanel {
         txtSearchService.setMinimumSize(new Dimension(500, 35)); // Add minimum size
         txtSearchService.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tên dịch vụ");
 
-        btnOrderHistory = new JButton("Lịch sử gọi dịch vụ");
-        btnOrderHistory.setBackground(CustomUI.purple);
-        btnOrderHistory.setForeground(CustomUI.white);
-        btnOrderHistory.setFont(CustomUI.normalFont);
-        btnOrderHistory.setPreferredSize(new Dimension(200, 35));
-        btnOrderHistory.setMinimumSize(new Dimension(200, 35));
-        btnOrderHistory.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
-
         // Info labels with fixed sizes
         lblTotalServices = new JLabel("Tổng dịch vụ: 0");
         lblTotalServices.setFont(CustomUI.normalFont);
@@ -120,7 +116,6 @@ public class ServiceSelectionPanel extends JPanel {
         lblTotalServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         lblTotalServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
         lblTotalServices.setMinimumSize(new Dimension(150, 40)); // Fixed minimum
-
 
         lblAvailableServices = new JLabel("Dịch vụ khả dụng: 0");
         lblAvailableServices.setFont(CustomUI.normalFont);
@@ -246,7 +241,7 @@ public class ServiceSelectionPanel extends JPanel {
         // Action buttons with fixed sizes
         btnReset = new JButton("Hoàn Tác");
         btnReset.setBackground(CustomUI.gray);
-        btnReset.setForeground(CustomUI.black);
+        btnReset.setForeground(CustomUI.white);
         btnReset.setFont(CustomUI.normalFont);
         btnReset.setPreferredSize(new Dimension(280, 40));
         btnReset.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
@@ -254,13 +249,29 @@ public class ServiceSelectionPanel extends JPanel {
         btnReset.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         btnConfirm = new JButton("Xác Nhận");
-        btnConfirm.setBackground(CustomUI.green);
-        btnConfirm.setForeground(CustomUI.black);
+        btnConfirm.setBackground(CustomUI.darkGreen);
+        btnConfirm.setForeground(CustomUI.white);
         btnConfirm.setFont(CustomUI.normalFont);
         btnConfirm.setPreferredSize(new Dimension(280, 40));
         btnConfirm.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
         btnConfirm.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
         btnConfirm.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+
+        btnOrderHistory = new JButton("Xem Lịch Sử");
+        btnOrderHistory.setBackground(CustomUI.purple);
+        btnOrderHistory.setForeground(CustomUI.white);
+        btnOrderHistory.setFont(CustomUI.normalFont);
+        btnOrderHistory.setPreferredSize(new Dimension(280, 40));
+        btnOrderHistory.setMinimumSize(new Dimension(280, 40));
+        btnOrderHistory.setMaximumSize(new Dimension(280, 40));
+        btnOrderHistory.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+
+        // Only show order history button for existing bookings
+        if (maChiTietDatPhong == null) {
+            btnOrderHistory.setBackground(CustomUI.gray);
+            btnOrderHistory.setBackground(CustomUI.white);
+            btnOrderHistory.setEnabled(false);
+        }
 
         btnClose = new JButton("x");
         btnClose.setFont(CustomUI.bigFont);
@@ -270,13 +281,13 @@ public class ServiceSelectionPanel extends JPanel {
         btnClose.setFocusPainted(false);
         btnClose.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
-
         // Total cost label with fixed size and improved formatting
         lblTotalCost = new JLabel("Tổng tiền: 0 VNĐ");
         lblTotalCost.setFont(CustomUI.normalFont);
-        lblTotalCost.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        lblTotalCost.setBorder(BorderFactory.createLineBorder(CustomUI.black, 1));
         lblTotalCost.setOpaque(true);
-        lblTotalCost.setBackground(new Color(255, 255, 200));
+        lblTotalCost.setBackground(CustomUI.yellow);
+        lblTotalCost.setForeground(CustomUI.black);
         lblTotalCost.setPreferredSize(new Dimension(280, 40)); // Fixed wider size
         lblTotalCost.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
         lblTotalCost.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
@@ -357,13 +368,13 @@ public class ServiceSelectionPanel extends JPanel {
         gbc.gridy = 1;
         mainPanel.add(btnConfirm, gbc);
 
-        // Total cost
         gbc.gridy = 2;
+        mainPanel.add(btnOrderHistory, gbc);
+
+        // Total cost
+        gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.NORTH;
         mainPanel.add(lblTotalCost, gbc);
-
-        gbc.gridy = 3;
-        mainPanel.add(btnOrderHistory, gbc);
 
         // Selected services table
         gbc.gridy = 4;
@@ -417,7 +428,7 @@ public class ServiceSelectionPanel extends JPanel {
     private void setupEventHandlers() {
         cmbServiceType.addActionListener(e -> handleCmbServiceChangeEvent());
 
-        btnOrderHistory.addActionListener(e -> filterServices());
+        btnOrderHistory.addActionListener(e -> handleFindServiceOrderedHistory());
 
         txtSearchService.addKeyListener(new KeyAdapter() {
             @Override
@@ -640,6 +651,21 @@ public class ServiceSelectionPanel extends JPanel {
         filterServices();
     }
 
+    private void handleFindServiceOrderedHistory() {
+        ServiceOrderedHistoryPanel serviceOrderedHistoryPanel =
+                new ServiceOrderedHistoryPanel(maChiTietDatPhong);
+
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+                                     "Lịch sử gọi dịch vụ", true);
+
+        dialog.setContentPane(serviceOrderedHistoryPanel);
+        dialog.setSize(900, 600);
+        dialog.setLocationRelativeTo(null); // Center on screen
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setResizable(false);
+        dialog.setVisible(true);
+    }
+
     private void handleSearchTextChangeEvent() {
         filterServices();
     }
@@ -648,16 +674,6 @@ public class ServiceSelectionPanel extends JPanel {
         String selectedCategory = (String) cmbServiceType.getSelectedItem();
         String searchText = txtSearchService.getText().toLowerCase().trim();
 
-//        if (searchText.isEmpty()) {
-//            filteredServices = new ArrayList<>(allServices);
-//        } else {
-//            filteredServices = allServices.stream()
-//                                          .filter(service ->
-//                                                          service.getTenDichVu().toLowerCase().contains(searchText) ||
-//                                                          service.getTenLoaiDichVu().toLowerCase().contains(searchText)
-//                                          )
-//                                          .collect(java.util.stream.Collectors.toList());
-//        }
         filteredServices = new ArrayList<>();
         for (ThongTinDichVu service : allServices) {
             boolean matchesSearch = service.getTenDichVu().toLowerCase().contains(searchText) ||
