@@ -7,6 +7,7 @@ import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.*;
 import vn.iuh.dto.response.*;
 import vn.iuh.entity.*;
+import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.TimeFormat;
@@ -25,6 +26,7 @@ public class BookingServiceImpl implements BookingService {
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private final CongViecDAO congViecDAO;
     private final HoaDonDAO hoaDonDAO;
+    private final NhanVienDAO nhanVienDAO;
 
     public BookingServiceImpl() {
         this.datPhongDAO = new DatPhongDAO();
@@ -35,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecDAO = new CongViecDAO();
         this.hoaDonDAO = new HoaDonDAO();
+        this.nhanVienDAO = new NhanVienDAO();
     }
 
     @Override
@@ -66,7 +69,7 @@ public class BookingServiceImpl implements BookingService {
             ) {
                 String message = "Đặt phòng thất bại! Thông tin khách hàng không khớp với CCCD đã có trong hệ thống.\n"
                                  + "Vui lòng kiểm tra lại tên và số điện thoại.";
-                return new EventResponse(ResponseType.ERROR, message);
+                return new EventResponse(ResponseType.ERROR, message, null);
             }
         }
 
@@ -95,7 +98,7 @@ public class BookingServiceImpl implements BookingService {
                        .append(TimeFormat.formatTime(thongTinDatPhong.getTgTraPhong()))
                        .append("\n");
             }
-            return new EventResponse(ResponseType.ERROR, message.toString());
+            return new EventResponse(ResponseType.ERROR, message.toString(), null);
         }
 
         try {
@@ -109,11 +112,12 @@ public class BookingServiceImpl implements BookingService {
             datPhongDAO.themDonDatPhong(donDatPhong);
 
             // 2.1.1 Create Invoice Advance Payment
+            HoaDon hoaDonDatCoc = null;
             if (bookingCreationEvent.isDaDatTruoc()) {
                 HoaDon hoaDonMoiNhat = hoaDonDAO.timHoaDonMoiNhat();
                 String maHoaDonMoiNhat = hoaDonMoiNhat == null ? null : hoaDonMoiNhat.getMaHoaDon();
 
-                HoaDon hoaDonDatCoc = createInvoiceEntity(
+                hoaDonDatCoc = createInvoiceEntity(
                         EntityUtil.increaseEntityID(maHoaDonMoiNhat,
                                                     EntityIDSymbol.INVOICE_PREFIX.getPrefix(),
                                                     EntityIDSymbol.INVOICE_PREFIX.getLength()),
@@ -230,31 +234,46 @@ public class BookingServiceImpl implements BookingService {
                     new Timestamp(System.currentTimeMillis())
             ));
 
+            datPhongDAO.thucHienGiaoTac();
+            System.out.println("Đặt phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString() +
+                               " cho khách hàng: " + bookingCreationEvent.getTenKhachHang()
+                               + " thành công!");
+            String message = "Đặt phòng thành công!";
+            if (bookingCreationEvent.getDanhSachMaPhong().size() > 1) {
+                message += " Các phòng đã được đặt:\n";
+                for (String roomId : bookingCreationEvent.getDanhSachMaPhong()) {
+                    message += "- Phòng " + roomId + "\n";
+                }
+            }
+            if (bookingCreationEvent.isDaDatTruoc()) {
+                message += " Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
+            } else {
+                message += " Khách hàng sẽ tiến hành check-in ngay bây giờ.";
+            }
+
+            if (hoaDonDatCoc == null) {
+                return new EventResponse(ResponseType.SUCCESS, message, null);
+            }
+
+            // 2.8. Prepare DepositInvoiceResponse if there is advance payment
+            DepositInvoiceResponse depositInvoiceResponse = new DepositInvoiceResponse(
+                    bookingCreationEvent.getMaPhienDangNhap(),
+                    donDatPhong,
+                    khachHang,
+                    hoaDonDatCoc,
+                    nhanVienDAO.layNVTheoMaPhienDangNhap(Main.getCurrentLoginSession()),
+                    chiTietDatPhongs,
+                    danhSachPhongDungDichVu
+            );
+            return new EventResponse(ResponseType.SUCCESS, message, depositInvoiceResponse);
+
         } catch (Exception e) {
             System.out.println("Lỗi khi đặt phòng: " + e.getMessage());
             System.out.println("Rollback transaction");
             e.printStackTrace();
             datPhongDAO.hoanTacGiaoTac();
-            return new EventResponse(ResponseType.ERROR, "Đặt phòng thất bại! Vui lòng thử lại sau.");
+            return new EventResponse(ResponseType.ERROR, "Đặt phòng thất bại! Vui lòng thử lại sau.", null);
         }
-
-        datPhongDAO.thucHienGiaoTac();
-        System.out.println("Đặt phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString() +
-                           " cho khách hàng: " + bookingCreationEvent.getTenKhachHang()
-                           + " thành công!");
-        String message = "Đặt phòng thành công!";
-        if (bookingCreationEvent.getDanhSachMaPhong().size() > 1) {
-            message += " Các phòng đã được đặt:\n";
-            for (String roomId : bookingCreationEvent.getDanhSachMaPhong()) {
-                message += "- Phòng " + roomId + "\n";
-            }
-        }
-        if (bookingCreationEvent.isDaDatTruoc()) {
-            message += " Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
-        } else {
-            message += " Khách hàng sẽ tiến hành check-in ngay bây giờ.";
-        }
-        return new EventResponse(ResponseType.SUCCESS, message);
     }
 
     @Override

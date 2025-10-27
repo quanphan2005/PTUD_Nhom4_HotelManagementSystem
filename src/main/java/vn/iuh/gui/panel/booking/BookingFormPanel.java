@@ -8,10 +8,13 @@ import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
+import vn.iuh.dto.response.DepositInvoiceResponse;
 import vn.iuh.dto.response.EventResponse;
 import vn.iuh.entity.KhachHang;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
+import vn.iuh.gui.dialog.DepositInvoiceDialog;
+import vn.iuh.gui.dialog.InvoiceDialog2;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.CustomerService;
 import vn.iuh.service.RoomService;
@@ -854,8 +857,20 @@ public class BookingFormPanel extends JPanel {
             // Call booking service
             EventResponse response = bookingService.createBooking(bookingEvent);
             if (response.getType().equals(ResponseType.SUCCESS)) {
+//                if (chkIsAdvanced.isSelected()) {
+//                    if (response.getData() != null && response.getData() instanceof DepositInvoiceResponse) {
+//                        SwingUtilities.invokeLater(() -> {
+//                            DepositInvoiceDialog dialog =
+//                                    new DepositInvoiceDialog((DepositInvoiceResponse)response.getData());
+//                            dialog.setVisible(true);
+//                        });
+//                    } else {
+//                        throw new IllegalStateException("Expected DepositInvoiceResponse in response data");
+//                    }
+//                }
+
                 JOptionPane.showMessageDialog(this,  response.getMessage(),
-                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                                              "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
                 // Refresh reservation management panel
                 RefreshManager.refreshAfterBooking();

@@ -277,7 +277,14 @@ public class DepositInvoiceDialog extends JDialog {
     }
 
     private void fillRoomTable(DefaultTableModel model) {
-        // load thông tin cho table chi tiết sử dụng phòng
+//        for (ChiTietDatPhong chiTietDatPhong : response.getDanhSachChiTietDatPhong()) {
+//            model.addRow(new Object[]{
+//                    chiTietDatPhong.getTenPhong(),
+//                    formatCurrency(chiTietDatPhong.getDonGiaPhongHienTai()),
+//                    getStringThoiGianSuDung(chiTietDatPhong.getThoiGianSuDung()),
+//                    formatCurrency(chiTietDatPhong.getTongTien())
+//            });
+//        }
     }
 
     private String getStringThoiGianSuDung(double thoiGianSuDung) {

@@ -2,13 +2,15 @@ package vn.iuh.dto.response;
 
 import vn.iuh.constraint.ResponseType;
 
-public class EventResponse {
+public class EventResponse<T> {
     private ResponseType type;
     private String message;
+    private T data;
 
-    public EventResponse(ResponseType type, String message) {
+    public EventResponse(ResponseType type, String message, T data) {
         this.type = type;
         this.message = message;
+        this.data = data;
     }
 
     public ResponseType getType() {
@@ -17,6 +19,10 @@ public class EventResponse {
 
     public String getMessage() {
         return message;
+    }
+
+    public T getData() {
+        return data;
     }
 }
 
