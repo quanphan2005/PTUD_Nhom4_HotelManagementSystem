@@ -674,6 +674,11 @@ public class RoomUsageFormPanel extends JPanel {
                                                      this::handleTransferRoom);
         ActionItem extendBookingItem = new ActionItem("Book Thêm Giờ", IconUtil.createExtendIcon(), CustomUI.bluePurple,
                                                       this::handleExtendBooking);
+
+        ActionItem extendCheckoutBookingItem = new ActionItem("Gia Hạn Trễ", IconUtil.createExtendCheckoutIcon(), CustomUI.bluePurple,
+                                                      this::handleExtendCheckoutBooking);
+
+
         ActionItem checkInItem =
                 new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
 
@@ -698,16 +703,11 @@ public class RoomUsageFormPanel extends JPanel {
                     callServiceItem.setAction(null);
                     transferRoomItem.setBackgroundColor(CustomUI.gray);
                     transferRoomItem.setAction(null);
-                    extendBookingItem.setBackgroundColor(CustomUI.gray);
-                    extendBookingItem.setAction(null);
 
                     items.add(callServiceItem);
                     items.add(checkOutItem);
                     items.add(transferRoomItem);
-                    items.add(extendBookingItem);
-
-                    // Disable some event when status is late
-
+                    items.add(extendCheckoutBookingItem);
                 } else
                     if (roomStatus.equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
                         callServiceItem.setBackgroundColor(CustomUI.gray);
@@ -1180,6 +1180,12 @@ public class RoomUsageFormPanel extends JPanel {
 
         dlg.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
         dlg.setVisible(true);
+    }
+
+    private void handleExtendCheckoutBooking() {
+        JOptionPane.showMessageDialog(this,
+                "Chức năng gia hạn thời gian trả phòng đang được phát triển.",
+                "Đang phát triển", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void handleCheckIn() {

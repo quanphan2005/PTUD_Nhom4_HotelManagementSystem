@@ -60,6 +60,15 @@ public class IconUtil {
         }
     }
 
+    public static ImageIcon createExtendCheckoutIcon() {
+        try {
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource("/icons/checkout_late.png")));
+            return new ImageIcon(icon.getImage().getScaledInstance(128, 128, Image.SCALE_SMOOTH));
+        } catch (Exception e) {
+            return createColoredIcon(new Color(255, 193, 7), "📋"); // Amber for extend
+        }
+    }
+
     public static ImageIcon createCancelIcon() {
         try {
             ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource("/icons/error.png")));
