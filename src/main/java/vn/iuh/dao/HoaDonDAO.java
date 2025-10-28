@@ -142,11 +142,12 @@ public class HoaDonDAO {
         }
     }
 
-    public HoaDon findInvoiceForReservation(String reservationId){
-        String query = "Select * from HoaDon where ma_don_dat_phong = ?";
+    public HoaDon findInvoiceForReservation(String reservationId, String invoiceType){
+        String query = "Select top 1 * from HoaDon where ma_don_dat_phong = ? and kieu_hoa_don = ?";
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, reservationId);
+            ps.setString(2, invoiceType);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return chuyenKetQuaThanhHoaDon(rs);

@@ -22,6 +22,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -48,7 +50,7 @@ public class RevenueStatisticPanel extends JPanel {
     private JPanel pnlVisualDisplay;
     private CardLayout cardLayout;
     private JPanel pnlTextDisplay;
-    private FilterStatistic filter;
+    private FilterStatistic baseFilter;
     private JComboBox<String> cmbEmployee;
     private List<NhanVien> danhSachNhanVien;
     private final RevenueStatisticService revenueStatisticService;
@@ -89,17 +91,29 @@ public class RevenueStatisticPanel extends JPanel {
         this.danhSachKetQua = new ArrayList<>();
         setLayout(new BorderLayout());
         init();
+        //run khi card được show
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                loadDanhSachNhanVien();
+            }
+        });
     }
-    private void createTopPanel(){
-        pnlTop = new JPanel();
-        lblTop = new JLabel("Thống kê doanh thu");
-        lblTop.setFont(CustomUI.normalFont);
+    private void createTopPanel() {
+        JPanel pnlTop = new JPanel();
+        JLabel lblTop = new JLabel("THỐNG KÊ DOANH THU", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
+        lblTop.setFont(CustomUI.bigFont);
+
         pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop);
-        pnlTop.setPreferredSize(new Dimension(0, 35));
+
+        pnlTop.setPreferredSize(new Dimension(0, 40));
+        pnlTop.setMinimumSize(new Dimension(0, 40));
+        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        this.add(pnlTop, BorderLayout.NORTH);
+
+        add(pnlTop);
     }
 
     private void createFilterPanel(){
@@ -131,20 +145,14 @@ public class RevenueStatisticPanel extends JPanel {
         lblEmployee.setForeground(CustomUI.black);
         cmbEmployee = new JComboBox<>();
         cmbEmployee.setPreferredSize(new Dimension(100, 30));
-        loadDanhSachNhanVien();
-        cmbEmployee.addPopupMenuListener(new PopupMenuListener() {
-            @Override
-            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                loadDanhSachNhanVien();
-            }
 
-            @Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
-            @Override public void popupMenuCanceled(PopupMenuEvent e) {}
+        cmbEmployee.addActionListener(e -> {
+            handleBaseCase();
         });
 
         JButton btnReLoad = new JButton("Tải lại");
         btnReLoad.addActionListener(e ->{
-            this.handleReload();
+            handleBaseCase();
         });
         btnReLoad.setSize(new Dimension(20, 10));
         btnReLoad.setFont(CustomUI.smallFont);
@@ -178,7 +186,7 @@ public class RevenueStatisticPanel extends JPanel {
 
         pnlEmployee.add(lblEmployee);
         pnlEmployee.add(cmbEmployee);
-        pnlEmployee.add(btnReLoad);
+//        pnlEmployee.add(btnReLoad);
         pnlEmployee.add(btnExport);
         pnlEmployee.add(btnChooseFolder);
         pnlEmployee.setBackground(CustomUI.white);
@@ -214,10 +222,10 @@ public class RevenueStatisticPanel extends JPanel {
         pnlOption.add(cmbOption);
         pnlOption.setBackground(CustomUI.white);
 
-
         cmbOption.addActionListener( e->{
             String option = (String) cmbOption.getSelectedItem();
             setDateRangeByOption(option);
+            handleBaseCase();
         });
         
         
@@ -275,47 +283,38 @@ public class RevenueStatisticPanel extends JPanel {
         }
     }
 
-    private void validateTime(){
+    private FilterStatistic validateInput(){
         LocalDate startDate = datePickerStart.getDate();
         LocalDate endDate = datePickerEnd.getDate();
         LocalDate today = LocalDate.now();
-
+        String tenNhanVien = (String) cmbEmployee.getSelectedItem();
+        String maNhanVien;
+        if("Tất cả".equalsIgnoreCase(tenNhanVien) || tenNhanVien == null){
+            maNhanVien = null;
+        }
+        else {
+            maNhanVien = this.danhSachNhanVien.stream()
+                    .filter(e -> tenNhanVien.equalsIgnoreCase(e.getTenNhanVien()))
+                    .map(NhanVien::getMaNhanVien)
+                    .toList().getFirst();
+        }
         if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc");
+            JOptionPane.showMessageDialog(null, "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc");
         }
         if (startDate.isAfter(today)) {
-            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày hiện tại");
+            JOptionPane.showMessageDialog(null, "Ngày bắt đầu không được sau ngày hiện tại");
         }
         if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày kết thúc");
+            JOptionPane.showMessageDialog(null, "Ngày bắt đầu không được sau ngày kết thúc");
         }
+
+        return new FilterStatistic(Timestamp.valueOf(startDate.atTime(LocalTime.MIN)),
+                Timestamp.valueOf(endDate.atTime(LocalTime.MAX)), maNhanVien);
     }
 
-    private void handleReload(){
+    private void handleReload(FilterStatistic newFilter){
         try {
-            validateTime();
-
-            String selectedTenNhanVien = (String) cmbEmployee.getSelectedItem();
-            Timestamp ngayBatDau = Timestamp.valueOf(datePickerStart.getDate().atTime(LocalTime.MIN));
-            Timestamp ngayKetThuc = Timestamp.valueOf(datePickerEnd.getDate().atTime(LocalTime.MAX));
-
-            String maNhanVien = null;
-            if (!"Tất cả".equalsIgnoreCase(selectedTenNhanVien)) {
-                maNhanVien = danhSachNhanVien.stream()
-                        .filter(nv -> nv.getTenNhanVien().equalsIgnoreCase(selectedTenNhanVien))
-                        .map(NhanVien::getMaNhanVien)
-                        .findFirst()
-                        .orElse(null);
-            }
-            System.out.println("Nhân viên: " + maNhanVien);
-            System.out.println("Từ: " + ngayBatDau + " - Đến: " + ngayKetThuc);
-            FilterStatistic newFilter = new FilterStatistic(ngayBatDau, ngayKetThuc, maNhanVien);
             List<InvoiceStatistic> danhSachKetQua  = revenueStatisticService.layThongKeVoiDieuKien(newFilter);
-
-            for(InvoiceStatistic i : danhSachKetQua){
-                System.out.println(Arrays.toString(i.getObject()));
-            }
-
             fillTable(danhSachKetQua);
             updateStatisticLabels(danhSachKetQua);
         } catch (IllegalArgumentException ex) {
@@ -324,7 +323,6 @@ public class RevenueStatisticPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi: " + ex.getMessage(), "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         }
-
     }
 
     private void setDateRangeByOption(String option) {
@@ -647,5 +645,12 @@ public class RevenueStatisticPanel extends JPanel {
         value = PriceFormat.lamTronDenHangNghin(value);
         DecimalFormat df = new DecimalFormat("#,### VND");
         return df.format(value);
+    }
+
+    private void handleBaseCase(){
+        FilterStatistic newFilter = validateInput();
+        if(!newFilter.equals(baseFilter)){
+            handleReload(newFilter);
+        }
     }
 }

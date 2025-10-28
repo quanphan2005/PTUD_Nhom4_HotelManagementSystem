@@ -7,12 +7,12 @@ import java.util.Objects;
 public class FilterStatistic {
     private Timestamp startDate;
     private Timestamp endDate;
-    private String employeeName;
+    private String employeeId;
 
-    public FilterStatistic(Timestamp startDate, Timestamp endDate, String employeeName) {
+    public FilterStatistic(Timestamp startDate, Timestamp endDate, String employeeId) {
         this.startDate = startDate;
         this.endDate = endDate;
-        this.employeeName = employeeName;
+        this.employeeId = employeeId;
     }
 
     public Timestamp getStartDate() {
@@ -23,8 +23,8 @@ public class FilterStatistic {
         return endDate;
     }
 
-    public String getEmployeeName() {
-        return employeeName;
+    public String getEmployeeId() {
+        return employeeId;
     }
 
     @Override
@@ -32,11 +32,11 @@ public class FilterStatistic {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FilterStatistic that = (FilterStatistic) o;
-        return Objects.equals(startDate, that.startDate) && Objects.equals(endDate, that.endDate) && Objects.equals(employeeName, that.employeeName);
+        return Objects.equals(startDate, that.startDate) && Objects.equals(endDate, that.endDate) && Objects.equals(employeeId, that.employeeId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(startDate, endDate, employeeName);
+        return Objects.hash(startDate, endDate, employeeId);
     }
 }

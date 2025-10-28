@@ -292,130 +292,94 @@ public class PhongDAO {
     public List<Phong> timPhongUngVien(String currentRoomId, int neededPersons, Timestamp fromTime, Timestamp toTime) {
         List<Phong> results = new LinkedList<>();
 
-        if (currentRoomId == null || fromTime == null) return results; // bảo vệ đầu vào
+        if (currentRoomId == null || fromTime == null || toTime == null) return results;
 
         try {
-            // 1) Lấy ma_loai_phong và ten_loai_phong của phòng hiện tại
-            String qGetLoai = "SELECT p.ma_loai_phong, lp.ten_loai_phong " +
-                    "FROM Phong p JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong " +
+            // 1) Lấy ma_loai_phong của phòng hiện tại
+            String qGetLoai = "SELECT p.ma_loai_phong " +
+                    "FROM Phong p " +
                     "WHERE p.ma_phong = ?";
 
             String maLoaiPhong = null;
-            String tenLoaiPhong = null;
             try (PreparedStatement ps = connection.prepareStatement(qGetLoai)) {
                 ps.setString(1, currentRoomId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         maLoaiPhong = rs.getString("ma_loai_phong");
-                        tenLoaiPhong = rs.getString("ten_loai_phong");
                     } else {
-                        return results; // không tìm thấy phòng hiện tại
+                        return results;
                     }
                 }
             }
 
-            // Nếu toTime != null mà < fromTime thì hoán đổi cho an toàn
-            if (toTime != null && toTime.before(fromTime)) {
+            // Nếu toTime < fromTime thì hoán đổi cho an toàn
+            if (toTime.before(fromTime)) {
                 Timestamp tmp = fromTime;
                 fromTime = toTime;
                 toTime = tmp;
             }
 
-            // 2) Lấy danh sách phòng cơ bản phù hợp (THEO TÊN LOẠI PHÒNG)
-
-            //Tìm tất cả các phòng khác với phòng hiện tại nhưng cùng loại phòng
+            // 2) Lấy danh sách phòng khác cùng ma_loai_phong, đang hoạt động, đủ chỗ
             String baseQuery = "SELECT p.* FROM Phong p " +
-                    "JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong " +
                     "WHERE p.ma_phong <> ? " +
-                    "AND lp.ten_loai_phong = ? " +
-                    "AND lp.so_luong_khach >= ? " +
-                    "AND p.dang_hoat_dong = 1 " +
+                    "AND p.ma_loai_phong = ? " +
+                    "AND ISNULL(p.dang_hoat_dong, 0) = 1 " +
                     "AND ISNULL(p.da_xoa,0) = 0";
 
-            try (PreparedStatement psBase = connection.prepareStatement(baseQuery)) {
+            // 3) Kiểm tra xem có bị trùng chi tiết đặt phòng hay không
+            // nếu trùng thời gian trên chi tiết đặt phòng ==> Không thể đổi phòng
+            final String bookingOverlap =
+                    "SELECT 1 FROM ChiTietDatPhong cdp " +
+                            "WHERE cdp.ma_phong = ? AND ISNULL(cdp.da_xoa,0)=0 " +
+                            "  AND cdp.kieu_ket_thuc IS NULL " +
+                            "  AND cdp.tg_nhan_phong IS NOT NULL AND cdp.tg_tra_phong IS NOT NULL " +
+                            "  AND cdp.tg_nhan_phong < cdp.tg_tra_phong " +
+                            "  AND NOT (cdp.tg_tra_phong <= ? OR cdp.tg_nhan_phong >= ?)";
+
+            final String workOverlap =
+                    "SELECT 1 FROM CongViec cv " +
+                            "WHERE cv.ma_phong = ? AND ISNULL(cv.da_xoa,0)=0 " +
+                            "  AND cv.tg_bat_dau IS NOT NULL AND cv.tg_ket_thuc IS NOT NULL " +
+                            "  AND cv.tg_bat_dau < cv.tg_ket_thuc " +
+                            "  AND NOT (cv.tg_ket_thuc <= ? OR cv.tg_bat_dau >= ?)";
+
+            try (PreparedStatement psBase = connection.prepareStatement(baseQuery);
+                 PreparedStatement psBookingOverlap = connection.prepareStatement(bookingOverlap);
+                 PreparedStatement psWorkOverlap = connection.prepareStatement(workOverlap)) {
+
                 psBase.setString(1, currentRoomId);
-                psBase.setString(2, tenLoaiPhong);
-                psBase.setInt(3, neededPersons);
+                psBase.setString(2, maLoaiPhong);
 
                 try (ResultSet rs = psBase.executeQuery()) {
-                    // Prepare statements để kiểm tra các phòng còn trống thời gian phù hợp với phòng cũ
-                    final String bookingOverlapWhenToNotNull =
-                            "SELECT 1 FROM ChiTietDatPhong cdp " +
-                                    "WHERE cdp.ma_phong = ? AND ISNULL(cdp.da_xoa,0)=0 " +
-                                    "  AND cdp.tg_nhan_phong IS NOT NULL AND cdp.tg_tra_phong IS NOT NULL " +
-                                    "  AND cdp.tg_nhan_phong < cdp.tg_tra_phong " +
-                                    "  AND NOT (cdp.tg_tra_phong <= ? OR cdp.tg_nhan_phong >= ?)";
+                    while (rs.next()) {
+                        Phong p = mapResultSetToRoom(rs);
+                        String roomId = p.getMaPhong();
 
-                    final String bookingOverlapWhenToNull =
-                            "SELECT 1 FROM ChiTietDatPhong cdp " +
-                                    "WHERE cdp.ma_phong = ? AND ISNULL(cdp.da_xoa,0)=0 " +
-                                    "  AND cdp.tg_nhan_phong IS NOT NULL AND cdp.tg_tra_phong IS NOT NULL " +
-                                    "  AND cdp.tg_nhan_phong < cdp.tg_tra_phong " +
-                                    "  AND cdp.tg_tra_phong > ?";
+                        boolean blockedByBooking = false;
+                        boolean blockedByWork = false;
 
-                    final String workOverlapWhenToNotNull =
-                            "SELECT 1 FROM CongViec cv " +
-                                    "WHERE cv.ma_phong = ? AND ISNULL(cv.da_xoa,0)=0 " +
-                                    "  AND cv.tg_bat_dau IS NOT NULL AND cv.tg_ket_thuc IS NOT NULL " +
-                                    "  AND cv.tg_bat_dau < cv.tg_ket_thuc " +
-                                    "  AND NOT (cv.tg_ket_thuc <= ? OR cv.tg_bat_dau >= ?)";
+                        // Kiểm tra chi tiết đặt phòng
+                        psBookingOverlap.setString(1, roomId);
+                        psBookingOverlap.setTimestamp(2, fromTime);
+                        psBookingOverlap.setTimestamp(3, toTime);
+                        try (ResultSet r2 = psBookingOverlap.executeQuery()) {
+                            blockedByBooking = r2.next();
+                        }
 
-                    final String workOverlapWhenToNull =
-                            "SELECT 1 FROM CongViec cv " +
-                                    "WHERE cv.ma_phong = ? AND ISNULL(cv.da_xoa,0)=0 " +
-                                    "  AND cv.tg_bat_dau IS NOT NULL AND cv.tg_ket_thuc IS NOT NULL " +
-                                    "  AND cv.tg_bat_dau < cv.tg_ket_thuc " +
-                                    "  AND cv.tg_ket_thuc > ?";
+                        // kiểm tra công việc
+                        psWorkOverlap.setString(1, roomId);
+                        psWorkOverlap.setTimestamp(2, fromTime);
+                        psWorkOverlap.setTimestamp(3, toTime);
+                        try (ResultSet r3 = psWorkOverlap.executeQuery()) {
+                            blockedByWork = r3.next();
+                        }
 
-                    try (PreparedStatement psBookingOverlapNotNull = connection.prepareStatement(bookingOverlapWhenToNotNull);
-                         PreparedStatement psBookingOverlapNull = connection.prepareStatement(bookingOverlapWhenToNull);
-                         PreparedStatement psWorkOverlapNotNull = connection.prepareStatement(workOverlapWhenToNotNull);
-                         PreparedStatement psWorkOverlapNull = connection.prepareStatement(workOverlapWhenToNull)) {
-
-                        while (rs.next()) {
-                            Phong p = mapResultSetToRoom(rs);
-                            String roomId = p.getMaPhong();
-
-                            boolean blockedByBooking = false;
-                            boolean blockedByWork = false;
-
-                            if (toTime != null) {
-                                psBookingOverlapNotNull.setString(1, roomId);
-                                psBookingOverlapNotNull.setTimestamp(2, fromTime);
-                                psBookingOverlapNotNull.setTimestamp(3, toTime);
-                                try (ResultSet r2 = psBookingOverlapNotNull.executeQuery()) {
-                                    blockedByBooking = r2.next();
-                                }
-
-                                psWorkOverlapNotNull.setString(1, roomId);
-                                psWorkOverlapNotNull.setTimestamp(2, fromTime);
-                                psWorkOverlapNotNull.setTimestamp(3, toTime);
-                                try (ResultSet r3 = psWorkOverlapNotNull.executeQuery()) {
-                                    blockedByWork = r3.next();
-                                }
-                            } else {
-                                // Trường hợp thời gian checkout == null
-                                psBookingOverlapNull.setString(1, roomId);
-                                psBookingOverlapNull.setTimestamp(2, fromTime);
-                                try (ResultSet r2 = psBookingOverlapNull.executeQuery()) {
-                                    blockedByBooking = r2.next();
-                                }
-
-                                psWorkOverlapNull.setString(1, roomId);
-                                psWorkOverlapNull.setTimestamp(2, fromTime);
-                                try (ResultSet r3 = psWorkOverlapNull.executeQuery()) {
-                                    blockedByWork = r3.next();
-                                }
-                            }
-
-                            //Nếu phòng không bận (trống vào khoảng thời gian cần đổi) thì thêm phòng vào danh sách
-                            if (!blockedByBooking && !blockedByWork) {
-                                results.add(p);
-                            } else {
-                                String reason = blockedByBooking && blockedByWork ? "booking+work" :
-                                        blockedByBooking ? "booking" : "work";
-                                System.out.println("timPhongUngVien: Loai phong " + p.getMaPhong() + " vì: " + reason);
-                            }
+                        if (!blockedByBooking && !blockedByWork) {
+                            results.add(p);
+                        } else {
+                            String reason = blockedByBooking && blockedByWork ? "booking+work" :
+                                    blockedByBooking ? "booking" : "work";
+                            System.out.println("timPhongUngVien: Loai phong " + p.getMaPhong() + " vì: " + reason);
                         }
                     }
                 }
@@ -427,6 +391,7 @@ public class PhongDAO {
 
         return results;
     }
+
 
     // Lấy giá mới nhất của một loại phòng
     public double[] getLatestPriceForLoaiPhong(String maLoaiPhong) {

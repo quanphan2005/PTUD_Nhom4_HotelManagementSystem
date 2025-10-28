@@ -193,7 +193,8 @@ public class DonGoiDichVuDao {
                         "JOIN DichVu dv ON pddv.ma_dich_vu = dv.ma_dich_vu " +
                         "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong "+
                         "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
-                        "WHERE ctdp.ma_don_dat_phong = ?";
+                        "WHERE ctdp.ma_don_dat_phong = ? " +
+                        "ORDER BY pddv.duoc_tang, pddv.so_luong desc";
         try{
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1,maDonDatPhong);
@@ -370,6 +371,7 @@ public class DonGoiDichVuDao {
             phongDungDichVu.setMaDichVu(rs.getString("ma_dich_vu"));
             phongDungDichVu.setMaPhienDangNhap(rs.getString("ma_phien_dang_nhap"));
             phongDungDichVu.setTongTien(BigDecimal.valueOf(rs.getDouble("tong_tien")));
+            phongDungDichVu.setDuocTang(rs.getBoolean("duoc_tang"));
             return phongDungDichVu;
         }catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành PhongDungDichVu" + e.getMessage());

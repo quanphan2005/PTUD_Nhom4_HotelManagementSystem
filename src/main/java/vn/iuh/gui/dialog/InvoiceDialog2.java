@@ -178,7 +178,6 @@ public class InvoiceDialog2 extends JDialog {
         String[] colPhong = {"Tên phòng", "Đơn giá" ,"Thời gian", "Thành tiền"};
         DefaultTableModel modelPhong = new DefaultTableModel(colPhong, 0);
         tblPhong = new JTable(modelPhong);
-        modelPhong.setRowCount(4);
         fillRoomTable(modelPhong);
 
         JPanel roomPanel = new JPanel(new BorderLayout());
@@ -206,7 +205,6 @@ public class InvoiceDialog2 extends JDialog {
 
         // ===== Tổng tiền =====
         pnlSouth = new JPanel();
-        pnlSouth.setPreferredSize(new Dimension(0, 170));
         pnlSouth.setLayout(new MigLayout(
                 "wrap 3, insets 10",
                 "[grow,fill][grow,fill][grow,fill]",
@@ -438,9 +436,11 @@ public class InvoiceDialog2 extends JDialog {
             leftTable.addCell(new Phrase("Mã hóa đơn: " + response.getHoaDon().getMaHoaDon(), itextNormalFont));
             leftTable.addCell(new Phrase("Nhân viên: " + response.getTenNhanVien().getTenNhanVien(), itextNormalFont));
             leftTable.addCell(new Phrase("Ngày tạo hóa đơn: " + TimeFormat.formatTime(new Timestamp(System.currentTimeMillis())), itextNormalFont));
-            if(response.getHoaDon().getPhuongThucThanhToan() != null || response.getHoaDon().getTinhTrangThanhToan() != null){
-                leftTable.addCell(new Phrase("Phương thức thanh toán: ".concat(response.getHoaDon().getPhuongThucThanhToan()), itextNormalFont));
+            if(response.getHoaDon().getTinhTrangThanhToan() != null){
                 leftTable.addCell(new Phrase("Tình trạng thanh toán: " + response.getHoaDon().getTinhTrangThanhToan(), itextNormalFont));
+            }
+            if(response.getHoaDon().getPhuongThucThanhToan() != null){
+                leftTable.addCell(new Phrase("Phương thức thanh toán: ".concat(response.getHoaDon().getPhuongThucThanhToan()), itextNormalFont));
             }
 // --- Cột phải ---
             PdfPTable rightTable = new PdfPTable(1);

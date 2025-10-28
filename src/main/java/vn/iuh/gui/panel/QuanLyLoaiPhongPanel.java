@@ -19,10 +19,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 
-/**
- * QuanLyLoaiPhongPanel - phiên bản đã bổ sung createCategoryPanel() và tối ưu khởi tạo danh sách thẻ.
- * Giữ nguyên bố cục, but UI loads faster thanks to incremental population + async image loading + cache.
- */
+// Panel quản lý loại phòng
 public class QuanLyLoaiPhongPanel extends JPanel {
 
     // Các hằng số dùng chung cho kích thước, font và thông số hiển thị
@@ -47,7 +44,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
     private static final int CATEGORY_CARD_ARC    = 20; // bán kính bo góc cho FlatLaf
 
     // Simple in-memory cache cho icons/ảnh đã scale+rounded
-    // key = path + "|" + width + "x" + height + "|arc:" + arc
     private static final Map<String, ImageIcon> ICON_CACHE = new HashMap<>();
 
     // Các thành phần sẽ được khởi tạo/tái dùng trong nhiều hàm
@@ -184,7 +180,7 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         add(pnlTop);
     }
 
-    // TẠO KHUNG SEARCH (giữ nguyên bố cục)
+    // TẠO KHUNG SEARCH (giữ nguyên bố cục) - đã chỉnh để tránh kéo dãn các component
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
@@ -194,93 +190,129 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         searchPanel.setOpaque(true);
         searchPanel.setBorder(new FlatLineBorder(new Insets(12,12,12,12), Color.decode("#CED4DA"), 2, 30));
 
-        String[] searchOptions = {"Mã loại phòng"};
+        String[] searchOptions = {"Mã loại phòng", "Trạng thái"};
         JComboBox<String> searchTypeComboBox = new JComboBox<>(searchOptions);
-        searchTypeComboBox.setPreferredSize(new Dimension(120, 45));
+
+        Dimension searchTypeSize = new Dimension(120, 45);
+        searchTypeComboBox.setPreferredSize(searchTypeSize);
+        searchTypeComboBox.setMaximumSize(searchTypeSize);
+        searchTypeComboBox.setMinimumSize(searchTypeSize);
         searchTypeComboBox.setFont(new Font("Arial", Font.BOLD, 14));
 
         JPanel inputPanel = new JPanel(new CardLayout());
+
+        Dimension inputSize = new Dimension(380, 45);
+        inputPanel.setPreferredSize(inputSize);
+        inputPanel.setMaximumSize(inputSize);
+        inputPanel.setMinimumSize(inputSize);
+
         JTextField categoryCodeField = new JTextField();
-        configureSearchTextField(categoryCodeField, new Dimension(380,45), "Mã loại phòng");
+        final String codePlaceholder = "Mã loại phòng";
+        configureSearchTextField(categoryCodeField, new Dimension(380,45), codePlaceholder);
+        categoryCodeField.setMaximumSize(new Dimension(380,45));
+        categoryCodeField.setMinimumSize(new Dimension(380,45));
+
+        String[] statusOptions = {"Thường", "VIP", "Tất cả"};
+        JComboBox<String> statusComboBox = new JComboBox<>(statusOptions);
+        statusComboBox.setPreferredSize(new Dimension(380, 45));
+        statusComboBox.setMaximumSize(new Dimension(380, 45));
+        statusComboBox.setMinimumSize(new Dimension(380, 45));
+        statusComboBox.setFont(new Font("Arial", Font.BOLD, 15));
+        statusComboBox.putClientProperty(FlatClientProperties.STYLE, "arc:12");
+
         inputPanel.add(categoryCodeField, "Mã loại phòng");
+        inputPanel.add(statusComboBox, "Trạng thái");
 
         searchTypeComboBox.addActionListener(e -> {
             CardLayout cl = (CardLayout)(inputPanel.getLayout());
-            cl.show(inputPanel, (String)searchTypeComboBox.getSelectedItem());
+            String selected = (String) searchTypeComboBox.getSelectedItem();
+            cl.show(inputPanel, selected);
         });
 
         JPanel row1 = new JPanel();
         row1.setLayout(new BoxLayout(row1, BoxLayout.X_AXIS));
         row1.setBackground(CustomUI.white);
+        row1.setMaximumSize(new Dimension(650, 60));
         row1.add(searchTypeComboBox);
         row1.add(Box.createHorizontalStrut(10));
         row1.add(inputPanel);
         row1.add(Box.createHorizontalStrut(10));
         row1.add(searchButton);
 
+        // nút TÌM behaviour (tương tự như trước)
+        searchButton.addActionListener(ev -> {
+            String mode = (String) searchTypeComboBox.getSelectedItem();
+            if ("Mã loại phòng".equals(mode)) {
+                String txt = categoryCodeField.getText();
+                if (txt == null) txt = "";
+                if (txt.isEmpty() || (codePlaceholder.equals(txt) && categoryCodeField.getForeground().equals(Color.GRAY))) {
+                    // reload all (placeholder - hiện chưa có service ở panel loại phòng mẫu)
+                    // giữ nguyên hành vi: không làm gì đặc biệt
+                } else {
+                    // thực hiện tìm trong UI nếu cần (user sẽ tích hợp service)
+                }
+            } else {
+                String status = (String) statusComboBox.getSelectedItem();
+                // reload theo trạng thái
+            }
+        });
+
         searchPanel.add(row1);
         searchPanel.add(Box.createVerticalStrut(10));
 
+        // Row2: chỉ giữ nút Thêm, căn giữa
         JPanel row2 = new JPanel();
         row2.setLayout(new BoxLayout(row2, BoxLayout.X_AXIS));
         row2.setBackground(CustomUI.white);
+        row2.setMaximumSize(new Dimension(650, ACTION_BUTTON_SIZE.height + 10));
+
+        row2.add(Box.createHorizontalGlue());
         row2.add(addButton);
         row2.add(Box.createHorizontalGlue());
-        row2.add(Box.createHorizontalStrut(20));
-        row2.add(editButton);
-        searchPanel.add(row2);
-        searchPanel.add(Box.createVerticalStrut(10));
 
-        JPanel row3 = new JPanel();
-        row3.setLayout(new BoxLayout(row3, BoxLayout.X_AXIS));
-        row3.setBackground(CustomUI.white);
-        row3.add(Box.createHorizontalGlue());
-        row3.add(deleteButton);
-        row3.add(Box.createHorizontalGlue());
-        searchPanel.add(row3);
+        searchPanel.add(row2);
 
         return searchPanel;
     }
 
-    // CREATE CATEGORY PANEL (phần nút bộ lọc bên phải) — bạn đã yêu cầu
+    // CREATE CATEGORY PANEL (phần nút bộ lọc bên phải) — đã chỉnh: mỗi hàng 3 nút, trái->phải
     private JPanel createCategoryPanel() {
         JPanel categoryPanel = new JPanel();
         categoryPanel.setLayout(new BoxLayout(categoryPanel, BoxLayout.Y_AXIS));
         categoryPanel.setBackground(CustomUI.white);
         categoryPanel.setPreferredSize(new Dimension(655, 200));
         categoryPanel.setMaximumSize(new Dimension(655, 200));
-        categoryPanel.setBorder(new FlatLineBorder(new Insets(12,12,12,12), Color.decode("#CED4DA"), 2, 30));
         categoryPanel.setOpaque(true);
+        categoryPanel.setBorder(new FlatLineBorder(new Insets(12,12,12,12), Color.decode("#CED4DA"), 2, 30));
 
-        // Row 1: Toàn bộ, 1 người
-        JPanel row1 = new JPanel();
-        row1.setLayout(new BoxLayout(row1, BoxLayout.X_AXIS));
+        // Row 1: Toàn bộ, 1 người, 2 người (left-aligned)
+        JPanel row1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         row1.setBackground(CustomUI.white);
+        row1.setAlignmentX(Component.LEFT_ALIGNMENT);
         row1.add(allCategoryButton);
-        row1.add(Box.createHorizontalStrut(15));
         row1.add(onePeopleButton);
+        row1.add(twoPeopleButton);
         categoryPanel.add(row1);
         categoryPanel.add(Box.createVerticalStrut(10));
 
-        // Row 2: 2 người, 3 người, 4 người
-        JPanel row2 = new JPanel();
-        row2.setLayout(new BoxLayout(row2, BoxLayout.X_AXIS));
+        // Row 2: 3 người, 4 người, VIP (left-aligned)
+        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         row2.setBackground(CustomUI.white);
-        row2.add(twoPeopleButton);
-        row2.add(Box.createHorizontalStrut(15));
+        row2.setAlignmentX(Component.LEFT_ALIGNMENT);
         row2.add(threePeopleButton);
-        row2.add(Box.createHorizontalStrut(15));
         row2.add(fourPeopleButton);
+        row2.add(vipButton);
         categoryPanel.add(row2);
         categoryPanel.add(Box.createVerticalStrut(10));
 
-        // Row 3: VIP, Thường
-        JPanel row3 = new JPanel();
-        row3.setLayout(new BoxLayout(row3, BoxLayout.X_AXIS));
+        // Row 3: Thường + 2 placeholder (left-aligned to keep 3-col layout)
+        JPanel row3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         row3.setBackground(CustomUI.white);
-        row3.add(vipButton);
-        row3.add(Box.createHorizontalStrut(15));
+        row3.setAlignmentX(Component.LEFT_ALIGNMENT);
         row3.add(normalButton);
+        // placeholders giữ kích thước giống nút
+        row3.add(Box.createRigidArea(new Dimension(CATEGORY_BUTTON_SIZE.width, CATEGORY_BUTTON_SIZE.height)));
+        row3.add(Box.createRigidArea(new Dimension(CATEGORY_BUTTON_SIZE.width, CATEGORY_BUTTON_SIZE.height)));
         categoryPanel.add(row3);
 
         return categoryPanel;

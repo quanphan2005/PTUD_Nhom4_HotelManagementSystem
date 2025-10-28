@@ -254,11 +254,38 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                 }
             }
 
-            // 6f) Xóa job (hoặc kết thúc) job của phòng cũ
+            // 6f) Xử lý job của phòng cũ: kết thúc job hiện tại và tùy trạng thái tạo job mới phù hợp
             CongViec oldJob2 = congViecDAO.layCongViecHienTaiCuaPhong(oldRoomId);
             if (oldJob2 != null) {
-                congViecDAO.removeJob(oldJob2.getMaCongViec());
+                // Kết thúc job hiện tại (đánh dấu da_xoa = true và tg_ket_thuc = now)
+                congViecDAO.capNhatThoiGianKetThuc(oldJob2.getMaCongViec(), now, true);
+
+                String currentStatus = oldJob2.getTenTrangThai() == null ? "" : oldJob2.getTenTrangThai().trim();
+
+                // Lấy id job mới dựa trên job mới nhất
+                CongViec lastJobForId = congViecDAO.timCongViecMoiNhat();
+                String newOldJobId = EntityUtil.increaseEntityID(
+                        lastJobForId == null ? null : lastJobForId.getMaCongViec(),
+                        EntityIDSymbol.JOB_PREFIX.getPrefix(),
+                        EntityIDSymbol.JOB_PREFIX.getLength()
+                );
+
+                // Nếu trạng thái cũ là "SỬ DỤNG" thì đưa về là dọn dẹp
+                if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(currentStatus)) {
+                    // Tạo côgn việc dọn dẹp cho phòng cũ
+                    Timestamp cleaningEnd = new Timestamp(now.getTime() + 2L * 60L * 60L * 1000L);
+                    CongViec cleaningJob = new CongViec(
+                            newOldJobId,
+                            RoomStatus.ROOM_CLEANING_STATUS.getStatus(),
+                            now,
+                            cleaningEnd,
+                            oldRoomId,
+                            now
+                    );
+                    congViecDAO.themCongViec(cleaningJob);
+                }
             }
+
 
             // 6g) TẠO công việc mới cho phòng mới với trạng thái "KIỂM TRA" từ hiện tại đến 30p sau
             CongViec lastJob3 = congViecDAO.timCongViecMoiNhat();
