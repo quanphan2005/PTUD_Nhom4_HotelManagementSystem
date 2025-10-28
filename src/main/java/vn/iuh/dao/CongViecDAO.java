@@ -1,5 +1,6 @@
 package vn.iuh.dao;
 
+import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.repository.RoomJob;
 import vn.iuh.entity.CongViec;
 import vn.iuh.exception.TableEntityMismatch;
@@ -328,5 +329,36 @@ public class CongViecDAO {
             System.out.println("Lỗi cập nhật ma_phong cho CongViec " + maCongViec + ": " + e.getMessage());
             return false;
         }
+    }
+
+
+    public List<CongViec> layDSCVChoCheckInCuaDDP(String maDonDatPhong) {
+        String query =
+                "select cv.* from DonDatPhong ddp\n" +
+                        "left join ChiTietDatPhong ctdp on ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong and ctdp.da_xoa = 0\n" +
+                        "left join Phong p on p.ma_phong = ctdp.ma_phong\n" +
+                        "cross apply (\n" +
+                        "\tselect top 1 * from CongViec cv \n" +
+                        "\twhere cv.ma_phong = p.ma_phong\n" +
+                        "\t\tand cv.da_xoa = 0 \n" +
+                        "\t\tand cv.ten_trang_thai = N'CHỜ CHECKIN'\n" +
+                        ")as cv\n" +
+                        "where ddp.ma_don_dat_phong = ?";
+
+
+
+        List<CongViec> danhSachCongViec = new java.util.ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maDonDatPhong);
+            ResultSet rs =ps.executeQuery();
+            while(rs.next()){
+                danhSachCongViec.add(chuyenKetQuaThanhCongViec(rs));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return danhSachCongViec;
     }
 }

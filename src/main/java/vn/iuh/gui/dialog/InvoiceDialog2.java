@@ -178,7 +178,6 @@ public class InvoiceDialog2 extends JDialog {
         String[] colPhong = {"Tên phòng", "Đơn giá" ,"Thời gian", "Thành tiền"};
         DefaultTableModel modelPhong = new DefaultTableModel(colPhong, 0);
         tblPhong = new JTable(modelPhong);
-        modelPhong.setRowCount(4);
         fillRoomTable(modelPhong);
 
         JPanel roomPanel = new JPanel(new BorderLayout());

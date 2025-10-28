@@ -61,14 +61,14 @@ public class CheckOutServiceImpl implements CheckOutService {
 
     public DonDatPhong validateDonDatPhong(String maDonDatPhong){
         var reservation = datPhongDAO.getDonDatPhongById(maDonDatPhong);
-//        var existingInvoice = hoaDonDAO.findInvoiceForReservation(maDonDatPhong);
+        var existingInvoice = hoaDonDAO.findInvoiceForReservation(maDonDatPhong, InvoiceType.PAYMENT_INVOICE.getStatus());
         if(reservation == null){
             throw new BusinessException("Không tìm thấy đơn đặt phòng");
         }
 
-//        if(existingInvoice != null){
-//            throw new BusinessException("Đã tạo hóa đơn thanh toán cho đơn đặt phòng này");
-//        }
+        if(existingInvoice != null){
+            throw new BusinessException("Đã tạo hóa đơn thanh toán cho đơn đặt phòng này");
+        }
         return reservation;
     }
 
@@ -77,7 +77,9 @@ public class CheckOutServiceImpl implements CheckOutService {
         //Lọc những phòng cần phải tính tiền
         List<ThongTinSuDungPhong> noneUsageRoom = new ArrayList<>();
         for(ThongTinSuDungPhong tt : chiTietSuDungList){
-            if(RoomEndType.TRA_PHONG_LOI.getStatus().equalsIgnoreCase(tt.getKieuKetThuc())){
+            if(RoomEndType.TRA_PHONG_LOI.getStatus().equalsIgnoreCase(tt.getKieuKetThuc())
+            || RoomEndType.KHONG_NHAN_PHONG.getStatus().equalsIgnoreCase(tt.getKieuKetThuc())
+            ){
                 noneUsageRoom.add(tt);
             }
         }
@@ -127,8 +129,9 @@ public class CheckOutServiceImpl implements CheckOutService {
 
                 //Lấy giá theo giờ hay theo ngày
                 //boolean isDatTheoNgay = thoiGianSuDung > 12;
-                BigDecimal donGiaNgay = loaiPhongService.layGiaTheoLoaiPhong(ct.getMaLoaiPhong(), true);
-                BigDecimal donGiaGio = loaiPhongService.layGiaTheoLoaiPhong(ct.getMaLoaiPhong(), false);
+                Map<String, BigDecimal> giaPhong = loaiPhongDAO.layGiaLoaiPhongTheoMaPhong(ct.getMaPhong());
+                BigDecimal donGiaNgay = giaPhong.get("gia_ngay");
+                BigDecimal donGiaGio = giaPhong.get("gia_gio");
                 BigDecimal finalDonGiaHienThi;
                 BigDecimal thanhTien;
 
@@ -178,7 +181,7 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             if(!danhSachMaPhongKhongSuDung.isEmpty()){
                 //Xóa các job tại phòng ko được checkin
-                xoaCongViecChoCheckIn(danhSachMaPhongKhongSuDung);
+                xoaCongViecChoCheckIn(reservationId);
                 chiTietDatPhongDAO.capNhatCTDPTheoMaDonDatPhong(reservation.getMaDonDatPhong(), RoomEndType.KHONG_NHAN_PHONG.getStatus());
             }
 
@@ -273,13 +276,15 @@ public class CheckOutServiceImpl implements CheckOutService {
         return response;
     }
 
-    private void xoaCongViecChoCheckIn(List<String> danhSachMaPhong){
-        if(danhSachMaPhong.isEmpty()) return;
+    private void xoaCongViecChoCheckIn(String maDonDatPhong){
+        if(maDonDatPhong == null) return;
 
-        List<CongViec> danhSachCongViec = congViecDAO.layCongViecHienTaiCuaCacPhong(danhSachMaPhong);
-        List<String> danhSachMaCongViec = danhSachCongViec.stream().map(CongViec::getMaCongViec).toList();
+        List<CongViec> danhSachCongViec = congViecDAO.layDSCVChoCheckInCuaDDP(maDonDatPhong);
+        List<String> danhSachMaCongViec = danhSachCongViec.stream()
+                    .map(CongViec::getMaCongViec).toList();
 
-        congViecDAO.xoaDanhSachCongViec(danhSachMaCongViec);
+        if(!danhSachCongViec.isEmpty())
+            congViecDAO.xoaDanhSachCongViec(danhSachMaCongViec);
     }
 
     private LichSuThaoTac createWorkingHistory(String maDonDatPhong, List<String> maPhongSuDung){
@@ -546,7 +551,7 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             if(!danhSachMaPhongKhongSuDung.isEmpty()){
                 //Xóa các job tại phòng ko được checkin
-                xoaCongViecChoCheckIn(danhSachMaPhongKhongSuDung);
+                xoaCongViecChoCheckIn(reservationId);
                 chiTietDatPhongDAO.capNhatCTDPTheoMaDonDatPhong(reservation.getMaDonDatPhong(), RoomEndType.KHONG_NHAN_PHONG.getStatus());
             }
 
