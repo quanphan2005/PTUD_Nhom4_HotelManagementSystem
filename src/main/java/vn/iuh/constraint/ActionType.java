@@ -12,7 +12,11 @@ public enum ActionType {
     CHANGE_ROOM_AFTER_CHECKIN("ĐỔI PHÒNG SAU KHI CHECKIN"),
     EDIT_ROOM("SỬA THÔNG TIN PHÒNG"),
     CREATE_ROOM("THÊM PHÒNG"),
-    DELETE_ROOM("XÓA PHÒNG");
+    DELETE_ROOM("XÓA PHÒNG"),
+    CREATE_ROOM_CATEGORY("THÊM LOẠI PHÒNG"),
+    DELETE_ROOM_CATEGORY("SỬA LOẠI PHÒNG"),
+    EDIT_ROOM_CATEGORY("SỬA LOẠI PHÒNG");
+
 
     public String actionName;
 
