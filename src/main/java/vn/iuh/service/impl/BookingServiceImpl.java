@@ -9,6 +9,7 @@ import vn.iuh.dto.response.*;
 import vn.iuh.entity.*;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.LoaiPhongService;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.TimeFormat;
 
@@ -26,7 +27,11 @@ public class BookingServiceImpl implements BookingService {
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private final CongViecDAO congViecDAO;
     private final HoaDonDAO hoaDonDAO;
+    private final ChiTietHoaDonDAO chiTietHoaDonDAO;
     private final NhanVienDAO nhanVienDAO;
+    private final LoaiPhongService loaiPhongService;
+    private final PhongDAO phongDAO;
+    private final DichVuDAO dichVuDAO;
 
     public BookingServiceImpl() {
         this.datPhongDAO = new DatPhongDAO();
@@ -37,11 +42,15 @@ public class BookingServiceImpl implements BookingService {
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecDAO = new CongViecDAO();
         this.hoaDonDAO = new HoaDonDAO();
+        this.chiTietHoaDonDAO = new ChiTietHoaDonDAO();
         this.nhanVienDAO = new NhanVienDAO();
+        this.loaiPhongService = new LoaiPhongServiceImpl();
+        this.phongDAO = new PhongDAO();
+        this.dichVuDAO = new DichVuDAO();
     }
 
     @Override
-    public EventResponse createBooking(BookingCreationEvent bookingCreationEvent) {
+    public EventResponse<DepositInvoiceResponse> createBooking(BookingCreationEvent bookingCreationEvent) {
 
         // 1. find Customer by CCCD
         KhachHang khachHang = khachHangDAO.timKhachHangBangCCCD(bookingCreationEvent.getCCCD());
@@ -111,23 +120,6 @@ public class BookingServiceImpl implements BookingService {
                                                                   khachHang.getMaKhachHang());
             datPhongDAO.themDonDatPhong(donDatPhong);
 
-            // 2.1.1 Create Invoice Advance Payment
-            HoaDon hoaDonDatCoc = null;
-            if (bookingCreationEvent.isDaDatTruoc()) {
-                HoaDon hoaDonMoiNhat = hoaDonDAO.timHoaDonMoiNhat();
-                String maHoaDonMoiNhat = hoaDonMoiNhat == null ? null : hoaDonMoiNhat.getMaHoaDon();
-
-                hoaDonDatCoc = createInvoiceEntity(
-                        EntityUtil.increaseEntityID(maHoaDonMoiNhat,
-                                                    EntityIDSymbol.INVOICE_PREFIX.getPrefix(),
-                                                    EntityIDSymbol.INVOICE_PREFIX.getLength()),
-                        donDatPhong,
-                        bookingCreationEvent.getPhuongThucThanhToan()
-                );
-
-                hoaDonDAO.createInvoice(hoaDonDatCoc);
-            }
-
             // 2.2. Create RoomReservationDetail Entity & insert to DB
             List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
             ChiTietDatPhong chiTietDatPhongMoiNhat = datPhongDAO.timChiTietDatPhongMoiNhat();
@@ -167,6 +159,14 @@ public class BookingServiceImpl implements BookingService {
             }
 
             // 2.5. Create RoomUsageServiceEntity & insert to DB
+            List<String> serviceIds = bookingCreationEvent.getDanhSachDichVu().stream().map(DonGoiDichVu::getMaDichVu).toList();
+            List<DichVu> danhSachDichVu = dichVuDAO.timDanhSachDichVuBangDanhSachMa(serviceIds);
+
+            Map<String, String> serviceIdToNameMap = new HashMap<>();
+            for (DichVu dichVu : danhSachDichVu) {
+                serviceIdToNameMap.put(dichVu.getMaDichVu(), dichVu.getTenDichVu());
+            }
+
             List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
             PhongDungDichVu phongDungDichVuMoiNhat = donGoiDichVuDao.timPhongDungDichVuMoiNhat();
             String maPhongDungDichVuMoiNhat =
@@ -188,9 +188,104 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
 
+            // 2.6. Create Deposite Invoice if and invoice details if there is advance payment
+            HoaDon hoaDonDatCoc = null;
+            List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
+
+            if (bookingCreationEvent.isDaDatTruoc()) {
+                HoaDon hoaDonMoiNhat = hoaDonDAO.timHoaDonMoiNhat();
+                String maHoaDonMoiNhat = hoaDonMoiNhat == null ? null : hoaDonMoiNhat.getMaHoaDon();
+
+                hoaDonDatCoc = createInvoiceEntity(
+                        EntityUtil.increaseEntityID(maHoaDonMoiNhat,
+                                                    EntityIDSymbol.INVOICE_PREFIX.getPrefix(),
+                                                    EntityIDSymbol.INVOICE_PREFIX.getLength()),
+                        donDatPhong
+                );
+
+                // 2.6.1 find all room prices
+                List<String> danhSachMaPhong = bookingCreationEvent.getDanhSachMaPhong();
+                List<RoomWithCategory> roomWithCategories =
+                        phongDAO.timTatCaPhongVoiLoaiBangDanhSachMaPhong(danhSachMaPhong);
+
+                // 2.6.2 Map roomId with pair daily and hourly price
+                Map<String, BigDecimal> dailyPriceMap = new HashMap<>();
+                Map<String, BigDecimal> hourlyPriceMap = new HashMap<>();
+                Map<String, String> RoomIdToRoomName = new HashMap<>();
+
+                for (RoomWithCategory roomWithCategory : roomWithCategories) {
+                    BigDecimal donGiaNgay =
+                            loaiPhongService.layGiaTheoLoaiPhong(roomWithCategory.getMaLoaiPhong(), true);
+                    BigDecimal donGiaGio =
+                            loaiPhongService.layGiaTheoLoaiPhong(roomWithCategory.getMaLoaiPhong(), false);
+                    dailyPriceMap.put(roomWithCategory.getMaPhong(), donGiaNgay);
+                    hourlyPriceMap.put(roomWithCategory.getMaPhong(), donGiaGio);
+                    RoomIdToRoomName.put(roomWithCategory.getMaPhong(), roomWithCategory.getTenPhong());
+                }
+
+                double thoiGianDung = TimeFormat.calculateHoursBetween(
+                        bookingCreationEvent.getTgNhanPhong(),
+                        bookingCreationEvent.getTgTraPhong()
+                );
+
+                boolean isLessThanHalfDay = thoiGianDung < 12;
+
+                double soNgaySuDung = thoiGianDung / 24;
+                double soGioSuDung = thoiGianDung % 24;
+                if (soGioSuDung >= 12) {
+                    soNgaySuDung += 1;
+                    soGioSuDung = 0;
+                }
+
+                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
+                    ChiTietHoaDon chiTietHoaDonMoiNhat = chiTietHoaDonDAO.layChiTietHoaDonMoiNhat();
+                    String maChiTietHoaDonMoiNhat = chiTietHoaDonMoiNhat == null
+                            ? null : chiTietHoaDonMoiNhat.getMaChiTietHoaDon();
+
+                    BigDecimal donGiaPhongHienTai = isLessThanHalfDay ?
+                            hourlyPriceMap.get(chiTietDatPhong.getMaPhong()) :
+                            dailyPriceMap.get(chiTietDatPhong.getMaPhong());
+
+                    BigDecimal tongTien = BigDecimal.ZERO;
+                    if (!isLessThanHalfDay) {
+                        tongTien = dailyPriceMap.get(chiTietDatPhong.getMaPhong()).multiply(BigDecimal.valueOf(soNgaySuDung))
+                                                .add(hourlyPriceMap.get(chiTietDatPhong.getMaPhong()).multiply(BigDecimal.valueOf(soGioSuDung)));
+                    } else {
+                        tongTien = hourlyPriceMap.get(chiTietDatPhong.getMaPhong()).multiply(BigDecimal.valueOf(thoiGianDung));
+                    }
+
+                    ChiTietHoaDon chiTietHoaDon = createInvoiceDetailEntity(
+                            EntityUtil.increaseEntityID(maChiTietHoaDonMoiNhat,
+                                                        EntityIDSymbol.INVOICE_DETAIL_PREFIX.getPrefix(),
+                                                        EntityIDSymbol.INVOICE_DETAIL_PREFIX.getLength()),
+                            hoaDonDatCoc.getMaHoaDon(),
+                            chiTietDatPhong.getMaPhong(),
+                            chiTietDatPhong.getMaChiTietDatPhong(),
+                            donGiaPhongHienTai,
+                            thoiGianDung
+                    );
+
+                    chiTietHoaDon.setTongTien(tongTien);
+                    chiTietHoaDon.setTenPhong(RoomIdToRoomName.get(chiTietDatPhong.getMaPhong()));
+                    danhSachChiTietHoaDon.add(chiTietHoaDon);
+
+                    danhSachPhongDungDichVu.forEach(phongDungDichVu -> {
+                        if (Objects.equals(phongDungDichVu.getMaChiTietDatPhong(), chiTietDatPhong.getMaChiTietDatPhong())) {
+                            phongDungDichVu.setTenDichVu(serviceIdToNameMap.get(phongDungDichVu.getMaDichVu()));
+                            phongDungDichVu.setTenPhong(RoomIdToRoomName.get(chiTietDatPhong.getMaPhong()));
+                        }
+                    });
+                }
+
+
+                hoaDonDatCoc.setChiTietHoaDonList(danhSachChiTietHoaDon);
+                hoaDonDAO.createInvoice(hoaDonDatCoc);
+                chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
+            }
+
             donGoiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
 
-            // 2.6. Create Job for each booked room
+            // 2.7. Create Job for each booked room
             List<CongViec> congViecs = new ArrayList<>();
             CongViec congViec = congViecDAO.timCongViecMoiNhat();
             String jobId = congViec == null ? null : congViec.getMaCongViec();
@@ -216,7 +311,7 @@ public class BookingServiceImpl implements BookingService {
 
             congViecDAO.themDanhSachCongViec(congViecs);
 
-            // 2.7. Update WorkingHistory
+            // 2.8. Update WorkingHistory
             LichSuThaoTac lichSuThaoTacMoiNhat = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
             String workingHistoryId = lichSuThaoTacMoiNhat == null ? null : lichSuThaoTacMoiNhat.getMaLichSuThaoTac();
 
@@ -263,6 +358,7 @@ public class BookingServiceImpl implements BookingService {
                     hoaDonDatCoc,
                     nhanVienDAO.layNVTheoMaPhienDangNhap(Main.getCurrentLoginSession()),
                     chiTietDatPhongs,
+                    danhSachChiTietHoaDon,
                     danhSachPhongDungDichVu
             );
             return new EventResponse(ResponseType.SUCCESS, message, depositInvoiceResponse);
@@ -720,7 +816,7 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    private HoaDon createInvoiceEntity(String maHD, DonDatPhong donDatPhong, String phuongThucThanhToan) {
+    private HoaDon createInvoiceEntity(String maHD, DonDatPhong donDatPhong) {
         HoaDon hoaDon = new HoaDon(
                 maHD,
                 InvoiceType.DEPOSIT_INVOICE.getStatus(),
@@ -728,8 +824,8 @@ public class BookingServiceImpl implements BookingService {
                 donDatPhong.getMaDonDatPhong(),
                 donDatPhong.getMaKhachHang()
         );
-        hoaDon.setPhuongThucThanhToan(phuongThucThanhToan);
-        hoaDon.setTinhTrangThanhToan(PaymentStatus.PAID.getStatus());
+        hoaDon.setPhuongThucThanhToan(null);
+        hoaDon.setTinhTrangThanhToan(PaymentStatus.UNPAID.getStatus());
         hoaDon.setThoiGianTao(null);
         hoaDon.setTongTien(BigDecimal.valueOf(donDatPhong.getTienDatCoc()));
         hoaDon.setTienThue(calculatePriceWithTaxPrice(BigDecimal.valueOf(donDatPhong.getTienDatCoc())));
@@ -1062,6 +1158,18 @@ public class BookingServiceImpl implements BookingService {
 
         return "UNKNOWN";
     }
+
+    private ChiTietHoaDon createInvoiceDetailEntity(String maChiTietHoaDon, String maHoaDon, String maPhong, String maChiTietDatPhong, BigDecimal donGiaPhongHienTai, double thoiGianDung) {
+        return new ChiTietHoaDon(
+                maChiTietHoaDon,
+                maHoaDon,
+                maPhong,
+                maChiTietDatPhong,
+                donGiaPhongHienTai,
+                thoiGianDung
+        );
+    }
+
 
     private BigDecimal calculatePriceWithTaxPrice(BigDecimal price){
         ThongTinPhuPhi thue = vn.iuh.util.FeeValue.getInstance().get(Fee.THUE);

@@ -96,7 +96,7 @@ public class ChiTietHoaDonDAO {
     public ChiTietHoaDon layChiTietHoaDonMoiNhat() {
         String sql = "SELECT TOP 1 *" +
                         "FROM ChiTietHoaDon " +
-                        "Where da_xoa = 0" +
+                        "Where da_xoa = 0 " +
                         "ORDER BY ma_chi_tiet_hoa_don DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ResultSet rs = ps.executeQuery();

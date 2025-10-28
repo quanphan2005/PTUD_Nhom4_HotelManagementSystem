@@ -11,18 +11,20 @@ public class DepositInvoiceResponse {
     private HoaDon hoaDon;
     private NhanVien tenNhanVien;
     private List<ChiTietDatPhong> danhSachChiTietDatPhong;
+    private List<ChiTietHoaDon> danhSachChiTietHoaDon;
     private List<PhongDungDichVu> danhSachDichVu;
 
     public DepositInvoiceResponse() {
     }
 
-    public DepositInvoiceResponse(String maPhienDangNhap, DonDatPhong donDatPhong, KhachHang khachHang, HoaDon hoaDon, NhanVien tenNhanVien, List<ChiTietDatPhong> danhSachChiTietDatPhong, List<PhongDungDichVu> danhSachDichVu) {
+    public DepositInvoiceResponse(String maPhienDangNhap, DonDatPhong donDatPhong, KhachHang khachHang, HoaDon hoaDon, NhanVien tenNhanVien, List<ChiTietDatPhong> danhSachChiTietDatPhong, List<ChiTietHoaDon> danhSachChiTietHoaDon, List<PhongDungDichVu> danhSachDichVu) {
         this.maPhienDangNhap = maPhienDangNhap;
         this.donDatPhong = donDatPhong;
         this.khachHang = khachHang;
         this.hoaDon = hoaDon;
         this.tenNhanVien = tenNhanVien;
         this.danhSachChiTietDatPhong = danhSachChiTietDatPhong;
+        this.danhSachChiTietHoaDon = danhSachChiTietHoaDon;
         this.danhSachDichVu = danhSachDichVu;
     }
 
@@ -32,6 +34,14 @@ public class DepositInvoiceResponse {
 
     public void setDanhSachChiTietDatPhong(List<ChiTietDatPhong> danhSachChiTietDatPhong) {
         this.danhSachChiTietDatPhong = danhSachChiTietDatPhong;
+    }
+
+    public List<ChiTietHoaDon> getDanhSachChiTietHoaDon() {
+        return danhSachChiTietHoaDon;
+    }
+
+    public void setDanhSachChiTietHoaDon(List<ChiTietHoaDon> danhSachChiTietHoaDon) {
+        this.danhSachChiTietHoaDon = danhSachChiTietHoaDon;
     }
 
     public List<PhongDungDichVu> getDanhSachDichVu() {

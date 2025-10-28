@@ -1,6 +1,8 @@
 package vn.iuh.dao;
 
 import vn.iuh.dto.repository.RoomFurnitureItem;
+import vn.iuh.dto.repository.RoomWithCategory;
+import vn.iuh.dto.repository.ThongTinPhong;
 import vn.iuh.entity.Phong;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -22,7 +24,7 @@ public class PhongDAO {
     }
 
     public Phong timPhong(String roomID) {
-        String query = "SELECT * FROM Phong WHERE ma_phong = ?";
+        String query = "SELECT * FROM Phong WHERE ma_phong = ? AND da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -62,7 +64,7 @@ public class PhongDAO {
     }
 
     public List<Phong> timTatCaPhong() {
-        String query = "SELECT * FROM Phong";
+        String query = "SELECT * FROM Phong where da_xoa = 0";
         List<Phong> phongs = new ArrayList<>();
 
         try {
@@ -79,6 +81,52 @@ public class PhongDAO {
         }
 
         return phongs;
+    }
+
+    public List<RoomWithCategory> timTatCaPhongVoiLoaiBangDanhSachMaPhong(List<String> danhSachMaPhong) {
+        if (danhSachMaPhong.isEmpty()) {
+            return new ArrayList<>();
+        }
+        StringBuilder queryStringBuilder = new StringBuilder(
+                "SELECT p.ma_phong, p.ten_phong, p.dang_hoat_dong, lp.ma_loai_phong, lp.ten_loai_phong, " +
+                "lp.so_luong_khach, gp.gia_ngay_moi, gp.gia_gio_moi " +
+                "FROM Phong p " +
+                "JOIN LoaiPhong lp ON p.ma_loai_phong = lp.ma_loai_phong " +
+                "JOIN GiaPhong gp ON lp.ma_loai_phong = gp.ma_loai_phong " +
+                "WHERE p.da_xoa = 0 " +
+                "AND lp.da_xoa = 0 " +
+                "AND gp.da_xoa = 0 " +
+                "AND p.ma_phong IN ("
+        );
+
+        for (int i = 0; i < danhSachMaPhong.size(); i++) {
+            queryStringBuilder.append("?");
+            if (i < danhSachMaPhong.size() - 1) {
+                queryStringBuilder.append(", ");
+            }
+        }
+        queryStringBuilder.append(")");
+        String query = queryStringBuilder.toString();
+
+        List<RoomWithCategory> results = new ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            for (int i = 0; i < danhSachMaPhong.size(); i++) {
+                ps.setString(i + 1, danhSachMaPhong.get(i));
+            }
+
+            var rs = ps.executeQuery();
+            while (rs.next()) {
+                RoomWithCategory roomWithCategory = chuyenKetQuaThanhRoomWithCategory(rs);
+                results.add(roomWithCategory);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return results;
     }
 
     public List<RoomFurnitureItem> timTatCaNoiThatTrongPhong(String roomID) {
@@ -194,6 +242,23 @@ public class PhongDAO {
         }
 
         return null;
+    }
+
+    private RoomWithCategory chuyenKetQuaThanhRoomWithCategory(ResultSet rs) {
+        try {
+            return new RoomWithCategory(
+                    rs.getString("ma_phong"),
+                    rs.getString("ten_phong"),
+                    rs.getBoolean("dang_hoat_dong"),
+                    rs.getString("ma_loai_phong"),
+                    rs.getString("ten_loai_phong"),
+                    rs.getInt("so_luong_khach"),
+                    rs.getDouble("gia_ngay_moi"),
+                    rs.getDouble("gia_gio_moi")
+            );
+        } catch (SQLException e) {
+            throw new TableEntityMismatch("Lỗi chuyển ResultSet thành RoomWithCategory" + e.getMessage());
+        }
     }
 
     private Phong mapResultSetToRoom(ResultSet rs) {
