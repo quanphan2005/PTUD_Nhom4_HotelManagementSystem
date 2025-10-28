@@ -230,6 +230,33 @@ public class DonGoiDichVuDao {
         return danhSachPhongDungDichVu;
     }
 
+    public List<RoomUsageServiceInfo> timTatCaDonGoiDichVuBangChiTietDatPhong(String maChiTietDatPhong) {
+
+        String query =
+                "SELECT pddv.*, dv.ten_dich_vu, p.ten_phong " +
+                "FROM PhongDungDichVu pddv " +
+                "JOIN DichVu dv ON pddv.ma_dich_vu = dv.ma_dich_vu " +
+                "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                "WHERE pddv.ma_chi_tiet_dat_phong = ?";
+
+        List<RoomUsageServiceInfo> roomUsageServiceInfos = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+
+            var rs = ps.executeQuery();
+            while (rs.next())
+                roomUsageServiceInfos.add(chuyenKetQuaThanhRoomUsageServiceInfo(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return roomUsageServiceInfos;
+    }
+
     public List<RoomUsageServiceInfo> timDonGoiDichVuBangDanhSachChiTietDatPhong(ArrayList<String> danhSachMaChiTietDatPhong) {
         if (danhSachMaChiTietDatPhong.isEmpty()) {
             return new ArrayList<>();

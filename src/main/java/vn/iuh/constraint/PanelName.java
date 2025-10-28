@@ -6,6 +6,7 @@ public enum PanelName {
     MULTI_BOOKING("Đặt nhiều phòng"),
     BOOKING_MANAGEMENT("Quản lý đặt phòng"),
     RESERVATION_MANAGEMENT("Quản lý đơn đặt phòng"),
+    RESERVATION_INFO_DETAIL("Chi tiết đơn đặt phòng"),
     PRE_RESERVATION_MANAGEMENT("Quản lý đơn đặt phòng trước"),
     PRE_RESERVATION_SEARCH("Tìm kiếm đơn đặt phòng"),
     CHECKIN("Nhận phòng"),

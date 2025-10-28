@@ -7,6 +7,7 @@ import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.*;
 import vn.iuh.dto.response.*;
 import vn.iuh.entity.*;
+import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.TimeFormat;
@@ -25,6 +26,7 @@ public class BookingServiceImpl implements BookingService {
     private final LichSuThaoTacDAO lichSuThaoTacDAO;
     private final CongViecDAO congViecDAO;
     private final HoaDonDAO hoaDonDAO;
+    private final NhanVienDAO nhanVienDAO;
 
     public BookingServiceImpl() {
         this.datPhongDAO = new DatPhongDAO();
@@ -35,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
         this.lichSuThaoTacDAO = new LichSuThaoTacDAO();
         this.congViecDAO = new CongViecDAO();
         this.hoaDonDAO = new HoaDonDAO();
+        this.nhanVienDAO = new NhanVienDAO();
     }
 
     @Override
@@ -66,7 +69,7 @@ public class BookingServiceImpl implements BookingService {
             ) {
                 String message = "Đặt phòng thất bại! Thông tin khách hàng không khớp với CCCD đã có trong hệ thống.\n"
                                  + "Vui lòng kiểm tra lại tên và số điện thoại.";
-                return new EventResponse(ResponseType.ERROR, message);
+                return new EventResponse(ResponseType.ERROR, message, null);
             }
         }
 
@@ -95,7 +98,7 @@ public class BookingServiceImpl implements BookingService {
                        .append(TimeFormat.formatTime(thongTinDatPhong.getTgTraPhong()))
                        .append("\n");
             }
-            return new EventResponse(ResponseType.ERROR, message.toString());
+            return new EventResponse(ResponseType.ERROR, message.toString(), null);
         }
 
         try {
@@ -109,11 +112,12 @@ public class BookingServiceImpl implements BookingService {
             datPhongDAO.themDonDatPhong(donDatPhong);
 
             // 2.1.1 Create Invoice Advance Payment
+            HoaDon hoaDonDatCoc = null;
             if (bookingCreationEvent.isDaDatTruoc()) {
                 HoaDon hoaDonMoiNhat = hoaDonDAO.timHoaDonMoiNhat();
                 String maHoaDonMoiNhat = hoaDonMoiNhat == null ? null : hoaDonMoiNhat.getMaHoaDon();
 
-                HoaDon hoaDonDatCoc = createInvoiceEntity(
+                hoaDonDatCoc = createInvoiceEntity(
                         EntityUtil.increaseEntityID(maHoaDonMoiNhat,
                                                     EntityIDSymbol.INVOICE_PREFIX.getPrefix(),
                                                     EntityIDSymbol.INVOICE_PREFIX.getLength()),
@@ -230,31 +234,46 @@ public class BookingServiceImpl implements BookingService {
                     new Timestamp(System.currentTimeMillis())
             ));
 
+            datPhongDAO.thucHienGiaoTac();
+            System.out.println("Đặt phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString() +
+                               " cho khách hàng: " + bookingCreationEvent.getTenKhachHang()
+                               + " thành công!");
+            String message = "Đặt phòng thành công!";
+            if (bookingCreationEvent.getDanhSachMaPhong().size() > 1) {
+                message += " Các phòng đã được đặt:\n";
+                for (String roomId : bookingCreationEvent.getDanhSachMaPhong()) {
+                    message += "- Phòng " + roomId + "\n";
+                }
+            }
+            if (bookingCreationEvent.isDaDatTruoc()) {
+                message += " Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
+            } else {
+                message += " Khách hàng sẽ tiến hành check-in ngay bây giờ.";
+            }
+
+            if (hoaDonDatCoc == null) {
+                return new EventResponse(ResponseType.SUCCESS, message, null);
+            }
+
+            // 2.8. Prepare DepositInvoiceResponse if there is advance payment
+            DepositInvoiceResponse depositInvoiceResponse = new DepositInvoiceResponse(
+                    bookingCreationEvent.getMaPhienDangNhap(),
+                    donDatPhong,
+                    khachHang,
+                    hoaDonDatCoc,
+                    nhanVienDAO.layNVTheoMaPhienDangNhap(Main.getCurrentLoginSession()),
+                    chiTietDatPhongs,
+                    danhSachPhongDungDichVu
+            );
+            return new EventResponse(ResponseType.SUCCESS, message, depositInvoiceResponse);
+
         } catch (Exception e) {
             System.out.println("Lỗi khi đặt phòng: " + e.getMessage());
             System.out.println("Rollback transaction");
             e.printStackTrace();
             datPhongDAO.hoanTacGiaoTac();
-            return new EventResponse(ResponseType.ERROR, "Đặt phòng thất bại! Vui lòng thử lại sau.");
+            return new EventResponse(ResponseType.ERROR, "Đặt phòng thất bại! Vui lòng thử lại sau.", null);
         }
-
-        datPhongDAO.thucHienGiaoTac();
-        System.out.println("Đặt phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString() +
-                           " cho khách hàng: " + bookingCreationEvent.getTenKhachHang()
-                           + " thành công!");
-        String message = "Đặt phòng thành công!";
-        if (bookingCreationEvent.getDanhSachMaPhong().size() > 1) {
-            message += " Các phòng đã được đặt:\n";
-            for (String roomId : bookingCreationEvent.getDanhSachMaPhong()) {
-                message += "- Phòng " + roomId + "\n";
-            }
-        }
-        if (bookingCreationEvent.isDaDatTruoc()) {
-            message += " Khách hàng đã đặt phòng trước. Vui lòng hoàn tất thủ tục check-in khi đến nhận phòng.";
-        } else {
-            message += " Khách hàng sẽ tiến hành check-in ngay bây giờ.";
-        }
-        return new EventResponse(ResponseType.SUCCESS, message);
     }
 
     @Override
@@ -591,7 +610,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // 3. Get reservation status for reservation IDs
+        // 3. Get reservation status form reservation IDs
         List<ReservationStatusRepository> allCurrentReservationsWithStatus =
                 datPhongDAO.getAllCurrentReservationsWithStatus(currentReservationIds);
         for (ReservationResponse response : responses) {
@@ -606,14 +625,21 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private String getReservationStatus(ReservationStatusRepository statusRepository) {
+        // Not yet check-in
         if (statusRepository.isCheckin() == null || !statusRepository.isCheckin()) {
             return ReservationStatus.CHECKED_IN.getStatus();
-        } else if (statusRepository.getCheckinDate().getTime() <= new Date().getTime()
+        }
+        // Checkin time is within 30 minutes
+        if (statusRepository.getCheckinDate().getTime() <= new Date().getTime()
                    && statusRepository.getCheckinDate().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
             return ReservationStatus.CHECKING.getStatus();
-        } else if (statusRepository.getCheckoutTime().after(new Date())) {
+        }
+        // Already checked-in
+        if (statusRepository.getCheckoutTime().after(new Date())) {
             return ReservationStatus.USING.getStatus();
-        } else if (statusRepository.getCheckoutTime().before(new Date())) {
+        }
+        // Late checkout
+        if (statusRepository.getCheckoutTime().before(new Date())) {
             return ReservationStatus.CHECKOUT_LATE.getStatus();
         }
 
@@ -652,12 +678,8 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // 4. Find all related info by ReservationDetail IDs (usage services, check-in history, check-out history)
-//        List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong = lichSuDiVaoDAO.timLichSuDiVaoBangDanhSachMaChiTietDatPhong(new ArrayList<>(danhSachMaChiTietDatPhong));
         List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong = lichSuDiVaoDAO.timTatCaLichSuDiVaoBangMaDatPhong(donDatPhong.getMaDonDatPhong());
-
-//        List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong = lichSuRaNgoaiDAO.timLichSuRaNgoaiBangDanhSachMaChiTietDatPhong(new ArrayList<>(danhSachMaChiTietDatPhong));
         List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong = lichSuRaNgoaiDAO.timTatCaLichSuRaNgoaiBangMaDatPhong(donDatPhong.getMaDonDatPhong());
-
         List<RoomUsageServiceInfo> phongDungDichVuTheoChiTietDatPhong = donGoiDichVuDao.timTatCaDonGoiDichVuBangMaDatPhong(donDatPhong.getMaDonDatPhong());
 
         return createReservationInfoDetailResponse(customerInfo,
@@ -813,15 +835,15 @@ public class BookingServiceImpl implements BookingService {
         // 1. Create base response
         List<ReservationDetailResponse> reservationDetailResponses = new ArrayList<>();
         for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
-            if (reservationDetailRepository.getEndType() == null) {
-                reservationDetailResponses.add(new ReservationDetailResponse(
-                        reservationDetailRepository.getReservationDetailId(),
-                        reservationDetailRepository.getRoomId(),
-                        reservationDetailRepository.getRoomName(),
-                        reservationDetailRepository.getTimeIn(),
-                        reservationDetailRepository.getTimeOut()
-                ));
-            }
+            String status = getReservationDetailStatus(reservationDetailRepository);
+            reservationDetailResponses.add(new ReservationDetailResponse(
+                    reservationDetailRepository.getReservationDetailId(),
+                    reservationDetailRepository.getRoomId(),
+                    reservationDetailRepository.getRoomName(),
+                    reservationDetailRepository.getTimeIn(),
+                    reservationDetailRepository.getTimeOut(),
+                    status
+            ));
         }
 
         // 2. Create list of RoomUsageServiceResponse
@@ -947,6 +969,11 @@ public class BookingServiceImpl implements BookingService {
         else {
             boolean allCheckedOut = true;
             for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
+                // Skip if this room is one of the endType rooms
+                if (reservationDetailRepository.getEndType() != null) {
+                    continue;
+                }
+
                 boolean hasCheckedOut = false;
                 for (LichSuRaNgoai lsrn : lichSuDiRaTheoChiTietDatPhong) {
                     if (Objects.equals(lsrn.getMaChiTietDatPhong(), reservationDetailRepository.getReservationDetailId())
@@ -981,6 +1008,60 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
+    private String getReservationDetailStatus(ReservationDetailRepository reservationDetailRepository) {
+        // CHECK FOR CURRENT RESERVATION STATUS
+        if (reservationDetailRepository.getEndType() == null) {
+            // Cancelled
+            if (reservationDetailRepository.isDeleted() != null && reservationDetailRepository.isDeleted()) {
+                return ReservationStatus.CANCELLED.getStatus();
+            }
+
+            // Not yet check-in
+            if (reservationDetailRepository.isCheckin() == null || !reservationDetailRepository.isCheckin()) {
+                return ReservationStatus.CHECKED_IN.getStatus();
+            }
+
+            // Checkin time is within 30 minutes
+            if (reservationDetailRepository.getTimeIn().getTime() <= new Date().getTime()
+                       && reservationDetailRepository.getTimeIn().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
+                return ReservationStatus.CHECKING.getStatus();
+            }
+
+            // Already checked-in
+            if (reservationDetailRepository.getTimeOut().after(new Date())) {
+                return ReservationStatus.USING.getStatus();
+            }
+
+            // Late checkout
+            if (reservationDetailRepository.getTimeOut().before(new Date())) {
+                return ReservationStatus.CHECKOUT_LATE.getStatus();
+            }
+
+            return "UNKNOWN";
+        }
+
+        // CHECK FOR PAST RESERVATION STATUS
+        // End type indicates how the room reservation ended
+        // Transferred or checked out with issues
+        if (reservationDetailRepository.getEndType().equals(RoomEndType.DOI_PHONG.getStatus())
+        || reservationDetailRepository.getEndType().equals(RoomEndType.TRA_PHONG_LOI.getStatus())) {
+            return ReservationStatus.TRANSFERRED.getStatus();
+        }
+        // Completed normally
+        if (reservationDetailRepository.getEndType().equals(RoomEndType.TRA_PHONG.getStatus())) {
+            return ReservationStatus.COMPLETED.getStatus();
+        }
+        // No check-in after specified time
+        else if (reservationDetailRepository.getEndType().equals(RoomEndType.KHONG_NHAN_PHONG.getStatus())) {
+            return ReservationStatus.NO_CHECKIN.getStatus();
+        }
+        // Cancelled
+        if (reservationDetailRepository.getEndType().equals(RoomEndType.HUY_PHONG.getStatus())) {
+            return ReservationStatus.CANCELLED.getStatus();
+        }
+
+        return "UNKNOWN";
+    }
 
     private BigDecimal calculatePriceWithTaxPrice(BigDecimal price){
         ThongTinPhuPhi thue = vn.iuh.util.FeeValue.getInstance().get(Fee.THUE);

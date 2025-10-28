@@ -7,20 +7,21 @@ public class ReservationDetailRepository {
     private String roomId;
     private String roomName;
     private String endType;
+    private Boolean isCheckin;
     private Timestamp timeIn;
     private Timestamp timeOut;
-
-    public ReservationDetailRepository() {
-    }
+    private Boolean isDeleted;
 
     public ReservationDetailRepository(String reservationDetailId, String roomId, String roomName, String endType,
-                                       Timestamp timeIn, Timestamp timeOut) {
+                                       Boolean isCheckin, Timestamp timeIn, Timestamp timeOut, Boolean isDeleted) {
         ReservationDetailId = reservationDetailId;
         this.roomId = roomId;
         this.roomName = roomName;
         this.endType = endType;
+        this.isCheckin = isCheckin;
         this.timeIn = timeIn;
         this.timeOut = timeOut;
+        this.isDeleted = isDeleted;
     }
 
     public String getReservationDetailId() {
@@ -35,6 +36,10 @@ public class ReservationDetailRepository {
         return roomName;
     }
 
+    public Boolean isCheckin() {
+        return isCheckin;
+    }
+
     public String getEndType() {
         return endType;
     }
@@ -45,5 +50,9 @@ public class ReservationDetailRepository {
 
     public Timestamp getTimeOut() {
         return timeOut;
+    }
+
+    public Boolean isDeleted() {
+        return isDeleted;
     }
 }

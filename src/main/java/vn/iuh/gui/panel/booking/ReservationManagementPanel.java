@@ -1,6 +1,7 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.ReservationStatus;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.response.ReservationResponse;
@@ -47,7 +48,7 @@ public class ReservationManagementPanel extends JPanel {
 
     // Parent container for panel navigation
     private JPanel parentContainer;
-    private String panelName = "reservationManagement";
+    private String panelName = PanelName.RESERVATION_MANAGEMENT.getName();
 
     public ReservationManagementPanel() {
         RefreshManager.setReservationManagementPanel(this);
@@ -506,11 +507,12 @@ public class ReservationManagementPanel extends JPanel {
                 }
                 
                 // Add new detail panel
-                parentContainer.add(detailPanel, "reservationDetail");
+                String subPanelName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservation.getMaDonDatPhong();
+                parentContainer.add(detailPanel, subPanelName);
                 
                 // Show detail panel
                 CardLayout layout = (CardLayout) parentContainer.getLayout();
-                layout.show(parentContainer, "reservationDetail");
+                layout.show(parentContainer, subPanelName);
             } else {
                 // Fallback: Open in dialog if parent container is not set
                 JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Đơn " + reservation.getMaDonDatPhong(), true);
