@@ -180,12 +180,12 @@ public class DepositInvoiceDialog extends JDialog {
         servicePanel.add(new JScrollPane(tblDichVu), BorderLayout.CENTER);
 
         // ===== Tổng tiền (rút gọn) =====
+        // ===== Tổng tiền (rút gọn) =====
         pnlSouth = new JPanel();
-        pnlSouth.setPreferredSize(new Dimension(0, 120));
         pnlSouth.setLayout(new MigLayout(
                 "wrap 3, insets 10",
                 "[grow,fill][grow,fill][grow,fill]",
-                "[][][]"
+                "[][][][]"
         ));
 
         JLabel lblTotalTitle = new JLabel("Tổng tiền dự tính: ");
@@ -198,26 +198,26 @@ public class DepositInvoiceDialog extends JDialog {
         JLabel lblDepositValue = new JLabel(formatCurrency(BigDecimal.valueOf(response.getDonDatPhong().getTienDatCoc())));
         lblDepositValue.setFont(CustomUI.smallFont);
 
-        // --- Thuế VAT ---
+// --- Thuế VAT ---
         double taxPercent = getTaxPrice();
         JLabel lblTaxFeeTitle = new JLabel("Thuế VAT(" + taxPercent + "%): ");
         lblTaxFeeTitle.setFont(CustomUI.smallFont);
         JLabel lblTaxFeeValue = new JLabel(formatCurrency(response.getHoaDon().getTienThue()));
         lblTaxFeeValue.setFont(CustomUI.smallFont);
 
-        // --- Tổng hóa đơn ---
+// --- Tổng hóa đơn ---
         JLabel lblTotalInvoiceTitle = new JLabel("Tổng hóa đơn sau thuế: ");
         lblTotalInvoiceTitle.setFont(CustomUI.smallFont);
         JLabel lblTotalInvoiceValue = new JLabel(formatCurrency(response.getHoaDon().getTongHoaDon()));
         lblTotalInvoiceValue.setFont(CustomUI.smallFont);
 
-        // Chọn phương thức thanh toán
+// Chọn phương thức thanh toán
         cmbPaymentMethod = new JComboBox<>();
         for (PaymentMethod method : PaymentMethod.values()) {
             cmbPaymentMethod.addItem(method.getMethod());
         }
 
-        // --- Border có tiêu đề ---
+// --- Border có tiêu đề ---
         TitledBorder border = BorderFactory.createTitledBorder("Chọn phương thức thanh toán");
         border.setTitleFont(new Font("Segoe UI", Font.BOLD, 13));
         cmbPaymentMethod.setBorder(border);
@@ -228,7 +228,7 @@ public class DepositInvoiceDialog extends JDialog {
             cmbPaymentMethod.setRequestFocusEnabled(false);
         }
 
-        // ===== Nút in hóa đơn =====
+// ===== Nút in hóa đơn =====
         JButton btnPrint = new JButton("In hóa đơn");
         btnPrint.setBackground(CustomUI.blue);
         btnPrint.setForeground(CustomUI.white);

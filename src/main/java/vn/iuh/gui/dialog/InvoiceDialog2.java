@@ -205,7 +205,6 @@ public class InvoiceDialog2 extends JDialog {
 
         // ===== Tổng tiền =====
         pnlSouth = new JPanel();
-        pnlSouth.setPreferredSize(new Dimension(0, 170));
         pnlSouth.setLayout(new MigLayout(
                 "wrap 3, insets 10",
                 "[grow,fill][grow,fill][grow,fill]",
