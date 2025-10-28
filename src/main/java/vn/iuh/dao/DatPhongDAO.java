@@ -16,6 +16,7 @@ import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DatPhongDAO {
@@ -868,6 +869,9 @@ public class DatPhongDAO {
     }
 
     public List<ReservationStatusRepository> getAllCurrentReservationsWithStatus(List<String> reservationIds) {
+        if(reservationIds == null || reservationIds.isEmpty()){
+            return Collections.emptyList();
+        }
         StringBuilder query =
                 new StringBuilder("SELECT DISTINCT ctdp.ma_don_dat_phong, lsdv.la_lan_dau_tien, ctdp.tg_nhan_phong, ctdp.tg_tra_phong " +
                                   "FROM ChiTietDatPhong ctdp " +

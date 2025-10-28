@@ -437,9 +437,11 @@ public class InvoiceDialog2 extends JDialog {
             leftTable.addCell(new Phrase("Mã hóa đơn: " + response.getHoaDon().getMaHoaDon(), itextNormalFont));
             leftTable.addCell(new Phrase("Nhân viên: " + response.getTenNhanVien().getTenNhanVien(), itextNormalFont));
             leftTable.addCell(new Phrase("Ngày tạo hóa đơn: " + TimeFormat.formatTime(new Timestamp(System.currentTimeMillis())), itextNormalFont));
-            if(response.getHoaDon().getPhuongThucThanhToan() != null || response.getHoaDon().getTinhTrangThanhToan() != null){
-                leftTable.addCell(new Phrase("Phương thức thanh toán: ".concat(response.getHoaDon().getPhuongThucThanhToan()), itextNormalFont));
+            if(response.getHoaDon().getTinhTrangThanhToan() != null){
                 leftTable.addCell(new Phrase("Tình trạng thanh toán: " + response.getHoaDon().getTinhTrangThanhToan(), itextNormalFont));
+            }
+            if(response.getHoaDon().getPhuongThucThanhToan() != null){
+                leftTable.addCell(new Phrase("Phương thức thanh toán: ".concat(response.getHoaDon().getPhuongThucThanhToan()), itextNormalFont));
             }
 // --- Cột phải ---
             PdfPTable rightTable = new PdfPTable(1);

@@ -18,10 +18,6 @@ import vn.iuh.util.ExportWriter;
 import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -42,9 +38,6 @@ public class RoomProductivityPanel extends JPanel {
     private JLabel lblTop;
     private JPanel pnlMain;
     private DefaultTableModel model;
-    private JTable table;
-    private JScrollPane scrollTable;
-    private JComboBox<String> cmbRoomCate;
     private final LoaiPhongDAO loaiPhongDAO;
     private DateChooser startChooser;
     private DateChooser endChooser;
@@ -59,7 +52,6 @@ public class RoomProductivityPanel extends JPanel {
     private JComboBox<String> cboQuy;
     private JPanel pnlLoaiPhong;
     private JComboBox<String> cboLoaiPhong;
-    private JPanel pnlMaPhong;
     private JComboBox<String> cboMaPhong;
     private JButton btnTaiLai;
     private JButton btnXuat;
@@ -77,18 +69,8 @@ public class RoomProductivityPanel extends JPanel {
     private JFreeChart chartRevenue;
     private ChartPanel usagePanel;
     private ChartPanel revenuePanel;
-    private JLabel lblTongSoLanValue;
-    private JPanel pnlTongSoLan;
     private JScrollPane pnlScroll;
     private FillterRoomStatistic baseFilter;
-    private JLabel lblThoiGian;
-    private JLabel lblTongSoLan;
-    private JPanel bottomPanel;
-    private JLabel lblTongDoanhThu;
-    private JLabel lblThoiGianValue;
-    private JLabel lblTongDoanhThuValue;
-    private JPanel pnlThoiGian;
-    private JPanel pnlDoanhThu;
     private JTextField txtFolderPath;
     private JButton btnChooseFolder;
     private JCheckBox btnCheckBox;
@@ -124,16 +106,21 @@ public class RoomProductivityPanel extends JPanel {
             }
         });
     }
-    private void createTopPanel(){
-        pnlTop = new JPanel();
-        lblTop = new JLabel("Thống kê hiệu suất phòng");
-        lblTop.setFont(CustomUI.normalFont);
+    private void createTopPanel() {
+        JPanel pnlTop = new JPanel();
+        JLabel lblTop = new JLabel("THỐNG KÊ HIỆU SUẤT PHÒNG", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
+        lblTop.setFont(CustomUI.bigFont);
+
         pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop);
-        pnlTop.setPreferredSize(new Dimension(0, 35));
+
+        pnlTop.setPreferredSize(new Dimension(0, 40));
+        pnlTop.setMinimumSize(new Dimension(0, 40));
+        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        this.add(pnlTop, BorderLayout.NORTH);
+
+        add(pnlTop);
     }
 
     private void createFilterPanel2(){
@@ -321,7 +308,7 @@ public class RoomProductivityPanel extends JPanel {
 
     private void reloadForAllCategory() {
         String tenLoaiPhong = (String) cboLoaiPhong.getSelectedItem();
-        int tongSoLuotDat = 0;
+        BigDecimal tongDoanhThu = BigDecimal.ZERO;
         double tongThoiGianDat = 0;
         datasetUsage.clear();
         datasetRevenue.clear();
@@ -349,10 +336,10 @@ public class RoomProductivityPanel extends JPanel {
 
             // Đưa dữ liệu vào dataset
             for (RoomStatistic loai : mapLoaiPhong.values()) {
-                tongSoLuotDat += loai.getSoLuotDat();
+                tongDoanhThu = tongDoanhThu.add(loai.getDoanhThu());
                 tongThoiGianDat += loai.getThoiGianDat();
-                datasetUsage.setValue(loai.getTenLoaiPhong(), loai.getSoLuotDat());
-                datasetRevenue.setValue(loai.getTenLoaiPhong(), loai.getThoiGianDat());
+                datasetUsage.setValue(loai.getTenLoaiPhong(), loai.getThoiGianDat());
+                datasetRevenue.setValue(loai.getTenLoaiPhong(), loai.getDoanhThu());
             }
 
             List<RoomStatistic> list = new ArrayList<>(mapLoaiPhong.values());
@@ -362,14 +349,15 @@ public class RoomProductivityPanel extends JPanel {
             // Chỉ lấy theo phòng trong loại được chọn
             for (RoomStatistic rs : this.danhSachKetQua) {
                 if (tenLoaiPhong.equalsIgnoreCase(rs.getTenLoaiPhong())) {
-                    tongSoLuotDat += rs.getSoLuotDat();
+                    tongDoanhThu = tongDoanhThu.add(rs.getDoanhThu());
                     tongThoiGianDat += rs.getThoiGianDat();
-                    datasetUsage.setValue(rs.getTenPhong(), rs.getSoLuotDat());
-                    datasetRevenue.setValue(rs.getTenPhong(), rs.getThoiGianDat());
+                    datasetUsage.setValue(rs.getTenPhong(), rs.getThoiGianDat());
+                    datasetRevenue.setValue(rs.getTenPhong(), rs.getDoanhThu());
                 }
             }
             fillTable(null);
         }
+        refreshCharts();
     }
 
     private void handlePeriodTime(){
@@ -441,14 +429,14 @@ public class RoomProductivityPanel extends JPanel {
 
         // === Biểu đồ 1: Tỉ lệ sử dụng phòng ===
         chartUsage = ChartFactory.createPieChart(
-                "Biểu đồ thống kê số lượt sử dụng phòng",
+                "Biểu đồ thống kê tỉ lệ thời gian sử dụng phòng",
                 datasetUsage,
                 true, true, false
         );
 
         // === Biểu đồ 2: Tỉ lệ doanh thu phòng ===
         chartRevenue = ChartFactory.createPieChart(
-                "Biểu đồ thống kê tỉ lệ thời gian sử dụng",
+                "Biểu đồ thống kê doanh thu loại phòng",
                 datasetRevenue,
                 true, true, false
         );
@@ -463,6 +451,26 @@ public class RoomProductivityPanel extends JPanel {
         chartPanel.add(revenuePanel);
 
         pnlMain.add(chartPanel);
+    }
+
+    private void refreshCharts() {
+        // Refresh plot để hiển thị lại label và legend
+        PiePlot plotUsage = (PiePlot) chartUsage.getPlot();
+        plotUsage.setLabelGenerator(new StandardPieSectionLabelGenerator(
+                "{0}: {1}h ({2})",
+                new DecimalFormat("0"),
+                new DecimalFormat("0.00%")
+        ));
+
+        PiePlot plotRevenue = (PiePlot) chartRevenue.getPlot();
+        plotRevenue.setLabelGenerator(new StandardPieSectionLabelGenerator(
+                "{0}: {1} ({2})",
+                new DecimalFormat("#,###"),
+                new DecimalFormat("0.00%")
+        ));
+        // Force repaint
+        usagePanel.repaint();
+        revenuePanel.repaint();
     }
 
 

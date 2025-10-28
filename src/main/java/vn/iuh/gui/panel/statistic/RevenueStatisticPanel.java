@@ -99,16 +99,21 @@ public class RevenueStatisticPanel extends JPanel {
             }
         });
     }
-    private void createTopPanel(){
-        pnlTop = new JPanel();
-        lblTop = new JLabel("Thống kê doanh thu");
-        lblTop.setFont(CustomUI.normalFont);
+    private void createTopPanel() {
+        JPanel pnlTop = new JPanel();
+        JLabel lblTop = new JLabel("THỐNG KÊ DOANH THU", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
+        lblTop.setFont(CustomUI.bigFont);
+
         pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop);
-        pnlTop.setPreferredSize(new Dimension(0, 35));
+
+        pnlTop.setPreferredSize(new Dimension(0, 40));
+        pnlTop.setMinimumSize(new Dimension(0, 40));
+        pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        this.add(pnlTop, BorderLayout.NORTH);
+
+        add(pnlTop);
     }
 
     private void createFilterPanel(){
