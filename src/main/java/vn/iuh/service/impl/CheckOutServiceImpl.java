@@ -18,6 +18,7 @@ import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -135,7 +136,7 @@ public class CheckOutServiceImpl implements CheckOutService {
                 BigDecimal finalDonGiaHienThi;
                 BigDecimal thanhTien;
 
-                if (thoiGianSuDung > 12) {
+                if (thoiGianSuDung >= 12) {
                     // tính theo ngày + giờ lẻ
                     finalDonGiaHienThi = donGiaNgay;
                     int soNgay = (int) Math.floor(thoiGianSuDung / 24);
@@ -219,9 +220,8 @@ public class CheckOutServiceImpl implements CheckOutService {
             }
 
             for (PhongDungDichVu pddv : danhSachPhongDungDichVu) {
-                if (!pddv.getDuocTang()) {
-                    tongTien = tongTien.add(pddv.tinhThanhTien());
-                }
+                tongTien = tongTien.add(pddv.getTongTien());
+                System.out.println(Arrays.toString(pddv.getSimpleObject()));
             }
 
             for (PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi) {
