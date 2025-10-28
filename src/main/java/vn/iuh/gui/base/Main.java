@@ -53,7 +53,10 @@ public class Main extends JFrame {
     private JPanel pnlTopRight;
     private NhanVienDAO nhanVienDAO;
     private TaiKhoanDAO taiKhoanDAO;
-
+    private QuanLyPhuPhiPanel pnlQuanLyPhuPhi;
+    private QuanLyTaiKhoanPanel pnlQuanLyTaiKhoan;
+    private RevenueStatisticPanel pnlStatistic;
+    private RoomProductivityPanel pnlRoomProductivity;
     public void init() {
         this.taiKhoanDAO = new TaiKhoanDAO();
         this.nhanVienDAO = new NhanVienDAO();
@@ -191,6 +194,23 @@ public class Main extends JFrame {
 
         // cập nhật tham chiếu
         this.userInfo = newUserInfo;
+
+        if (pnlQuanLyPhuPhi != null) {
+            pnlQuanLyPhuPhi.checkRoleAndLoadData();
+        }
+
+        if (pnlQuanLyTaiKhoan != null) {
+            pnlQuanLyTaiKhoan.checkRoleAndLoadData();
+        }
+
+        if (pnlStatistic != null) {
+            pnlStatistic.checkRoleAndLoadData();
+        }
+
+        if (pnlRoomProductivity != null) {
+            pnlRoomProductivity.checkRoleAndLoadData();
+        }
+
     }
 
     private String convertMaChucVuToTen(String maChucVu) {
@@ -282,15 +302,15 @@ public class Main extends JFrame {
         BookingManagementPanel bookingManagementPanel = new BookingManagementPanel();
         ReservationManagementPanel reservationManagementPanel = new ReservationManagementPanel();
         PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
-        RevenueStatisticPanel pnlStatistic = new RevenueStatisticPanel();
+        pnlStatistic = new RevenueStatisticPanel();
         QuanLyHoaDonPanel pnlQuanLyHoaDon = new QuanLyHoaDonPanel();
         QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
-        QuanLyTaiKhoanPanel pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
-        QuanLyPhuPhiPanel pnlQuanLyPhuPhiPanel = new QuanLyPhuPhiPanel();
+        pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
+        pnlQuanLyPhuPhi = new QuanLyPhuPhiPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
-        RoomProductivityPanel pnlRoomProductivity = new RoomProductivityPanel();
+        pnlRoomProductivity = new RoomProductivityPanel();
 //        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
 //        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
 //        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý khách hàng");
@@ -302,7 +322,7 @@ public class Main extends JFrame {
         pnlCenter.add(pnlQuanLyHoaDon, "Tìm hóa đơn");
         pnlCenter.add(pnlQuanLyNhanVien, "Quản lý nhân viên");
         pnlCenter.add(pnlRoomProductivity, "Thống kê hiệu suất");
-        pnlCenter.add(pnlQuanLyPhuPhiPanel, "Quản lý phụ phí");
+        pnlCenter.add(pnlQuanLyPhuPhi, "Quản lý phụ phí");
 //        showCard("Quản lý đặt phòng");
 
         showCenterCard("Quản lý đặt phòng");

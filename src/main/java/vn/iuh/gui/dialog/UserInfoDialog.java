@@ -7,11 +7,11 @@ import vn.iuh.dao.TaiKhoanDAO;
 import vn.iuh.dto.repository.ThongTinNhanVien;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.gui.base.CustomUI;
-import vn.iuh.gui.base.DateChooser;
 import vn.iuh.gui.base.Main;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.DateFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.geom.Ellipse2D;
@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class UserInfoDialog extends JDialog {
 
@@ -36,7 +37,7 @@ public class UserInfoDialog extends JDialog {
     private JLabel lblChucVu;
     private JTextField txtTen;
     private JTextField txtCCCD;
-    private DateChooser dateNgaySinh;
+    private JTextField txtNgaySinh;
     private JTextField txtSDT;
     private JButton btnDoiMatKhau;
 
@@ -49,7 +50,7 @@ public class UserInfoDialog extends JDialog {
 
     public UserInfoDialog(Frame parent, NhanVien nv) {
         super(parent, "Thông tin cá nhân", true);
-
+        setSize(new Dimension(700, 450));
         this.nhanVienData = nv;
         this.maNhanVien = nv.getMaNhanVien();
 
@@ -61,7 +62,7 @@ public class UserInfoDialog extends JDialog {
         addActions();
 
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        pack();
+        //pack();
         setLocationRelativeTo(parent);
     }
 
@@ -145,10 +146,10 @@ public class UserInfoDialog extends JDialog {
         gbcLabel.gridy = 3;
         panel.add(createLabel("Ngày sinh:"), gbcLabel);
         gbcField.gridy = 3;
-        dateNgaySinh = new DateChooser();
-        dateNgaySinh.setFont(FONT_FIELD);
-        dateNgaySinh.setEnabled(false);
-        panel.add(dateNgaySinh, gbcField);
+        txtNgaySinh = createTextField();
+        txtNgaySinh.setEditable(false);
+        txtNgaySinh.setFont(FONT_FIELD);
+        panel.add(txtNgaySinh, gbcField);
 
         gbcLabel.gridy = 4;
         panel.add(createLabel("Số điện thoại:"), gbcLabel);
@@ -266,7 +267,8 @@ public class UserInfoDialog extends JDialog {
                     LocalDate localDate = currentUser.getNgaySinh().toInstant()
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate();
-                    dateNgaySinh.setDate(localDate);
+                    DateTimeFormatter format1 = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    txtNgaySinh.setText(localDate.format(format1));
                 }
 
                 lblChucVu.setText(tenChucVu.toUpperCase());

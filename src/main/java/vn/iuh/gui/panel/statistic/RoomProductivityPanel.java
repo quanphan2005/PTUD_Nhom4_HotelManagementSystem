@@ -12,6 +12,7 @@ import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
+import vn.iuh.gui.base.RoleChecking;
 import vn.iuh.service.LoaiPhongService;
 import vn.iuh.service.impl.LoaiPhongServiceImpl;
 import vn.iuh.util.ExportWriter;
@@ -33,7 +34,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.List;
 
-public class RoomProductivityPanel extends JPanel {
+public class RoomProductivityPanel extends RoleChecking {
     private JPanel pnlTop;
     private JLabel lblTop;
     private JPanel pnlMain;
@@ -93,11 +94,20 @@ public class RoomProductivityPanel extends JPanel {
         createTableResult();
         this.add(pnlScroll, BorderLayout.CENTER);
     }
-    public RoomProductivityPanel() {
+
+    @Override
+    protected void buildAdminUI() {
         setLayout(new BorderLayout());
+        init();
+        loadRoomCategoryList();
+    }
+
+    public RoomProductivityPanel() {
+        super();
+//        setLayout(new BorderLayout());
         this.loaiPhongDAO = new LoaiPhongDAO();
         this.loaiPhongService = new LoaiPhongServiceImpl();
-        init();
+//        init();
         //run khi card được show
         addComponentListener(new ComponentAdapter() {
             @Override

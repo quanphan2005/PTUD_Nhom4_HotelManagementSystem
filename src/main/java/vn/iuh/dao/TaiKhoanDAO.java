@@ -2,6 +2,7 @@ package vn.iuh.dao;
 
 import org.mindrot.jbcrypt.BCrypt;
 import vn.iuh.config.SecurityConfig;
+import vn.iuh.constraint.UserRole;
 import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.entity.TaiKhoan;
@@ -223,8 +224,8 @@ public class TaiKhoanDAO {
 
     public List<TaiKhoan> getAllTaiKhoan() {
         List<TaiKhoan> list = new ArrayList<>();
-        String sql = "SELECT ma_tai_khoan, ten_dang_nhap, ma_chuc_vu, " +
-                "ma_nhan_vien FROM TaiKhoan";
+        String sql = "select ma_tai_khoan, ten_dang_nhap, ma_chuc_vu, " +
+                "ma_nhan_vien from TaiKhoan where da_xoa = 0";
 
         try {
              PreparedStatement ps = connection.prepareStatement(sql);

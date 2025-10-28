@@ -3,12 +3,16 @@ package vn.iuh.gui.panel;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.ui.FlatLineBorder;
 import vn.iuh.constraint.EntityIDSymbol;
+import vn.iuh.constraint.UserRole;
 import vn.iuh.dao.NhanVienDAO;
 import vn.iuh.dao.TaiKhoanDAO;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.entity.TaiKhoan;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.base.Main;
+import vn.iuh.gui.base.RoleChecking;
 import vn.iuh.gui.dialog.AccountDialog;
+import vn.iuh.util.AccountUtil;
 import vn.iuh.util.EntityUtil;
 
 import javax.imageio.ImageIO;
@@ -23,7 +27,7 @@ import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class QuanLyTaiKhoanPanel extends JPanel {
+public class QuanLyTaiKhoanPanel extends RoleChecking {
 
     // --- Kích thước ---
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(150, 45);
@@ -67,10 +71,14 @@ public class QuanLyTaiKhoanPanel extends JPanel {
     private JComboBox<String> roleComboBox;
 
     public QuanLyTaiKhoanPanel() {
-        this.taiKhoanDAO = new TaiKhoanDAO();
+        setLayout(new BorderLayout());
         this.nhanVienDAO = new NhanVienDAO();
+        this.taiKhoanDAO = new TaiKhoanDAO();
+    }
+
+    @Override
+    protected void buildAdminUI() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBackground(CustomUI.white);
         init();
         loadTaiKhoanData();
         loadNhanVienData();
@@ -104,8 +112,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
             boolean isNhanVienTabActive = lblTabNhanVien.getForeground().equals(CustomUI.blue);
 
             if (!isNhanVienTabActive) {
-                // CHẾ ĐỘ 1: Đang ở tab TÀI KHOẢN
-
                 // Tải lại danh sách nhân viên CHƯA có tài khoản
                 loadNhanVienData();
 
@@ -116,9 +122,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhân viên từ danh sách để tạo tài khoản.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-
-            // CHẾ ĐỘ 2: Đang ở tab NHÂN VIÊN
-
             int selectedRow = tblNhanVien.getSelectedRow();
 
             if(selectedRow == -1) {
@@ -128,9 +131,10 @@ public class QuanLyTaiKhoanPanel extends JPanel {
 
             int modelRow = tblNhanVien.convertRowIndexToModel(selectedRow);
             String maNhanVien = (String) modelNhanVien.getValueAt(modelRow, 0);
+            // tạo tên đăng nhập bằng tên nhân viên
+            String tennv = (nhanVienDAO.timNhanVien(maNhanVien)).getTenNhanVien();
 
             try {
-                //  Kiểm tra xem nhân viên này đã có tài khoản chưa
                 if (taiKhoanDAO.findByMaNhanVien(maNhanVien) != null) {
                     JOptionPane.showMessageDialog(this, "Nhân viên này đã có tài khoản.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                     return;
@@ -143,7 +147,7 @@ public class QuanLyTaiKhoanPanel extends JPanel {
                         EntityIDSymbol.ACCOUNT_PREFIX.getLength());
 
                 Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
-                AccountDialog addDialog = new AccountDialog(owner, "Tạo tài khoản", newMaTaiKhoan, maNhanVien);
+                AccountDialog addDialog = new AccountDialog(owner, "Tạo tài khoản", newMaTaiKhoan, maNhanVien, tennv);
                 addDialog.setVisible(true);
 
                 if (addDialog.isSaved()) {
@@ -153,7 +157,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
                     if (success) {
                         JOptionPane.showMessageDialog(this, "Tạo tài khoản thành công.");
 
-                        // Tải lại cả 2 bảng
                         loadTaiKhoanData(); // Bảng TK có thêm 1 người
                         loadNhanVienData(); // Bảng NV mất 1 người (vì đã có TK)
 
@@ -240,7 +243,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
                         JOptionPane.showMessageDialog(this, "Xóa tài khoản thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (Exception ex) {
-
                     JOptionPane.showMessageDialog(this, "Xóa thất bại. Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
             }

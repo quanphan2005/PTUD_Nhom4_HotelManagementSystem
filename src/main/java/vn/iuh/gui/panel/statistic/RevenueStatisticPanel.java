@@ -10,6 +10,7 @@ import vn.iuh.dto.response.InvoiceStatistic;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
+import vn.iuh.gui.base.RoleChecking;
 import vn.iuh.service.impl.RevenueStatisticService;
 import vn.iuh.util.ExportWriter;
 import vn.iuh.util.PriceFormat;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-public class RevenueStatisticPanel extends JPanel {
+public class RevenueStatisticPanel extends RoleChecking {
     private JPanel pnlTop;
     private JLabel lblTop;
     private JPanel pnlFilter;
@@ -76,6 +77,13 @@ public class RevenueStatisticPanel extends JPanel {
         createMainPanel();
     }
 
+    @Override
+    protected void buildAdminUI() {
+        setLayout(new BorderLayout());
+        init();
+        loadDanhSachNhanVien();
+    }
+
     public void createMainPanel() {
         pnlMain = new JPanel();
         pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
@@ -84,13 +92,13 @@ public class RevenueStatisticPanel extends JPanel {
         this.add(pnlMain, BorderLayout.CENTER);
     }
 
-
     public RevenueStatisticPanel() {
+        super();
         this.nhanVienDAO = new NhanVienDAO();
         this.revenueStatisticService = new RevenueStatisticService();
         this.danhSachKetQua = new ArrayList<>();
-        setLayout(new BorderLayout());
-        init();
+//        setLayout(new BorderLayout());
+//        init();
         //run khi card được show
         addComponentListener(new ComponentAdapter() {
             @Override
