@@ -1112,5 +1112,25 @@ public class DatPhongDAO {
             throw new TableEntityMismatch("Lỗi chuyển ResultSet thành ChiTietDatPhong: " + e.getMessage());
         }
     }
+
+    public ChiTietDatPhong timChiTietDatPhongBangMaChiTietDatPhong(String maChiTietDatPhong) {
+        String query = "SELECT * FROM ChiTietDatPhong WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next())
+                return chuyenKetQuaThanhChiTietDatPhong(rs);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return null;
+    }
 }
 

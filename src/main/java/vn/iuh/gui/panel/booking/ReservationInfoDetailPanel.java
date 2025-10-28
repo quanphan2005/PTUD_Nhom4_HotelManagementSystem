@@ -1,13 +1,14 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.ReservationStatus;
-import vn.iuh.constraint.RoomStatus;
-import vn.iuh.dto.response.MovingHistoryResponse;
-import vn.iuh.dto.response.ReservationDetailResponse;
-import vn.iuh.dto.response.ReservationInfoDetailResponse;
-import vn.iuh.dto.response.RoomUsageServiceResponse;
+import vn.iuh.dto.response.*;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.base.Main;
+import vn.iuh.gui.dialog.DepositInvoiceDialog;
+import vn.iuh.service.BookingService;
+import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
@@ -21,14 +22,16 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.Objects;
+
+import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 
 public class ReservationInfoDetailPanel extends JPanel {
     private ReservationInfoDetailResponse reservationInfo;
     private ReservationManagementPanel parentPanel;
+
+    private BookingService bookingService;
 
     // Customer info components
     private JLabel lblCCCD;
@@ -58,6 +61,8 @@ public class ReservationInfoDetailPanel extends JPanel {
     public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo, ReservationManagementPanel parentPanel) {
         this.reservationInfo = reservationInfo;
         this.parentPanel = parentPanel;
+
+        this.bookingService = new BookingServiceImpl();
 
         setLayout(new BorderLayout());
         init();
@@ -340,7 +345,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     // Action Buttons for room details
-    private JButton createOrderServiceBtn() {
+    private JButton createOrderServiceBtn(ReservationDetailResponse detail) {
         // Order service button
         JButton btnOrderService = new JButton("Gọi DV");
         btnOrderService.setFont(CustomUI.verySmallFont);
@@ -349,12 +354,12 @@ public class ReservationInfoDetailPanel extends JPanel {
         btnOrderService.setPreferredSize(new Dimension(100, 30));
         btnOrderService.setFocusPainted(false);
         btnOrderService.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
-        btnOrderService.addActionListener(e -> handleOrderService(reservationInfo));
+        btnOrderService.addActionListener(e -> handleOrderService(detail));
 
         return btnOrderService;
     }
 
-    private JButton createCheckinBtn() {
+    private JButton createCheckinBtn(ReservationDetailResponse detail) {
         // Check-in button
         JButton btnCheckIn = new JButton("Checkin");
         btnCheckIn.setFont(CustomUI.verySmallFont);
@@ -363,12 +368,12 @@ public class ReservationInfoDetailPanel extends JPanel {
         btnCheckIn.setPreferredSize(new Dimension(100, 30));
         btnCheckIn.setFocusPainted(false);
         btnCheckIn.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
-        btnCheckIn.addActionListener(e -> handleCheckin(reservationInfo));
+        btnCheckIn.addActionListener(e -> handleCheckin(detail));
 
         return btnCheckIn;
     }
 
-    private JButton createChangeRoomBtn() {
+    private JButton createChangeRoomBtn(ReservationDetailResponse detail) {
         // Change room button
         JButton btnChangeRoom = new JButton("Đổi phòng");
         btnChangeRoom.setFont(CustomUI.verySmallFont);
@@ -377,12 +382,12 @@ public class ReservationInfoDetailPanel extends JPanel {
         btnChangeRoom.setPreferredSize(new Dimension(100, 30));
         btnChangeRoom.setFocusPainted(false);
         btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
-        btnChangeRoom.addActionListener(e -> handleChangeRoom(reservationInfo));
+        btnChangeRoom.addActionListener(e -> handleChangeRoom(detail));
 
         return btnChangeRoom;
     }
 
-    private JButton createExtendTimeBtn() {
+    private JButton createExtendTimeBtn(ReservationDetailResponse detail) {
         // Change Extend time button
         JButton btnExtendTime = new JButton("Gia hạn");
         btnExtendTime.setFont(CustomUI.verySmallFont);
@@ -391,12 +396,12 @@ public class ReservationInfoDetailPanel extends JPanel {
         btnExtendTime.setPreferredSize(new Dimension(100, 30));
         btnExtendTime.setFocusPainted(false);
         btnExtendTime.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
-        btnExtendTime.addActionListener(e -> handleExtendTime(reservationInfo));
+        btnExtendTime.addActionListener(e -> handleExtendTime(detail));
 
         return btnExtendTime;
     }
 
-    private JButton createCancelBtn() {
+    private JButton createCancelBtn(ReservationDetailResponse detail) {
         // Cancel button (small square with trash icon)
         JButton btnCancel = new JButton("Hủy đơn");
         btnCancel.setFont(CustomUI.verySmallFont);
@@ -406,7 +411,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         btnCancel.setFocusPainted(false);
         btnCancel.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
         btnCancel.setToolTipText("Hủy phòng");
-        btnCancel.addActionListener(e -> handleCancelRoom(reservationInfo));
+        btnCancel.addActionListener(e -> handleCancelRoom(detail));
 
         return btnCancel;
     }
@@ -654,7 +659,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         }
     }
 
-    public void attachButtons(JPanel panel, String status) {
+    public void attachButtons(JPanel panel, String status, ReservationDetailResponse detail) {
         System.out.println("Visualizing buttons for status: " + status);
         panel.removeAll();
 
@@ -664,11 +669,11 @@ public class ReservationInfoDetailPanel extends JPanel {
             return;
         }
 
-        JButton btnOrderService = createOrderServiceBtn();
-        JButton btnCheckIn = createCheckinBtn();
-        JButton btnChangeRoom = createChangeRoomBtn();
-        JButton btnExtendTime = createExtendTimeBtn();
-        JButton btnCancel = createCancelBtn();
+        JButton btnOrderService = createOrderServiceBtn(detail);
+        JButton btnCheckIn = createCheckinBtn(detail);
+        JButton btnChangeRoom = createChangeRoomBtn(detail);
+        JButton btnExtendTime = createExtendTimeBtn(detail);
+        JButton btnCancel = createCancelBtn(detail);
 
         switch (ReservationStatus.fromStatus(status)) {
             case CHECKED_IN:
@@ -704,7 +709,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             removeAll(); // Clear previous buttons
             ReservationDetailResponse detail = (ReservationDetailResponse) table.getValueAt(row, 5);
-            attachButtons(this, detail.getStatus()); // Re-attach buttons for current state
+            attachButtons(this, detail.getStatus(), detail); // Pass detail to attachButtons
 
             if (isSelected) {
                 setBackground(table.getSelectionBackground());
@@ -735,7 +740,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
             panel.removeAll();
             ReservationDetailResponse detail = (ReservationDetailResponse) table.getValueAt(row, 5);
-            attachButtons(panel, detail.getStatus()); // Populate panel with buttons
+            attachButtons(panel, detail.getStatus(), detail); // Pass detail to attachButtons
 
             return panel;
         }
@@ -832,39 +837,96 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     // Action handlers for reservation details
-    private void handleOrderService(ReservationInfoDetailResponse detail) {
+    private void handleOrderService(ReservationDetailResponse detail) {
+        handleViewOrderService(detail);
+    }
+
+    private void handleCheckin(ReservationDetailResponse detail) {
         JOptionPane.showMessageDialog(this,
-                                      "Chức năng gọi dịch vụ đang được phát triển cho phòng: " + detail.getCustomerName(),
+                                      "Chức năng check-in đang được phát triển cho phòng: " + detail.getRoomName(),
                                       "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void handleCheckin(ReservationInfoDetailResponse detail) {
-        JOptionPane.showMessageDialog(this,
-                                      "Chức năng check-in đang được phát triển cho phòng: " + detail.getCustomerName(),
-                                      "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void handleExtendTime(ReservationInfoDetailResponse detail) {
+    private void handleExtendTime(ReservationDetailResponse detail) {
         JOptionPane.showMessageDialog(this,
                                       "Chức năng gia hạn phòng đang được phát triển",
                                       "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void handleChangeRoom(ReservationInfoDetailResponse detail) {
+    private void handleChangeRoom(ReservationDetailResponse detail) {
         JOptionPane.showMessageDialog(this,
-                                      "Chức năng đổi phòng đang được phát triển cho phòng: " + detail.getCustomerName(),
+                                      "Chức năng đổi phòng đang được phát triển cho phòng: " + detail.getRoomName(),
                                       "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void handleCancelRoom(ReservationInfoDetailResponse detail) {
+    private void handleCancelRoom(ReservationDetailResponse detail) {
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận hủy phòng " + detail.getCustomerName() + "?",
+                                                   "Xác nhận hủy phòng " + "?",
                                                    "Hủy phòng", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
-            JOptionPane.showMessageDialog(this,
-                                          "Chức năng hủy phòng đang được phát triển",
-                                          "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            boolean isSuccess = bookingService.cancelReservationDetail(detail.getReservationDetailId());
+
+            if (isSuccess) {
+                JOptionPane.showMessageDialog(this,
+                                              "Hủy phòng thành công!",
+                                              "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                refreshPanel();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                                              "Hủy phòng thất bại! Vui lòng thử lại.",
+                                              "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         }
+    }
+
+    private void handleViewOrderService(ReservationDetailResponse detail) {
+        if (detail == null) return;
+
+        String parentName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservationInfo.getMaDonDatPhong();
+        ServiceSelectionPanel serviceSelectionPanel = new ServiceSelectionPanel(detail.getReservationDetailId());
+
+        // Navigate to detail panel using CardLayout
+        if (parentPanel != null) {
+            // Check if detail panel already exists, if so remove it
+            Component[] components = parentPanel.getComponents();
+            for (Component comp : components) {
+                if (comp instanceof ReservationInfoDetailPanel) {
+                    parentPanel.remove(comp);
+                    break;
+                }
+            }
+
+            // Add new detail panel
+            String subPanelName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservationInfo.getMaDonDatPhong();
+            parentPanel.add(serviceSelectionPanel, subPanelName);
+
+            // Show detail panel
+            CardLayout layout = (CardLayout) parentPanel.getLayout();
+            layout.show(parentPanel, subPanelName);
+        } else {
+            // Fallback: Open in dialog if parent container is not set
+            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Đơn " + reservationInfo.getMaDonDatPhong(), true);
+
+            // Wrap detail panel in a scroll pane
+            JScrollPane scrollPane = new JScrollPane(serviceSelectionPanel);
+            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+            dialog.setContentPane(scrollPane);
+            dialog.setSize(1000, 700); // Reduced width from 1200 to 1000
+            dialog.setLocationRelativeTo(null); // Center on screen
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            dialog.setResizable(false);
+            dialog.setVisible(true);
+        }
+    }
+
+    public void refreshPanel() {
+//        reservationInfo = bookingService.getReservationDetailInfo(reservationInfo.getMaDonDatPhong());
+//        createCustomerInfoPanel();
+//        createRoomDetailsTable();
+//        loadRoomDetails();
     }
 }

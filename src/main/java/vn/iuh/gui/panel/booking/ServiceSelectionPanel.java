@@ -95,6 +95,16 @@ public class ServiceSelectionPanel extends JPanel {
         setupEventHandlers();
     }
 
+    public ServiceSelectionPanel(String maChiTietDatPhong) {
+
+        this.serviceCategoryService = new ServiceCategoryServiceImpl();
+        this.goiDichVuService = new GoiDichVuServiceImpl();
+        this.selectedServicesMap = new HashMap<>();
+        this.giftServicesMap = new HashMap<>();
+
+        this.maChiTietDatPhong = maChiTietDatPhong;
+    }
+
     private void initializeComponents() {
         // Search components
         cmbServiceType = new JComboBox<>();

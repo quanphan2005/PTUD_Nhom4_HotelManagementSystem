@@ -115,7 +115,6 @@ public class BookingFormPanel extends JPanel {
         setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
 
-
         ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.BOOKING.getName(), 1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
                 serviceOrdered.clear();
                 serviceOrdered.addAll(services);

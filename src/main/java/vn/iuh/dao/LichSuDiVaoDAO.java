@@ -22,7 +22,7 @@ public class LichSuDiVaoDAO {
         this.connection = connection;
     }
 
-    public void themLichSuDiVao(LichSuDiVao lichSuDiVao) {
+    public boolean themLichSuDiVao(LichSuDiVao lichSuDiVao) {
         String query = "INSERT INTO LichSuDiVao" +
                        " (ma_lich_su_di_vao, la_lan_dau_tien, ma_chi_tiet_dat_phong)" +
                        " VALUES (?, ?, ?)";
@@ -33,8 +33,10 @@ public class LichSuDiVaoDAO {
             ps.setString(3, lichSuDiVao.getMaChiTietDatPhong());
 
             ps.executeUpdate();
+            return true;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            System.out.println(e.getMessage());
+            return false;
         }
     }
 

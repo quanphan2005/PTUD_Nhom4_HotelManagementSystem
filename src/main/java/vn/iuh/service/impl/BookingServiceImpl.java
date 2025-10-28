@@ -674,6 +674,19 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public boolean cancelReservationDetail(String maChiTietDatPhong) {
+        // 1. Find reservationDetail by id
+        ChiTietDatPhong chiTietDatPhong = datPhongDAO.timChiTietDatPhongBangMaChiTietDatPhong(maChiTietDatPhong);
+        if (Objects.isNull(chiTietDatPhong)) {
+            System.out.println(
+                    "Không tìm thấy chi tiết đặt phòng cho mã chi tiết đặt phòng: " + maChiTietDatPhong);
+            return false;
+        }
+
+        return cancelRoomReservation(chiTietDatPhong.getMaDonDatPhong(), chiTietDatPhong.getMaPhong());
+    }
+
+    @Override
     public List<ReservationResponse> getAllCurrentReservationsWithStatus() {
         Set<ReservationResponse> responses = new HashSet<>();
 

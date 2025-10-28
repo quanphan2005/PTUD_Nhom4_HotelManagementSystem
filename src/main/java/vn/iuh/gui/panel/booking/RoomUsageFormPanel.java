@@ -49,6 +49,7 @@ public class RoomUsageFormPanel extends JPanel {
     private CustomerInfoResponse customerInfoResponse;
     private CheckOutService checkOutService;
     private RoomService roomService;
+    private MovingHistoryService movingHistoryService;
 
     // Formatters
     private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
@@ -86,6 +87,9 @@ public class RoomUsageFormPanel extends JPanel {
     private JButton btnCancel;
     private JButton btnCalculatePrice;
 
+    JButton btnEntering;
+    JButton btnLeaving;
+
     // Main content components
     private JPanel mainContentPanel;
 
@@ -109,6 +113,7 @@ public class RoomUsageFormPanel extends JPanel {
         this.selectedRoom = roomInfo;
         this.bookingService = new BookingServiceImpl();
         this.roomService = new RoomServiceImpl();
+        this.movingHistoryService = new MovingHistoryServiceImpl();
         this.customerInfoResponse = bookingService.getCustomerInfoByBookingId(roomInfo.getMaChiTietDatPhong());
         if (customerInfoResponse == null) {
             if (!Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
@@ -220,15 +225,15 @@ public class RoomUsageFormPanel extends JPanel {
         // Check-in and Check-out icons
         ImageIcon checkinIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/get_in.png")));
         checkinIcon = new ImageIcon(checkinIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
-        JButton checkInButton = new JButton(checkinIcon);
+        btnEntering = new JButton(checkinIcon);
 
         ImageIcon checkoutIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/leaving.png")));
         checkoutIcon = new ImageIcon(checkoutIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
-        JButton checkoutButton = new JButton(checkoutIcon);
+        btnLeaving = new JButton(checkoutIcon);
 
-        titlePanel.add(checkInButton);
+        titlePanel.add(btnEntering);
         titlePanel.add(titleLabel);
-        titlePanel.add(checkoutButton);
+        titlePanel.add(btnLeaving);
 
         btnClose = new JButton("x");
         btnClose.setFont(CustomUI.bigFont);
@@ -994,6 +999,40 @@ public class RoomUsageFormPanel extends JPanel {
         btnClose.addActionListener(e -> Main.showCard(PanelName.BOOKING_MANAGEMENT.getName()));
         btnCreateReservationForm.addActionListener(e -> handleCreateReservationForm());
         reservationButton.addActionListener(e -> handleShowReservationManagement());
+        btnEntering.addActionListener(e -> handleEntering());
+        btnLeaving.addActionListener(e -> handleLeaving());
+    }
+
+    private void handleEntering() {
+        boolean isSuccess = movingHistoryService.createEnteringHistory(selectedRoom.getMaChiTietDatPhong());
+        if (isSuccess) {
+            JOptionPane.showMessageDialog(this,
+                    "Ghi nhận khách đã nhận phòng " + selectedRoom.getRoomName() + " thành công.",
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            btnEntering.setEnabled(false);
+            btnLeaving.setEnabled(true);
+
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Ghi nhận khách nhận phòng thất bại cho " + selectedRoom.getRoomName(),
+                    "Thất bại", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void handleLeaving() {
+        boolean isSuccess = movingHistoryService.createLeavingHistory(selectedRoom.getMaChiTietDatPhong());
+        if (isSuccess) {
+            JOptionPane.showMessageDialog(this,
+                    "Ghi nhận khách đã trả phòng " + selectedRoom.getRoomName() + " thành công.",
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            btnLeaving.setEnabled(false);
+            btnEntering.setEnabled(true);
+
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Ghi nhận khách trả phòng thất bại cho " + selectedRoom.getRoomName(),
+                    "Thất bại", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void handleShowReservationManagement() {
