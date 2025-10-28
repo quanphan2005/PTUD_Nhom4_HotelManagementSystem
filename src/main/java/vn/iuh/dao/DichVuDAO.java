@@ -136,7 +136,7 @@ public class DichVuDAO {
     }
 
     public DichVu timDichVuMoiNhat() {
-        String query = "SELECT TOP 1 * FROM DichVu ORDER BY ma_dich_vu DESC";
+        String query = "SELECT TOP 1 * FROM DichVu ORDER BY ma_dich_vu DESC WHERE da_xoa = 0";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
@@ -152,6 +152,40 @@ public class DichVuDAO {
         }
 
         return null;
+    }
+
+    public List<DichVu> timDanhSachDichVuBangDanhSachMa(List<String> serviceIds) {
+        List<DichVu> dichVus = new java.util.ArrayList<>();
+        if (serviceIds == null || serviceIds.isEmpty()) {
+            return dichVus;
+        }
+
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM DichVu WHERE da_xoa = 0 AND ma_dich_vu IN (");
+        for (int i = 0; i < serviceIds.size(); i++) {
+            queryBuilder.append("?");
+            if (i < serviceIds.size() - 1) {
+                queryBuilder.append(", ");
+            }
+        }
+        queryBuilder.append(")");
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(queryBuilder.toString());
+            for (int i = 0; i < serviceIds.size(); i++) {
+                ps.setString(i + 1, serviceIds.get(i));
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                dichVus.add(chuyenKetQuaThanhDichVu(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+
+        return dichVus;
     }
 
     private DichVu chuyenKetQuaThanhDichVu(ResultSet rs) throws SQLException {

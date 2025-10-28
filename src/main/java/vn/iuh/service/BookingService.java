@@ -1,18 +1,13 @@
 package vn.iuh.service;
 
 import vn.iuh.dto.event.create.BookingCreationEvent;
-import vn.iuh.dto.response.BookingResponse;
-import vn.iuh.dto.response.CustomerInfoResponse;
-import vn.iuh.dto.response.EventResponse;
-import vn.iuh.dto.response.PreReservationResponse;
-import vn.iuh.dto.response.ReservationResponse;
-import vn.iuh.dto.response.ReservationInfoDetailResponse;
+import vn.iuh.dto.response.*;
 
 import java.sql.Timestamp;
 import java.util.List;
 
 public interface BookingService {
-    EventResponse createBooking(BookingCreationEvent bookingCreationEvent);
+    EventResponse<DepositInvoiceResponse> createBooking(BookingCreationEvent bookingCreationEvent);
     List<PreReservationResponse> getAllReservationForms();
     List<PreReservationResponse> getReseravtionFormByRoomId(String id);
     List<BookingResponse> getAllBookingInfo();

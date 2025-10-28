@@ -16,4 +16,13 @@ public class TimeFormat {
         }
         return timestamp.toLocalDateTime().format(formatter);
     }
+
+    public static double calculateHoursBetween(Timestamp tgNhanPhong, Timestamp tgTraPhong) {
+        if (tgNhanPhong == null || tgTraPhong == null) {
+            return 0;
+        }
+        long milliseconds = tgTraPhong.getTime() - tgNhanPhong.getTime();
+        double hours = milliseconds / (1000.0 * 60 * 60);
+        return hours;
+    }
 }
