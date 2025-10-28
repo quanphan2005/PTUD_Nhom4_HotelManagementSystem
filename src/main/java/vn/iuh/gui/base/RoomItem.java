@@ -66,6 +66,8 @@ public class RoomItem extends JPanel {
         this.bookingResponse = bookingResponse;
 
         if (isEmptyRoom) {
+            this.bookingResponse = new BookingResponse(bookingResponse);
+            this.bookingResponse.setRoomStatus(RoomStatus.ROOM_EMPTY_STATUS.getStatus());
             createEmptyUI();
         } else {
             createUI();
