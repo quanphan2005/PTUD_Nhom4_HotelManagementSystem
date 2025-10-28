@@ -45,7 +45,7 @@ public class DepositInvoiceDialog extends JDialog {
         super((Frame) null, "Hóa đơn đặt cọc", true);
         this.response = response;
         getContentPane().setBackground(Color.WHITE);
-        setSize(800, 650);
+        setSize(800, 700);
         setLocationRelativeTo(null);
         setModal(true);
         initComponents();

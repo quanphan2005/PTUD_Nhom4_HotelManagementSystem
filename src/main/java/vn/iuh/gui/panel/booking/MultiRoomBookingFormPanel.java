@@ -26,12 +26,10 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 
@@ -908,19 +906,19 @@ public class MultiRoomBookingFormPanel extends JPanel {
             BookingCreationEvent bookingEvent = createMultiRoomBookingEvent();
 
             // Call booking service
-            EventResponse response = bookingService.createBooking(bookingEvent);
+            EventResponse<DepositInvoiceResponse> response = bookingService.createBooking(bookingEvent);
             if (response.getType().equals(ResponseType.SUCCESS)) {
-//                if (chkIsAdvanced.isSelected()) {
-//                    if (response.getData() != null && response.getData() instanceof DepositInvoiceResponse) {
-//                        SwingUtilities.invokeLater(() -> {
-//                            DepositInvoiceDialog dialog =
-//                                    new DepositInvoiceDialog((DepositInvoiceResponse)response.getData());
-//                            dialog.setVisible(true);
-//                        });
-//                    } else {
-//                        throw new IllegalStateException("Expected DepositInvoiceResponse in response data");
-//                    }
-//                }
+                if (chkIsAdvanced.isSelected()) {
+                    if (response.getData() != null) {
+                        SwingUtilities.invokeLater(() -> {
+                            DepositInvoiceDialog dialog =
+                                    new DepositInvoiceDialog(response.getData());
+                            dialog.setVisible(true);
+                        });
+                    } else {
+                        throw new IllegalStateException("Expected DepositInvoiceResponse in response data");
+                    }
+                }
 
                 JOptionPane.showMessageDialog(this,  response.getMessage(),
                                               "Thành công", JOptionPane.INFORMATION_MESSAGE);
