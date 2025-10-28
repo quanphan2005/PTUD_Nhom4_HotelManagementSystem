@@ -194,16 +194,6 @@ public class ChiTietDatPhongDAO {
         }
     }
 
-    public ChiTietDatPhong timChiTietDatPhongMoiNhatTheoDonDatPhong(String maDonDatPhong) {
-        String query = "SELECT TOP 1 * FROM ChiTietDatPhong WHERE ma_don_dat_phong = ? ORDER BY tg_nhan_phong DESC";
-        try (var ps = connection.prepareStatement(query)) {
-            ps.setString(1, maDonDatPhong);
-            return mapResultSetToChiTietDatPhong(ps.executeQuery());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     //Cập nhập tg_nhan_phong cho ChiTietDatPhong
     public boolean capNhatTgNhanPhong(String maChiTiet, Timestamp tgNhanPhong, String maPhienDangNhap, Timestamp thoiGianCapNhat) {
         String sql = "UPDATE ChiTietDatPhong SET tg_nhan_phong = ?, ma_phien_dang_nhap = ?, thoi_gian_tao = ? WHERE ma_chi_tiet_dat_phong = ?";

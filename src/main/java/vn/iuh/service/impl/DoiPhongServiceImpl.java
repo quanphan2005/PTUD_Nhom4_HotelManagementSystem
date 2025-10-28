@@ -66,7 +66,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                     tenLoai != null ? tenLoai : p.getMaLoaiPhong(),
                     String.valueOf(neededPersons),
                     giaNgay,
-                    giaGio                                           //
+                    giaGio
             );
 
             results.add(br);
@@ -93,7 +93,6 @@ public class DoiPhongServiceImpl implements DoiPhongService {
             LichSuThaoTacDAO lichSuThaoTacDAO = new LichSuThaoTacDAO(conn);
             PhongTinhPhuPhiDAO phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO(conn);
             PhuPhiDAO phuPhiDAO = new PhuPhiDAO(conn);
-            PhongDAO phongDAOConn = new PhongDAO(conn);
 
             Timestamp now = new Timestamp(System.currentTimeMillis());
 
@@ -261,7 +260,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                 congViecDAO.removeJob(oldJob2.getMaCongViec());
             }
 
-            // 6g) TẠO công việc mới cho phòng mới** với trạng thái "KIỂM TRA" từ hiện tại đến 30p sau
+            // 6g) TẠO công việc mới cho phòng mới với trạng thái "KIỂM TRA" từ hiện tại đến 30p sau
             CongViec lastJob3 = congViecDAO.timCongViecMoiNhat();
             String newJobIdNew = EntityUtil.increaseEntityID(lastJob3 == null ? null : lastJob3.getMaCongViec(),
                     EntityIDSymbol.JOB_PREFIX.getPrefix(), EntityIDSymbol.JOB_PREFIX.getLength());
