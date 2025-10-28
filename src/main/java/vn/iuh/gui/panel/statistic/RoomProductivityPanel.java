@@ -4,6 +4,9 @@ import com.formdev.flatlaf.FlatClientProperties;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.data.general.Dataset;
 import org.jfree.data.general.DefaultPieDataset;
 import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.entity.LoaiPhong;
@@ -15,6 +18,8 @@ import vn.iuh.util.ExportWriter;
 import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -22,6 +27,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -57,7 +64,6 @@ public class RoomProductivityPanel extends JPanel {
     private JButton btnTaiLai;
     private JButton btnXuat;
     private JLabel lblStartDate;
-    private JLabel lblNam;
     private JLabel lblEndDate;
     private JLabel lblLoaiPhong;
     private JPanel pnlButton;
@@ -85,6 +91,7 @@ public class RoomProductivityPanel extends JPanel {
     private JPanel pnlDoanhThu;
     private JTextField txtFolderPath;
     private JButton btnChooseFolder;
+    private JCheckBox btnCheckBox;
 
     private void init(){
         createTopPanel();
@@ -109,6 +116,13 @@ public class RoomProductivityPanel extends JPanel {
         this.loaiPhongDAO = new LoaiPhongDAO();
         this.loaiPhongService = new LoaiPhongServiceImpl();
         init();
+        //run khi card được show
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                loadRoomCategoryList();
+            }
+        });
     }
     private void createTopPanel(){
         pnlTop = new JPanel();
@@ -147,23 +161,43 @@ public class RoomProductivityPanel extends JPanel {
 
         pnlNam = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         pnlNam.setOpaque(false);
-        lblNam = new JLabel("Tùy chọn");
-        lblNam.setFont(CustomUI.smallFont);
+
+        btnCheckBox = new JCheckBox("Tùy chọn");
+        btnCheckBox.setFont(CustomUI.smallFont);
+        btnCheckBox.addActionListener( e-> {
+            if(btnCheckBox.isSelected()){
+                cboNam.setEnabled(true);
+                cboQuy.setEnabled(true);
+                this.startChooser.setEnabled(false);
+                this.endChooser.setEnabled(false);
+            }
+            else{
+                cboNam.setEnabled(false);
+                cboQuy.setEnabled(false);
+                this.startChooser.setEnabled(true);
+                this.endChooser.setEnabled(true);
+            }
+        });
         pnlNam.setBorder(BorderFactory.createEmptyBorder(8,0,0,0));
-        cboNam = new JComboBox<>(new String[]{"2023", "2024", "2025"});
+        cboNam = new JComboBox<>(new String[]{"2023", "2024", "2025", "2026"});
         cboNam.setPreferredSize(new Dimension(100, 30));
         cboNam.addActionListener(e ->{
             handlePeriodTime();
+            handleBaseCase();
         });
 
         cboQuy = new JComboBox<>(new String[]{"Quý 1", "Quý 2", "Quý 3", "Quý 4"});
         cboQuy.setPreferredSize(new Dimension(100, 30));
         cboQuy.addActionListener(e ->{
             handlePeriodTime();
+            handleBaseCase();
         });
-        pnlNam.add(lblNam);
+        pnlNam.add(btnCheckBox);
         pnlNam.add(cboNam);
         pnlNam.add(cboQuy);
+
+        cboNam.setEnabled(false);
+        cboQuy.setEnabled(false);
 
 
         // === Hàng 2 ===
@@ -174,21 +208,15 @@ public class RoomProductivityPanel extends JPanel {
         pnlLoaiPhong.add(lblLoaiPhong);
         cboLoaiPhong = new JComboBox<>();
         cboLoaiPhong.setPreferredSize(new Dimension(200,30 ));
-        loadRoomCategoryList();
-        cboLoaiPhong.addPopupMenuListener(new PopupMenuListener() {
-            @Override
-            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                loadRoomCategoryList();
-            }
-
-            @Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
-            @Override public void popupMenuCanceled(PopupMenuEvent e) {}
-        });
         pnlLoaiPhong.add(cboLoaiPhong);
 
         pnlPhong = new JPanel();
         pnlPhong.add(pnlLoaiPhong);
         pnlPhong.setOpaque(false);
+
+        cboLoaiPhong.addActionListener(e ->{
+            handleBaseCase();
+        });
 
 
 
@@ -199,11 +227,7 @@ public class RoomProductivityPanel extends JPanel {
         btnTaiLai.setForeground(CustomUI.white);
 
         btnTaiLai.addActionListener(e ->{
-            FillterRoomStatistic filter = validateTime();
-            if(!filter.equals(this.baseFilter)){
-                getListRoomCategoryByFilter(filter);
-            }
-            reloadForAllCategory();
+            handleBaseCase();
         });
 
         txtFolderPath = new JTextField();
@@ -257,6 +281,14 @@ public class RoomProductivityPanel extends JPanel {
         }
     }
 
+    private void handleBaseCase(){
+        FillterRoomStatistic filter = validateTime();
+        if(filter != null && !filter.equals(this.baseFilter)){
+            getListRoomCategoryByFilter(filter);
+        }
+        reloadForAllCategory();
+    }
+
     private void exportFileExcel(){
         String folderPath = txtFolderPath.getText().trim();
         if (!folderPath.isEmpty()) {
@@ -274,14 +306,17 @@ public class RoomProductivityPanel extends JPanel {
         }
     }
 
-    private void loadRoomCategoryList(){
-        List<LoaiPhong> danhSachLoaiPhong = loaiPhongDAO.layTatCaLoaiPhong();
-        this.cboLoaiPhong.removeAllItems();
-        this.cboLoaiPhong.addItem("Tất cả");
-        for(LoaiPhong lp : danhSachLoaiPhong){
-            this.cboLoaiPhong.addItem(lp.getTenLoaiPhong());
+    public void loadRoomCategoryList() {
+        this.danhSachLoaiPhong = loaiPhongDAO.layTatCaLoaiPhong();
+
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+        model.addElement("Tất cả");
+        for(LoaiPhong lp : danhSachLoaiPhong) {
+            model.addElement(lp.getTenLoaiPhong());
         }
-        this.danhSachLoaiPhong = danhSachLoaiPhong;
+
+        // Set model một lần duy nhất
+        this.cboLoaiPhong.setModel(model);
     }
 
     private void reloadForAllCategory() {
@@ -377,13 +412,16 @@ public class RoomProductivityPanel extends JPanel {
         LocalDate today = LocalDate.now();
 
         if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc");
+           JOptionPane.showMessageDialog(null,"Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc");
+           return null;
         }
         if (startDate.isAfter(today)) {
-            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày hiện tại");
+            JOptionPane.showMessageDialog(null,"Ngày bắt đầu không được sau ngày hiện tại");
+            return null;
         }
         if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("Ngày bắt đầu không được sau ngày kết thúc");
+            JOptionPane.showMessageDialog(null,"Ngày bắt đầu không được sau ngày kết thúc");
+            return null;
         }
 
         return new FillterRoomStatistic(
@@ -438,18 +476,18 @@ public class RoomProductivityPanel extends JPanel {
                         .filter(rs -> rs.getTenLoaiPhong().equalsIgnoreCase(selectedCategory))
                         .sorted(Comparator.comparing(RoomStatistic::getSoLuotDat).reversed())
                                 .toList();
-
-
-                if(danhSachKetQua.isEmpty()){
-                    JOptionPane.showMessageDialog(null, "Không tìm thấy kết quả");
-                    return;
-                }
             }
             for(RoomStatistic rs : danhSachKetQua){
                 model.addRow(rs.getObject());
             }
+            if(danhSachKetQua.isEmpty()){
+                JOptionPane.showMessageDialog(null, "Không tìm thấy kết quả");
+            }
         }
         else {
+            if(danhSachKetQua.isEmpty()){
+                JOptionPane.showMessageDialog(null, "Không tìm thấy kết quả");
+            }
             for(RoomStatistic rs : listCategory){
                 model.addRow(new Object[]{
                         rs.getMaLoaiPhong(),

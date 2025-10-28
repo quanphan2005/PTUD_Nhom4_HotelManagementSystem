@@ -36,7 +36,7 @@ public class RevenueStatisticService {
     }
 
     public List<InvoiceStatistic> layThongKeVoiDieuKien(FilterStatistic dieuKien) {
-        var danhSachHoaDon = hoaDonDAO.layDanhSachHoaDonTrongKhoang(dieuKien.getStartDate(), dieuKien.getEndDate(), dieuKien.getEmployeeName());
+        var danhSachHoaDon = hoaDonDAO.layDanhSachHoaDonTrongKhoang(dieuKien.getStartDate(), dieuKien.getEndDate(), dieuKien.getEmployeeId());
         List<InvoiceStatistic> danhSachKetQua = new ArrayList<>();
 
         for (HoaDon hd : danhSachHoaDon) {

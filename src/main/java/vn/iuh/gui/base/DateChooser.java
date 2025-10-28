@@ -69,4 +69,17 @@ public class DateChooser extends JPanel {
         g2.dispose();
         super.paintComponent(grphcs);
     }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+
+        lblToday.setEnabled(enabled);
+        datePicker.setEnabled(enabled);
+
+        for (Component comp : getComponents()) {
+            comp.setEnabled(enabled);
+        }
+    }
+
 }
