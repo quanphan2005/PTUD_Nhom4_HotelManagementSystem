@@ -119,27 +119,27 @@ public class BookThemGioServiceImpl implements BookThemGioService {
             }
 
             // 2) Kiểm tra đã check-in chưa
-            boolean checkedIn = false;
-            try {
-                String maDon = chiDaoTx.findFormIDByDetail(maChiTietDatPhong);
-                if (maDon != null && !maDon.isEmpty()) {
-                    var thongTin = chiDaoTx.layThongTinSuDungPhong(maDon);
-                    if (thongTin != null) {
-                        for (var t : thongTin) {
-                            if (maChiTietDatPhong.equals(t.getMaChiTietDatPhong()) && t.getGioCheckIn() != null) {
-                                checkedIn = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ignored) {}
-
-            if (!checkedIn) {
-                // không thể gia hạn nếu chưa checkin
-                datPhongDAO.hoanTacGiaoTac();
-                return false;
-            }
+//            boolean checkedIn = false;
+//            try {
+//                String maDon = chiDaoTx.findFormIDByDetail(maChiTietDatPhong);
+//                if (maDon != null && !maDon.isEmpty()) {
+//                    var thongTin = chiDaoTx.layThongTinSuDungPhong(maDon);
+//                    if (thongTin != null) {
+//                        for (var t : thongTin) {
+//                            if (maChiTietDatPhong.equals(t.getMaChiTietDatPhong()) && t.getGioCheckIn() != null) {
+//                                checkedIn = true;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//            } catch (Exception ignored) {}
+//
+//            if (!checkedIn) {
+//                // không thể gia hạn nếu chưa checkin
+//                datPhongDAO.hoanTacGiaoTac();
+//                return false;
+//            }
 
             // 3) Kiểm tra kiểu kết thúc
             String kieuKetThuc = current.getKieuKetThuc();

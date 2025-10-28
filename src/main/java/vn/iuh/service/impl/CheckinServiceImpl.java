@@ -300,7 +300,7 @@ public class CheckinServiceImpl implements CheckinService {
         if (s == null) return "";
         String t = s.trim().toLowerCase(Locale.ROOT);
         // Loại bỏ dấu để so sánh không phụ thuộc dấu tiếng Việt
-        t = Normalizer.normalize(t, Normalizer.Form.NFD).replaceAll("\\p{M}+,", "");
+        t = Normalizer.normalize(t, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
         // Loại bỏ tiền tố "Phòng" hoặc 'p' nếu có
         t = t.replaceAll("^phòng\\s*", "");
         t = t.replaceAll("^p\\s*", "");

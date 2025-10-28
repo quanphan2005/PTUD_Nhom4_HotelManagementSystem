@@ -451,4 +451,69 @@ public class PhongDAO {
 
         return price;
     }
+
+
+    // Tìm danh sách nội thất theo loại phòng
+    public List<RoomFurnitureItem> timNoiThatTheoLoaiPhong(String maLoaiPhong) {
+        String query = "SELECT nttlp.ma_noi_that, nt.ten_noi_that, nttlp.so_luong " +
+                "FROM NoiThatTrongLoaiPhong nttlp " +
+                "JOIN NoiThat nt ON nttlp.ma_noi_that = nt.ma_noi_that " +
+                "WHERE nttlp.ma_loai_phong = ? AND ISNULL(nttlp.da_xoa,0) = 0";
+
+        List<RoomFurnitureItem> furnitureItems = new ArrayList<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, maLoaiPhong);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    furnitureItems.add(chuyenKetQuaThanhNoiThatTrongPhong(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return furnitureItems;
+    }
+
+    public boolean xoaPhongQuanLyPhongPanel(String roomID) {
+        if (timPhong(roomID) == null) {
+            System.out.println("No room found with ID: " + roomID);
+            return false;
+        }
+
+        String query = "UPDATE Phong SET da_xoa = 1 WHERE ma_phong = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, roomID);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Phong> timTatCaPhongChoQuanLyPhong() {
+        String query = "SELECT * FROM Phong WHERE da_xoa=0";
+        List<Phong> phongs = new ArrayList<>();
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            var rs = ps.executeQuery();
+            while (rs.next())
+                phongs.add(mapResultSetToRoom(rs));
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+        }
+
+        return phongs;
+    }
+
 }
