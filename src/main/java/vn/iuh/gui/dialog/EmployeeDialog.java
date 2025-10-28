@@ -79,8 +79,7 @@ public class EmployeeDialog extends JDialog {
     }
 
     private JPanel createMainPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(CustomUI.white);
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -89,19 +88,61 @@ public class EmployeeDialog extends JDialog {
         txtCCCD = new JTextField(20);
         txtSDT = new JTextField(20);
         datePickerNgaySinh = new DateChooser();
-        styleTextField(txtMaNV);
-        styleTextField(txtTenNV);
-        styleTextField(txtCCCD);
-        styleTextField(txtSDT);
-        panel.add(createFieldRow("Mã nhân viên:", txtMaNV));
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(createFieldRow("Tên nhân viên:", txtTenNV));
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(createFieldRow("Số CCCD:", txtCCCD));
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(createFieldRow("Ngày sinh:", datePickerNgaySinh));
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(createFieldRow("Số điện thoại:", txtSDT));
+        styleField(txtMaNV);
+        styleField(txtTenNV);
+        styleField(txtCCCD);
+        styleField(txtSDT);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.anchor = GridBagConstraints.EAST;
+        gbc.weightx = 0.0;
+        gbc.insets = new Insets(0, 0, 15, 10);
+        GridBagConstraints gbcField = new GridBagConstraints();
+        gbcField.gridx = 1;
+        gbcField.anchor = GridBagConstraints.WEST;
+        gbcField.fill = GridBagConstraints.HORIZONTAL;
+        gbcField.weightx = 1.0;
+        gbcField.insets = new Insets(0, 0, 15, 0);
+        gbc.gridy = 0;
+        JLabel lblMaNV = new JLabel("Mã nhân viên:");
+        lblMaNV.setFont(FONT_LABEL);
+        panel.add(lblMaNV, gbc);
+
+        gbcField.gridy = 0;
+        panel.add(txtMaNV, gbcField);
+
+        gbc.gridy = 1;
+        JLabel lblTenNV = new JLabel("Tên nhân viên:");
+        lblTenNV.setFont(FONT_LABEL);
+        panel.add(lblTenNV, gbc);
+
+        gbcField.gridy = 1;
+        panel.add(txtTenNV, gbcField);
+
+        gbc.gridy = 2;
+        JLabel lblCCCD = new JLabel("Số CCCD:");
+        lblCCCD.setFont(FONT_LABEL);
+        panel.add(lblCCCD, gbc);
+
+        gbcField.gridy = 2;
+        panel.add(txtCCCD, gbcField);
+
+        gbc.gridy = 3;
+        JLabel lblNgaySinh = new JLabel("Ngày sinh:");
+        lblNgaySinh.setFont(FONT_LABEL);
+        panel.add(lblNgaySinh, gbc);
+
+        gbcField.gridy = 3;
+        panel.add(datePickerNgaySinh, gbcField);
+
+        gbc.gridy = 4;
+        JLabel lblSDT = new JLabel("Số điện thoại:");
+        lblSDT.setFont(FONT_LABEL);
+        panel.add(lblSDT, gbc);
+
+        gbcField.gridy = 4;
+        panel.add(txtSDT, gbcField);
 
         return panel;
     }
@@ -153,7 +194,7 @@ public class EmployeeDialog extends JDialog {
         return row;
     }
 
-    private void styleTextField(JTextField field) {
+    private void styleField(JComponent field) {
         field.setFont(FONT_FIELD);
         field.setPreferredSize(FIELD_SIZE);
         field.putClientProperty(FlatClientProperties.STYLE, "arc: 10");

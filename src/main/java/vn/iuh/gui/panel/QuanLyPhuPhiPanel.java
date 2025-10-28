@@ -1,10 +1,13 @@
 package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.UserRole;
 import vn.iuh.dao.*;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.base.Main;
+import vn.iuh.gui.base.RoleChecking;
 import vn.iuh.gui.dialog.PhuPhiDialog;
 
 import javax.swing.*;
@@ -16,7 +19,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class QuanLyPhuPhiPanel extends JPanel {
+public class QuanLyPhuPhiPanel extends RoleChecking {
     private static final int SEARCH_CONTROL_HEIGHT = 40;
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(520, SEARCH_CONTROL_HEIGHT);
 
@@ -37,10 +40,15 @@ public class QuanLyPhuPhiPanel extends JPanel {
     private DefaultTableModel tableModel;
     private List<ThongTinPhuPhi> dsPhuPhi;
 
+
     public QuanLyPhuPhiPanel() {
+        super();
         this.phuPhiDAO = new PhuPhiDAO();
+    }
+
+    @Override
+    protected void buildAdminUI() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBackground(CustomUI.white);
         init();
         loadDataToTable();
     }
@@ -72,7 +80,7 @@ public class QuanLyPhuPhiPanel extends JPanel {
             Object[] row = {
                     thongTinPhuPhi.getMaPhuPhi(),
                     thongTinPhuPhi.getTenPhuPhi(),
-                    thongTinPhuPhi.isLaPhanTram() ? "TỈ LỆ PHẦM TRĂM" : "VNĐ",
+                    thongTinPhuPhi.isLaPhanTram() ? "TỈ LỆ PHẦN TRĂM" : "VNĐ",
                     thongTinPhuPhi.getGiaHienTai(),
             };
             tableModel.addRow(row);
@@ -164,19 +172,6 @@ public class QuanLyPhuPhiPanel extends JPanel {
 
         wrap.add(scrollPane, BorderLayout.CENTER);
         add(wrap);
-    }
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Test QuanLyNhanVienPanel");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1000, 700);
-
-            JPanel panel = new QuanLyPhuPhiPanel();
-            frame.add(panel);
-
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        });
     }
 }
 
