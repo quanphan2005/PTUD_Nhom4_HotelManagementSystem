@@ -25,7 +25,7 @@ public class TaiKhoanDAO {
     }
 
     public TaiKhoan timTaiKhoanMoiNhat() {
-        String query = "SELECT TOP 1 * FROM TaiKhoan WHERE da_xoa = 0 ORDER BY ma_tai_khoan DESC";
+        String query = "SELECT TOP 1 * FROM TaiKhoan ORDER BY ma_tai_khoan DESC";
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);

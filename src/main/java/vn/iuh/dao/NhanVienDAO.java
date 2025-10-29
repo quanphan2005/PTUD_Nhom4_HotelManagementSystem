@@ -168,20 +168,42 @@ public class NhanVienDAO {
             return false;
         }
 
-        String query = "UPDATE NhanVien SET da_xoa = 1 WHERE ma_nhan_vien = ?";
+        String query1 = "UPDATE TaiKhoan SET da_xoa = 1 WHERE ma_nhan_vien = ?";
+        String query2 = "Update NhanVien set da_xoa = 1 where ma_nhan_vien = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, id);
-            int rowsAffected = ps.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Xóa nhân viên thành công!");
-                return true;
+        try {
+            connection.setAutoCommit(false);
+            try (PreparedStatement ps1 = connection.prepareStatement(query1)) {
+                ps1.setString(1, id);
+                ps1.executeUpdate();
+//                int rowAffected = ps1.executeUpdate();
+//                if (rowsAffected > 0) {
+//                    System.out.println("Xóa nhân viên thành công!");
+//                    return true;
+//                }
             }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            try (PreparedStatement ps2 = connection.prepareStatement(query2)) {
+                ps2.setString(1, id);
+                ps2.executeUpdate();
+            }
+            connection.commit();
+            return true;
+        }catch (SQLException e) {
+            e.printStackTrace();
+            try {
+                connection.rollback();
+                System.out.print("Giao dịch bị hủy bỏ");
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            return false;
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
-
-        return false;
     }
 
     public NhanVien timNhanVienBangCCCD(String cccd) {
@@ -204,7 +226,7 @@ public class NhanVienDAO {
     }
 
     public NhanVien timNhanVienMoiNhat() {
-        String query = "SELECT TOP 1 * FROM NhanVien WHERE da_xoa = 0 ORDER BY ma_nhan_vien DESC";
+        String query = "SELECT TOP 1 * FROM NhanVien ORDER BY ma_nhan_vien DESC";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
 

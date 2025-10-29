@@ -57,6 +57,8 @@ public class Main extends JFrame {
     private QuanLyTaiKhoanPanel pnlQuanLyTaiKhoan;
     private RevenueStatisticPanel pnlStatistic;
     private RoomProductivityPanel pnlRoomProductivity;
+    private QuanLyNhanVienPanel pnlQuanLyNhanVien;
+
     public void init() {
         this.taiKhoanDAO = new TaiKhoanDAO();
         this.nhanVienDAO = new NhanVienDAO();
@@ -211,6 +213,10 @@ public class Main extends JFrame {
             pnlRoomProductivity.checkRoleAndLoadData();
         }
 
+        if (pnlQuanLyNhanVien != null) {
+            pnlQuanLyNhanVien.checkRoleAndLoadData();
+        }
+
     }
 
     private String convertMaChucVuToTen(String maChucVu) {
@@ -304,7 +310,7 @@ public class Main extends JFrame {
         PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
         pnlStatistic = new RevenueStatisticPanel();
         QuanLyHoaDonPanel pnlQuanLyHoaDon = new QuanLyHoaDonPanel();
-        QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
+        pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
         pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
         pnlQuanLyPhuPhi = new QuanLyPhuPhiPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
