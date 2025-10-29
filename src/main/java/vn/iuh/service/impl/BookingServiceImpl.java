@@ -840,7 +840,7 @@ public class BookingServiceImpl implements BookingService {
         hoaDon.setPhuongThucThanhToan(null);
         hoaDon.setTinhTrangThanhToan(PaymentStatus.UNPAID.getStatus());
         hoaDon.setThoiGianTao(null);
-        hoaDon.setTongTien(BigDecimal.valueOf(donDatPhong.getTienDatCoc()));
+        hoaDon.setTongTien(BigDecimal.valueOf(donDatPhong.getTongTienDuTinh()));
         hoaDon.setTienThue(calculatePriceWithTaxPrice(BigDecimal.valueOf(donDatPhong.getTienDatCoc())));
         hoaDon.setTongHoaDon(hoaDon.getTongTien().add(hoaDon.getTienThue()));
         hoaDon.setChiTietHoaDonList(null);

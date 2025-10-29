@@ -252,6 +252,10 @@ public class CongViecDAO {
     }
 
     public int xoaDanhSachCongViec(List<String> danhSacMaCongViec) {
+        if (danhSacMaCongViec == null || danhSacMaCongViec.isEmpty()) {
+            return 0; // Không có công việc nào để xóa
+        }
+
         StringBuilder string = new StringBuilder(
                 "UPDATE CongViec SET da_xoa = 1 WHERE ma_cong_viec IN ("
         );

@@ -287,12 +287,12 @@ public class Main extends JFrame {
         QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
         QuanLyTaiKhoanPanel pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
         QuanLyPhuPhiPanel pnlQuanLyPhuPhiPanel = new QuanLyPhuPhiPanel();
-        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
+//        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
-        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
+//        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         RoomProductivityPanel pnlRoomProductivity = new RoomProductivityPanel();
-        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
-        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
+//        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
+//        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
 //        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý khách hàng");
         pnlCenter.add(bookingManagementPanel, PanelName.BOOKING_MANAGEMENT.getName());
         pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());

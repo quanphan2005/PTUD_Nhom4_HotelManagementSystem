@@ -110,12 +110,12 @@ public class ChiTietDatPhongDAO {
         }
         return chiTietDatPhongs;
     }
-
+    
     public List<ThongTinSuDungPhong> layThongTinSuDungPhong(String maDonDatPhong) {
         String query = "select ddp.ma_don_dat_phong , ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, dv.thoi_gian_tao as gio_check_in, \n" +
                 "p.ma_phong, p.ten_phong, ctdp.kieu_ket_thuc, lp.ma_loai_phong  from DonDatPhong ddp\n" +
                 "left join ChiTietDatPhong ctdp on ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong\n" +
-                "left join LichSuDiVao dv on dv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong\n" +
+                "left join LichSuDiVao dv on dv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong and la_lan_dau_tien = 1 \n" +
                 "left join Phong p on p.ma_phong = ctdp.ma_phong\n" +
                 "left join LoaiPhong lp on lp.ma_loai_phong = p.ma_loai_phong\n" +
                 "where ddp.ma_don_dat_phong = ?";

@@ -845,18 +845,21 @@ public class ReservationInfoDetailPanel extends JPanel {
         JOptionPane.showMessageDialog(this,
                                       "Chức năng check-in đang được phát triển cho phòng: " + detail.getRoomName(),
                                       "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        refreshPanel();
     }
 
     private void handleExtendTime(ReservationDetailResponse detail) {
         JOptionPane.showMessageDialog(this,
                                       "Chức năng gia hạn phòng đang được phát triển",
                                       "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        refreshPanel();
     }
 
     private void handleChangeRoom(ReservationDetailResponse detail) {
         JOptionPane.showMessageDialog(this,
                                       "Chức năng đổi phòng đang được phát triển cho phòng: " + detail.getRoomName(),
                                       "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        refreshPanel();
     }
 
     private void handleCancelRoom(ReservationDetailResponse detail) {
@@ -924,9 +927,10 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     public void refreshPanel() {
-//        reservationInfo = bookingService.getReservationDetailInfo(reservationInfo.getMaDonDatPhong());
-//        createCustomerInfoPanel();
-//        createRoomDetailsTable();
-//        loadRoomDetails();
+        removeAll();
+        reservationInfo = bookingService.getReservationDetailInfo(reservationInfo.getMaDonDatPhong());
+        setLayout(new BorderLayout());
+        init();
+        loadData();
     }
 }
