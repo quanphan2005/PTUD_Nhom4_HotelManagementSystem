@@ -190,7 +190,7 @@ public class DepositInvoiceDialog extends JDialog {
 
         JLabel lblTotalTitle = new JLabel("Tổng tiền dự tính: ");
         lblTotalTitle.setFont(CustomUI.smallFont);
-        JLabel lblTotalValue = new JLabel(formatCurrency(response.getHoaDon().getTongTien()));
+        JLabel lblTotalValue = new JLabel(formatCurrency(BigDecimal.valueOf(response.getDonDatPhong().getTongTienDuTinh())));
         lblTotalValue.setFont(CustomUI.smallFont);
 
         JLabel lblDeposit = new JLabel("Tiền cọc: ");
@@ -208,7 +208,9 @@ public class DepositInvoiceDialog extends JDialog {
 // --- Tổng hóa đơn ---
         JLabel lblTotalInvoiceTitle = new JLabel("Tổng hóa đơn sau thuế: ");
         lblTotalInvoiceTitle.setFont(CustomUI.smallFont);
-        JLabel lblTotalInvoiceValue = new JLabel(formatCurrency(response.getHoaDon().getTongHoaDon()));
+        JLabel lblTotalInvoiceValue = new JLabel(formatCurrency(
+                response.getHoaDon().getTongHoaDon()
+        ));
         lblTotalInvoiceValue.setFont(CustomUI.smallFont);
 
 // Chọn phương thức thanh toán

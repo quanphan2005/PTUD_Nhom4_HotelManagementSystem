@@ -1,12 +1,14 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import vn.iuh.constraint.Fee;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.ResponseType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.BookingCreationEvent;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.RoomFurnitureItem;
+import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.dto.response.DepositInvoiceResponse;
 import vn.iuh.dto.response.EventResponse;
@@ -20,10 +22,7 @@ import vn.iuh.service.RoomService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.service.impl.CustomerServiceImpl;
 import vn.iuh.service.impl.RoomServiceImpl;
-import vn.iuh.util.IconUtil;
-import vn.iuh.util.PriceFormat;
-import vn.iuh.util.RefreshManager;
-import vn.iuh.util.TimeFilterHelper;
+import vn.iuh.util.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -1055,12 +1054,13 @@ public class BookingFormPanel extends JPanel {
         java.sql.Timestamp ngayNhanPhong = new java.sql.Timestamp(((java.util.Date) spnCheckInDate.getValue()).getTime());
         java.sql.Timestamp ngayTraPhong = new java.sql.Timestamp(((java.util.Date) spnCheckOutDate.getValue()).getTime());
         java.sql.Timestamp thoiGianTao = new java.sql.Timestamp(System.currentTimeMillis());
-        double tongTienDuTinh = Double.parseDouble(txtInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
+        double tongTienDuTinh = Double.parseDouble(txtInitialPrice.getText().replace(" VNĐ", "").replace(",", ""))
+                + Double.parseDouble(txtTotalServicePrice.getText().replace(" VNĐ", "").replace(",", ""));
         double tienDatCoc = Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         boolean daDatTruoc = chkIsAdvanced.isSelected();
         List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
 
-        String maPhienDangNhap = Main.getCurrentLoginSession(); // TODO - get actual shift assignment ID
+        String maPhienDangNhap = Main.getCurrentLoginSession();
 
         return new BookingCreationEvent(tenKhachHang, soDienThoai, cccd, moTa,
                                         ngayNhanPhong, ngayTraPhong, tongTienDuTinh, tienDatCoc, daDatTruoc,

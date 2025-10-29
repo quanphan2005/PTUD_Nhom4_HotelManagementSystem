@@ -1007,7 +1007,7 @@ public class RoomUsageFormPanel extends JPanel {
         boolean isSuccess = movingHistoryService.createEnteringHistory(selectedRoom.getMaChiTietDatPhong());
         if (isSuccess) {
             JOptionPane.showMessageDialog(this,
-                    "Ghi nhận khách đã nhận phòng " + selectedRoom.getRoomName() + " thành công.",
+                    "Ghi nhận khách vào phòng: " + selectedRoom.getRoomName() + " thành công.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             btnEntering.setEnabled(false);
             btnLeaving.setEnabled(true);
@@ -1023,14 +1023,14 @@ public class RoomUsageFormPanel extends JPanel {
         boolean isSuccess = movingHistoryService.createLeavingHistory(selectedRoom.getMaChiTietDatPhong());
         if (isSuccess) {
             JOptionPane.showMessageDialog(this,
-                    "Ghi nhận khách đã trả phòng " + selectedRoom.getRoomName() + " thành công.",
+                    "Ghi nhận khách rời phòng:  " + selectedRoom.getRoomName() + " thành công.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             btnLeaving.setEnabled(false);
             btnEntering.setEnabled(true);
 
         } else {
             JOptionPane.showMessageDialog(this,
-                    "Ghi nhận khách trả phòng thất bại cho " + selectedRoom.getRoomName(),
+                    "Ghi nhận khách rời phòng: " + selectedRoom.getRoomName() + " thất bại.",
                     "Thất bại", JOptionPane.ERROR_MESSAGE);
         }
     }

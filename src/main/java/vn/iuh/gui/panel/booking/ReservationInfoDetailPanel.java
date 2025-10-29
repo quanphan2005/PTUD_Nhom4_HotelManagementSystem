@@ -886,44 +886,47 @@ public class ReservationInfoDetailPanel extends JPanel {
     private void handleViewOrderService(ReservationDetailResponse detail) {
         if (detail == null) return;
 
-        String parentName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservationInfo.getMaDonDatPhong();
         ServiceSelectionPanel serviceSelectionPanel = new ServiceSelectionPanel(detail.getReservationDetailId());
 
-        // Navigate to detail panel using CardLayout
-        if (parentPanel != null) {
-            // Check if detail panel already exists, if so remove it
-            Component[] components = parentPanel.getComponents();
-            for (Component comp : components) {
-                if (comp instanceof ReservationInfoDetailPanel) {
-                    parentPanel.remove(comp);
-                    break;
-                }
-            }
-
-            // Add new detail panel
-            String subPanelName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservationInfo.getMaDonDatPhong();
-            parentPanel.add(serviceSelectionPanel, subPanelName);
-
-            // Show detail panel
-            CardLayout layout = (CardLayout) parentPanel.getLayout();
-            layout.show(parentPanel, subPanelName);
+        // Get the window ancestor and handle both Frame and Dialog cases
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        final JDialog dialog;
+        if (owner instanceof Frame) {
+            dialog = new JDialog((Frame) owner, SERVICE_ORDER + " - " + detail.getRoomName(), true);
+        } else if (owner instanceof Dialog) {
+            dialog = new JDialog((Dialog) owner, SERVICE_ORDER + " - " + detail.getRoomName(), true);
         } else {
-            // Fallback: Open in dialog if parent container is not set
-            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Đơn " + reservationInfo.getMaDonDatPhong(), true);
-
-            // Wrap detail panel in a scroll pane
-            JScrollPane scrollPane = new JScrollPane(serviceSelectionPanel);
-            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
-            dialog.setContentPane(scrollPane);
-            dialog.setSize(1000, 700); // Reduced width from 1200 to 1000
-            dialog.setLocationRelativeTo(null); // Center on screen
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            dialog.setResizable(false);
-            dialog.setVisible(true);
+            dialog = new JDialog((Frame) null, SERVICE_ORDER + " - " + detail.getRoomName(), true);
         }
+
+        // Wrap detail panel in a scroll pane
+        JScrollPane scrollPane = new JScrollPane(serviceSelectionPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        dialog.setContentPane(scrollPane);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setResizable(true);
+        dialog.setLocationRelativeTo(this);
+
+        // Refresh after dialog is closed
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                refreshPanel();
+            }
+        });
+
+        // Ensure layout is computed and show dialog on EDT
+        SwingUtilities.invokeLater(() -> {
+            dialog.pack(); // let layout compute preferred sizes
+            if (dialog.getWidth() < 600 || dialog.getHeight() < 400) {
+                dialog.setSize(1000, 700); // fallback size
+            }
+            dialog.validate();
+            dialog.setVisible(true); // modal dialog: will block here while visible
+        });
     }
 
     public void refreshPanel() {
