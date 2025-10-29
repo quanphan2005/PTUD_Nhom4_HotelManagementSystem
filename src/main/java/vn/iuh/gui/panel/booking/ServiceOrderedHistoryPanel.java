@@ -43,13 +43,12 @@ public class ServiceOrderedHistoryPanel extends JPanel {
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.goiDichVuService = new GoiDichVuServiceImpl();
 
-        setLayout(new BorderLayout());
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         init();
         loadServices();
     }
 
     private void init() {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         createTopPanel();
         createInfoPanel();
         createServicesTable();
@@ -335,7 +334,7 @@ public class ServiceOrderedHistoryPanel extends JPanel {
 
             // Calculate total for this service
             double serviceTotal = service.getTotalPrice();
-            rowData[6] = priceFormatter.format(serviceTotal) + " VND";
+            rowData[6] = service.isGifted() ? "0 VND" : priceFormatter.format(service.getPrice() * service.getQuantity()) + " VND";
 
             servicesModel.addRow(rowData);
 

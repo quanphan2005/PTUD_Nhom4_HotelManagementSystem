@@ -7,9 +7,11 @@ import vn.iuh.dto.response.*;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.dialog.DepositInvoiceDialog;
+import vn.iuh.gui.panel.DoiPhongDiaLog;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.impl.BookingServiceImpl;
 import vn.iuh.util.PriceFormat;
+import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -626,7 +628,7 @@ public class ReservationInfoDetailPanel extends JPanel {
             rowData[3] = service.getQuantity();
             rowData[4] = priceFormatter.format(service.getPrice()) + " VND";
             rowData[5] = service.isGifted() ? "Có" : "Không";
-            rowData[6] = priceFormatter.format(service.getPrice()) + " VND";
+            rowData[6] = service.isGifted() ? "0 VND" : priceFormatter.format(service.getPrice() * service.getQuantity()) + " VND";
 
             servicesModel.addRow(rowData);
         }
@@ -884,62 +886,23 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     private void handleViewOrderService(ReservationDetailResponse detail) {
-        if (detail == null) return;
-
         ServiceSelectionPanel serviceSelectionPanel = new ServiceSelectionPanel(detail.getReservationDetailId());
 
-        // Ensure the panel has a reasonable preferred size so pack() won't make the dialog tiny/empty
-        Dimension pref = serviceSelectionPanel.getPreferredSize();
-        if (pref == null || pref.width <= 0 || pref.height <= 0) {
-            serviceSelectionPanel.setPreferredSize(new Dimension(900, 650));
-        }
-
-        // Get the window ancestor and handle both Frame and Dialog cases
-        Window owner = SwingUtilities.getWindowAncestor(this);
-        final JDialog dialog;
-        if (owner instanceof Frame) {
-            dialog = new JDialog((Frame) owner, SERVICE_ORDER + " - " + detail.getRoomName(), true);
-        } else if (owner instanceof Dialog) {
-            dialog = new JDialog((Dialog) owner, SERVICE_ORDER + " - " + detail.getRoomName(), true);
-        } else {
-            dialog = new JDialog((Frame) null, SERVICE_ORDER + " - " + detail.getRoomName(), true);
-        }
-
-        // Wrap detail panel in a scroll pane
-        JScrollPane scrollPane = new JScrollPane(serviceSelectionPanel);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setPreferredSize(serviceSelectionPanel.getPreferredSize());
-
-        dialog.setContentPane(scrollPane);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        dialog.setResizable(true);
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), SERVICE_ORDER + reservationInfo.getMaDonDatPhong(), Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dialog.getContentPane().add(serviceSelectionPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
 
         // Refresh after dialog is closed
         dialog.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosed(java.awt.event.WindowEvent e) {
+                RefreshManager.refreshAll();
                 refreshPanel();
             }
         });
-
-        System.out.println("Panel component count: " + serviceSelectionPanel.getComponentCount());
-        System.out.println("Panel preferred size: " + serviceSelectionPanel.getPreferredSize());
-
-        // Prepare and show dialog on EDT. If already on EDT run directly.
-        Runnable showDialog = () -> {
-            serviceSelectionPanel.setSize(1000, 700); // Set size before packing
-            dialog.setSize(1000, 700); // Force fixed size
-            dialog.setLocationRelativeTo(this);
-            dialog.setVisible(true); // modal dialog: will block here while visible
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            showDialog.run();
-        } else {
-            SwingUtilities.invokeLater(showDialog);
-        }
     }
 
     public void refreshPanel() {

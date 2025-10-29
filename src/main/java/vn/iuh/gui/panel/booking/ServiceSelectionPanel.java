@@ -89,20 +89,29 @@ public class ServiceSelectionPanel extends JPanel {
         this.selectedRooms = selectedRooms;
         this.maChiTietDatPhong = maChiTietDatPhong;
 
+        setLayout(new BorderLayout());
+
         initializeComponents();
-        loadData();
         setupLayout();
+        loadData();
         setupEventHandlers();
     }
 
     public ServiceSelectionPanel(String maChiTietDatPhong) {
-
         this.serviceCategoryService = new ServiceCategoryServiceImpl();
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.selectedServicesMap = new HashMap<>();
         this.giftServicesMap = new HashMap<>();
 
         this.maChiTietDatPhong = maChiTietDatPhong;
+        this.selectedRooms = 1; // Default to 1 for viewing existing bookings
+
+        setLayout(new BorderLayout());
+
+        initializeComponents();
+        setupLayout();
+        loadData();
+        setupEventHandlers();
     }
 
     private void initializeComponents() {
@@ -306,8 +315,6 @@ public class ServiceSelectionPanel extends JPanel {
     }
 
     private void setupLayout() {
-        setLayout(new BorderLayout());
-
         // Header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setPreferredSize(new Dimension(0, 40));
@@ -665,13 +672,14 @@ public class ServiceSelectionPanel extends JPanel {
         ServiceOrderedHistoryPanel serviceOrderedHistoryPanel =
                 new ServiceOrderedHistoryPanel(maChiTietDatPhong);
 
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
-                                     "Lịch sử gọi dịch vụ", true);
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
+                                     "Lịch sử gọi dịch vụ", Dialog.ModalityType.APPLICATION_MODAL);
 
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dialog.setContentPane(serviceOrderedHistoryPanel);
+        dialog.pack();
         dialog.setSize(900, 600);
         dialog.setLocationRelativeTo(null); // Center on screen
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setResizable(false);
         dialog.setVisible(true);
     }
