@@ -266,4 +266,48 @@ public class ChiTietDatPhongDAO {
             throw new RuntimeException(e);
         }
     }
+
+    // Cập nhật thời gian trả phòng của đơn đặt phòng (dùng cho book thêm giờ)
+    public boolean updateDonTraPhong(String maDonDatPhong, Timestamp newTraPhong) {
+        if (maDonDatPhong == null || newTraPhong == null) return false;
+        String sql = "UPDATE DonDatPhong SET tg_tra_phong = ? WHERE ma_don_dat_phong = ? AND ISNULL(da_xoa,0)=0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setTimestamp(1, newTraPhong);
+            ps.setString(2, maDonDatPhong);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Tìm lọai của đơn đặt phòng
+    public String getLoaiDonDatPhong(String maDonDatPhong) {
+        if (maDonDatPhong == null) return null;
+        String sql = "SELECT loai FROM DonDatPhong WHERE ma_don_dat_phong = ? AND ISNULL(da_xoa,0)=0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maDonDatPhong);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("loai");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    // Cập nhật tg_tra_phong cho tất cả ChiTietDatPhong của đơn
+    public int updateAllChiTietTraPhongIfNotEnded(String maDonDatPhong, Timestamp newTraPhong) {
+        if (maDonDatPhong == null || newTraPhong == null) return 0;
+        String sql = "UPDATE ChiTietDatPhong SET tg_tra_phong = ? " +
+                "WHERE ma_don_dat_phong = ? AND ISNULL(kieu_ket_thuc, '') = '' AND ISNULL(da_xoa,0)=0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setTimestamp(1, newTraPhong);
+            ps.setString(2, maDonDatPhong);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
