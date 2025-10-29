@@ -221,7 +221,6 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             for (PhongDungDichVu pddv : danhSachPhongDungDichVu) {
                 tongTien = tongTien.add(pddv.getTongTien());
-                System.out.println(Arrays.toString(pddv.getSimpleObject()));
             }
 
             for (PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi) {

@@ -281,13 +281,16 @@ public class InvoiceDialog2 extends JDialog {
             btnConfirm.setEnabled(false);
         }
         btnConfirm.addActionListener(e -> {
-            var result = this.confirmPayment();
-            if(result){
-                JOptionPane.showMessageDialog(null, "Thanh toán thành công");
-                dispose();
-            }
-            else {
-                JOptionPane.showMessageDialog(null, "Thanh toán thất bại");
+            int choice = JOptionPane.showConfirmDialog(null, "Chọn có chắc chắn muốn thanh toán?", "Xác nhận thanh toán", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+            if(choice == JOptionPane.YES_OPTION){
+                var result = this.confirmPayment();
+                if(result){
+                    JOptionPane.showMessageDialog(null, "Thanh toán thành công");
+                    dispose();
+                }
+                else {
+                    JOptionPane.showMessageDialog(null, "Thanh toán thất bại");
+                }
             }
         });
 

@@ -43,7 +43,7 @@ public class GiaPhuPhiDAO {
     }
 
     public GiaPhuPhi timPhuPhiMoiNhat() {
-        String query = "SELECT TOP 1 * FROM GiaPhuPhi WHERE da_xoa = 0 ORDER BY thoi_gian_tao DESC";
+        String query = "SELECT TOP 1 * FROM GiaPhuPhi WHERE da_xoa = 0 ORDER BY ma_gia_phu_phi  DESC";
 
         try (PreparedStatement ps = connection.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
