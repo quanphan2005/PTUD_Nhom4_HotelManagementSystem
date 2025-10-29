@@ -206,9 +206,9 @@ public class DatPhongDAO {
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
                 " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
                 " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
-                " WHERE ctdp.tg_nhan_phong > GETDATE()" +
-                " AND cv.tg_bat_dau = ctdp.tg_nhan_phong" +
+                " WHERE ctdp.tg_nhan_phong >= DATEADD(HOUR, ?, GETDATE())" + // Get all booking from now - X hours
                 " AND cv.ten_trang_thai = ?" +
+                " AND ctdp.da_xoa = 0" +
                 " AND ddp.da_xoa = 0" +
                 " AND cv.da_xoa = 0" +
                 " ORDER BY ctdp.tg_nhan_phong";
@@ -216,7 +216,8 @@ public class DatPhongDAO {
         List<PhieuDatPhong> danhSachPhieuDatPhong = new ArrayList<>();
         try {
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, RoomStatus.ROOM_BOOKED_STATUS.getStatus());
+            ps.setInt(1, -WorkTimeCost.CHECKIN_LATE_MAX.getMinutes());
+            ps.setString(2, RoomStatus.ROOM_BOOKED_STATUS.getStatus());
 
             var rs = ps.executeQuery();
 

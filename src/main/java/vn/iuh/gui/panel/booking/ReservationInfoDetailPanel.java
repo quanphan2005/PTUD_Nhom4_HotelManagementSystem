@@ -888,6 +888,12 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         ServiceSelectionPanel serviceSelectionPanel = new ServiceSelectionPanel(detail.getReservationDetailId());
 
+        // Ensure the panel has a reasonable preferred size so pack() won't make the dialog tiny/empty
+        Dimension pref = serviceSelectionPanel.getPreferredSize();
+        if (pref == null || pref.width <= 0 || pref.height <= 0) {
+            serviceSelectionPanel.setPreferredSize(new Dimension(900, 650));
+        }
+
         // Get the window ancestor and handle both Frame and Dialog cases
         Window owner = SwingUtilities.getWindowAncestor(this);
         final JDialog dialog;
@@ -904,11 +910,11 @@ public class ReservationInfoDetailPanel extends JPanel {
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setPreferredSize(serviceSelectionPanel.getPreferredSize());
 
         dialog.setContentPane(scrollPane);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setResizable(true);
-        dialog.setLocationRelativeTo(this);
 
         // Refresh after dialog is closed
         dialog.addWindowListener(new java.awt.event.WindowAdapter() {
@@ -918,15 +924,22 @@ public class ReservationInfoDetailPanel extends JPanel {
             }
         });
 
-        // Ensure layout is computed and show dialog on EDT
-        SwingUtilities.invokeLater(() -> {
-            dialog.pack(); // let layout compute preferred sizes
-            if (dialog.getWidth() < 600 || dialog.getHeight() < 400) {
-                dialog.setSize(1000, 700); // fallback size
-            }
-            dialog.validate();
+        System.out.println("Panel component count: " + serviceSelectionPanel.getComponentCount());
+        System.out.println("Panel preferred size: " + serviceSelectionPanel.getPreferredSize());
+
+        // Prepare and show dialog on EDT. If already on EDT run directly.
+        Runnable showDialog = () -> {
+            serviceSelectionPanel.setSize(1000, 700); // Set size before packing
+            dialog.setSize(1000, 700); // Force fixed size
+            dialog.setLocationRelativeTo(this);
             dialog.setVisible(true); // modal dialog: will block here while visible
-        });
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            showDialog.run();
+        } else {
+            SwingUtilities.invokeLater(showDialog);
+        }
     }
 
     public void refreshPanel() {
