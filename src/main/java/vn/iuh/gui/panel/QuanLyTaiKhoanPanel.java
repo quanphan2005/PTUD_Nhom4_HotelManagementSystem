@@ -50,7 +50,7 @@ public class QuanLyTaiKhoanPanel extends RoleChecking {
 
     private JComboBox<String> cmbTimKiem;
     private final JButton searchButton = new JButton("TÌM");
-    private JButton addButton, editButton, deleteButton;
+    private JButton addButton, editButton;
 
     private JButton leTanButton, quanLyButton, adminButton;
     private JButton allCategoryButton;
@@ -71,6 +71,7 @@ public class QuanLyTaiKhoanPanel extends RoleChecking {
     private JComboBox<String> roleComboBox;
 
     public QuanLyTaiKhoanPanel() {
+        super();
         setLayout(new BorderLayout());
         this.nhanVienDAO = new NhanVienDAO();
         this.taiKhoanDAO = new TaiKhoanDAO();
@@ -98,8 +99,6 @@ public class QuanLyTaiKhoanPanel extends RoleChecking {
 
         addButton = createActionButtonAsync("Thêm",  ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
         editButton = createActionButtonAsync("Sửa",  ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
-        deleteButton = createActionButtonAsync("Xóa",  ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
-
         leTanButton = createCategoryButton("Lễ tân", "#34D399", CATEGORY_BUTTON_SIZE);
         quanLyButton = createCategoryButton("Quản lý", "#FB923C", CATEGORY_BUTTON_SIZE);
         adminButton = createCategoryButton("Admin", "#A78BFA", CATEGORY_BUTTON_SIZE);
@@ -213,40 +212,6 @@ public class QuanLyTaiKhoanPanel extends RoleChecking {
                 JOptionPane.showMessageDialog(this, "Lỗi khi tải hoặc cập nhật tài khoản: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
-
-        deleteButton.addActionListener(e -> {
-            int selectedRow = tblTaiKhoan.getSelectedRow();
-
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một tài khoản để xóa.", "Lỗi", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            int modelRow = tblTaiKhoan.convertRowIndexToModel(selectedRow);
-
-            String maTaiKhoan = (String) modelTaiKhoan.getValueAt(modelRow, 0);
-            String tenDangNhap = (String) modelTaiKhoan.getValueAt(modelRow, 1);
-
-            int confirm = JOptionPane.showConfirmDialog(this,
-                    "Bạn có chắc chắn muốn xóa tài khoản '" + tenDangNhap + "' (Mã: " + maTaiKhoan + ") không?",
-                    "Xác nhận xóa",
-                    JOptionPane.YES_NO_OPTION);
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                try {
-                    boolean success = taiKhoanDAO.xoaTaiKhoan(maTaiKhoan);
-
-                    if (success) {
-                        JOptionPane.showMessageDialog(this, "Xóa tài khoản thành công.");
-                        loadTaiKhoanData();
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Xóa tài khoản thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Xóa thất bại. Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
     }
 
     private void createTopPanel() {
@@ -330,7 +295,6 @@ public class QuanLyTaiKhoanPanel extends RoleChecking {
         row2.setBackground(CustomUI.white);
         row2.add(addButton);
         row2.add(editButton);
-        row2.add(deleteButton);
 
         searchPanel.add(row2);
         searchPanel.add(Box.createVerticalStrut(10));
