@@ -182,7 +182,7 @@ public class PhuPhiDAO {
                 SELECT TOP 1 gia_hien_tai, la_phan_tram, thoi_gian_tao
                 FROM GiaPhuPhi gpp
                 WHERE gpp.ma_phu_phi = pp.ma_phu_phi
-                ORDER BY gpp.thoi_gian_tao DESC
+                ORDER BY gpp.ma_gia_phu_phi DESC
             ) AS gpp
         """;
 

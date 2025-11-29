@@ -1007,7 +1007,7 @@
                 editBtn.addActionListener(ev -> {
                     try {
                         // kiểm tra có được phép sửa không
-                        if (!canEditRoom(p)) {
+                        if (!hasCurrentJob(p)) {
                             // xác định trạng thái hiển thị cho người dùng
                             String currentStatus = "Không xác định";
                             try {
@@ -1023,7 +1023,15 @@
 
                             JOptionPane.showMessageDialog(
                                     this,
-                                    "Không thể sửa phòng vì phòng hiện không ở trạng thái trống.\nTrạng thái hiện tại: " + currentStatus,
+                                    "Không thể sửa phòng vì phòng hiện không ở trạng thái 'CÒN TRỐNG'.\nTrạng thái hiện tại: " + currentStatus,
+                                    "Không thể sửa",
+                                    JOptionPane.WARNING_MESSAGE
+                            );
+                            return;
+                        } else if (hasFutureBookings(p)) {
+                            JOptionPane.showMessageDialog(
+                                    this,
+                                    "Không thể sửa phòng vì phòng hiện có đơn đặt phòng trong tương lai!",
                                     "Không thể sửa",
                                     JOptionPane.WARNING_MESSAGE
                             );
@@ -1072,7 +1080,15 @@
                     if (!canDelete) {
                         JOptionPane.showMessageDialog(
                                 this,
-                                "Không thể xóa phòng vì trạng thái hiện tại: " + currentStatus + ".\nChỉ có thể xóa khi phòng đang ở trạng thái 'Trống'.",
+                                "Không thể xóa phòng vì trạng thái hiện tại: " + currentStatus + ".\nChỉ có thể xóa khi phòng đang ở trạng thái 'CÒN TRỐNG'.",
+                                "Không thể xóa",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    } else if (hasFutureBookings(p)) {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Không thể xóa phòng vì phòng hiện có đơn đặt phòng trong tương lai!",
                                 "Không thể xóa",
                                 JOptionPane.WARNING_MESSAGE
                         );
@@ -1118,7 +1134,7 @@
         }
 
         // Kiểm tra phòng có được phép sửa không
-        private boolean canEditRoom(Phong p) {
+        private boolean hasCurrentJob(Phong p) {
             if (p == null) return false;
             try {
                 var cv = roomService.getCurrentJobForRoom(p.getMaPhong());
@@ -1131,4 +1147,16 @@
             return p.isDangHoatDong();
         }
 
+        private boolean hasFutureBookings(Phong p) {
+            if (p == null) return false;
+            boolean check = roomService.hasFutureBookings(p);
+            try {
+                if (!check) {
+                    // Nếu có đơn đặt phòng trong tương lai thì không cho phép xóa hay sửa
+                    return false;
+                }
+            } catch (Exception ignored) {
+            }
+            return check;
+        }
     }

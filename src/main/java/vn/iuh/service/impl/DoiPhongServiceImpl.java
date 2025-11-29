@@ -7,6 +7,7 @@ import vn.iuh.entity.*;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.DoiPhongService;
 import vn.iuh.util.EntityUtil;
+import vn.iuh.util.FeeValue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -137,8 +138,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                 // 5b) áp phụ phí (nếu nhân viên lựa chọn)
                 if (applyFee) {
                     // Tìm thông tin phụ phi
-                    String phuPhiName = Fee.DOI_PHONG.getStatus();
-                    var thongTin = phuPhiDAO.getThongTinPhuPhiByName(phuPhiName);
+                    var thongTin = FeeValue.getInstance().get(Fee.DOI_PHONG);
                     String maPhuPhi = (thongTin == null) ? null : thongTin.getMaPhuPhi();
 
                     // Lấy giá hiện tại của phụ phí

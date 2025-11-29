@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class NoiThatDAO {
     private final Connection connection;
@@ -135,6 +136,23 @@ public class NoiThatDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Lỗi chuyển kết quả thành NoiThat" + e.getMessage());
         }
+    }
+
+    public List<NoiThat> layTatCaNoiThat() {
+        String query = "SELECT * FROM NoiThat WHERE da_xoa = 0";
+        List<NoiThat> list = new java.util.ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(chuyenKetQuaThanhNoiThat(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+        return list;
     }
 
 }

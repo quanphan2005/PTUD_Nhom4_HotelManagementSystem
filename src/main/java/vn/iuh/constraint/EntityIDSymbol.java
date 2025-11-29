@@ -18,7 +18,9 @@ public enum EntityIDSymbol {
     LOGIN_SESSION("PN", 8),
     NOTIFICATION_PREFIX("TB", 8),
     EMPLOYEE_PREFIX("NV", 8),
-    FEE_LIST_PRICE("GP", 8)
+    FEE_LIST_PRICE("GP", 8),
+    LOAI_PHONG_PREFIX("LP", 8),
+    ROOM_PRICE("GP", 8)
     ;
 //................... Other here
 

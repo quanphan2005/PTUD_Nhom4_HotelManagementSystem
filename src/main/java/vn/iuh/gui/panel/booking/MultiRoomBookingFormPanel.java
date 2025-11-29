@@ -946,13 +946,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
 
         // Regex check for CCCD/CMND format (12 digits)
-//        String cccdPattern = "^[0-9]{12}$";
-//        if (!txtCCCD.getText().trim().matches(cccdPattern)) {
-//            JOptionPane.showMessageDialog(this, "CCCD/CMND không hợp lệ! Vui lòng nhập đúng định dạng 12 chữ số.",
-//                                          "Lỗi định dạng CCCD/CMND", JOptionPane.WARNING_MESSAGE);
-//            txtCCCD.requestFocus();
-//            return false;
-//        }
+        String cccdPattern = "^[0-9]{12}$";
+        if (!txtCCCD.getText().trim().matches(cccdPattern)) {
+            JOptionPane.showMessageDialog(this, "CCCD/CMND không hợp lệ! Vui lòng nhập đúng định dạng 12 chữ số.",
+                                          "Lỗi định dạng CCCD/CMND", JOptionPane.WARNING_MESSAGE);
+            txtCCCD.requestFocus();
+            return false;
+        }
 
         if (txtCustomerName.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!",
@@ -962,13 +962,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
 
         // Simple name validation (Last name & first name, letters and spaces only)
-//        String namePattern = "^[A-ZÀ-ỹ][a-zà-ỹ]*(\\s[A-ZÀ-ỹ][a-zà-ỹ]*)+$";
-//        if (!txtCustomerName.getText().trim().matches(namePattern)) {
-//            JOptionPane.showMessageDialog(this, "Tên khách hàng không hợp lệ! Tên chỉ chứa ký tự và khoảng trắng.\nVui lòng nhập đầy đủ họ và tên.",
-//                                          "Lỗi định dạng tên khách hàng", JOptionPane.WARNING_MESSAGE);
-//            txtCustomerName.requestFocus();
-//            return false;
-//        }
+        String namePattern = "^[A-ZÀ-ỹ][a-zà-ỹ]*(\\s[A-ZÀ-ỹ][a-zà-ỹ]*)+$";
+        if (!txtCustomerName.getText().trim().matches(namePattern)) {
+            JOptionPane.showMessageDialog(this, "Tên khách hàng không hợp lệ! Tên chỉ chứa ký tự và khoảng trắng.\nVui lòng nhập đầy đủ họ và tên.",
+                                          "Lỗi định dạng tên khách hàng", JOptionPane.WARNING_MESSAGE);
+            txtCustomerName.requestFocus();
+            return false;
+        }
 
         if (txtPhoneNumber.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập số điện thoại!",
@@ -978,13 +978,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
         }
 
         // Simple phone number validation (digits only, length 10-15)
-//        String phonePattern = "^[0-9]{10,15}$";
-//        if (!txtPhoneNumber.getText().trim().matches(phonePattern)) {
-//            JOptionPane.showMessageDialog(this, "Số điện thoại không hợp lệ! Vui lòng nhập đúng định dạng từ 10 đến 15 chữ số.",
-//                                          "Lỗi định dạng số điện thoại", JOptionPane.WARNING_MESSAGE);
-//            txtPhoneNumber.requestFocus();
-//            return false;
-//        }
+        String phonePattern = "^[0-9]{10,15}$";
+        if (!txtPhoneNumber.getText().trim().matches(phonePattern)) {
+            JOptionPane.showMessageDialog(this, "Số điện thoại không hợp lệ! Vui lòng nhập đúng định dạng từ 10 đến 15 chữ số.",
+                                          "Lỗi định dạng số điện thoại", JOptionPane.WARNING_MESSAGE);
+            txtPhoneNumber.requestFocus();
+            return false;
+        }
 
         // Check if customer with CCCD exists but have different name/phone
         KhachHang kh = customerService.getCustomerByCCCD(txtCCCD.getText().trim());

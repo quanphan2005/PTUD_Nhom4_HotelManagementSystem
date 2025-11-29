@@ -257,5 +257,53 @@ public class LoaiPhongDAO {
         return null;
     }
 
+    public LoaiPhong timLoaiPhongMoiNhatBaoGomDaXoa() {
+        String query = "SELECT TOP 1 * FROM LoaiPhong ORDER BY ma_loai_phong DESC";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhLoaiPhong(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Chèn LoaiPhong mới trực tiếp (không dùng themLoaiPhong).
+     * Không commit/rollback ở đây — caller có thể quản lý transaction nếu cần.
+     */
+    public LoaiPhong insertLoaiPhong(LoaiPhong loaiPhong) {
+        if (loaiPhong == null) throw new IllegalArgumentException("loaiPhong null");
+
+        String sql = "INSERT INTO LoaiPhong (ma_loai_phong, ten_loai_phong, so_luong_khach, phan_loai, thoi_gian_tao, da_xoa) " +
+                "VALUES (?, ?, ?, ?, ?, 0)";
+
+        Timestamp now = loaiPhong.getThoiGianTao() != null ? loaiPhong.getThoiGianTao() : new Timestamp(System.currentTimeMillis());
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, loaiPhong.getMaLoaiPhong());
+            ps.setString(2, loaiPhong.getTenLoaiPhong());
+            ps.setInt(3, loaiPhong.getSoLuongKhach());
+            ps.setString(4, loaiPhong.getPhanLoai());
+            ps.setTimestamp(5, now);
+
+            int rows = ps.executeUpdate();
+            if (rows == 1) {
+                loaiPhong.setThoiGianTao(now);
+                return loaiPhong;
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("LoaiPhongDAO.insertLoaiPhong lỗi: " + e.getMessage(), e);
+        }
+    }
+
+
 }
 
