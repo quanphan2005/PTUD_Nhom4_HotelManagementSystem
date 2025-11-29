@@ -10,16 +10,14 @@ import vn.iuh.entity.*;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.CheckinService;
 import vn.iuh.util.EntityUtil;
+import vn.iuh.util.FeeValue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.Normalizer;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -105,7 +103,7 @@ public class CheckinServiceImpl implements CheckinService {
             String maPh = trimToNull(chiTietDatPhong.getMaPhong());
             Timestamp now = new Timestamp(System.currentTimeMillis());
 
-            // 6) Kiểm tra Checkin hay chưa (nếu đã checkin -> rollback và trả false)
+            // 6) Kiểm tra Checkin hay chưa
             boolean alreadyCheckedIn = lichSuDiVaoDAO.daTonTai(maChiTietDatPhongMain);
             if (alreadyCheckedIn) {
                 thongBaoLoi = "Đơn này đã được check-in trước đó.";
@@ -113,7 +111,91 @@ public class CheckinServiceImpl implements CheckinService {
                 return false;
             }
 
-            // Kiểm tra trạng thái công việc hiện tại của phòng
+            // Trường hợp đặt nhiều và các phòng đang trong trạng thái "CHỜ CHECKIN"
+            String loaiDonGlobal = chiTietDatPhongDAO.getLoaiDonDatPhong(maDonDatPhongMain);
+            if (loaiDonGlobal != null && loaiDonGlobal.trim().equalsIgnoreCase("ĐẶT NHIỀU")) {
+                // Lấy tất cả chi tiết chưa kết thúc trong đơn
+                List<ChiTietDatPhong> allNotEnded = chiTietDatPhongDAO.findNotEndedByBookingId(maDonDatPhongMain);
+                if (allNotEnded != null && !allNotEnded.isEmpty()) {
+                    // Danh sách các chi tiết mà phòng hiện có job active và là CHỜ CHECKIN
+                    List<ChiTietDatPhong> toProcess = new ArrayList<>();
+                    for (ChiTietDatPhong ct : allNotEnded) {
+                        String roomId = trimToNull(ct.getMaPhong());
+                        if (roomId == null) continue;
+                        CongViec job = congViecDAO.layCongViecHienTaiCuaPhong(roomId);
+                        if (job == null) continue;
+                        Timestamp jobStart = job.getTgBatDau();
+                        Timestamp jobEnd = job.getTgKetThuc();
+                        boolean started = jobStart != null && !now.before(jobStart);
+                        boolean notFinished = jobEnd == null || jobEnd.after(now);
+                        boolean active = started && notFinished;
+                        if (!active) continue;
+                        RoomStatus rs = RoomStatus.fromString(trimToNull(job.getTenTrangThai()));
+                        if (rs == RoomStatus.ROOM_BOOKED_STATUS) {
+                            toProcess.add(ct);
+                        }
+                    }
+
+                    if (!toProcess.isEmpty()) {
+                        // 1) Ghi LichSuDiVao cho từng chi tiết (tạo id tăng dần)
+                        var lastLichSuDiVao = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
+                        String prevCheckinId = (lastLichSuDiVao == null) ? null : trimToNull(lastLichSuDiVao.getMaLichSuDiVao());
+
+                        // 2) Lấy lastJobId để tăng id cho các job mới
+                        var lastJob = congViecDAO.timCongViecMoiNhat();
+                        String prevJobId = (lastJob == null) ? null : trimToNull(lastJob.getMaCongViec());
+
+                        for (ChiTietDatPhong ct : toProcess) {
+                            // Tạo lịch sử đi vào cho từng chi tiết
+                            String newCheckinId = EntityUtil.increaseEntityID(prevCheckinId,
+                                    EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getPrefix(),
+                                    EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getLength());
+                            prevCheckinId = newCheckinId;
+                            LichSuDiVao ls = new LichSuDiVao(newCheckinId, true, ct.getMaChiTietDatPhong(), now);
+                            lichSuDiVaoDAO.themLichSuDiVao(ls);
+
+                            // Kết thúc công việc cũ
+                            CongViec oldJob = congViecDAO.layCongViecHienTaiCuaPhong(trimToNull(ct.getMaPhong()));
+                            if (oldJob != null) {
+                                boolean finished = congViecDAO.capNhatThoiGianKetThuc(oldJob.getMaCongViec(), now, true);
+                                if (!finished) {
+                                    throw new SQLException("Không thể kết thúc job CHỜ CHECKIN hiện tại: " + oldJob.getMaCongViec());
+                                }
+                            }
+
+                            // Tạo công việc mới cho từng phòng
+                            String newJobId = EntityUtil.increaseEntityID(prevJobId,
+                                    EntityIDSymbol.JOB_PREFIX.getPrefix(),
+                                    EntityIDSymbol.JOB_PREFIX.getLength());
+                            prevJobId = newJobId;
+                            String tenTrangThaiChecking = RoomStatus.ROOM_CHECKING_STATUS.getStatus();
+                            Timestamp tgBatDauChecking = now;
+                            Timestamp tgKetThucChecking = new Timestamp(tgBatDauChecking.getTime() + 30L * 60L * 1000L);
+                            CongViec checkingJob = new CongViec(newJobId, tenTrangThaiChecking, tgBatDauChecking, tgKetThucChecking, trimToNull(ct.getMaPhong()), tgBatDauChecking);
+                            congViecDAO.themCongViec(checkingJob);
+                        }
+
+                        // 3) Ghi 1 LichSuThaoTac cho toàn đơn
+                        var lastLichSuThaoTac = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
+                        String lastLichSuThaoTacId = (lastLichSuThaoTac == null) ? null : trimToNull(lastLichSuThaoTac.getMaLichSuThaoTac());
+                        String newWorkingHistoryId = EntityUtil.increaseEntityID(lastLichSuThaoTacId,
+                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
+
+                        String tenThaoTac = ActionType.CHECKIN.getActionName();
+                        String moTaThaoTac = "Checkin (từ trạng thái CHỜ CHECKIN) cho đơn đặt nhiều " + maDonDatPhongMain;
+                        LichSuThaoTac newLichSuThaoTac = new LichSuThaoTac(newWorkingHistoryId, tenThaoTac, moTaThaoTac, maPhienDangNhap, now);
+                        lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
+
+                        // Commit và return
+                        datPhongDAO.thucHienGiaoTac();
+                        thongBaoLoi = null;
+                        return true;
+                    }
+                }
+            }
+
+            // Đơn đặt phòng đơn ở trạng thái chờ checkin
             CongViec congViecHienTai = congViecDAO.layCongViecHienTaiCuaPhong(maPh);
             if (congViecHienTai != null) {
                 Timestamp jobStart = congViecHienTai.getTgBatDau();
@@ -125,7 +207,57 @@ public class CheckinServiceImpl implements CheckinService {
                 if (active) {
                     RoomStatus roomStatus = RoomStatus.fromString(trimToNull(congViecHienTai.getTenTrangThai()));
 
-                    // Các trạng thái không cho phép checkin:
+                    // Xử lí khi phòng ở trạng thái chờ checkin
+                    if (roomStatus == RoomStatus.ROOM_BOOKED_STATUS) {
+
+                        // 1) Ghi lịch sử đi vào cho chi tiết hiện tại
+                        var lastLichSuDiVao = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
+                        String lastCheckinId = (lastLichSuDiVao == null) ? null : trimToNull(lastLichSuDiVao.getMaLichSuDiVao());
+                        String newLichSuDiVaoId = EntityUtil.increaseEntityID(lastCheckinId,
+                                EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getPrefix(),
+                                EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getLength());
+
+                        LichSuDiVao newLichSuDiVao = new LichSuDiVao(newLichSuDiVaoId, true, maChiTietDatPhongMain, now);
+                        lichSuDiVaoDAO.themLichSuDiVao(newLichSuDiVao);
+
+                        // 2) Kết thúc job CHỜ CHECKIN hiện tại (set tg_ket_thuc = now)
+                        boolean finishedOldJob = congViecDAO.capNhatThoiGianKetThuc(congViecHienTai.getMaCongViec(), now, true);
+                        if (!finishedOldJob) {
+                            throw new SQLException("Không thể kết thúc job CHỜ CHECKIN hiện tại: " + congViecHienTai.getMaCongViec());
+                        }
+
+                        // 3) Tạo job mới: KIỂM TRA
+                        var lastJob = congViecDAO.timCongViecMoiNhat();
+                        String lastJobId = (lastJob == null) ? null : trimToNull(lastJob.getMaCongViec());
+                        String newJobId = EntityUtil.increaseEntityID(lastJobId,
+                                EntityIDSymbol.JOB_PREFIX.getPrefix(),
+                                EntityIDSymbol.JOB_PREFIX.getLength());
+
+                        String tenTrangThaiChecking = RoomStatus.ROOM_CHECKING_STATUS.getStatus();
+                        Timestamp tgBatDauChecking = now;
+                        Timestamp tgKetThucChecking = new Timestamp(tgBatDauChecking.getTime() + 30L * 60L * 1000L);
+                        CongViec checkingJob = new CongViec(newJobId, tenTrangThaiChecking, tgBatDauChecking, tgKetThucChecking, maPh, tgBatDauChecking);
+                        congViecDAO.themCongViec(checkingJob);
+
+                        // 4) Ghi lịch sử thao tác cho nhân viên
+                        var lastLichSuThaoTac = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
+                        String lastLichSuThaoTacId = (lastLichSuThaoTac == null) ? null : trimToNull(lastLichSuThaoTac.getMaLichSuThaoTac());
+                        String newWorkingHistoryId = EntityUtil.increaseEntityID(lastLichSuThaoTacId,
+                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                                EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
+
+                        String tenThaoTac = ActionType.CHECKIN.getActionName();
+                        String moTaThaoTac = "Checkin (từ trạng thái CHỜ CHECKIN) cho chi tiết " + maChiTietDatPhongMain + " - phòng " + maPh;
+                        LichSuThaoTac newLichSuThaoTac = new LichSuThaoTac(newWorkingHistoryId, tenThaoTac, moTaThaoTac, maPhienDangNhap, now);
+                        lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
+
+                        // Commit và trả về
+                        datPhongDAO.thucHienGiaoTac();
+                        thongBaoLoi = null;
+                        return true;
+                    }
+
+                    // Các trạng thái phòng không cho phép checkin
                     boolean forbidden = roomStatus == RoomStatus.ROOM_CHECKING_STATUS
                             || roomStatus == RoomStatus.ROOM_USING_STATUS
                             || roomStatus == RoomStatus.ROOM_CHECKOUT_LATE_STATUS
@@ -142,41 +274,199 @@ public class CheckinServiceImpl implements CheckinService {
 
             // 7) Nếu checkin sớm
             if (now.before(chiTietDatPhong.getTgNhanPhong())) {
-                // Cập nhật ChiTietDatPhong hiện tại: đặt tg_nhan_phong = now
-                boolean updated = chiTietDatPhongDAO.capNhatTgNhanPhong(maChiTietDatPhongMain, now, maPhienDangNhap, now);
-                if (!updated) {
-                    throw new SQLException("Không thể cập nhật ChiTietDatPhong cho checkin sớm: " + maChiTietDatPhongMain);
-                }
 
-                // Áp phụ phí cho chi tiết đặt phòng
-                String tenPhuPhi = Fee.CHECK_IN_SOM.getStatus();
-                ThongTinPhuPhi thongTinPhuPhi = phuPhiDAO.getThongTinPhuPhiByName(tenPhuPhi);
-                if (thongTinPhuPhi == null) {
-                    throw new IllegalStateException("Không tìm thấy thông tin phụ phí cho: " + tenPhuPhi);
-                }
+                // Kiểm tra loại đơn (ĐẶT NHIỀU hay ĐẶT MỘT PHÒNG)
+                String loaiDon = chiTietDatPhongDAO.getLoaiDonDatPhong(maDonDatPhongMain);
 
-                String maPhuPhi = trimToNull(thongTinPhuPhi.getMaPhuPhi());
-                BigDecimal giaHienTai = thongTinPhuPhi.getGiaHienTai();
-                if (giaHienTai == null) giaHienTai = BigDecimal.ZERO;
+                if (loaiDon != null && loaiDon.trim().equalsIgnoreCase("ĐẶT NHIỀU")) {
+                    // Nếu là đơn đặt nhiều
 
-                // Kiểm tra phụ phí đã tồn tại cho chi tiết đặt phòng chưa
-                boolean feeAlreadyAppliedForNewCt = phongTinhPhuPhiDAO.daTonTai(maChiTietDatPhongMain, maPhuPhi);
-                if (!feeAlreadyAppliedForNewCt) {
-                    var latestFee = phongTinhPhuPhiDAO.getLatest();
-                    String latestFeeId = (latestFee == null) ? null : trimToNull(latestFee.getMaPhongTinhPhuPhi());
-                    String newFeeId = EntityUtil.increaseEntityID(latestFeeId,
-                            EntityIDSymbol.ROOM_FEE.getPrefix(),
-                            EntityIDSymbol.ROOM_FEE.getLength());
+                    // 1) Cập nhật tg_nhan_phong của DonDatPhong
+                    boolean updatedDon = chiTietDatPhongDAO.capNhatTgNhanPhongChoDonDatPhong(maDonDatPhongMain, now, maPhienDangNhap, now);
+                    if (!updatedDon) {
+                        throw new SQLException("Không cập nhật được tg_nhan_phong cho DonDatPhong: " + maDonDatPhongMain);
+                    }
 
-                    PhongTinhPhuPhi feeEntity = new PhongTinhPhuPhi(newFeeId, maChiTietDatPhongMain, maPhuPhi, giaHienTai);
-                    boolean insertedFee = phongTinhPhuPhiDAO.insert(feeEntity);
-                    if (!insertedFee) {
-                        System.err.println("Thêm PhongTinhPhuPhi cho chi tiết checkin-sớm không thành công!!");
+                    // 2) Lấy tất cả ChiTietDatPhong chưa kết thúc của đơn bằng DAO
+                    List<ChiTietDatPhong> allNotEnded = chiTietDatPhongDAO.findNotEndedByBookingId(maDonDatPhongMain);
+
+                    // 3) Cập nhật tg_nhan_phong cho từng chi tiết bằng DAO
+                    if (allNotEnded != null) {
+                        for (ChiTietDatPhong ct : allNotEnded) {
+                            boolean updatedCt = chiTietDatPhongDAO.capNhatTgNhanPhong(ct.getMaChiTietDatPhong(), now, maPhienDangNhap, now);
+                            if (!updatedCt) {
+                                System.err.println("Không thể cập nhật tg_nhan_phong cho chi tiết: " + ct.getMaChiTietDatPhong());
+                            }
+                        }
+                    }
+
+                    // 4) Ghi LichSuDiVao cho mỗi chi tiết (sử dụng DAO LichSuDiVaoDAO)
+                    var lastLichSuDiVao = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
+                    String prevCheckinId = (lastLichSuDiVao == null) ? null : trimToNull(lastLichSuDiVao.getMaLichSuDiVao());
+
+                    if (allNotEnded != null) {
+                        for (ChiTietDatPhong ct : allNotEnded) {
+                            String newCheckinId = EntityUtil.increaseEntityID(prevCheckinId,
+                                    EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getPrefix(),
+                                    EntityIDSymbol.HISTORY_CHECKIN_PREFIX.getLength());
+                            prevCheckinId = newCheckinId;
+
+                            LichSuDiVao record = new LichSuDiVao(newCheckinId, true, ct.getMaChiTietDatPhong(), now);
+                            lichSuDiVaoDAO.themLichSuDiVao(record);
+                        }
+                    }
+
+                    // 5) Kết thúc job hiện tại nếu có và tạo job CHECKING cho tất cả các phòng tương ứng (sử dụng CongViecDAO)
+                    var lastJob = congViecDAO.timCongViecMoiNhat();
+                    String prevJobId = (lastJob == null) ? null : trimToNull(lastJob.getMaCongViec());
+
+                    if (allNotEnded != null) {
+                        for (ChiTietDatPhong ct : allNotEnded) {
+                            String roomId = trimToNull(ct.getMaPhong());
+                            if (roomId == null) continue;
+
+                            CongViec jobCuForRoom = congViecDAO.layCongViecHienTaiCuaPhongChoCheckin(roomId);
+                            if (jobCuForRoom != null) {
+                                boolean finished = congViecDAO.removeJob(jobCuForRoom.getMaCongViec());
+                                if (!finished) {
+                                    throw new SQLException("Không thể kết thúc job hiện tại của phòng: " + jobCuForRoom.getMaCongViec());
+                                }
+                            }
+
+                            String newJobId = EntityUtil.increaseEntityID(prevJobId,
+                                    EntityIDSymbol.JOB_PREFIX.getPrefix(),
+                                    EntityIDSymbol.JOB_PREFIX.getLength());
+                            prevJobId = newJobId;
+
+                            String tenTrangThai = RoomStatus.ROOM_CHECKING_STATUS.getStatus();
+                            Timestamp tgBatDau = now;
+                            Timestamp tgKetThuc = new Timestamp(tgBatDau.getTime() + 30L * 60L * 1000L);
+                            CongViec jobMoi = new CongViec(newJobId, tenTrangThai, tgBatDau, tgKetThuc, roomId, tgBatDau);
+                            congViecDAO.themCongViec(jobMoi);
+                        }
+                    }
+
+                    // 6) Tính phụ phí cho các đơn đặt phòng
+                    try {
+                        ThongTinPhuPhi thongTinPhuPhi = FeeValue.getInstance().get(Fee.CHECK_IN_SOM);
+                        if (thongTinPhuPhi != null) {
+                            String maPhuPhi = trimToNull(thongTinPhuPhi.getMaPhuPhi());
+                            BigDecimal donGia = thongTinPhuPhi.getGiaHienTai() == null ? BigDecimal.ZERO : thongTinPhuPhi.getGiaHienTai();
+
+                            // Lấy id mới bắt đầu từ latest
+                            var latestPtpp = phongTinhPhuPhiDAO.getLatest();
+                            String prevPtppId = (latestPtpp == null) ? null : trimToNull(latestPtpp.getMaPhongTinhPhuPhi());
+
+                            List<PhongTinhPhuPhi> dsPtpp = new ArrayList<>();
+                            for (ChiTietDatPhong ct : allNotEnded) {
+                                String maCt = trimToNull(ct.getMaChiTietDatPhong());
+                                if (maCt == null) continue;
+
+                                // Nếu đã có phụ phí cho chi tiết này thì bỏ qua
+                                boolean already = phongTinhPhuPhiDAO.daTonTai(maCt, maPhuPhi);
+                                if (already) continue;
+
+                                // Tạo id mới cho PhongTinhPhuPhi
+                                String newPtppId = EntityUtil.increaseEntityID(prevPtppId,
+                                        EntityIDSymbol.ROOM_FEE.getPrefix(),
+                                        EntityIDSymbol.ROOM_FEE.getLength());
+
+                                // Set id cũ bằng id mới để tiếp tục sinh ID
+                                prevPtppId = newPtppId;
+
+                                PhongTinhPhuPhi pt = new PhongTinhPhuPhi(newPtppId, maCt, maPhuPhi, donGia);
+                                try {
+                                    pt.setTongTien(donGia);
+                                } catch (NoSuchMethodError | Exception ignore) {
+
+                                }
+
+                                dsPtpp.add(pt);
+                            }
+
+                            if (!dsPtpp.isEmpty()) {
+                                boolean ok = phongTinhPhuPhiDAO.themDanhSachPhuPhiChoCacPhong(dsPtpp);
+                                if (!ok) {
+                                    for (PhongTinhPhuPhi p : dsPtpp) {
+                                        try {
+                                            phongTinhPhuPhiDAO.insert(p);
+                                        } catch (Exception ex) {
+                                            System.err.println("Không thể thêm PhongTinhPhuPhi: " + p.getMaPhongTinhPhuPhi() + " -> " + ex.getMessage());
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            System.err.println("Không tìm thấy cấu hình phụ phí 'Check-in sớm' (Fee.CHECK_IN_SOM).");
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("Lỗi khi áp phụ phí check-in-sớm cho đơn nhiều: " + ex.getMessage());
+                        throw ex;
+                    }
+
+
+                    // 7) Ghi lịch sử thao tác (1 bản cho toàn đơn)
+                    var lastLichSuThaoTac = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
+                    String lastLichSuThaoTacId = (lastLichSuThaoTac == null) ? null : trimToNull(lastLichSuThaoTac.getMaLichSuThaoTac());
+                    String newWorkingHistoryId = EntityUtil.increaseEntityID(lastLichSuThaoTacId,
+                            EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                            EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
+
+                    String tenThaoTac = ActionType.CHECKIN.getActionName();
+                    String moTaThaoTac = "Checkin (đặt nhiều) cho đơn đặt phòng " + maDonDatPhongMain;
+                    LichSuThaoTac newLichSuThaoTac = new LichSuThaoTac(newWorkingHistoryId, tenThaoTac, moTaThaoTac, maPhienDangNhap, now);
+                    lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
+
+                    // Commit
+                    datPhongDAO.thucHienGiaoTac();
+                    thongBaoLoi = null;
+                    return true;
+
+                } else {
+                    // TRƯỜNG HỢP ĐƠN CHỈ ĐẶT MỘT PHÒNG
+
+                    // Cập nhật thời gian nhận phòng cho đơn đặt phòng
+                    boolean updatedDon = chiTietDatPhongDAO.capNhatTgNhanPhongChoDonDatPhong(maDonDatPhongMain, now, maPhienDangNhap, now);
+                    if (!updatedDon) {
+                        throw new SQLException("Không cập nhật được tg_nhan_phong cho DonDatPhong: " + maDonDatPhongMain);
+                    }
+
+                    // Cập nhật ChiTietDatPhong hiện tại: đặt tg_nhan_phong = now
+                    boolean updated = chiTietDatPhongDAO.capNhatTgNhanPhong(maChiTietDatPhongMain, now, maPhienDangNhap, now);
+                    if (!updated) {
+                        throw new SQLException("Không thể cập nhật ChiTietDatPhong cho checkin sớm: " + maChiTietDatPhongMain);
+                    }
+
+                    // Áp phụ phí cho chi tiết đặt phòng
+                    String tenPhuPhi = Fee.CHECK_IN_SOM.getStatus();
+                    ThongTinPhuPhi thongTinPhuPhi = FeeValue.getInstance().get(Fee.CHECK_IN_SOM);
+                    if (thongTinPhuPhi == null) {
+                        throw new IllegalStateException("Không tìm thấy thông tin phụ phí cho: " + tenPhuPhi);
+                    }
+
+                    String maPhuPhi = trimToNull(thongTinPhuPhi.getMaPhuPhi());
+                    BigDecimal giaHienTai = thongTinPhuPhi.getGiaHienTai();
+                    if (giaHienTai == null) giaHienTai = BigDecimal.ZERO;
+
+                    // Kiểm tra phụ phí đã tồn tại cho chi tiết đặt phòng chưa
+                    boolean feeAlreadyAppliedForNewCt = phongTinhPhuPhiDAO.daTonTai(maChiTietDatPhongMain, maPhuPhi);
+                    if (!feeAlreadyAppliedForNewCt) {
+                        var latestFee = phongTinhPhuPhiDAO.getLatest();
+                        String latestFeeId = (latestFee == null) ? null : trimToNull(latestFee.getMaPhongTinhPhuPhi());
+                        String newFeeId = EntityUtil.increaseEntityID(latestFeeId,
+                                EntityIDSymbol.ROOM_FEE.getPrefix(),
+                                EntityIDSymbol.ROOM_FEE.getLength());
+
+                        PhongTinhPhuPhi feeEntity = new PhongTinhPhuPhi(newFeeId, maChiTietDatPhongMain, maPhuPhi, giaHienTai);
+                        boolean insertedFee = phongTinhPhuPhiDAO.insert(feeEntity);
+                        if (!insertedFee) {
+                            System.err.println("Thêm PhongTinhPhuPhi cho chi tiết checkin-sớm không thành công!!");
+                        }
                     }
                 }
             }
 
-            // 8) Ghi lịch sử checkin (sử dụng maChiTietDatPhongMain đã có)
+            // ===== phần tiếp theo xử lý cho trường hợp normal (không phải checkin-sớm-ĐẶT_NHIỀU) =====
             var lastLichSuDiVao = lichSuDiVaoDAO.timLichSuDiVaoMoiNhat();
             String lastCheckinId = (lastLichSuDiVao == null) ? null : trimToNull(lastLichSuDiVao.getMaLichSuDiVao());
             String newLichSuDiVaoId = EntityUtil.increaseEntityID(lastCheckinId,
@@ -186,7 +476,6 @@ public class CheckinServiceImpl implements CheckinService {
             LichSuDiVao newLichSuDiVao = new LichSuDiVao(newLichSuDiVaoId, true, maChiTietDatPhongMain, now);
             lichSuDiVaoDAO.themLichSuDiVao(newLichSuDiVao);
 
-            // 9) Kết thúc job hiện tại nếu có
             CongViec jobCu = congViecDAO.layCongViecHienTaiCuaPhongChoCheckin(maPh);
             if (jobCu != null) {
                 boolean finished = congViecDAO.capNhatThoiGianKetThuc(jobCu.getMaCongViec(), now, true);
@@ -195,7 +484,6 @@ public class CheckinServiceImpl implements CheckinService {
                 }
             }
 
-            // 10) Tạo job mới CHECKING
             var lastJob = congViecDAO.timCongViecMoiNhat();
             String lastJobId = (lastJob == null) ? null : trimToNull(lastJob.getMaCongViec());
             String newJobId = EntityUtil.increaseEntityID(lastJobId,
@@ -208,7 +496,6 @@ public class CheckinServiceImpl implements CheckinService {
             CongViec jobMoi = new CongViec(newJobId, tenTrangThai, tgBatDau, tgKetThuc, maPh, tgBatDau);
             congViecDAO.themCongViec(jobMoi);
 
-            // 11) Ghi lịch sử thao tác
             var lastLichSuThaoTac = lichSuThaoTacDAO.timLichSuThaoTacMoiNhat();
             String lastLichSuThaoTacId = (lastLichSuThaoTac == null) ? null : trimToNull(lastLichSuThaoTac.getMaLichSuThaoTac());
             String newWorkingHistoryId = EntityUtil.increaseEntityID(lastLichSuThaoTacId,
@@ -220,7 +507,7 @@ public class CheckinServiceImpl implements CheckinService {
             LichSuThaoTac newLichSuThaoTac = new LichSuThaoTac(newWorkingHistoryId, tenThaoTac, moTaThaoTac, maPhienDangNhap, now);
             lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
 
-            // 12) Commit nếu mọi thứ OK
+            // Commit nếu mọi thứ OK
             datPhongDAO.thucHienGiaoTac();
             thongBaoLoi = null;
             return true;
@@ -238,6 +525,7 @@ public class CheckinServiceImpl implements CheckinService {
             return false;
         }
     }
+
 
 
     // In lỗi ra thoi hehe
@@ -314,5 +602,11 @@ public class CheckinServiceImpl implements CheckinService {
         if (s == null) return null;
         String t = s.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    @Override
+    public String layMaDonDatPhongTuMaChiTiet(String maChiTietDatPhong) {
+        String maDonDatPhong = chiTietDatPhongDAO.findFormIDByDetail(maChiTietDatPhong);
+        return maDonDatPhong;
     }
 }

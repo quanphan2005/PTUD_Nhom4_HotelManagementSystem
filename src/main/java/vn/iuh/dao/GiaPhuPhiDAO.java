@@ -25,7 +25,7 @@ public class GiaPhuPhiDAO {
     }
 
     public GiaPhuPhi themGiaPhuPhi(GiaPhuPhi giaPhuPhi) {
-        String query = "INSERT INTO GiaPhuPhi (ma_gia_phu_phi, gia_truoc_do, gia_hien_tai,ma_phien_dang_nhap,ma_phu_phi) VALUES (?, ?, ?, ? , ?)";
+        String query = "INSERT INTO GiaPhuPhi (ma_gia_phu_phi, gia_truoc_do, gia_hien_tai,ma_phien_dang_nhap,ma_phu_phi, la_phan_tram) VALUES (?, ?, ?, ? , ?, ?)";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1,giaPhuPhi.getMaGiaPhuPhi());
@@ -33,6 +33,7 @@ public class GiaPhuPhiDAO {
             ps.setDouble(3, giaPhuPhi.getGiaHienTai());
             ps.setString(4,giaPhuPhi.getMaPhienDangNhap());
             ps.setString(5,giaPhuPhi.getMaPhuPhi());
+            ps.setBoolean(6, giaPhuPhi.getLaPhanTram());
             ps.executeUpdate();
             return giaPhuPhi;
         } catch (SQLException e) {

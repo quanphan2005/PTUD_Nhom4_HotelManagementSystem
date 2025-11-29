@@ -203,11 +203,12 @@ public class DatPhongDAO {
                 "SELECT DISTINCT p.ma_phong, p.ten_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
                 " FROM Phong p" +
                 " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
-                " JOIN LichSuDiVao lsdv ON lsdv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong" +
+                " LEFT JOIN LichSuDiVao lsdv ON lsdv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong" +
                 " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
                 " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
                 " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
-                " WHERE ctdp.tg_nhan_phong >= DATEADD(HOUR, ?, GETDATE())" + // Get all booking from now - X hours
+                " WHERE ctdp.tg_nhan_phong >= DATEADD(HOUR, ?, GETDATE()) " +
+                        "AND lsdv.la_lan_dau_tien is null AND lsdv.thoi_gian_tao is null "+// Get all booking from now - X hours
                 " AND cv.ten_trang_thai = ?" +
                 " AND ctdp.da_xoa = 0" +
                 " AND ddp.da_xoa = 0" +

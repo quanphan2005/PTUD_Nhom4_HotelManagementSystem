@@ -3,6 +3,7 @@ package vn.iuh.dao;
 import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.repository.RoomWithCategory;
 import vn.iuh.dto.repository.ThongTinPhong;
+import vn.iuh.entity.CongViec;
 import vn.iuh.entity.Phong;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
@@ -481,4 +482,36 @@ public class PhongDAO {
         return phongs;
     }
 
+    public CongViec layCongViecHienTaiCuaPhong(String maPhong) {
+        String query = "SELECT TOP 1 * FROM CongViec " +
+                "WHERE ma_phong = ? AND ISNULL(da_xoa,0) = 0 " +
+                "  AND ( (tg_bat_dau IS NOT NULL AND tg_ket_thuc IS NOT NULL AND ? BETWEEN tg_bat_dau AND tg_ket_thuc) " +
+                "        OR (tg_bat_dau IS NOT NULL AND tg_ket_thuc IS NULL AND tg_bat_dau <= ?) ) " +
+                "ORDER BY tg_bat_dau DESC";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            ps.setString(1, maPhong);
+            ps.setTimestamp(2, now);
+            ps.setTimestamp(3, now);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    CongViec cv = new CongViec();
+                    cv.setMaCongViec(rs.getString("ma_cong_viec"));
+                    cv.setTenTrangThai(rs.getString("ten_trang_thai"));
+                    cv.setTgBatDau(rs.getTimestamp("tg_bat_dau"));
+                    cv.setTgKetThuc(rs.getTimestamp("tg_ket_thuc"));
+                    cv.setMaPhong(rs.getString("ma_phong"));
+                    cv.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
+
+                    return cv;
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
 }

@@ -2,10 +2,8 @@ package vn.iuh.service.impl;
 
 import vn.iuh.constraint.ActionType;
 import vn.iuh.constraint.EntityIDSymbol;
-import vn.iuh.dao.CongViecDAO;
-import vn.iuh.dao.LichSuThaoTacDAO;
-import vn.iuh.dao.LoaiPhongDAO;
-import vn.iuh.dao.PhongDAO;
+import vn.iuh.constraint.RoomStatus;
+import vn.iuh.dao.*;
 import vn.iuh.dto.event.create.RoomCreationEvent;
 import vn.iuh.dto.event.update.RoomModificationEvent;
 import vn.iuh.dto.repository.RoomFurnitureItem;
@@ -24,17 +22,20 @@ public class RoomServiceImpl implements RoomService {
     private final PhongDAO phongDAO;
     private final CongViecDAO congViecDAO;
     private final LoaiPhongDAO loaiPhongDAO;
+    private final ChiTietDatPhongDAO chiTietDatPhongDAO;
 
     public RoomServiceImpl() {
         phongDAO = new PhongDAO();
         congViecDAO = new CongViecDAO();
         loaiPhongDAO = new LoaiPhongDAO();
+        chiTietDatPhongDAO = new ChiTietDatPhongDAO();
     }
 
     public RoomServiceImpl(PhongDAO phongDAO, CongViecDAO congViecDAO, LoaiPhongDAO loaiPhongDAO) {
         this.phongDAO = phongDAO;
         this.congViecDAO = congViecDAO;
         this.loaiPhongDAO = loaiPhongDAO;
+        this.chiTietDatPhongDAO = new ChiTietDatPhongDAO();
     }
 
     @Override
@@ -63,27 +64,6 @@ public class RoomServiceImpl implements RoomService {
     public List<RoomFurnitureItem> getAllFurnitureInRoom(String roomID) {
         return phongDAO.timTatCaNoiThatTrongPhong(roomID);
     }
-
-//    @Override
-//    public Phong createRoom(RoomCreationEvent room) {
-//        Phong lastedPhong = phongDAO.timPhongMoiNhat();
-//        String newID = EntityUtil.increaseEntityID(
-//                lastedPhong.getMaPhong(),
-//                EntityIDSymbol.ROOM_PREFIX.getPrefix(),
-//                EntityIDSymbol.ROOM_PREFIX.getLength());
-//
-//        Phong newPhong = new Phong(
-//                newID,
-//                room.getRoomName(),
-//                true,
-//                room.getNote(),
-//                room.getRoomDescription(),
-//                room.getRoomCategoryId(),
-//                new Timestamp(new Date().getTime())
-//        );
-//
-//        return phongDAO.themPhong(newPhong);
-//    }
 
     @Override
     public Phong updateRoom(RoomModificationEvent room) {
@@ -215,6 +195,17 @@ public class RoomServiceImpl implements RoomService {
         } catch (Exception e) {
             System.out.println("RoomServiceImpl.getCurrentJobForRoom error: " + e.getMessage());
             return null;
+        }
+    }
+
+    @Override
+    public boolean hasFutureBookings(Phong phong) {
+        try {
+            return chiTietDatPhongDAO.findLastestByRoom(phong.getMaPhong()) != null;
+        } catch (Exception e) {
+            System.out.println("hasFutureBookings error for " + phong.getTenPhong() + ": " + e.getMessage());
+            // nếu lỗi thì an toàn: coi là có booking
+            return true;
         }
     }
 
@@ -388,14 +379,14 @@ public class RoomServiceImpl implements RoomService {
             // Lấy thông tin phòng trước khi xóa để lưu mô tả lịch sử
             Phong phong = phongDAO.timPhong(maPhong);
             if (phong == null) {
-                System.out.println("deleteRoomWithHistory: Không tìm thấy phòng: " + maPhong);
+                System.out.println("Không tìm thấy phòng: " + maPhong);
                 return false;
             }
 
             // Thực hiện xóa
             boolean deleted = phongDAO.xoaPhongQuanLyPhongPanel(maPhong);
             if (!deleted) {
-                System.out.println("deleteRoomWithHistory: xóa thất bại cho: " + maPhong);
+                System.out.println("Không thể xóa phòng " + phong.getTenPhong());
                 return false;
             }
 

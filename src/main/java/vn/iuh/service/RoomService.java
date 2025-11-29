@@ -29,4 +29,6 @@ public interface RoomService {
 
     List<RoomFurnitureItem> getFurnitureForLoaiPhong(String maLoaiPhong);
     List<Phong> getAllQuanLyPhongPanel();
+
+    boolean hasFutureBookings(Phong phong);
 }

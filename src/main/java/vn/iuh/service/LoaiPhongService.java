@@ -1,5 +1,6 @@
 package vn.iuh.service;
 
+import vn.iuh.dto.repository.NoiThatAssignment;
 import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.gui.panel.statistic.FillterRoomStatistic;
@@ -17,4 +18,12 @@ public interface LoaiPhongService {
     boolean deleteRoomCategoryByID(String id);
     BigDecimal layGiaTheoLoaiPhong(String maLoaiPhong, boolean isGiaNgay);
     List<RoomStatistic> getListRoomCategoryByFilter(FillterRoomStatistic filter);
+
+    LoaiPhong findLatestIncludingDeleted();
+    LoaiPhong updateRoomCategoryV2(LoaiPhong loaiPhong);
+    boolean deleteRoomCategoryByIDV2(String id);
+    LoaiPhong getRoomCategoryByIDV2(String id);
+
+    LoaiPhong createRoomCategoryV2(LoaiPhong loaiPhong, double giaNgay, double giaGio, List<NoiThatAssignment> itemsWithQty);
+
 }

@@ -50,6 +50,7 @@ public class RoomUsageFormPanel extends JPanel {
     private CheckOutService checkOutService;
     private RoomService roomService;
     private MovingHistoryService movingHistoryService;
+    private CheckinService checkinService;
 
     // Formatters
     private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
@@ -114,6 +115,7 @@ public class RoomUsageFormPanel extends JPanel {
         this.bookingService = new BookingServiceImpl();
         this.roomService = new RoomServiceImpl();
         this.movingHistoryService = new MovingHistoryServiceImpl();
+        this.checkinService = new CheckinServiceImpl();
         this.customerInfoResponse = bookingService.getCustomerInfoByBookingId(roomInfo.getMaChiTietDatPhong());
         if (customerInfoResponse == null) {
             if (!Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
@@ -1229,16 +1231,43 @@ public class RoomUsageFormPanel extends JPanel {
 
     private void handleCheckIn() {
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Xác nhận nhận phòng " + selectedRoom.getRoomName() + "?",
-                                                   "Nhận phòng", JOptionPane.YES_NO_OPTION);
+                "Xác nhận nhận phòng " + selectedRoom.getRoomName() + "?",
+                "Nhận phòng", JOptionPane.YES_NO_OPTION);
 
-        if (result == JOptionPane.YES_OPTION) {
+        if (result != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        String maDonDatPhongInput = checkinService.layMaDonDatPhongTuMaChiTiet(selectedRoom.getMaChiTietDatPhong()); // nếu bạn có getMaDonDatPhong() thì có thể đổi sang đó
+        String tenPhongInput = selectedRoom.getRoomName();
+
+        boolean success;
+        try {
+            success = checkinService.checkin(maDonDatPhongInput, tenPhongInput);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            success = false;
+        }
+
+        if (success) {
             JOptionPane.showMessageDialog(this,
-                                          "Khách đã nhận phòng " + selectedRoom.getRoomName(),
-                                          "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    "Khách đã nhận phòng " + selectedRoom.getRoomName(),
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+            // Cập nhật trạng thái UI
+            btnEntering.setEnabled(false);
+            btnLeaving.setEnabled(true);
+
+            // Refesh sau khi checkin
             RefreshManager.refreshAfterCheckIn();
+        } else {
+            // Hiện thông báo lỗi chung
+            JOptionPane.showMessageDialog(this,
+                    "Nhận phòng thất bại cho " + selectedRoom.getRoomName(),
+                    "Thất bại", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
     private void handleCompleteCleaning() {
         int result = JOptionPane.showConfirmDialog(this,

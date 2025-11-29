@@ -1,14 +1,11 @@
 package vn.iuh.dao;
 
-import vn.iuh.constraint.RoomEndType;
 import vn.iuh.dto.repository.ThongTinSuDungPhong;
 import vn.iuh.entity.ChiTietDatPhong;
-import vn.iuh.entity.DonDatPhong;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class ChiTietDatPhongDAO {
@@ -309,5 +306,75 @@ public class ChiTietDatPhongDAO {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public boolean hasFutureBookingsForLoaiPhong(String maLoaiPhong) {
+        if (maLoaiPhong == null || maLoaiPhong.isBlank()) return false;
+        String sql = "SELECT TOP 1 ctdp.ma_chi_tiet_dat_phong " +
+                "FROM ChiTietDatPhong ctdp " +
+                "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                "WHERE p.ma_loai_phong = ? AND ISNULL(ctdp.da_xoa,0) = 0 AND ctdp.tg_nhan_phong > GETDATE()";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maLoaiPhong);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean hasCurrentOrFutureBookingsForLoaiPhong(String maLoaiPhong) {
+        if (maLoaiPhong == null || maLoaiPhong.isBlank()) return false;
+        String sql =
+                "SELECT TOP 1 ctdp.ma_chi_tiet_dat_phong " +
+                        "FROM ChiTietDatPhong ctdp " +
+                        "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
+                        "WHERE p.ma_loai_phong = ? AND ISNULL(ctdp.da_xoa,0)=0 " +
+                        "  AND ( " +
+                        "       ctdp.tg_nhan_phong > GETDATE() " +            // future bookings
+                        "    OR (ctdp.tg_nhan_phong <= GETDATE() AND (ctdp.tg_tra_phong IS NULL OR ctdp.tg_tra_phong >= GETDATE())) " + // current use
+                        "  )";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maLoaiPhong);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean capNhatTgNhanPhongChoDonDatPhong(String maDonDatPhong, Timestamp tgNhanPhong, String maPhienDangNhap, Timestamp thoiGianCapNhat) {
+        if (maDonDatPhong == null) return false;
+        String sql = "UPDATE DonDatPhong SET tg_nhan_phong = ?, ma_phien_dang_nhap = ?, thoi_gian_tao = ? " +
+                "WHERE ma_don_dat_phong = ? AND ISNULL(da_xoa, 0) = 0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setTimestamp(1, tgNhanPhong);
+            ps.setString(2, maPhienDangNhap);
+            ps.setTimestamp(3, thoiGianCapNhat);
+            ps.setString(4, maDonDatPhong);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<ChiTietDatPhong> findNotEndedByBookingId(String bookingId) {
+        String query = "SELECT * FROM ChiTietDatPhong " +
+                "WHERE ma_don_dat_phong = ? AND ISNULL(kieu_ket_thuc, '') = '' AND ISNULL(da_xoa,0) = 0 " +
+                "ORDER BY tg_nhan_phong ASC";
+        List<ChiTietDatPhong> result = new ArrayList<>();
+        try (var ps = connection.prepareStatement(query)) {
+            ps.setString(1, bookingId);
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapResultSetToChiTietDatPhong(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 }
