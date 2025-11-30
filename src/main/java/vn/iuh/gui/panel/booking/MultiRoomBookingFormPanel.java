@@ -1043,7 +1043,8 @@ public class MultiRoomBookingFormPanel extends JPanel {
         java.sql.Timestamp ngayNhanPhong = new java.sql.Timestamp(((java.util.Date) spnCheckInDate.getValue()).getTime());
         java.sql.Timestamp ngayTraPhong = new java.sql.Timestamp(((java.util.Date) spnCheckOutDate.getValue()).getTime());
         java.sql.Timestamp thoiGianTao = new java.sql.Timestamp(System.currentTimeMillis());
-        double tongTienDuTinh = Double.parseDouble(txtTotalInitialPrice.getText().replace(" VNĐ", "").replace(",", ""));
+        double tongTienDuTinh = Double.parseDouble(txtTotalInitialPrice.getText().replace(" VNĐ", "").replace(",", ""))
+                                + Double.parseDouble(txtTotalServicePrice.getText().replace(" VNĐ", "").replace(",", ""));
         double tienDatCoc = Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         boolean daDatTruoc = chkIsAdvanced.isSelected();
 
