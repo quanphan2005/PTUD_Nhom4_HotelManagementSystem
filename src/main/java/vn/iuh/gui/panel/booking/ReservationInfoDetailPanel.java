@@ -7,9 +7,13 @@ import vn.iuh.dto.response.*;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.dialog.DepositInvoiceDialog;
+import vn.iuh.gui.dialog.InvoiceDialog2;
 import vn.iuh.service.BookingService;
+import vn.iuh.service.CheckOutService;
 import vn.iuh.service.impl.BookingServiceImpl;
+import vn.iuh.service.impl.CheckOutServiceImpl;
 import vn.iuh.util.PriceFormat;
+import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -32,6 +36,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     private ReservationManagementPanel parentPanel;
 
     private BookingService bookingService;
+    private CheckOutService checkoutService;
 
     // Customer info components
     private JLabel lblCCCD;
@@ -63,6 +68,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         this.parentPanel = parentPanel;
 
         this.bookingService = new BookingServiceImpl();
+        this.checkoutService = new CheckOutServiceImpl();
 
         setLayout(new BorderLayout());
         init();
@@ -825,9 +831,26 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     private void handleCheckoutAndPrintReceipt(ReservationInfoDetailResponse detail) {
-        JOptionPane.showMessageDialog(this,
-                                      "Chức năng checkout và in hóa đơn đang được phát triển cho phòng: " + detail.getCustomerName(),
-                                      "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(null,
+                "Xác nhận trả đơn đặt phòng " + detail.getMaDonDatPhong() + "?",
+                "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+
+        if (result == JOptionPane.YES_OPTION) {
+            InvoiceResponse invoiceResponse = checkoutService.checkOutReservation(detail.getMaDonDatPhong());
+            if (invoiceResponse != null) {
+                SwingUtilities.invokeLater(() -> {
+                    InvoiceDialog2 dialog = new InvoiceDialog2(invoiceResponse);
+                    dialog.setVisible(true);
+                    RefreshManager.refreshAfterCheckout();
+                    refreshPanel();
+//                    Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
+                });
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Trả phòng thất bại cho " + detail.getMaDonDatPhong(),
+                        "Thất bại", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void handleCheckTranferRoomHistory(ReservationInfoDetailResponse detail) {

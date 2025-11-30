@@ -256,7 +256,13 @@ public class PhuPhiDialog extends JDialog {
         }
 
         try {
-            FeeValue.getInstance().updateFee(Fee.THUE, giaMoi);
+            switch (thongTinPhuPhi.getTenPhuPhi().trim()) {
+                case "Check-out trễ" -> FeeValue.getInstance().updateFee(Fee.CHECK_OUT_TRE, giaMoi);
+                case "Check-in sớm" -> FeeValue.getInstance().updateFee(Fee.CHECK_IN_SOM, giaMoi);
+                case "Thuế giá trị gia tăng" -> FeeValue.getInstance().updateFee(Fee.THUE, giaMoi);
+                case "Đổi phòng" -> FeeValue.getInstance().updateFee(Fee.DOI_PHONG, giaMoi);
+                default -> throw new IllegalArgumentException("Không xác định được loại phụ phí.");
+            }
             dispose();
         } catch (Exception e) {
             e.printStackTrace();

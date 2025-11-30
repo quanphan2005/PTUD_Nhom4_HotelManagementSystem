@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import vn.iuh.dto.repository.ThongTinNhanVien;
+import vn.iuh.dto.repository.ThongTinNhanVien;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.entity.TaiKhoan;
 import vn.iuh.exception.TableEntityMismatch;
@@ -10,6 +11,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -159,8 +162,6 @@ public class NhanVienDAO {
 
         return null;
     }
-
-
 
     public boolean xoaNhanVien(String id) {
         if (timNhanVien(id) == null) {
