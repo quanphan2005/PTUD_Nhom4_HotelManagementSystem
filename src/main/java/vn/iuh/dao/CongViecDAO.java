@@ -365,4 +365,25 @@ public class CongViecDAO {
 
         return danhSachCongViec;
     }
+
+    // Kiểm tra loại phòng có đang được sử dụng không
+    public boolean existsUsingRoomByLoaiPhong(String maLoaiPhong) {
+        if (maLoaiPhong == null || maLoaiPhong.isBlank()) return false;
+        final String sql = "SELECT TOP 1 cv.ma_cong_viec " +
+                "FROM CongViec cv " +
+                "JOIN Phong p ON cv.ma_phong = p.ma_phong " +
+                "WHERE p.ma_loai_phong = ? " +
+                "  AND ISNULL(cv.da_xoa,0) = 0 " +
+                "  AND cv.ten_trang_thai = ? " +
+                "  AND (cv.tg_ket_thuc IS NULL OR cv.tg_ket_thuc >= GETDATE())";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maLoaiPhong);
+            ps.setString(2, RoomStatus.ROOM_USING_STATUS.getStatus());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi khi kiểm tra trạng thái sử dụng của phòng: " + e.getMessage(), e);
+        }
+    }
 }

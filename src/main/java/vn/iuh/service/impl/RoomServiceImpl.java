@@ -295,11 +295,10 @@ public class RoomServiceImpl implements RoomService {
     // Lấy ID để thêm phòng
     public String getNextRoomID() {
         try {
-            Phong last = phongDAO.timPhongMoiNhat(); // DAO của bạn trả về TOP 1 ORDER BY ma_phong DESC
+            Phong last = phongDAO.timPhongMoiNhat();
             String lastId = (last != null) ? last.getMaPhong() : null;
             return EntityUtil.increaseEntityID(lastId, EntityIDSymbol.ROOM_PREFIX.getPrefix(), EntityIDSymbol.ROOM_PREFIX.getLength());
         } catch (Exception e) {
-            // phòng cuối cùng không tìm thấy -> tạo ID đầu tiên
             return EntityUtil.increaseEntityID(null, EntityIDSymbol.ROOM_PREFIX.getPrefix(), EntityIDSymbol.ROOM_PREFIX.getLength());
         }
     }

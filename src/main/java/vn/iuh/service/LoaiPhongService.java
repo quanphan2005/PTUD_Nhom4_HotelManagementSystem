@@ -25,5 +25,7 @@ public interface LoaiPhongService {
     LoaiPhong getRoomCategoryByIDV2(String id);
 
     LoaiPhong createRoomCategoryV2(LoaiPhong loaiPhong, double giaNgay, double giaGio, List<NoiThatAssignment> itemsWithQty);
-
+    boolean deleteRoomCategoryWithAudit(String maLoaiPhong);
+    boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty);
+    boolean isRoomCategoryInUse(String maLoaiPhong);
 }

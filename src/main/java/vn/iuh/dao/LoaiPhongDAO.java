@@ -273,10 +273,6 @@ public class LoaiPhongDAO {
         return null;
     }
 
-    /**
-     * Chèn LoaiPhong mới trực tiếp (không dùng themLoaiPhong).
-     * Không commit/rollback ở đây — caller có thể quản lý transaction nếu cần.
-     */
     public LoaiPhong insertLoaiPhong(LoaiPhong loaiPhong) {
         if (loaiPhong == null) throw new IllegalArgumentException("loaiPhong null");
 

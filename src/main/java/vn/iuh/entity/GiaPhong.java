@@ -52,19 +52,19 @@ public class GiaPhong {
         this.giaGioCu = giaGioCu;
     }
 
-    public double getGioNgayMoi() {
+    public double getGiaNgayMoi() {
         return gioNgayMoi;
     }
 
-    public void setGioNgayMoi(double gioNgayMoi) {
+    public void setGiaNgayMoi(double gioNgayMoi) {
         this.gioNgayMoi = gioNgayMoi;
     }
 
-    public double getGioGioMoi() {
+    public double getGiaGioMoi() {
         return gioGioMoi;
     }
 
-    public void setGioGioMoi(double gioGioMoi) {
+    public void setGiaGioMoi(double gioGioMoi) {
         this.gioGioMoi = gioGioMoi;
     }
 

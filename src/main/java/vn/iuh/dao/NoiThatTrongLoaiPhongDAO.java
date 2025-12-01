@@ -11,13 +11,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO quản lý bảng NoiThatTrongLoaiPhong (ma_noi_that_trong_loai_phong, so_luong, ma_loai_phong, ma_noi_that, ...)
- * - findByLoaiPhong(maLoai)
- * - replaceMappings(maLoai, List<NoiThat>) : cập nhật mapping (soft-delete mapping cũ, insert mapping mới)
- *
- * Lưu ý: id prefix cho mapping là "NP" giống dữ liệu mẫu (NP00000001...)
- */
 public class NoiThatTrongLoaiPhongDAO {
     private final Connection connection;
 
@@ -29,9 +22,7 @@ public class NoiThatTrongLoaiPhongDAO {
         this.connection = connection;
     }
 
-    /**
-     * Lấy danh sách NoiThat được gán cho 1 LoaiPhong (chỉ lấy mapping da_xoa = 0 và noi_that.da_xoa = 0)
-     */
+    //Lấy danh sách nội thất của 1 loại phòng
     public List<NoiThat> findByLoaiPhong(String maLoaiPhong) {
         String query = "SELECT nt.ma_noi_that, nt.ten_noi_that, nt.mo_ta " +
                 "FROM NoiThatTrongLoaiPhong ntlp " +
@@ -55,61 +46,7 @@ public class NoiThatTrongLoaiPhongDAO {
         return list;
     }
 
-    /**
-     * Thay thế toàn bộ mapping của 1 LoaiPhong:
-     * - soft-delete tất cả mapping hiện tại (set da_xoa = 1)
-     * - insert mapping mới (so_luong mặc định = 1)
-     *
-     * Trả về true nếu commit thành công.
-     */
-    public boolean replaceMappings(String maLoaiPhong, List<NoiThat> items) {
-        if (maLoaiPhong == null) return false;
-        try {
-            connection.setAutoCommit(false);
-
-            // Soft-delete existing mappings
-            String softDeleteSql = "UPDATE NoiThatTrongLoaiPhong SET da_xoa = 1 WHERE ma_loai_phong = ?";
-            try (PreparedStatement psDel = connection.prepareStatement(softDeleteSql)) {
-                psDel.setString(1, maLoaiPhong);
-                psDel.executeUpdate();
-            }
-
-            // find latest existing mapping id to generate next ids
-            String latestId = findLatestMappingId();
-            // we'll use prefix "NP" and suffix length 8 (data sample uses NP00000001)
-            String prefix = "NP";
-            int suffixLength = 8;
-
-            String insertSql = "INSERT INTO NoiThatTrongLoaiPhong (ma_noi_that_trong_loai_phong, so_luong, ma_loai_phong, ma_noi_that) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement psIns = connection.prepareStatement(insertSql)) {
-                for (NoiThat n : items) {
-                    latestId = EntityUtil.increaseEntityID(latestId, prefix, suffixLength);
-                    psIns.setString(1, latestId);
-                    psIns.setInt(2, 1); // default so_luong
-                    psIns.setString(3, maLoaiPhong);
-                    psIns.setString(4, n.getMaNoiThat());
-                    psIns.addBatch();
-                }
-                psIns.executeBatch();
-            }
-
-            connection.commit();
-            connection.setAutoCommit(true);
-            return true;
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                // ignore
-            }
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Tìm ma_noi_that_trong_loai_phong mới nhất (kể cả da_xoa), trả null nếu chưa có.
-     */
+    //Tìm nội thất trong loại phòng mới nhất để sinh ID
     private String findLatestMappingId() {
         String query = "SELECT TOP 1 ma_noi_that_trong_loai_phong FROM NoiThatTrongLoaiPhong ORDER BY ma_noi_that_trong_loai_phong DESC";
         try (PreparedStatement ps = connection.prepareStatement(query)) {
@@ -128,14 +65,14 @@ public class NoiThatTrongLoaiPhongDAO {
         try {
             connection.setAutoCommit(false);
 
-            // Soft-delete existing mappings
+            //Xóa nội thất theo loại phòng
             String softDeleteSql = "UPDATE NoiThatTrongLoaiPhong SET da_xoa = 1 WHERE ma_loai_phong = ?";
             try (PreparedStatement psDel = connection.prepareStatement(softDeleteSql)) {
                 psDel.setString(1, maLoaiPhong);
                 psDel.executeUpdate();
             }
 
-            // find latest existing mapping id to generate next ids
+            // Tìm mã nội thất trong loại phòng mới nhất để sinh ID
             String latestId = findLatestMappingId();
             String prefix = "NP";
             int suffixLength = 8;
@@ -145,7 +82,7 @@ public class NoiThatTrongLoaiPhongDAO {
                 for (NoiThatAssignment it : items) {
                     latestId = EntityUtil.increaseEntityID(latestId, prefix, suffixLength);
                     psIns.setString(1, latestId);
-                    psIns.setInt(2, Math.max(1, it.getSoLuong())); // default >=1
+                    psIns.setInt(2, Math.max(1, it.getSoLuong()));
                     psIns.setString(3, maLoaiPhong);
                     psIns.setString(4, it.getMaNoiThat());
                     psIns.addBatch();
@@ -161,7 +98,6 @@ public class NoiThatTrongLoaiPhongDAO {
                 connection.rollback();
                 connection.setAutoCommit(true);
             } catch (SQLException ex) {
-                // ignore
             }
             throw new RuntimeException(e);
         }

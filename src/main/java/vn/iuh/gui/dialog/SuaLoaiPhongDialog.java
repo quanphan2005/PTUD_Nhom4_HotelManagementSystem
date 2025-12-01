@@ -22,9 +22,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Dialog sửa loại phòng.
- */
+//Dialog sửa loại phòng
 public class SuaLoaiPhongDialog extends JDialog {
 
     private final LoaiPhongService loaiPhongService;
@@ -42,7 +40,7 @@ public class SuaLoaiPhongDialog extends JDialog {
     private final DefaultTableModel selectedTableModel = new DefaultTableModel(
             new Object[] {"Mã", "Tên", "Mô tả", "Số lượng"}, 0) {
         @Override public boolean isCellEditable(int row, int column) {
-            // chỉ cho chỉnh sửa cột Số lượng (index 3)
+            // chỉ cho chỉnh sửa cột Số lượng
             return column == 3;
         }
         @Override
@@ -108,14 +106,14 @@ public class SuaLoaiPhongDialog extends JDialog {
 
         main.add(form, BorderLayout.NORTH);
 
-        // center: furniture selection
+        // Chọn nội thất
         JPanel center = new JPanel(new GridLayout(1,2,12,12));
 
-        // left available
+        // Bên trái
         JPanel left = new JPanel(new BorderLayout(6,6));
         left.setBorder(BorderFactory.createTitledBorder("Nội thất có sẵn"));
         listAvailable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        // renderer để hiển thị tên (mã)
+        // Hiển thị tên + mã
         listAvailable.setCellRenderer((JList<? extends NoiThat> list, NoiThat value, int index, boolean isSelected, boolean cellHasFocus) -> {
             JLabel lbl = new JLabel();
             if (value == null) {
@@ -143,13 +141,13 @@ public class SuaLoaiPhongDialog extends JDialog {
         leftSouth.add(btnAdd);
         left.add(leftSouth, BorderLayout.SOUTH);
 
-        // right selected
+        // Bên phải
         JPanel right = new JPanel(new BorderLayout(6,6));
         right.setBorder(BorderFactory.createTitledBorder("Nội thất (đã chọn)"));
         tableSelected.setFillsViewportHeight(true);
         tableSelected.setRowHeight(28);
 
-        // đặt editor spinner cho cột Số lượng (cần custom editor)
+        // Cho phép thay đổi số lượng
         TableColumnModel tcm = tableSelected.getColumnModel();
         TableColumn qtyCol = tcm.getColumn(3);
         qtyCol.setCellEditor(new SpinnerEditor(1, 1, 999, 1));
@@ -180,7 +178,7 @@ public class SuaLoaiPhongDialog extends JDialog {
     }
 
     private void loadInitialData(List<NoiThat> currentFurniture) {
-        // fill fields from current LoaiPhong
+        // Lấy các thông tin loại phòng sẵn có
         if (current != null) {
             txtMa.setText(current.getMaLoaiPhong());
             txtTen.setText(current.getTenLoaiPhong());
@@ -189,13 +187,11 @@ public class SuaLoaiPhongDialog extends JDialog {
             else cboPhanLoai.setSelectedItem("Thường");
         }
 
-        // load all furniture and mark selected
         List<NoiThat> all = new ArrayList<>();
         try {
             all = noiThatService.getAllNoiThat();
         } catch (Exception ignored) { all = new ArrayList<>(); }
 
-        // selected (from parameter or via service)
         List<NoiThat> selected = (currentFurniture != null) ? currentFurniture : new ArrayList<>();
         if (selected.isEmpty()) {
             try {
@@ -203,11 +199,9 @@ public class SuaLoaiPhongDialog extends JDialog {
             } catch (Exception ignored) { selected = new ArrayList<>(); }
         }
 
-        // populate selected table and available list
         selectedTableModel.setRowCount(0);
         availableModel.clear();
 
-        // Add selected rows; quantity mặc định = 1 (nếu bạn có cách lấy số lượng mapping thực, thay ở đây)
         for (NoiThat s : selected) {
             if (s == null) continue;
             selectedTableModel.addRow(new Object[] {
@@ -268,7 +262,7 @@ public class SuaLoaiPhongDialog extends JDialog {
         current.setSoLuongKhach(soNguoi);
         current.setPhanLoai(phanLoai);
 
-        // kiểm tra booking hiện tại/tương lai bằng ChiTietDatPhongDAO (bạn đã thêm method)
+        // kiểm tra booking hiện tại/tương lai bằng ChiTietDatPhongDAO
         try {
             ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO();
             boolean hasBooking = ctDao.hasCurrentOrFutureBookingsForLoaiPhong(current.getMaLoaiPhong());
@@ -284,7 +278,6 @@ public class SuaLoaiPhongDialog extends JDialog {
             return;
         }
 
-        // build assignments with quantities (List<NoiThatAssignment>)
         List<NoiThatAssignment> newAssignments = new ArrayList<>();
         for (int r = 0; r < selectedTableModel.getRowCount(); r++) {
             String ma = (String) selectedTableModel.getValueAt(r, 0);
@@ -297,15 +290,10 @@ public class SuaLoaiPhongDialog extends JDialog {
             newAssignments.add(new NoiThatAssignment(ma, qty));
         }
 
-        // maPhienDangNhap: bạn nên thay cách lấy này bằng session thực tế
-        String maPhien = System.getProperty("user.name");
-        if (maPhien == null) maPhien = "UNKNOWN";
-
         try {
             if (loaiPhongService instanceof LoaiPhongServiceImpl) {
-                // nếu implement của bạn có method transaction + audit, gọi nó
                 LoaiPhongServiceImpl impl = (LoaiPhongServiceImpl) loaiPhongService;
-                boolean ok = impl.updateRoomCategoryWithAudit(current, newAssignments, maPhien);
+                boolean ok = impl.updateRoomCategoryWithAudit(current, newAssignments);
                 if (ok) {
                     JOptionPane.showMessageDialog(this, "Cập nhật thành công", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                     dispose();
@@ -315,7 +303,6 @@ public class SuaLoaiPhongDialog extends JDialog {
                     return;
                 }
             } else {
-                // fallback: cập nhật loại phòng rồi gán nội thất bằng List<NoiThatAssignment>
                 LoaiPhong updated = loaiPhongService.updateRoomCategory(current);
                 if (updated == null) {
                     JOptionPane.showMessageDialog(this, "Cập nhật loại phòng thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -324,11 +311,9 @@ public class SuaLoaiPhongDialog extends JDialog {
 
                 boolean assignOk = false;
                 try {
-                    // **SỬA**: truyền newAssignments thay vì List<NoiThat>
                     assignOk = noiThatService.assignNoiThatToLoaiPhong(updated.getMaLoaiPhong(), newAssignments);
                 } catch (Exception ignored) { assignOk = false; }
 
-                // Ghi lịch sử thao tác (fallback) bằng LichSuThaoTacDAO
                 try {
                     String latestId = null;
                     LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
@@ -362,9 +347,6 @@ public class SuaLoaiPhongDialog extends JDialog {
     }
 
 
-    /**
-     * Editor spinner dùng làm TableCellEditor cho cột số lượng.
-     */
     private static class SpinnerEditor extends AbstractCellEditor implements TableCellEditor {
         private final JSpinner spinner;
 

@@ -106,8 +106,13 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             throw new BusinessException("Tên loại phòng không được rỗng");
         }
 
-        // 1) kiểm tra trùng tên (case-insensitive)
-        List<LoaiPhong> all = loaiPhongDao.layTatCaLoaiPhong();
+        // 1) kiểm tra trùng tên
+        List<LoaiPhong> all = null;
+        try {
+            all = loaiPhongDao.layTatCaLoaiPhong();
+        } catch (Exception e) {
+            try { all = new LoaiPhongDAO().layTatCaLoaiPhong(); } catch (Exception ignore) { all = null; }
+        }
         if (all != null) {
             for (LoaiPhong lp : all) {
                 if (lp.getTenLoaiPhong() != null && lp.getTenLoaiPhong().equalsIgnoreCase(loaiPhong.getTenLoaiPhong())) {
@@ -116,18 +121,18 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             }
         }
 
-        Connection conn = null;
-        try {
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+        DatPhongDAO txManager = new DatPhongDAO();
+        Connection conn = txManager.getConnection();
 
-            // DAO dùng chung connection để nằm trong cùng 1 transaction
+        try {
+            txManager.khoiTaoGiaoTac();
+
             LoaiPhongDAO lpDao = new LoaiPhongDAO(conn);
             GiaPhongDAO gpDao = new GiaPhongDAO(conn);
             NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO(conn);
             LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
 
-            // --- Sinh ma_loai_phong nếu chưa có (theo quy ước LP + 8 chữ số) ---
+            // sinh mã cho loại phòng mới
             if (loaiPhong.getMaLoaiPhong() == null || loaiPhong.getMaLoaiPhong().isBlank()) {
                 LoaiPhong latestLp = lpDao.timLoaiPhongMoiNhatBaoGomDaXoa();
                 String lastLpId = (latestLp != null) ? latestLp.getMaLoaiPhong() : null;
@@ -139,19 +144,17 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
                 loaiPhong.setMaLoaiPhong(newLpId);
             }
 
-            // 2.a) Insert loại phòng
+            // Insert loại phòng
             LoaiPhong inserted = lpDao.insertLoaiPhong(loaiPhong);
             if (inserted == null) {
-                conn.rollback();
+                txManager.hoanTacGiaoTac();
                 throw new RuntimeException("Không thể tạo loại phòng");
             }
             String maLoai = inserted.getMaLoaiPhong();
 
-            // 2.b) Insert giá cho loại phòng (tạo ma_gia_phong theo quy ước)
+            // Insert giá
             Timestamp now = new Timestamp(System.currentTimeMillis());
-
-            // tìm mã giá phòng mới nhất (kể cả đã xóa) -> để tăng id
-            GiaPhong latestGia = gpDao.timGiaPhongMoiNhat(); // giả sử method này đã được cài trong GiaPhongDAO
+            GiaPhong latestGia = gpDao.timGiaPhongMoiNhat();
             String lastGiaId = (latestGia != null) ? latestGia.getMaGiaPhong() : null;
             String newGiaId = EntityUtil.increaseEntityID(
                     lastGiaId,
@@ -159,33 +162,31 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
                     EntityIDSymbol.ROOM_PRICE.getLength()
             );
 
-            // build GiaPhong object — giả sử có setter như bên dưới
             GiaPhong gp = new GiaPhong();
             gp.setMaGiaPhong(newGiaId);
             gp.setMaLoaiPhong(maLoai);
-            // khi thêm mới, giá cũ để null hoặc 0 (tuỳ schema). Ta đặt giá_cu = 0 nếu không có.
             gp.setGiaNgayCu(0.0);
             gp.setGiaGioCu(0.0);
-            gp.setGioNgayMoi(giaNgay);
-            gp.setGioGioMoi(giaGio);
+            gp.setGiaNgayMoi(giaNgay);
+            gp.setGiaGioMoi(giaGio);
             gp.setMaPhienDangNhap(Main.getCurrentLoginSession());
             gp.setThoiGianTao(now);
 
             boolean priceInserted = gpDao.insertGiaPhong(gp);
             if (!priceInserted) {
-                conn.rollback();
+                txManager.hoanTacGiaoTac();
                 throw new RuntimeException("Không thể thêm giá cho loại phòng");
             }
 
-            // 2.c) Thêm mapping nội thất (với số lượng) — method trong DAO đã tự sinh id mapping (NP...)
+            // Thêm mapping nội thất
             List<NoiThatAssignment> assignments = itemsWithQty == null ? new java.util.ArrayList<>() : itemsWithQty;
             boolean mappingsOk = ntlpDao.replaceMappingsWithQuantities(maLoai, assignments);
             if (!mappingsOk) {
-                conn.rollback();
+                txManager.hoanTacGiaoTac();
                 throw new RuntimeException("Không thể gán nội thất cho loại phòng");
             }
 
-            // 2.d) Ghi lịch sử thao tác (sinh id theo quy ước LT...)
+            // Ghi lịch sử thao tác
             try {
                 var lastHistory = lichSuDao.timLichSuThaoTacMoiNhat();
                 String lastHistoryId = (lastHistory != null) ? lastHistory.getMaLichSuThaoTac() : null;
@@ -204,27 +205,21 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
                 wh.setThoiGianTao(now);
                 lichSuDao.themLichSuThaoTac(wh);
             } catch (Exception e) {
-                // Không rollback chỉ vì lỗi ghi lịch sử — log để debug
                 System.err.println("Không thể ghi lịch sử thao tác (không rollback): " + e.getMessage());
             }
 
-            // commit transaction
-            conn.commit();
-            conn.setAutoCommit(true);
+            txManager.thucHienGiaoTac();
 
-            // trả về LoaiPhong vừa tạo (lấy lại bằng DAO dùng cùng connection/hoặc mới tuỳ impl)
             return lpDao.getRoomCategoryByID(maLoai);
+
         } catch (BusinessException be) {
-            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            try { txManager.hoanTacGiaoTac(); } catch (Exception ignored) {}
             throw be;
         } catch (Exception ex) {
-            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            try { txManager.hoanTacGiaoTac(); } catch (Exception ignored) {}
             throw new RuntimeException("Lỗi khi tạo loại phòng: " + ex.getMessage(), ex);
-        } finally {
-            try { if (conn != null && !conn.isClosed()) conn.close(); } catch (Exception ignored) {}
         }
     }
-
 
 
     @Override
@@ -241,123 +236,273 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
         return loaiPhongDao.xoaLoaiPhong(id);
     }
 
-    public boolean deleteRoomCategoryWithAudit(String maLoaiPhong, String maPhienDangNhap) {
+    @Override
+    public boolean deleteRoomCategoryWithAudit(String maLoaiPhong) {
         if (maLoaiPhong == null || maLoaiPhong.isBlank()) {
             throw new IllegalArgumentException("maLoaiPhong rỗng");
         }
-        if (maPhienDangNhap == null) maPhienDangNhap = "SYSTEM";
 
-        ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO();
-        NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO();
-        LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
-
-        // 1) kiểm tra booking tương lai
-        boolean hasFuture = ctDao.hasFutureBookingsForLoaiPhong(maLoaiPhong);
-        if (hasFuture) {
-            throw new BusinessException("Loại phòng đang có đặt phòng trong tương lai, không thể xóa.");
-        }
-
-        // 2) xóa (soft-delete) mapping nội thất
-        int mappingsDeleted = 0;
+        DatPhongDAO tx = new DatPhongDAO();
         try {
-            mappingsDeleted = ntlpDao.softDeleteByLoaiPhong(maLoaiPhong);
-        } catch (Exception e) {
-            // log (không dừng) - tiếp tục cố gắng xóa loại phòng nhưng bạn có thể rollback nếu muốn transaction
-            System.err.println("Lỗi khi xóa mapping nội thất: " + e.getMessage());
-        }
+            tx.khoiTaoGiaoTac();
+            Connection conn = tx.getConnection();
 
-        // 3) soft-delete loại phòng
-        boolean deleted = loaiPhongDao.xoaLoaiPhong(maLoaiPhong);
-
-        // 4) ghi lịch sử thao tác vào LichSuThaoTac
-        try {
-            // tạo id mới cho LichSuThaoTac (giả sử prefix "LS" + 8 chữ số)
-            String latestId = null;
-            try {
-                var latest = lichSuDao.timLichSuThaoTacMoiNhat();
-                if (latest != null) latestId = latest.getMaLichSuThaoTac();
-            } catch (Exception ignore) {}
-
-
-            String newId = EntityUtil.increaseEntityID(latestId, "LT", 8);
-
-
-            LichSuThaoTac wh = new LichSuThaoTac();
-            wh.setMaLichSuThaoTac(newId);
-            wh.setTenThaoTac(ActionType.DELETE_ROOM_CATEGORY.getActionName());
-            String detail = String.format("Xóa loại phòng %s. Xóa mapping nội thất: %d. Kết quả xóa loại phòng: %s",
-                    maLoaiPhong, mappingsDeleted, deleted ? "OK" : "FAIL");
-            wh.setMoTa(detail);
-            wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
-
-            lichSuDao.themLichSuThaoTac(wh);
-        } catch (Exception e) {
-            System.err.println("Không thể ghi lịch sử thao tác: " + e.getMessage());
-        }
-
-        return deleted;
-    }
-
-    public boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty, String maPhienDangNhap) {
-        if (loaiPhong == null || loaiPhong.getMaLoaiPhong() == null) throw new IllegalArgumentException("loaiPhong null/không có mã");
-
-        Connection conn = null;
-        try {
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
-
-            // DAO dùng cùng connection để đảm bảo transaction
             ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO(conn);
-            // phương thức bạn đã thêm: hasCurrentOrFutureBookingsForLoaiPhong(String maLoai)
-            boolean hasBooking = ctDao.hasCurrentOrFutureBookingsForLoaiPhong(loaiPhong.getMaLoaiPhong());
-            if (hasBooking) {
-                conn.setAutoCommit(true);
-                return false; // không cập nhật nếu đang có booking
-            }
-
-            LoaiPhongDAO lpDao = new LoaiPhongDAO(conn);
-            LoaiPhong updated = lpDao.capNhatLoaiPhong(loaiPhong);
-            if (updated == null) {
-                conn.rollback();
-                conn.setAutoCommit(true);
-                return false;
-            }
-
-            // cập nhật mapping nội thất (soft-delete cũ + insert mới) với số lượng
+            CongViecDAO cvDao = new CongViecDAO(conn);
             NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO(conn);
-            boolean replaced = ntlpDao.replaceMappingsWithQuantities(loaiPhong.getMaLoaiPhong(),
-                    itemsWithQty == null ? new java.util.ArrayList<>() : itemsWithQty);
-            if (!replaced) {
-                conn.rollback();
-                conn.setAutoCommit(true);
+            GiaPhongDAO gpDao = new GiaPhongDAO(conn);
+            LoaiPhongDAO lpDao = new LoaiPhongDAO(conn);
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+
+            // 1) Kiểm tra: có booking tương lai hay có phòng đang "SỬ DỤNG" không
+            boolean hasFuture;
+            try {
+                hasFuture = ctDao.hasFutureBookingsForLoaiPhong(maLoaiPhong);
+            } catch (Exception e) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi kiểm tra đặt phòng tương lai: " + e.getMessage(), e);
+            }
+
+            boolean hasUsing;
+            try {
+                hasUsing = cvDao.existsUsingRoomByLoaiPhong(maLoaiPhong);
+            } catch (Exception e) {
+                // nếu kiểm tra lỗi
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi kiểm tra trạng thái sử dụng phòng: " + e.getMessage(), e);
+            }
+
+            if (hasFuture || hasUsing) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new BusinessException("Loại phòng đang được sử dụng hoặc có đặt phòng trong tương lai, không thể xóa.");
+            }
+
+            // 2) xóa nội thất
+            int mappingsDeleted = 0;
+            try {
+                mappingsDeleted = ntlpDao.softDeleteByLoaiPhong(maLoaiPhong);
+            } catch (Exception e) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi xóa mapping nội thất: " + e.getMessage(), e);
+            }
+
+            // 3) xóa tất cả giá phòng liên quan đến loại phòng
+            int pricesDeleted = 0;
+            try {
+                pricesDeleted = gpDao.softDeleteByLoaiPhong(maLoaiPhong);
+            } catch (Exception e) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi xóa giá phòng liên quan: " + e.getMessage(), e);
+            }
+
+            // 4) Xóa loại phòng
+            boolean deleted;
+            try {
+                deleted = lpDao.xoaLoaiPhong(maLoaiPhong);
+            } catch (Exception e) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi xóa loại phòng: " + e.getMessage(), e);
+            }
+
+            if (!deleted) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
                 return false;
             }
 
-            // ghi lịch sử thao tác
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
-            LichSuThaoTac wh = new LichSuThaoTac();
-            // tạo id đơn giản (bạn có thể thay bằng EntityUtil tăng id nếu muốn)
-            wh.setMaLichSuThaoTac("LS" + System.currentTimeMillis());
-            wh.setTenThaoTac("CẬP_NHẬT_LOẠI_PHÒNG");
-            wh.setMoTa(String.format("Cập nhật loại phòng %s; nội thất=%d", loaiPhong.getMaLoaiPhong(),
-                    itemsWithQty == null ? 0 : itemsWithQty.size()));
-            wh.setMaPhienDangNhap(maPhienDangNhap);
-            lichSuDao.themLichSuThaoTac(wh);
+            // 5) Ghi lịch sử thao tác
+            try {
+                var lastHistory = lichSuDao.timLichSuThaoTacMoiNhat();
+                String lastHistoryId = (lastHistory != null) ? lastHistory.getMaLichSuThaoTac() : null;
+                String newHistoryId = EntityUtil.increaseEntityID(
+                        lastHistoryId,
+                        EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                        EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength()
+                );
 
-            conn.commit();
-            conn.setAutoCommit(true);
+                LichSuThaoTac wh = new LichSuThaoTac();
+                wh.setMaLichSuThaoTac(newHistoryId);
+                wh.setTenThaoTac(ActionType.DELETE_ROOM_CATEGORY.getActionName());
+
+                String moTa = String.format("Xóa loại phòng %s; Kết quả xóa loại phòng: %s; Xóa mapping nội thất (số bản ghi): %d; Xóa giá phòng (số bản ghi): %d",
+                        maLoaiPhong, deleted ? "OK" : "FAIL", mappingsDeleted, pricesDeleted);
+                wh.setMoTa(moTa);
+
+                wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
+                wh.setThoiGianTao(new Timestamp(System.currentTimeMillis()));
+
+                try {
+                    lichSuDao.themLichSuThaoTac(wh);
+                } catch (Exception e) {
+                    System.err.println("Không thể ghi lịch sử thao tác (không rollback): " + e.getMessage());
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi khi chuẩn bị ghi lịch sử thao tác (không rollback): " + e.getMessage());
+            }
+
+            // 6) Commit
+            tx.thucHienGiaoTac();
             return true;
+
+        } catch (BusinessException be) {
+            throw be;
         } catch (Exception ex) {
-            try {
-                if (conn != null) conn.rollback();
-            } catch (Exception e) { /* ignore */ }
-            throw new RuntimeException("Lỗi khi cập nhật loại phòng (transaction): " + ex.getMessage(), ex);
-        } finally {
-            try {
-                if (conn != null && !conn.isClosed()) conn.close();
-            } catch (Exception ignored) {}
+            try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+            throw new RuntimeException("Lỗi khi xóa loại phòng: " + ex.getMessage(), ex);
         }
     }
+
+
+
+    @Override
+    public boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty) {
+        if (loaiPhong == null || loaiPhong.getMaLoaiPhong() == null || loaiPhong.getMaLoaiPhong().isBlank()) {
+            throw new IllegalArgumentException("loaiPhong null hoặc không có mã");
+        }
+
+        DatPhongDAO tx = new DatPhongDAO();
+        try {
+            tx.khoiTaoGiaoTac();
+            Connection conn = tx.getConnection();
+
+            ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO(conn);
+            LoaiPhongDAO lpDao = new LoaiPhongDAO(conn);
+            NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO(conn);
+            GiaPhongDAO gpDao = new GiaPhongDAO(conn);
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+
+            // 1) Kiểm tra: có booking hiện tại/tương lai cho loại phòng không
+            boolean hasBooking;
+            try {
+                hasBooking = ctDao.hasCurrentOrFutureBookingsForLoaiPhong(loaiPhong.getMaLoaiPhong());
+            } catch (Exception e) {
+                // nếu kiểm tra lỗi
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi kiểm tra booking hiện tại/tương lai: " + e.getMessage(), e);
+            }
+
+            if (hasBooking) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                return false;
+            }
+
+            // 2) Cập nhật LoaiPhong
+            LoaiPhong updated;
+            try {
+                updated = lpDao.capNhatLoaiPhong(loaiPhong);
+                if (updated == null) {
+                    tx.hoanTacGiaoTac();
+                    return false;
+                }
+            } catch (Exception e) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi cập nhật loại phòng: " + e.getMessage(), e);
+            }
+
+            // 3) Cập nhật mapping nội thất
+            boolean replaced;
+            try {
+                replaced = ntlpDao.replaceMappingsWithQuantities(loaiPhong.getMaLoaiPhong(),
+                        itemsWithQty == null ? new java.util.ArrayList<>() : itemsWithQty);
+                if (!replaced) {
+                    tx.hoanTacGiaoTac();
+                    return false;
+                }
+            } catch (Exception e) {
+                try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+                throw new RuntimeException("Lỗi khi cập nhật mapping nội thất: " + e.getMessage(), e);
+            }
+
+            Double giaNgayMoi = null;
+            Double giaGioMoi = null;
+            try {
+                try {
+                    var m1 = loaiPhong.getClass().getMethod("getGiaNgayMoi");
+                    Object v1 = m1.invoke(loaiPhong);
+                    if (v1 instanceof Number) giaNgayMoi = ((Number) v1).doubleValue();
+                } catch (NoSuchMethodException ignored) {}
+                try {
+                    var m2 = loaiPhong.getClass().getMethod("getGiaGioMoi");
+                    Object v2 = m2.invoke(loaiPhong);
+                    if (v2 instanceof Number) giaGioMoi = ((Number) v2).doubleValue();
+                } catch (NoSuchMethodException ignored) {}
+            } catch (Exception e) {
+                System.err.println("Không thể đọc giá mới từ LoaiPhong (reflection): " + e.getMessage());
+            }
+
+            if (giaNgayMoi != null && giaGioMoi != null) {
+                try {
+                    // Tạo ID mới cho GiaPhong
+                    GiaPhong latestGia = gpDao.timGiaPhongMoiNhat();
+                    String lastGiaId = (latestGia != null) ? latestGia.getMaGiaPhong() : null;
+                    String newGiaId = EntityUtil.increaseEntityID(
+                            lastGiaId,
+                            EntityIDSymbol.ROOM_PRICE.getPrefix(),
+                            EntityIDSymbol.ROOM_PRICE.getLength()
+                    );
+
+                    GiaPhong gp = new GiaPhong();
+                    gp.setMaGiaPhong(newGiaId);
+                    gp.setMaLoaiPhong(loaiPhong.getMaLoaiPhong());
+                    gp.setGiaNgayCu(0.0);
+                    gp.setGiaGioCu(0.0);
+                    gp.setGiaNgayMoi(giaNgayMoi);
+                    gp.setGiaGioMoi(giaGioMoi);
+                    gp.setMaPhienDangNhap(Main.getCurrentLoginSession());
+                    gp.setThoiGianTao(new Timestamp(System.currentTimeMillis()));
+
+                    boolean priceInserted = gpDao.insertGiaPhong(gp);
+                    if (!priceInserted) {
+                        // nếu chèn giá thất bại
+                        System.err.println("Cảnh báo: không thể chèn giá mới cho loại phòng " + loaiPhong.getMaLoaiPhong());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Lỗi khi chèn giá mới (không rollback): " + e.getMessage());
+                }
+            }
+
+            // 5) Ghi lịch sử thao tác
+            try {
+                var lastHistory = lichSuDao.timLichSuThaoTacMoiNhat();
+                String lastHistoryId = (lastHistory != null) ? lastHistory.getMaLichSuThaoTac() : null;
+                String newHistoryId = EntityUtil.increaseEntityID(
+                        lastHistoryId,
+                        EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                        EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength()
+                );
+
+                LichSuThaoTac wh = new LichSuThaoTac();
+                wh.setMaLichSuThaoTac(newHistoryId);
+                wh.setTenThaoTac(ActionType.EDIT_ROOM_CATEGORY.getActionName());
+                String moTa = String.format("Cập nhật loại phòng %s; Tên=%s; SốNg=%d; Phân loại=%s; Nội thất count=%d",
+                        loaiPhong.getMaLoaiPhong(),
+                        loaiPhong.getTenLoaiPhong() != null ? loaiPhong.getTenLoaiPhong() : "",
+                        loaiPhong.getSoLuongKhach(),
+                        loaiPhong.getPhanLoai(),
+                        itemsWithQty == null ? 0 : itemsWithQty.size()
+                );
+                wh.setMoTa(moTa);
+                wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
+                wh.setThoiGianTao(new Timestamp(System.currentTimeMillis()));
+
+                try {
+                    lichSuDao.themLichSuThaoTac(wh);
+                } catch (Exception e) {
+                    System.err.println("Không thể ghi lịch sử thao tác (không rollback): " + e.getMessage());
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi khi chuẩn bị ghi lịch sử thao tác (không rollback): " + e.getMessage());
+            }
+
+            // 6) Commit
+            tx.thucHienGiaoTac();
+            return true;
+
+        } catch (Exception ex) {
+            try { tx.hoanTacGiaoTac(); } catch (Exception ignored) {}
+            throw new RuntimeException("Lỗi khi cập nhật loại phòng: " + ex.getMessage(), ex);
+        }
+    }
+
 
     @Override
     public LoaiPhong getRoomCategoryByIDV2(String id) {
@@ -365,9 +510,28 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
         try {
             return loaiPhongDao.getRoomCategoryByID(id);
         } catch (Exception ex) {
-            // log nếu cần
             System.out.println("Lỗi khi lấy LoaiPhong by id: " + ex.getMessage());
             return null;
+        }
+    }
+
+    @Override
+    public boolean isRoomCategoryInUse(String maLoaiPhong) {
+        if (maLoaiPhong == null || maLoaiPhong.isBlank()) return false;
+
+        try {
+            // 1) kiểm tra có booking hiện tại/tương lai (ChiTietDatPhongDAO)
+            ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO();
+            boolean hasFutureOrCurrent = ctDao.hasCurrentOrFutureBookingsForLoaiPhong(maLoaiPhong);
+            if (hasFutureOrCurrent) return true;
+
+            // 2) kiểm tra có phòng đang "SỬ DỤNG" (CongViecDAO)
+            CongViecDAO cvDao = new CongViecDAO();
+            boolean hasUsing = cvDao.existsUsingRoomByLoaiPhong(maLoaiPhong);
+            return hasUsing;
+        } catch (Exception ex) {
+            System.err.println("Lỗi kiểm tra isRoomCategoryInUse: " + ex.getMessage());
+            return true;
         }
     }
 

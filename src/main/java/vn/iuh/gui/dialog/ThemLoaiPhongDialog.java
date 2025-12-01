@@ -25,9 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Dialog thêm loại phòng (đã chỉnh sửa theo yêu cầu)
- */
+// Dialgo thêm loại phòng
 public class ThemLoaiPhongDialog extends JDialog {
 
     private final LoaiPhongService loaiPhongService;
@@ -38,20 +36,17 @@ public class ThemLoaiPhongDialog extends JDialog {
     private final JSpinner spnSoNguoi = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
     private final JComboBox<String> cboPhanLoai = new JComboBox<>(new String[] {"Thường", "VIP"});
 
-    // new price fields
     private final JFormattedTextField txtGiaNgay;
     private final JFormattedTextField txtGiaGio;
 
-    // Available furniture table
     private final DefaultTableModel availableTableModel = new DefaultTableModel(new Object[] {"Mã", "Tên", "Mô tả"}, 0) {
         @Override public boolean isCellEditable(int row, int column) { return false; }
     };
     private final JTable tableAvailable = new JTable(availableTableModel);
 
-    // Selected furniture table (includes quantity column)
     private final DefaultTableModel selectedTableModel = new DefaultTableModel(new Object[] {"Mã", "Tên", "Mô tả", "Số lượng"}, 0) {
         @Override public boolean isCellEditable(int row, int column) {
-            return column == 3; // only quantity editable
+            return column == 3;
         }
 
         @Override
@@ -67,7 +62,6 @@ public class ThemLoaiPhongDialog extends JDialog {
         this.loaiPhongService = loaiPhongService;
         this.noiThatService = noiThatService;
 
-        // setup number formats for price fields
         NumberFormat currencyFormat = NumberFormat.getNumberInstance(Locale.getDefault());
         txtGiaNgay = new JFormattedTextField(currencyFormat);
         txtGiaGio = new JFormattedTextField(currencyFormat);
@@ -88,7 +82,7 @@ public class ThemLoaiPhongDialog extends JDialog {
         gc.insets = new Insets(8,8,8,8);
         gc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Row 1: Mã (auto)
+        // Mã (tự sinh)
         gc.gridx = 0; gc.gridy = 0; gc.weightx = 0;
         form.add(new JLabel("Mã loại phòng:"), gc);
         txtMa.setEditable(false);
@@ -96,25 +90,25 @@ public class ThemLoaiPhongDialog extends JDialog {
         gc.gridx = 1; gc.gridy = 0; gc.weightx = 1;
         form.add(txtMa, gc);
 
-        // Row 2: Tên
+        // Tên loại phòng
         gc.gridx = 0; gc.gridy = 1; gc.weightx = 0;
         form.add(new JLabel("Tên loại phòng:"), gc);
         gc.gridx = 1; gc.gridy = 1; gc.weightx = 1;
         form.add(txtTen, gc);
 
-        // Row 3: Số người
+        // Số người
         gc.gridx = 0; gc.gridy = 2; gc.weightx = 0;
         form.add(new JLabel("Số người tối đa:"), gc);
         gc.gridx = 1; gc.gridy = 2; gc.weightx = 1;
         form.add(spnSoNguoi, gc);
 
-        // Row 4: Phân loại
+        // Phân loại (VIP/THƯỜNG)
         gc.gridx = 0; gc.gridy = 3; gc.weightx = 0;
         form.add(new JLabel("Phân loại:"), gc);
         gc.gridx = 1; gc.gridy = 3; gc.weightx = 1;
         form.add(cboPhanLoai, gc);
 
-        // Row 5: Giá ngày
+        // Giá ngày
         gc.gridx = 0; gc.gridy = 4; gc.weightx = 0;
         form.add(new JLabel("Giá (theo ngày):"), gc);
         txtGiaNgay.setColumns(12);
@@ -122,7 +116,7 @@ public class ThemLoaiPhongDialog extends JDialog {
         gc.gridx = 1; gc.gridy = 4; gc.weightx = 1;
         form.add(txtGiaNgay, gc);
 
-        // Row 6: Giá giờ
+        // Giá giờ
         gc.gridx = 0; gc.gridy = 5; gc.weightx = 0;
         form.add(new JLabel("Giá (theo giờ):"), gc);
         txtGiaGio.setColumns(12);
@@ -132,10 +126,8 @@ public class ThemLoaiPhongDialog extends JDialog {
 
         main.add(form, BorderLayout.NORTH);
 
-        // Center: furniture selection area (left available, right selected)
         JPanel center = new JPanel(new GridLayout(1,2,12,12));
 
-        // Left - available (JTable)
         JPanel left = new JPanel(new BorderLayout(6,6));
         left.setBorder(BorderFactory.createTitledBorder("Nội thất có sẵn"));
         tableAvailable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -148,11 +140,9 @@ public class ThemLoaiPhongDialog extends JDialog {
         leftSouth.add(btnAdd);
         left.add(leftSouth, BorderLayout.SOUTH);
 
-        // Right - selected (JTable with quantity Spinner editor)
         JPanel right = new JPanel(new BorderLayout(6,6));
         right.setBorder(BorderFactory.createTitledBorder("Nội thất cho loại phòng (đã chọn)"));
         tableSelected.setFillsViewportHeight(true);
-        // set spinner editor for quantity column
         tableSelected.getColumnModel().getColumn(3).setCellEditor(new SpinnerEditor(1, 1, 999, 1));
         right.add(new JScrollPane(tableSelected), BorderLayout.CENTER);
 
@@ -167,7 +157,6 @@ public class ThemLoaiPhongDialog extends JDialog {
 
         main.add(center, BorderLayout.CENTER);
 
-        // Buttons bottom
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnSave = new JButton("Lưu");
         JButton btnCancel = new JButton("Hủy");
@@ -184,7 +173,7 @@ public class ThemLoaiPhongDialog extends JDialog {
     }
 
     private void loadInitialData() {
-        // 1) Sinh mã mới: gọi service để lấy latest (bao gồm deleted). Nếu service không hỗ trợ, fallback.
+        // Tự động sinh mã mới
         try {
             LoaiPhong latest = null;
             try {
@@ -204,7 +193,7 @@ public class ThemLoaiPhongDialog extends JDialog {
             txtMa.setText(EntityUtil.increaseEntityID(null, "LP", 8));
         }
 
-        // 2) Load all furniture from NoiThatService into availableTable
+        // Lấy tất cả nội thất hiện có
         try {
             List<NoiThat> all = noiThatService.getAllNoiThat();
             availableTableModel.setRowCount(0);
@@ -222,8 +211,7 @@ public class ThemLoaiPhongDialog extends JDialog {
         int[] rows = tableAvailable.getSelectedRows();
         if (rows == null || rows.length == 0) return;
 
-        // add selected rows to selectedTable with default quantity 1, remove from available model
-        // iterate from bottom to top to remove correctly
+        // Thêm nội thất được chọn
         for (int i = rows.length - 1; i >= 0; i--) {
             int r = rows[i];
             String ma = (String) availableTableModel.getValueAt(r, 0);
@@ -270,7 +258,6 @@ public class ThemLoaiPhongDialog extends JDialog {
             return;
         }
 
-        // parse prices
         double giaNgay = 0.0;
         double giaGio = 0.0;
         try {
@@ -290,14 +277,14 @@ public class ThemLoaiPhongDialog extends JDialog {
             return;
         }
 
-        // Build LoaiPhong
+        // Tạo LoaiPhong mới
         LoaiPhong lp = new LoaiPhong();
         lp.setMaLoaiPhong(ma);
         lp.setTenLoaiPhong(ten);
         lp.setSoLuongKhach(soNguoi);
         lp.setPhanLoai(phanLoai);
 
-        // prepare selected furniture list with quantities
+        // Tạo list nội thất được chọn cùng số lượng
         List<NoiThatAssignment> assignments = new ArrayList<>();
         for (int r = 0; r < selectedTableModel.getRowCount(); r++) {
             String maNT = (String) selectedTableModel.getValueAt(r, 0);
@@ -312,14 +299,13 @@ public class ThemLoaiPhongDialog extends JDialog {
         }
 
         try {
-            // call service (new signature)
+            // Gọi service
             LoaiPhong created = loaiPhongService.createRoomCategoryV2(lp, giaNgay, giaGio, assignments);
             if (created == null) {
                 JOptionPane.showMessageDialog(this, "Tạo loại phòng thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // ghi Lịch sử thao tác (nếu service chưa làm hoặc bạn muốn hiển thị thêm) - service đã ghi rồi, nên bạn có thể bỏ phần này.
             JOptionPane.showMessageDialog(this, "Tạo loại phòng thành công", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         } catch (Exception ex) {
@@ -327,15 +313,11 @@ public class ThemLoaiPhongDialog extends JDialog {
         }
     }
 
-    /**
-     * Simple spinner cell editor to edit integer quantities in table cell.
-     */
     private static class SpinnerEditor extends AbstractCellEditor implements TableCellEditor {
         private final JSpinner spinner;
 
         public SpinnerEditor(int value, int min, int max, int step) {
             spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
-            // make spinner display without editor issues
             JComponent comp = ((DefaultEditor) spinner.getEditor()).getTextField();
             comp.setBorder(null);
             spinner.setBorder(null);

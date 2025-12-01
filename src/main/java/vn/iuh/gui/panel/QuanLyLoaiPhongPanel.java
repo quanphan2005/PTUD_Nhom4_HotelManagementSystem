@@ -627,8 +627,35 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         JButton deleteBtn = createIconOnlyButtonAsync("/icons/delete.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
 
         // ---- gắn sự kiện cho nút SỬA: mở SuaLoaiPhongDialog với dữ liệu từ service ----
+        // ---- gắn sự kiện cho nút SỬA: mở SuaLoaiPhongDialog với dữ liệu từ service ----
         editBtn.addActionListener(evt -> {
             Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
+
+            // kiểm tra nhanh trước khi mở form: nếu service có method isRoomCategoryInUse -> dùng nó
+            try {
+                boolean inUse = false;
+                if (loaiPhongService != null) {
+                    try {
+                        inUse = loaiPhongService.isRoomCategoryInUse(maLoai);
+                    } catch (AbstractMethodError ame) {
+                        // nếu interface chưa cập nhật (không có method) -> fallback: assume not in use
+                        inUse = false;
+                    }
+                }
+                if (inUse) {
+                    JOptionPane.showMessageDialog(this,
+                            "Loại phòng đang được sử dụng hoặc có đặt phòng tương lai. Không thể sửa.",
+                            "Không thể sửa", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } catch (Exception checkEx) {
+                // nếu lỗi kiểm tra -> thông báo và không mở dialog để tránh mất thời gian user
+                JOptionPane.showMessageDialog(this,
+                        "Không thể kiểm tra trạng thái loại phòng: " + checkEx.getMessage(),
+                        "Lỗi kiểm tra", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             LoaiPhong lp = null;
             try {
                 if (loaiPhongService != null) {
@@ -639,12 +666,10 @@ public class QuanLyLoaiPhongPanel extends JPanel {
             }
 
             if (lp == null) {
-
                 String fallbackName = tenLoaiPhong != null ? tenLoaiPhong : "";
                 LoaiPhong tmp = new LoaiPhong();
                 tmp.setMaLoaiPhong(maLoai);
                 tmp.setTenLoaiPhong(fallbackName);
-                // thông báo cho user
                 JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin đầy đủ cho loại phòng. Vẫn mở form với dữ liệu sẵn có.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 lp = tmp;
             }
@@ -660,7 +685,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
                 SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture);
                 dlg.setVisible(true);
             } catch (Throwable ex) {
-                // fallback attempt
                 try {
                     SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture);
                     dlg.setVisible(true);
@@ -670,24 +694,49 @@ public class QuanLyLoaiPhongPanel extends JPanel {
             }
         });
 
-
         // ---- gắn sự kiện cho nút XÓA (nếu bạn muốn xử lý xóa) ----
+        // ---- gắn sự kiện cho nút XÓA (có check) ----
         deleteBtn.addActionListener(evt -> {
             if (loaiPhongService == null) {
                 JOptionPane.showMessageDialog(this, "Không có service để xóa", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
+            // kiểm tra nhanh trước khi hỏi confirm xóa
+            try {
+                boolean inUse = false;
+                try {
+                    inUse = loaiPhongService.isRoomCategoryInUse(maLoai);
+                } catch (AbstractMethodError ame) {
+                    // interface chưa có method -> fallback: không biết -> bảo user kiểm tra sau
+                    JOptionPane.showMessageDialog(this,
+                            "Phiên bản service hiện tại không hỗ trợ kiểm tra trạng thái. Thao tác bị hủy.",
+                            "Không thể xóa", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                if (inUse) {
+                    JOptionPane.showMessageDialog(this,
+                            "Loại phòng đang được sử dụng hoặc có đặt phòng tương lai. Không thể xóa.",
+                            "Không thể xóa", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } catch (Exception checkEx) {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể kiểm tra trạng thái loại phòng: " + checkEx.getMessage(),
+                        "Lỗi kiểm tra", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa loại phòng " + maLoai + " ?", "Xác nhận", JOptionPane.YES_NO_OPTION);
             if (confirm != JOptionPane.YES_OPTION) return;
 
-            // Lấy mã phiên/nhân viên hiện tại. Thay bằng cách lấy session thực tế nếu có.
             String maPhien = System.getProperty("user.name");
             if (maPhien == null) maPhien = "UNKNOWN";
 
             try {
-                // gọi trực tiếp impl (nếu interface LoaiPhongService không khai báo phương thức này)
                 boolean deleted = ((vn.iuh.service.impl.LoaiPhongServiceImpl) loaiPhongService)
-                        .deleteRoomCategoryWithAudit(maLoai, maPhien);
+                        .deleteRoomCategoryWithAudit(maLoai);
                 if (deleted) {
                     JOptionPane.showMessageDialog(this, "Xóa loại phòng thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 } else {
@@ -702,6 +751,7 @@ public class QuanLyLoaiPhongPanel extends JPanel {
                 reloadListFromService();
             }
         });
+
 
         buttonPanel.add(editBtn);
         buttonPanel.add(deleteBtn);
@@ -753,15 +803,10 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         reloadListFromService();
     }
 
-    /**
-     * Reload danh sách loại phòng bằng cách gọi service (bắt lỗi và không sử dụng dữ liệu mẫu).
-     * Nếu service == null -> hiển thị thông báo và để list rỗng.
-     */
+    // Reload danh sách loại phòng
     private void reloadListFromService() {
-        // clear current items
         listPanelContainer.removeAll();
 
-        // show temporary "loading" row
         JLabel loading = new JLabel("Đang tải danh sách loại phòng...", SwingConstants.CENTER);
         loading.setPreferredSize(new Dimension(0, 40));
         loading.setForeground(Color.GRAY);
@@ -783,12 +828,10 @@ public class QuanLyLoaiPhongPanel extends JPanel {
                     List<RoomCategoryResponse> list = loaiPhongService.getAllRoomCategories();
                     if (list == null) return dataset; // return empty list if null
                     for (RoomCategoryResponse r : list) {
-                        // Map fields from RoomCategoryResponse to CategoryData
                         String code = r.getMaLoaiPhong();
                         String name = r.getTenLoaiPhong();
                         int people = r.getSoLuongKhach();
                         String type = r.getPhanLoai();
-                        // image: keep default or allow RoomCategoryResponse to carry image path in future
                         String image = "/images/room_category.jpg";
                         dataset.add(new CategoryData(code, name, people, type, image));
                     }
@@ -804,7 +847,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
                 listPanelContainer.removeAll();
                 try {
                     if (error != null) {
-                        // show non-blocking error label and log stacktrace to console
                         JLabel lbl = new JLabel("Lỗi khi tải danh sách loại phòng: " + error.getMessage(), SwingConstants.CENTER);
                         lbl.setForeground(Color.RED);
                         lbl.setPreferredSize(new Dimension(0, 40));
@@ -812,9 +854,7 @@ public class QuanLyLoaiPhongPanel extends JPanel {
                         error.printStackTrace();
                     } else {
                         List<CategoryData> dataset = get();
-                        // cache full dataset for filtering
                         fullDataset = dataset == null ? new ArrayList<>() : dataset;
-                        // render using current filters
                         renderList(fullDataset);
                     }
                 } catch (Exception ex) {
