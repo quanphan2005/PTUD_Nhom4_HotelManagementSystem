@@ -113,7 +113,6 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
                 info.getTenDichVu(),
                 info.getSoLuong(),
                 info.getGiaThoiDiemDo(),
-                info.isDuocTang(),
                 info.getSoLuong() * info.getGiaThoiDiemDo()
         );
     }
@@ -136,7 +135,6 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
                 id,
                 dichVu.getSoLuong(),
                 dichVu.getGiaThoiDiemDo(),
-                dichVu.isDuocTang(),
                 maChiTietDatPhong,
                 dichVu.getMaDichVu(),
                 maPhienDangNhap,

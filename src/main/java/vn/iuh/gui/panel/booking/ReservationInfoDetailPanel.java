@@ -440,8 +440,8 @@ public class ReservationInfoDetailPanel extends JPanel {
         // Create collapsible title panel
         JPanel titlePanel = createCollapsibleTitlePanel("Đơn gọi dịch vụ");
 
-        // Create table
-        String[] columnNames = {"Đơn DV", "Phòng", "Dịch vụ", "Số lượng", "Đơn giá", "Được tặng", "Thành tiền"};
+        // Create table - removed "Được tặng" column
+        String[] columnNames = {"Đơn DV", "Phòng", "Dịch vụ", "Số lượng", "Đơn giá", "Thành tiền"};
         servicesModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -457,13 +457,12 @@ public class ReservationInfoDetailPanel extends JPanel {
             public void componentResized(ComponentEvent e) {
                 int tableWidth = tblServices.getWidth();
                 TableColumnModel columnModel = tblServices.getColumnModel();
-                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.10)); // 15% - Đơn gọi DV
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Đơn gọi DV
                 columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Phòng
-                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Dịch vụ
-                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Số lượng
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.25)); // 25% - Dịch vụ
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Số lượng
                 columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Đơn giá
-                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.10)); // 15% - Được tặng
-                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Thành tiền
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Thành tiền
             }
         });
 
@@ -635,14 +634,13 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         for (RoomUsageServiceResponse service : reservationInfo.getServices()) {
 
-            Object[] rowData = new Object[7];
+            Object[] rowData = new Object[6];
             rowData[0] = service.getRoomUsageServiceId();
             rowData[1] = service.getRoomName();
             rowData[2] = service.getServiceName();
             rowData[3] = service.getQuantity();
             rowData[4] = priceFormatter.format(service.getPrice()) + " VND";
-            rowData[5] = service.isGifted() ? "Có" : "Không";
-            rowData[6] = service.isGifted() ? "0 VND" : priceFormatter.format(service.getPrice() * service.getQuantity()) + " VND";
+            rowData[5] = priceFormatter.format(service.getPrice() * service.getQuantity()) + " VND";
 
             servicesModel.addRow(rowData);
         }

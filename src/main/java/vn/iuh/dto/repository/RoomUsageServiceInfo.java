@@ -7,7 +7,6 @@ public class RoomUsageServiceInfo {
     private String maPhongDungDichVu;
     private int soLuong;
     private double giaThoiDiemDo;
-    private boolean duocTang;
     private String maChiTietDatPhong;
     private String tenPhong;
     private String maDichVu;
@@ -25,7 +24,6 @@ public class RoomUsageServiceInfo {
         this.maPhongDungDichVu = maPhongDungDichVu;
         this.soLuong = soLuong;
         this.giaThoiDiemDo = giaThoiDiemDo;
-        this.duocTang = duocTang;
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.tenPhong = tenPhong;
         this.maDichVu = maDichVu;
@@ -45,10 +43,6 @@ public class RoomUsageServiceInfo {
 
     public double getGiaThoiDiemDo() {
         return giaThoiDiemDo;
-    }
-
-    public boolean isDuocTang() {
-        return duocTang;
     }
 
     public String getMaChiTietDatPhong() {

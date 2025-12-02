@@ -844,9 +844,9 @@ public class BookingFormPanel extends JPanel {
     private void handleConfirmBooking() {
         try {
             // Validate input
-            if (!validateInput()) {
-                return;
-            }
+//            if (!validateInput()) {
+//                return;
+//            }
 
             // Create booking event
             BookingCreationEvent bookingEvent = createBookingEvent();
