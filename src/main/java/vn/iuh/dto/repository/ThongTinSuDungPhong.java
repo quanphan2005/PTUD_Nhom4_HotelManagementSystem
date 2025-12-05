@@ -11,10 +11,11 @@ public class ThongTinSuDungPhong {
     private Timestamp tgTraPhong;
     private Timestamp gioCheckIn;
     private String kieuKetThuc;
+    private String ghiChu;
     private String maLoaiPhong;
     private String tenPhong;
 
-    public ThongTinSuDungPhong(String maDonDatPhong, String maChiTietDatPhong, String maPhong, Timestamp tgNhanPhong, Timestamp tgTraPhong, Timestamp gioCheckIn, String kieuKetThuc, String maLoaiPhong) {
+    public ThongTinSuDungPhong(String maDonDatPhong, String maChiTietDatPhong, String maPhong, Timestamp tgNhanPhong, Timestamp tgTraPhong, Timestamp gioCheckIn, String kieuKetThuc, String maLoaiPhong, String ghiChu) {
         this.maDonDatPhong = maDonDatPhong;
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.maPhong = maPhong;
@@ -23,6 +24,7 @@ public class ThongTinSuDungPhong {
         this.gioCheckIn = gioCheckIn;
         this.kieuKetThuc = kieuKetThuc;
         this.maLoaiPhong = maLoaiPhong;
+        this.ghiChu = ghiChu;
     }
 
     public String getTenPhong() {
@@ -100,5 +102,11 @@ public class ThongTinSuDungPhong {
         this.kieuKetThuc = kieuKetThuc;
     }
 
+    public String getGhiChu() {
+        return ghiChu;
+    }
 
+    public void setGhiChu(String ghiChu) {
+        this.ghiChu = ghiChu;
+    }
 }
