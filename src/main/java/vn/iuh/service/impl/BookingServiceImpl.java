@@ -892,7 +892,6 @@ public class BookingServiceImpl implements BookingService {
                 id,
                 dichVu.getSoLuong(),
                 dichVu.getGiaThoiDiemDo(),
-                dichVu.isDuocTang(),
                 maChiTietDatPhong,
                 dichVu.getMaDichVu(),
                 bookingCreationEvent.getMaPhienDangNhap(),
@@ -964,7 +963,6 @@ public class BookingServiceImpl implements BookingService {
                     roomUsageServiceInfo.getTenDichVu(),
                     roomUsageServiceInfo.getSoLuong(),
                     roomUsageServiceInfo.getGiaThoiDiemDo(),
-                    roomUsageServiceInfo.isDuocTang(),
                     roomUsageServiceInfo.getGiaThoiDiemDo() * roomUsageServiceInfo.getSoLuong()
             ));
         }

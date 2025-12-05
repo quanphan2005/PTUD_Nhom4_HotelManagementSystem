@@ -137,8 +137,8 @@ public class ServiceOrderedHistoryPanel extends JPanel {
         // Create collapsible title panel
         JPanel titlePanel = createCollapsibleTitlePanel("Danh sách dịch vụ");
 
-        // Create table
-        String[] columnNames = {"Đơn DV", "Phòng", "Dịch vụ", "Số lượng", "Đơn giá", "Được tặng", "Thành tiền"};
+        // Create table - removed "Được tặng" column
+        String[] columnNames = {"Đơn DV", "Phòng", "Dịch vụ", "Số lượng", "Đơn giá", "Thành tiền"};
         servicesModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -154,13 +154,12 @@ public class ServiceOrderedHistoryPanel extends JPanel {
             public void componentResized(ComponentEvent e) {
                 int tableWidth = tblServices.getWidth();
                 TableColumnModel columnModel = tblServices.getColumnModel();
-                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.15)); // 10% - Đơn DV
-                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.12)); // 15% - Phòng
-                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Dịch vụ
-                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 15% - Số lượng
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Đơn DV
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.12)); // 12% - Phòng
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.25)); // 25% - Dịch vụ
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Số lượng
                 columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Đơn giá
-                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.13)); // 10% - Được tặng
-                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Thành tiền
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.23)); // 23% - Thành tiền
             }
         });
 
@@ -318,23 +317,16 @@ public class ServiceOrderedHistoryPanel extends JPanel {
         double totalAmount = 0;
 
         for (RoomUsageServiceResponse service : services) {
-            Object[] rowData = new Object[7];
+            Object[] rowData = new Object[6];
             rowData[0] = service.getRoomUsageServiceId();
             rowData[1] = service.getRoomName();
             rowData[2] = service.getServiceName();
             rowData[3] = service.getQuantity();
             rowData[4] = priceFormatter.format(service.getPrice()) + " VND";
 
-            // Display icon for gifted services
-            if (service.isGifted()) {
-                rowData[5] = "Có";
-            } else {
-                rowData[5] = "Không";
-            }
-
             // Calculate total for this service
             double serviceTotal = service.getTotalPrice();
-            rowData[6] = service.isGifted() ? "0 VND" : priceFormatter.format(service.getPrice() * service.getQuantity()) + " VND";
+            rowData[5] = priceFormatter.format(service.getPrice() * service.getQuantity()) + " VND";
 
             servicesModel.addRow(rowData);
 

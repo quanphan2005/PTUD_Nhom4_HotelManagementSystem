@@ -6,30 +6,27 @@ public class RoomUsageServiceResponse {
     private String serviceName;
     private int quantity;
     private double price;
-    private boolean isGifted;
     private double totalPrice;
 
     public RoomUsageServiceResponse() {
     }
 
     public RoomUsageServiceResponse(String roomUsageServiceId, String roomName, String serviceName, int quantity,
-                                    double price, boolean isGifted) {
+                                    double price) {
         this.roomUsageServiceId = roomUsageServiceId;
         this.roomName = roomName;
         this.serviceName = serviceName;
         this.quantity = quantity;
         this.price = price;
-        this.isGifted = isGifted;
     }
 
     public RoomUsageServiceResponse(String roomUsageServiceId, String roomName, String serviceName, int quantity,
-                                    double price, boolean isGifted, double totalPrice) {
+                                    double price, double totalPrice) {
         this.roomUsageServiceId = roomUsageServiceId;
         this.roomName = roomName;
         this.serviceName = serviceName;
         this.quantity = quantity;
         this.price = price;
-        this.isGifted = isGifted;
         this.totalPrice = totalPrice;
     }
 
@@ -51,10 +48,6 @@ public class RoomUsageServiceResponse {
 
     public double getPrice() {
         return price;
-    }
-
-    public boolean isGifted() {
-        return isGifted;
     }
 
     public double getTotalPrice() {

@@ -65,7 +65,6 @@ public class ServiceSelectionPanel extends JPanel {
     private List<ThongTinDichVu> filteredServices;
     private Map<String, Integer> selectedServicesMap;
     private Map<String, Double> servicePricesMap; // Track service prices for total cost calculation
-    private Map<String, Boolean> giftServicesMap; // Track which services are marked as gifts
     private ServiceSelectionCallback callback;
 
     // Formatters
@@ -84,7 +83,6 @@ public class ServiceSelectionPanel extends JPanel {
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
         this.selectedServicesMap = new HashMap<>();
-        this.giftServicesMap = new HashMap<>();
 
         this.selectedRooms = selectedRooms;
         this.maChiTietDatPhong = maChiTietDatPhong;
@@ -101,7 +99,6 @@ public class ServiceSelectionPanel extends JPanel {
         this.serviceCategoryService = new ServiceCategoryServiceImpl();
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.selectedServicesMap = new HashMap<>();
-        this.giftServicesMap = new HashMap<>();
 
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.selectedRooms = 1; // Default to 1 for viewing existing bookings
@@ -144,12 +141,12 @@ public class ServiceSelectionPanel extends JPanel {
         lblAvailableServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
         lblAvailableServices.setMinimumSize(new Dimension(150, 40)); // Fixed minimum
 
-        // Service table - Updated with Gift column
-        String[] serviceColumns = {"Dịch vụ", "Loại", "Giá", "Tồn kho", "Quà", "Đã chọn"};
+        // Service table - Remove gift column
+        String[] serviceColumns = {"Dịch vụ", "Loại", "Giá", "Tồn kho", "Đã chọn"};
         serviceTableModel = new DefaultTableModel(serviceColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4 || column == 5; // Gift and quantity columns are editable
+                return column == 4; // Only quantity column is editable
             }
         };
         serviceTable = new JTable(serviceTableModel);
@@ -168,7 +165,7 @@ public class ServiceSelectionPanel extends JPanel {
         serviceTable.getTableHeader().setOpaque(true);
         serviceTable.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomUI.tableBorder));
 
-        // Set alternating row colors for regular columns (not gift and quantity)
+        // Set alternating row colors for regular columns
         serviceTable.setDefaultRenderer(Object.class, new ServiceTableRenderer());
 
         TableColumnModel serviceColumnModel = serviceTable.getColumnModel();
@@ -182,22 +179,17 @@ public class ServiceSelectionPanel extends JPanel {
                 int tableWidth = serviceTable.getWidth();
                 TableColumnModel columnModel = serviceTable.getColumnModel();
 
-                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Tên
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.25)); // 25% - Tên
                 columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.25)); // 25% - Loại
                 columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Giá
-                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Tồn kho
-                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Quà tặng
-                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Đã chọn
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Tồn kho
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Đã chọn
             }
         });
 
-        // Custom renderer and editor for gift column (column 4)
-        serviceTable.getColumnModel().getColumn(4).setCellRenderer(new GiftRenderer());
-        serviceTable.getColumnModel().getColumn(4).setCellEditor(new GiftEditor());
-
-        // Custom renderer and editor for quantity column (column 5)
-        serviceTable.getColumnModel().getColumn(5).setCellRenderer(new QuantityRenderer());
-        serviceTable.getColumnModel().getColumn(5).setCellEditor(new QuantityEditor());
+        // Custom renderer and editor for quantity column (column 4)
+        serviceTable.getColumnModel().getColumn(4).setCellRenderer(new QuantityRenderer());
+        serviceTable.getColumnModel().getColumn(4).setCellEditor(new QuantityEditor());
 
         // Selected services table with fixed column widths
         String[] selectedColumns = {"Dịch vụ", "SL", "Thành tiền"};
@@ -473,7 +465,6 @@ public class ServiceSelectionPanel extends JPanel {
         }
 
         selectedServicesMap.clear();
-        giftServicesMap.clear(); // Also clear gift selections
 
         resetAllRowEditingCell();
 
@@ -490,13 +481,11 @@ public class ServiceSelectionPanel extends JPanel {
         // Reset data in maps first
         for (ThongTinDichVu service : filteredServices) {
             selectedServicesMap.put(service.getMaDichVu(), 0);
-            giftServicesMap.put(service.getMaDichVu(), false);
         }
 
         // Then update table display
         for (int i = 0; i < serviceTableModel.getRowCount(); i++) {
-            serviceTableModel.setValueAt(false, i, 4); // Reset gift column
-            serviceTableModel.setValueAt(0, i, 5);     // Reset quantity column
+            serviceTableModel.setValueAt(0, i, 4);     // Reset quantity column (now column 4 instead of 5)
         }
 
         // Force table repaint to ensure UI updates
@@ -520,8 +509,7 @@ public class ServiceSelectionPanel extends JPanel {
                 String serviceId = entry.getKey();
                 double price = servicePricesMap.getOrDefault(serviceId, 0.0);
                 int quantity = entry.getValue();
-                boolean isGift = giftServicesMap.getOrDefault(serviceId, false);
-                serviceOrdered.add(new DonGoiDichVu(serviceId, price, quantity, isGift));
+                serviceOrdered.add(new DonGoiDichVu(serviceId, price, quantity, false));
             }
         }
 
@@ -573,13 +561,11 @@ public class ServiceSelectionPanel extends JPanel {
 
         for (ThongTinDichVu service : filteredServices) {
             int selectedQuantity = selectedServicesMap.getOrDefault(service.getMaDichVu(), 0);
-            boolean isGift = giftServicesMap.getOrDefault(service.getMaDichVu(), false);
             Object[] row = {
                     service.getTenDichVu(),
-                    service.getTenLoaiDichVu(), // Updated to use correct method name
+                    service.getTenLoaiDichVu(),
                     priceFormatter.format(service.getDonGia()) + " VNĐ",
                     service.getTonKho(),
-                    isGift, // Gift checkbox value
                     selectedQuantity
             };
             serviceTableModel.addRow(row);
@@ -593,8 +579,7 @@ public class ServiceSelectionPanel extends JPanel {
             if (entry.getValue() > 0) {
                 ThongTinDichVu service = findServiceById(entry.getKey());
                 if (service != null) {
-                    boolean isGift = giftServicesMap.getOrDefault(entry.getKey(), false);
-                    double totalPrice = isGift ? 0 : service.getDonGia() * entry.getValue(); // 0 if gift
+                    double totalPrice = service.getDonGia() * entry.getValue(); // 0 if gift
                     Object[] row = {
                             service.getTenDichVu(),
                             entry.getValue(),
@@ -624,10 +609,7 @@ public class ServiceSelectionPanel extends JPanel {
             if (entry.getValue() > 0) {
                 ThongTinDichVu service = findServiceById(entry.getKey());
                 if (service != null) {
-                    boolean isGift = giftServicesMap.getOrDefault(entry.getKey(), false);
-                    if (!isGift) { // Only add to total if not a gift
-                        total += service.getDonGia() * entry.getValue();
-                    }
+                    total += service.getDonGia() * entry.getValue();
                 }
             }
         }
@@ -776,8 +758,6 @@ public class ServiceSelectionPanel extends JPanel {
 
             // Only update if service is giftable
             if (service.isCoTheTang()) {
-                giftServicesMap.put(service.getMaDichVu(), currentGiftStatus);
-                updateSelectedServicesTable();
 
                 // Update the main table
                 serviceTableModel.setValueAt(currentGiftStatus, currentRow, 4);
@@ -1156,8 +1136,8 @@ public class ServiceSelectionPanel extends JPanel {
 
             updateSelectedServicesTable();
 
-            // Update the main table
-            serviceTableModel.setValueAt(currentQuantity, currentRow, 5); // Updated column index
+            // Update the main table (quantity column is now at index 4)
+            serviceTableModel.setValueAt(currentQuantity, currentRow, 4);
         }
 
         @Override

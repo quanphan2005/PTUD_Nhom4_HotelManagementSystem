@@ -578,9 +578,7 @@ public class CheckOutServiceImpl implements CheckOutService {
             }
 
             for (PhongDungDichVu pddv : danhSachPhongDungDichVu) {
-                if (!pddv.getDuocTang()) {
-                    tongTien = tongTien.add(pddv.tinhThanhTien());
-                }
+                tongTien = tongTien.add(pddv.tinhThanhTien());
             }
 
             for (PhongTinhPhuPhi ptpp : danhSachPhongTinhPhuPhi) {

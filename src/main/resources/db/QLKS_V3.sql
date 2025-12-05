@@ -228,7 +228,6 @@ CREATE TABLE PhongDungDichVu (
     so_luong int default 1,
 	thoi_gian_dung DATETIME default getdate(),
     gia_thoi_diem_do real not null,
-    duoc_tang bit default 0,
     ma_chi_tiet_dat_phong CHAR(11),
     ma_dich_vu CHAR(11),
     ma_phien_dang_nhap CHAR(11),

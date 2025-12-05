@@ -9,7 +9,6 @@ public class PhongDungDichVu {
     private String maPhongDungDichVu;
     private int soLuong;
     private double giaThoiDiemDo;
-    private boolean duocTang;
     private String maChiTietDatPhong;
     private String tenPhong;
     private String maDichVu;
@@ -41,12 +40,11 @@ public class PhongDungDichVu {
     }
 
     public PhongDungDichVu(String maPhongDungDichVu, int soLuong, double giaThoiDiemDo,
-                           boolean duocTang, String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
+                           String maChiTietDatPhong, String maDichVu, String maPhienDangNhap,
                            Timestamp thoiGianTao) {
         this.maPhongDungDichVu = maPhongDungDichVu;
         this.soLuong = soLuong;
         this.giaThoiDiemDo = giaThoiDiemDo;
-        this.duocTang = duocTang;
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.maDichVu = maDichVu;
         this.maPhienDangNhap = maPhienDangNhap;
@@ -75,14 +73,6 @@ public class PhongDungDichVu {
 
     public void setGiaThoiDiemDo(double giaThoiDiemDo) {
         this.giaThoiDiemDo = giaThoiDiemDo;
-    }
-
-    public boolean getDuocTang() {
-        return duocTang;
-    }
-
-    public void setDuocTang(boolean duocTang) {
-        this.duocTang = duocTang;
     }
 
     public String getMaChiTietDatPhong() {
@@ -122,16 +112,12 @@ public class PhongDungDichVu {
     }
 
     public BigDecimal getTongTien() {
-        if(!this.duocTang){
-            if(tongTien != null){
-                return tongTien;
-            }
-            else {
-                tongTien = this.tinhThanhTien();
-                return tongTien;
-            }
-        }else {
-            return BigDecimal.ZERO;
+        if(tongTien != null){
+            return tongTien;
+        }
+        else {
+            tongTien = this.tinhThanhTien();
+            return tongTien;
         }
     }
 
@@ -141,8 +127,7 @@ public class PhongDungDichVu {
             this.tenDichVu,
                 PriceFormat.formatPrice(this.giaThoiDiemDo) + " VNĐ",
                 this.soLuong,
-                PriceFormat.formatPrice(this.getTongTien().doubleValue()) + " VNĐ",
-                this.duocTang ? "Được tặng" : ""
+                PriceFormat.formatPrice(this.getTongTien().doubleValue()) + " VNĐ"
         };
     }
 }
