@@ -13,7 +13,7 @@ public interface BookingService {
     List<BookingResponse> getAllBookingInfo();
     List<BookingResponse> getAllEmptyRoomInRange(Timestamp timeIn, Timestamp timeOut);
     List<String> getAllNonEmptyRoomInRange(Timestamp timeIn, Timestamp timeOut);
-    CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong);
+    CustomerInfoWithPayments getCustomerInfoWithPaymentsBookingId(String maChiTietDatPhong);
     boolean cancelReservation(String maDatPhong);
     boolean cancelRoomReservation(String maDatPhong, String maPhong);
     boolean cancelReservationDetail(String maChiTietDatPhong);

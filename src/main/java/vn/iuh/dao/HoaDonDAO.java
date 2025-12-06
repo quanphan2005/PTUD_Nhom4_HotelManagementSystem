@@ -1,9 +1,12 @@
 package vn.iuh.dao;
 
+import vn.iuh.constraint.InvoiceType;
+import vn.iuh.dto.repository.CustomerPayments;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -211,6 +214,47 @@ public class HoaDonDAO {
         }
 
         return danhSachHoaDon;
+    }
+
+    public CustomerPayments timThongTinThanhToanCuaKhachHangBangMaChiTietDatPhong(String maChiTietDatPhong) {
+        String query =
+                "SELECT DISTINCT hd.kieu_hoa_don," +
+                " hd.tong_tien as tong_tien_dat_coc," +
+                " (SELECT SUM(pddv.tong_tien) FROM PhongDungDichVu pddv where pddv.ma_chi_tiet_dat_phong = ?) AS tong_tien_dich_vu" +
+                " FROM ChiTietDatPhong ctdp" +
+                " JOIN DonDatPhong ddp ON ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong" +
+                " LEFT JOIN HoaDon hd ON ddp.ma_don_dat_phong = hd.ma_don_dat_phong" +
+                " WHERE ctdp.ma_chi_tiet_dat_phong = ?"
+                ;
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+            ps.setString(2, maChiTietDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next()) {
+                String kieuHoaDon = rs.getString("kieu_hoa_don");
+                BigDecimal tongTienDatCoc = rs.getBigDecimal("tong_tien_dat_coc");
+                BigDecimal tongTienDichVu = rs.getBigDecimal("tong_tien_dich_vu");
+
+                if (kieuHoaDon == null || !kieuHoaDon.equalsIgnoreCase(InvoiceType.PAYMENT_INVOICE.getStatus())) {
+                    tongTienDatCoc = BigDecimal.ZERO;
+                }
+
+                return new CustomerPayments(
+                        tongTienDatCoc,
+                        tongTienDichVu
+                );
+            }
+            else
+                return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch mismatchException) {
+            System.out.println(mismatchException.getMessage());
+            return null;
+        }
     }
 
     public List<HoaDon> layDanhSachHoaDonTrongKhoang(Timestamp tgBatDau, Timestamp tgKetThuc, String maNhanVien){

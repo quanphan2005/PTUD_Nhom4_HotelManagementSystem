@@ -482,18 +482,48 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong) {
+    public CustomerInfoWithPayments getCustomerInfoWithPaymentsBookingId(String maChiTietDatPhong) {
+
+        // 1. Get Customer Info by ReservationDetail ID
         CustomerInfo customerInfo = datPhongDAO.timThongTinKhachHangBangMaChiTietDatPhong(maChiTietDatPhong);
         if (Objects.isNull(customerInfo)) {
             System.out.println("Không tìm thấy thông tin khách hàng cho mã chi tiết đặt phòng: " + maChiTietDatPhong);
             return null;
         }
 
-        return new CustomerInfoResponse(
+        // 2. Get Customer Payments by ReservationDetail ID
+        CustomerPayments customerPayments =
+                hoaDonDAO.timThongTinThanhToanCuaKhachHangBangMaChiTietDatPhong(maChiTietDatPhong);
+
+        if (Objects.isNull(customerPayments)) {
+            customerPayments = new CustomerPayments(BigDecimal.ZERO, BigDecimal.ZERO);
+        } else {
+            // 3. Remove decimal part
+            if (customerPayments.getTotalServiceCost() != null) {
+                customerPayments.setTotalServiceCost(
+                        customerPayments.getTotalServiceCost().setScale(0, RoundingMode.HALF_UP)
+                );
+            } else {
+                customerPayments.setTotalServiceCost(BigDecimal.ZERO);
+            }
+
+            if (customerPayments.getAdvancePayment() != null) {
+                customerPayments.setAdvancePayment(
+                        customerPayments.getAdvancePayment().setScale(0, RoundingMode.HALF_UP)
+                );
+            } else {
+                customerPayments.setAdvancePayment(BigDecimal.ZERO);
+            }
+        }
+
+        // 4. Create CustomerInfoWithPayments
+        return new CustomerInfoWithPayments(
                 customerInfo.getMaKhachHang(),
                 customerInfo.getCCCD(),
                 customerInfo.getTenKhachHang(),
-                customerInfo.getSoDienThoai()
+                customerInfo.getSoDienThoai(),
+                customerPayments.getTotalServiceCost().toBigInteger().doubleValue(),
+                customerPayments.getAdvancePayment().toBigInteger().doubleValue()
         );
     }
 

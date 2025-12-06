@@ -3,16 +3,12 @@ package vn.iuh.gui.panel.booking;
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.constraint.RoomStatus;
-import vn.iuh.dao.LoaiPhongDAO;
-import vn.iuh.dao.PhongDAO;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.BookThemGioInfo;
 import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.dto.response.BookingResponse;
-import vn.iuh.dto.response.CustomerInfoResponse;
+import vn.iuh.dto.response.CustomerInfoWithPayments;
 import vn.iuh.dto.response.InvoiceResponse;
-import vn.iuh.entity.LoaiPhong;
-import vn.iuh.entity.Phong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.dialog.InvoiceDialog2;
@@ -46,7 +42,7 @@ import static vn.iuh.constraint.PanelName.SERVICE_ORDER;
 public class RoomUsageFormPanel extends JPanel {
     private BookingResponse selectedRoom;
     private BookingService bookingService;
-    private CustomerInfoResponse customerInfoResponse;
+    private CustomerInfoWithPayments customerInfoWithPayments;
     private CheckOutService checkOutService;
     private RoomService roomService;
     private MovingHistoryService movingHistoryService;
@@ -116,8 +112,8 @@ public class RoomUsageFormPanel extends JPanel {
         this.roomService = new RoomServiceImpl();
         this.movingHistoryService = new MovingHistoryServiceImpl();
         this.checkinService = new CheckinServiceImpl();
-        this.customerInfoResponse = bookingService.getCustomerInfoByBookingId(roomInfo.getMaChiTietDatPhong());
-        if (customerInfoResponse == null) {
+        this.customerInfoWithPayments = bookingService.getCustomerInfoWithPaymentsBookingId(roomInfo.getMaChiTietDatPhong());
+        if (customerInfoWithPayments == null) {
             if (!Objects.equals(roomInfo.getRoomStatus(), RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
                 new JOptionPane().showMessageDialog(this,
                                                     "Không tìm thấy thông tin khách hàng cho mã chi tiết đặt phòng: "
@@ -126,7 +122,7 @@ public class RoomUsageFormPanel extends JPanel {
             }
 
             selectedRoom = createDefaultValueForBookingInfo(roomInfo);
-            customerInfoResponse = new CustomerInfoResponse("N/A", "N/A", "N/A", "N/A");
+            customerInfoWithPayments = new CustomerInfoWithPayments("N/A", "N/A", "N/A", "N/A", 0, 0);
         }
 
         initializeComponents();
@@ -980,20 +976,22 @@ public class RoomUsageFormPanel extends JPanel {
         spnCheckInDate.setValue(selectedRoom.getTimeIn());
 
         txtInitialPrice.setText(priceFormatter.format(selectedRoom.getDailyPrice()) + " VNĐ");
-        txtTotalServicePrice.setText(priceFormatter.format(0) + " VNĐ");
 
-        txtCustomerName.setText(customerInfoResponse.getCustomerName());
-        txtPhoneNumber.setText(customerInfoResponse.getCustomerPhone());
-        txtCCCD.setText(customerInfoResponse.getCCCD());
+        txtTotalServicePrice.setText(priceFormatter.format(customerInfoWithPayments.getTotalServiceCost()) + " VNĐ");
+        txtDepositPrice.setText(priceFormatter.format(customerInfoWithPayments.getTotalDepositPayment()) + " VNĐ");
+
+
+        txtCustomerName.setText(customerInfoWithPayments.getCustomerName());
+        txtPhoneNumber.setText(customerInfoWithPayments.getCustomerPhone());
+        txtCCCD.setText(customerInfoWithPayments.getCCCD());
     }
 
     // Method to update total service price from ServiceSelectionPanel
     private void updateTotalServicePrice() {
-        double totalServicePrice = 0.0;
-        for (DonGoiDichVu service : serviceOrdered) {
-            totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
-        }
-        txtTotalServicePrice.setText(priceFormatter.format(totalServicePrice) + " VNĐ");
+        CustomerInfoWithPayments customerInfoWithPaymentsBookingId =
+                bookingService.getCustomerInfoWithPaymentsBookingId(selectedRoom.getMaChiTietDatPhong());
+
+        txtTotalServicePrice.setText(priceFormatter.format(customerInfoWithPaymentsBookingId.getTotalServiceCost()) + " VNĐ");
     }
 
     // Setup event handlers for buttons

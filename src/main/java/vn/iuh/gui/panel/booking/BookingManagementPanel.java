@@ -769,6 +769,13 @@ public class BookingManagementPanel extends JPanel {
             }
         }
 
+        // Accept cleaning room only when room status filter is set to cleaning
+        if (roomFilter.roomStatus == null || !roomFilter.roomStatus.equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
+            if (bookingResponse.getRoomStatus().equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
+                return false;
+            }
+        }
+
         return true;
     }
 
