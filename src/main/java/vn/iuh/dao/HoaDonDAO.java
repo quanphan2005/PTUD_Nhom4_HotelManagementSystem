@@ -238,7 +238,7 @@ public class HoaDonDAO {
                 BigDecimal tongTienDatCoc = rs.getBigDecimal("tong_tien_dat_coc");
                 BigDecimal tongTienDichVu = rs.getBigDecimal("tong_tien_dich_vu");
 
-                if (kieuHoaDon == null || !kieuHoaDon.equalsIgnoreCase(InvoiceType.PAYMENT_INVOICE.getStatus())) {
+                if (kieuHoaDon == null || !kieuHoaDon.equalsIgnoreCase(InvoiceType.DEPOSIT_INVOICE.getStatus())) {
                     tongTienDatCoc = BigDecimal.ZERO;
                 }
 
