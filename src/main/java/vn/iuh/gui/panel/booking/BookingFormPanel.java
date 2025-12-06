@@ -118,7 +118,11 @@ public class BookingFormPanel extends JPanel {
         setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
 
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.BOOKING.getName(), 1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.BOOKING.getName(), 1,
+                                                                       Collections.singletonList(
+                                                                               selectedRoom.getRoomName()),
+                                                                       selectedRoom.getMaChiTietDatPhong(),
+                                                                       (services) -> {
                 serviceOrdered.clear();
                 serviceOrdered.addAll(services);
                 updateTotalServicePrice(); // Update service price when services are selected
@@ -804,9 +808,7 @@ public class BookingFormPanel extends JPanel {
     private void updateTotalServicePrice() {
         double totalServicePrice = 0.0;
         for (DonGoiDichVu service : serviceOrdered) {
-            if (!service.isDuocTang()) { // Only count non-gift services
-                totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
-            }
+            totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
         }
         txtTotalServicePrice.setText(priceFormatter.format(totalServicePrice) + " VNĐ");
         calculateDepositPrice(); // Recalculate deposit when service price changes
@@ -1091,6 +1093,11 @@ public class BookingFormPanel extends JPanel {
         double tienDatCoc = Double.parseDouble(txtDepositPrice.getText().replace(" VNĐ", "").replace(",", ""));
         boolean daDatTruoc = chkIsAdvanced.isSelected();
         List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
+
+        // Assign roomId for each service ordered
+        for (DonGoiDichVu service : serviceOrdered) {
+            service.setMaPhong(selectedRoom.getRoomId());
+        }
 
         String maPhienDangNhap = Main.getCurrentLoginSession();
 

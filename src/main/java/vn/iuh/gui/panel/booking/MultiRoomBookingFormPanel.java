@@ -103,7 +103,10 @@ public class MultiRoomBookingFormPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
 
         // Initialize service selection
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.MULTI_BOOKING.getName(), selectedRooms.size(), null, (services) -> {
+        List<String> selectedRoomNames = selectedRooms.stream()
+                .map(BookingResponse::getRoomName)
+                .toList();
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.MULTI_BOOKING.getName(), selectedRooms.size(), selectedRoomNames, null, (services) -> {
             serviceOrdered.clear();
             serviceOrdered.addAll(services);
             updateTotalServicePrice(); // Update service price when services are selected
@@ -207,9 +210,13 @@ public class MultiRoomBookingFormPanel extends JPanel {
         mainScrollPane.getVerticalScrollBar().setUnitIncrement(40);
         mainScrollPane.getViewport().setBackground(Color.WHITE);
 
+        // Footer navbar
+        JPanel footerNavbar = createFooterNavbar();
+
         // Add to main panel
         add(headerPanel, BorderLayout.NORTH);
         add(mainScrollPane, BorderLayout.CENTER);
+        add(footerNavbar, BorderLayout.SOUTH);
     }
 
     private JPanel createFooterNavbar() {
@@ -802,9 +809,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
     private void updateTotalServicePrice() {
         double totalServicePrice = 0.0;
         for (DonGoiDichVu service : serviceOrdered) {
-            if (!service.isDuocTang()) { // Only count non-gift services
-                totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
-            }
+            totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
         }
         txtTotalServicePrice.setText(priceFormatter.format(totalServicePrice) + " VNĐ");
         calculateDepositPrice(); // Recalculate deposit when service price changes
@@ -1080,6 +1085,17 @@ public class MultiRoomBookingFormPanel extends JPanel {
         List<String> danhSachMaPhong = selectedRooms.stream()
                 .map(BookingResponse::getRoomId)
                 .toList();;
+
+        // Assign roomId for each service ordered
+        for (DonGoiDichVu service : serviceOrdered) {
+            // Find which room this service belongs to based on room name
+            for (BookingResponse room : selectedRooms) {
+                if (room.getRoomName().equals(service.getTenPhong())) {
+                    service.setMaPhong(room.getRoomId());
+                    break;
+                }
+            }
+        }
 
         String maPhienDangNhap = Main.getCurrentLoginSession();
 

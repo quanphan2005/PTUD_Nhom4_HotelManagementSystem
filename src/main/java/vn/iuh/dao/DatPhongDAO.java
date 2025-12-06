@@ -922,7 +922,7 @@ public class DatPhongDAO {
 
     public List<ReservationDetailRepository> getReservationDetailByReservationId(String maDonDatPhong) {
         List<ReservationDetailRepository> reservationDetails = new ArrayList<>();
-        String query = "SELECT DISTINCT ctdp.ma_chi_tiet_dat_phong, ctdp.ma_phong, p.ten_phong, lsdv.la_lan_dau_tien, " +
+        String query = "SELECT DISTINCT ctdp.ma_chi_tiet_dat_phong, ctdp.ma_don_dat_phong, ctdp.ma_phong, p.ten_phong, lsdv.la_lan_dau_tien, " +
                        "ctdp.kieu_ket_thuc, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, ctdp.da_xoa " +
                        "FROM ChiTietDatPhong ctdp " +
                        "LEFT JOIN LichSuDiVao lsdv ON ctdp.ma_chi_tiet_dat_phong = lsdv.ma_chi_tiet_dat_phong " +
@@ -938,6 +938,7 @@ public class DatPhongDAO {
             while (rs.next()) {
                 reservationDetails.add(new ReservationDetailRepository(
                         rs.getString("ma_chi_tiet_dat_phong"),
+                        rs.getString("ma_don_dat_phong"),
                         rs.getString("ma_phong"),
                         rs.getString("ten_phong"),
                         rs.getString("kieu_ket_thuc"),

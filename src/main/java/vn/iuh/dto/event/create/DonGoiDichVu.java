@@ -2,22 +2,31 @@ package vn.iuh.dto.event.create;
 
 public class DonGoiDichVu {
     private String maDichVu;
+    private String maPhong;
+    private String tenPhong;
     private double giaThoiDiemDo;
     private int soLuong;
-    private boolean duocTang;
 
     public DonGoiDichVu() {
     }
 
-    public DonGoiDichVu(String maDichVu, double giaThoiDiemDo, int soLuong, boolean duocTang) {
+    public DonGoiDichVu(String maDichVu, String tenPhong, double giaThoiDiemDo, int soLuong) {
         this.maDichVu = maDichVu;
+        this.tenPhong = tenPhong;
         this.giaThoiDiemDo = giaThoiDiemDo;
         this.soLuong = soLuong;
-        this.duocTang = duocTang;
     }
 
     public String getMaDichVu() {
         return maDichVu;
+    }
+
+    public String getMaPhong() {
+        return maPhong;
+    }
+
+    public String getTenPhong() {
+        return tenPhong;
     }
 
     public double getGiaThoiDiemDo() {
@@ -28,11 +37,11 @@ public class DonGoiDichVu {
         return soLuong;
     }
 
-    public void setSoLuong(int soLuong) {
-        this.soLuong = soLuong;
+    public void setMaPhong(String maPhong) {
+        this.maPhong = maPhong;
     }
 
-    public boolean isDuocTang() {
-        return duocTang;
+    public void setSoLuong(int soLuong) {
+        this.soLuong = soLuong;
     }
 }

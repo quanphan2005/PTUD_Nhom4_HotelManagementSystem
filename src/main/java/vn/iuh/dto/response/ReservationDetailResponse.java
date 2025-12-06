@@ -1,10 +1,10 @@
 package vn.iuh.dto.response;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 
 public class ReservationDetailResponse {
-    private String ReservationDetailId;
+    private String reservationDetailId;
+    private String reservationId;
     private String roomId;
     private String roomName;
     private Timestamp timeIn;
@@ -14,18 +14,10 @@ public class ReservationDetailResponse {
     public ReservationDetailResponse() {
     }
 
-    public ReservationDetailResponse(String reservationDetailId, String roomId, String roomName,
-                                     Timestamp timeIn, Timestamp timeOut) {
-        ReservationDetailId = reservationDetailId;
-        this.roomId = roomId;
-        this.roomName = roomName;
-        this.timeIn = timeIn;
-        this.timeOut = timeOut;
-    }
-
-    public ReservationDetailResponse(String reservationDetailId, String roomId, String roomName, Timestamp timeIn,
+    public ReservationDetailResponse(String reservationDetailId, String reservationId, String roomId, String roomName, Timestamp timeIn,
                                      Timestamp timeOut, String status) {
-        ReservationDetailId = reservationDetailId;
+        this.reservationDetailId = reservationDetailId;
+        this.reservationId = reservationId;
         this.roomId = roomId;
         this.roomName = roomName;
         this.timeIn = timeIn;
@@ -34,7 +26,11 @@ public class ReservationDetailResponse {
     }
 
     public String getReservationDetailId() {
-        return ReservationDetailId;
+        return reservationDetailId;
+    }
+
+    public String getReservationId() {
+        return reservationId;
     }
 
     public String getRoomId() {

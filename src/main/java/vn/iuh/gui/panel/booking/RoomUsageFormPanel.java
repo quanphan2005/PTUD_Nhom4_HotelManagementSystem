@@ -142,7 +142,10 @@ public class RoomUsageFormPanel extends JPanel {
 
 
         ServiceSelectionPanel servicePanel =
-                new ServiceSelectionPanel(PanelName.ROOM_USING.getName(), 1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
+                new ServiceSelectionPanel(PanelName.ROOM_USING.getName(), 1,
+                                          Collections.singletonList(selectedRoom.getRoomName()),
+                                          selectedRoom.getMaChiTietDatPhong(),
+                                          (services) -> {
                     serviceOrdered.clear();
                     serviceOrdered.addAll(services);
                     updateTotalServicePrice(); // Update service price when services are selected
@@ -988,9 +991,7 @@ public class RoomUsageFormPanel extends JPanel {
     private void updateTotalServicePrice() {
         double totalServicePrice = 0.0;
         for (DonGoiDichVu service : serviceOrdered) {
-            if (!service.isDuocTang()) { // Only count non-gift services
-                totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
-            }
+            totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
         }
         txtTotalServicePrice.setText(priceFormatter.format(totalServicePrice) + " VNĐ");
     }

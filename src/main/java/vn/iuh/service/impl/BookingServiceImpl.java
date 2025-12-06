@@ -167,25 +167,24 @@ public class BookingServiceImpl implements BookingService {
                 serviceIdToNameMap.put(dichVu.getMaDichVu(), dichVu.getTenDichVu());
             }
 
+            Map<String, String> RoomIdToReservationDetailId = new HashMap<>();
+            for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
+                RoomIdToReservationDetailId.put(chiTietDatPhong.getMaPhong(), chiTietDatPhong.getMaChiTietDatPhong());
+            }
+
             List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
             PhongDungDichVu phongDungDichVuMoiNhat = donGoiDichVuDao.timPhongDungDichVuMoiNhat();
             String maPhongDungDichVuMoiNhat =
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
             for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
-
-                // If booking multiple rooms, divide service equally to each booked room
-                dichVu.setSoLuong(dichVu.getSoLuong() / bookingCreationEvent.getDanhSachMaPhong().size());
-
-                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
                     phongDungDichVuMoiNhat =
                             createRoomUsageServiceEntity(bookingCreationEvent,
                                                          maPhongDungDichVuMoiNhat,
-                                                         chiTietDatPhong.getMaChiTietDatPhong(),
+                                                         RoomIdToReservationDetailId.get(dichVu.getMaPhong()),
                                                          dichVu);
                     maPhongDungDichVuMoiNhat = phongDungDichVuMoiNhat.getMaPhongDungDichVu();
                     danhSachPhongDungDichVu.add(phongDungDichVuMoiNhat);
-                }
             }
 
             // 2.6. Create Deposite Invoice if and invoice details if there is advance payment
@@ -627,7 +626,7 @@ public class BookingServiceImpl implements BookingService {
 
             // 5. Handle RoomUsageService
             List<PhongDungDichVu> danhSachPhongDungDichVu =
-                    donGoiDichVuDao.timDonGoiDichVuBangChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
+                    donGoiDichVuDao.timDonGoiDichVuBangMaDatPhong(chiTietDatPhong.getMaDonDatPhong());
             if (!danhSachPhongDungDichVu.isEmpty()) {
                 for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu)
 //                  // 4.1 Update Service Quantity if any
@@ -946,6 +945,7 @@ public class BookingServiceImpl implements BookingService {
             String status = getReservationDetailStatus(reservationDetailRepository);
             reservationDetailResponses.add(new ReservationDetailResponse(
                     reservationDetailRepository.getReservationDetailId(),
+                    reservationDetailRepository.getReservationId(),
                     reservationDetailRepository.getRoomId(),
                     reservationDetailRepository.getRoomName(),
                     reservationDetailRepository.getTimeIn(),
