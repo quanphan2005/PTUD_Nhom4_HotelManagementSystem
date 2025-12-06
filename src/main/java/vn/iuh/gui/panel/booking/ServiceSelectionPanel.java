@@ -98,7 +98,7 @@ public class ServiceSelectionPanel extends JPanel {
     }
 
     // For existing booking
-    public ServiceSelectionPanel(String maChiTietDatPhong) {
+    public ServiceSelectionPanel(String maChiTietDatPhong, String roomName) {
         this.serviceCategoryService = new ServiceCategoryServiceImpl();
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.serviceOrders = new ArrayList<>();
@@ -106,6 +106,7 @@ public class ServiceSelectionPanel extends JPanel {
         this.maChiTietDatPhong = maChiTietDatPhong;
         this.totalRoom = 1; // Default to 1 for viewing existing bookings
         this.selectedRoomNames = new ArrayList<>();
+        this.selectedRoomNames.add(roomName);
 
         setLayout(new BorderLayout());
 
@@ -113,6 +114,8 @@ public class ServiceSelectionPanel extends JPanel {
         setupLayout();
         loadData();
         setupEventHandlers();
+
+        hideCloseButton();
     }
 
     private void initializeComponents() {
@@ -295,8 +298,8 @@ public class ServiceSelectionPanel extends JPanel {
 
         btnClose = new JButton("x");
         btnClose.setFont(CustomUI.bigFont);
-        btnClose.setBackground(Color.RED);
-        btnClose.setForeground(Color.WHITE);
+        btnClose.setBackground(CustomUI.red);
+        btnClose.setForeground(CustomUI.white);
         btnClose.setPreferredSize(new Dimension(50, 20));
         btnClose.setFocusPainted(false);
         btnClose.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
@@ -331,7 +334,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         // Main content panel with GridBagLayout
         JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(CustomUI.white);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -414,7 +417,7 @@ public class ServiceSelectionPanel extends JPanel {
 
     private JPanel createSearchPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(CustomUI.white);
         panel.add(cmbServiceType);
         panel.add(txtSearchService);
         return panel;
@@ -556,12 +559,12 @@ public class ServiceSelectionPanel extends JPanel {
         // Show dialog base on selected rooms
         if (totalRoom > 1) {
             JOptionPane.showMessageDialog(this,
-                                          "Tạo " + serviceOrders.size() + "đơn dùng dịch vụ cho " + totalRoom + " phòng\n",
+                                          "Tạo " + serviceOrders.size() + " đơn dùng dịch vụ cho " + totalRoom + " phòng\n",
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                                          "Tạo " + serviceOrders.size() + "đơn dùng dịch vụ cho phòng: " + selectedRoomNames.get(0),
+                                          "Tạo " + serviceOrders.size() + " đơn dùng dịch vụ cho phòng: " + selectedRoomNames.get(0),
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         }
@@ -732,7 +735,7 @@ public class ServiceSelectionPanel extends JPanel {
             quantityField = new JTextField("0", 3);
             quantityField.setPreferredSize(new Dimension(40, 25));
             quantityField.setHorizontalAlignment(SwingConstants.CENTER);
-            quantityField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            quantityField.setBorder(BorderFactory.createLineBorder(CustomUI.gray));
             quantityField.setFont(new Font("Arial", Font.PLAIN, 12));
 
             btnIncrease = new JButton("▲");
@@ -758,7 +761,7 @@ public class ServiceSelectionPanel extends JPanel {
                 quantityField.setBackground(table.getSelectionBackground());
             } else {
                 setBackground(table.getBackground());
-                quantityField.setBackground(Color.WHITE);
+                quantityField.setBackground(CustomUI.white);
             }
 
             return this;
@@ -786,7 +789,7 @@ public class ServiceSelectionPanel extends JPanel {
             quantityField = new JTextField("0", 3);
             quantityField.setPreferredSize(new Dimension(40, 25));
             quantityField.setHorizontalAlignment(SwingConstants.CENTER);
-            quantityField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            quantityField.setBorder(BorderFactory.createLineBorder(CustomUI.gray));
             quantityField.setFont(new Font("Arial", Font.PLAIN, 12));
 
             btnIncrease = new JButton("▲");
@@ -1207,6 +1210,10 @@ public class ServiceSelectionPanel extends JPanel {
         }
     }
 
+    private void hideCloseButton() {
+        btnClose.setVisible(false);
+    }
+
     // Custom renderer for service table with alternating row colors and proper styling
     private class ServiceTableRenderer extends DefaultTableCellRenderer {
         @Override
@@ -1219,7 +1226,7 @@ public class ServiceSelectionPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
@@ -1227,7 +1234,7 @@ public class ServiceSelectionPanel extends JPanel {
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             // Center align text for all columns except custom rendered columns (4 and 5)
@@ -1254,7 +1261,7 @@ public class ServiceSelectionPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
@@ -1262,7 +1269,7 @@ public class ServiceSelectionPanel extends JPanel {
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             // Center align text for all columns

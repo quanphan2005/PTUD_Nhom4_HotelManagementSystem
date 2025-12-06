@@ -114,7 +114,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private void createCustomerInfoPanel() {
         JPanel infoPanel = new JPanel(new GridBagLayout());
-        infoPanel.setBackground(Color.WHITE);
+        infoPanel.setBackground(CustomUI.white);
         infoPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
             BorderFactory.createEmptyBorder(5, 15, 5, 15)
@@ -233,7 +233,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private void createRoomDetailsTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBackground(Color.WHITE);
+        tablePanel.setBackground(CustomUI.white);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
         // Create collapsible title panel
@@ -281,10 +281,10 @@ public class ReservationInfoDetailPanel extends JPanel {
                     TableColumnModel columnModel = tblRoomDetails.getColumnModel();
                     columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.12)); // 12% - Mã chi tiết
                     columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Phòng
-                    columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.15)); // 18% - Checkin
-                    columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.15)); // 18% - Checkout
-                    columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Trạng thái
-                    columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.33)); // 33% - Thao tác
+                    columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.14)); // 18% - Checkin
+                    columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.14)); // 18% - Checkout
+                    columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.14)); // 15% - Trạng thái
+                    columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.38)); // 33% - Thao tác
                 }
             });
 
@@ -366,7 +366,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         JButton btnOrderService = new JButton("Gọi DV");
         btnOrderService.setFont(CustomUI.verySmallFont);
         btnOrderService.setBackground(CustomUI.darkGreen);
-        btnOrderService.setForeground(Color.WHITE);
+        btnOrderService.setForeground(CustomUI.white);
         btnOrderService.setPreferredSize(new Dimension(100, 30));
         btnOrderService.setFocusPainted(false);
         btnOrderService.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
@@ -377,11 +377,11 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private JButton createCheckinBtn(ReservationDetailResponse detail) {
         // Check-in button
-        JButton btnCheckIn = new JButton("Checkin");
+        JButton btnCheckIn = new JButton("Nhận phòng");
         btnCheckIn.setFont(CustomUI.verySmallFont);
         btnCheckIn.setBackground(CustomUI.darkGreen);
-        btnCheckIn.setForeground(Color.WHITE);
-        btnCheckIn.setPreferredSize(new Dimension(100, 30));
+        btnCheckIn.setForeground(CustomUI.white);
+        btnCheckIn.setPreferredSize(new Dimension(120, 30));
         btnCheckIn.setFocusPainted(false);
         btnCheckIn.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
         btnCheckIn.addActionListener(e -> handleCheckin(detail));
@@ -393,9 +393,9 @@ public class ReservationInfoDetailPanel extends JPanel {
         // Change room button
         JButton btnChangeRoom = new JButton("Đổi phòng");
         btnChangeRoom.setFont(CustomUI.verySmallFont);
-        btnChangeRoom.setBackground(CustomUI.lightBlue);
-        btnChangeRoom.setForeground(Color.WHITE);
-        btnChangeRoom.setPreferredSize(new Dimension(100, 30));
+        btnChangeRoom.setBackground(CustomUI.blue);
+        btnChangeRoom.setForeground(CustomUI.white);
+        btnChangeRoom.setPreferredSize(new Dimension(110, 30));
         btnChangeRoom.setFocusPainted(false);
         btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
         btnChangeRoom.addActionListener(e -> handleChangeRoom(detail));
@@ -408,7 +408,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         JButton btnExtendTime = new JButton("Gia hạn");
         btnExtendTime.setFont(CustomUI.verySmallFont);
         btnExtendTime.setBackground(CustomUI.orange);
-        btnExtendTime.setForeground(Color.WHITE);
+        btnExtendTime.setForeground(CustomUI.white);
         btnExtendTime.setPreferredSize(new Dimension(100, 30));
         btnExtendTime.setFocusPainted(false);
         btnExtendTime.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
@@ -422,7 +422,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         JButton btnCancel = new JButton("Hủy đơn");
         btnCancel.setFont(CustomUI.verySmallFont);
         btnCancel.setBackground(CustomUI.red);
-        btnCancel.setForeground(Color.WHITE);
+        btnCancel.setForeground(CustomUI.white);
         btnCancel.setPreferredSize(new Dimension(100, 30));
         btnCancel.setFocusPainted(false);
         btnCancel.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
@@ -434,7 +434,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private void createServicesTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBackground(Color.WHITE);
+        tablePanel.setBackground(CustomUI.white);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
         // Create collapsible title panel
@@ -478,7 +478,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private void createMovingHistoryTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBackground(Color.WHITE);
+        tablePanel.setBackground(CustomUI.white);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
         // Create collapsible title panel
@@ -565,14 +565,14 @@ public class ReservationInfoDetailPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 if (row % 2 == 0) {
                     component.setBackground(CustomUI.ROW_EVEN);
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             setHorizontalAlignment(JLabel.CENTER);
@@ -698,8 +698,8 @@ public class ReservationInfoDetailPanel extends JPanel {
             case CHECKING:
             case USING:
                 panel.add(btnOrderService);
-                panel.add(btnExtendTime);
                 panel.add(btnChangeRoom);
+                panel.add(btnExtendTime);
                 break;
             case CHECKOUT_LATE:
             case null:
@@ -1170,7 +1170,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     private void handleViewOrderService(ReservationDetailResponse detail) {
-        ServiceSelectionPanel serviceSelectionPanel = new ServiceSelectionPanel(detail.getReservationDetailId());
+        ServiceSelectionPanel serviceSelectionPanel = new ServiceSelectionPanel(detail.getReservationDetailId(), detail.getRoomName());
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), SERVICE_ORDER + reservationInfo.getMaDonDatPhong(), Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

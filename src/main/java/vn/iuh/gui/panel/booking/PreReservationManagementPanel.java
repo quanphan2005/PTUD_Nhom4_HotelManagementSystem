@@ -96,7 +96,7 @@ public class PreReservationManagementPanel extends JPanel {
 
     private void createFilterPanel() {
         JPanel filterPanel = new JPanel(new GridBagLayout());
-        filterPanel.setBackground(Color.WHITE);
+        filterPanel.setBackground(CustomUI.white);
         filterPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -166,7 +166,7 @@ public class PreReservationManagementPanel extends JPanel {
         btnReset = new JButton("HOÀN TÁC");
         btnReset.setFont(CustomUI.smallFont);
         btnReset.setBackground(CustomUI.lightGray);
-        btnReset.setForeground(Color.BLACK);
+        btnReset.setForeground(CustomUI.black);
         btnReset.setFocusPainted(false);
         btnReset.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         btnReset.addActionListener(e -> resetFilters());
@@ -262,7 +262,7 @@ public class PreReservationManagementPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
@@ -270,7 +270,7 @@ public class PreReservationManagementPanel extends JPanel {
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             // Center align text for all columns except action column
@@ -556,20 +556,20 @@ public class PreReservationManagementPanel extends JPanel {
             setOpaque(true);
 
             // Check-in button
-            btnCheckIn = new JButton("Check-in");
+            btnCheckIn = new JButton("Nhận phòng");
             btnCheckIn.setFont(CustomUI.verySmallFont);
             btnCheckIn.setBackground(CustomUI.darkGreen);
-            btnCheckIn.setForeground(Color.WHITE);
-            btnCheckIn.setPreferredSize(new Dimension(120, 30));
+            btnCheckIn.setForeground(CustomUI.white);
+            btnCheckIn.setPreferredSize(new Dimension(130, 30));
             btnCheckIn.setFocusPainted(false);
             btnCheckIn.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
 
             // Change room button
             btnChangeRoom = new JButton("Đổi phòng");
             btnChangeRoom.setFont(CustomUI.verySmallFont);
-            btnChangeRoom.setBackground(CustomUI.lightBlue);
-            btnChangeRoom.setForeground(Color.WHITE);
-            btnChangeRoom.setPreferredSize(new Dimension(120, 30));
+            btnChangeRoom.setBackground(CustomUI.blue);
+            btnChangeRoom.setForeground(CustomUI.white);
+            btnChangeRoom.setPreferredSize(new Dimension(130, 30));
             btnChangeRoom.setFocusPainted(false);
             btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
 
@@ -578,7 +578,7 @@ public class PreReservationManagementPanel extends JPanel {
             trashIcon = new ImageIcon(trashIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
             btnCancel = new JButton(trashIcon);
             btnCancel.setBackground(CustomUI.red);
-            btnCancel.setForeground(Color.WHITE);
+            btnCancel.setForeground(CustomUI.white);
             btnCancel.setPreferredSize(new Dimension(30, 30));
             btnCancel.setFocusPainted(false);
             btnCancel.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
@@ -615,11 +615,11 @@ public class PreReservationManagementPanel extends JPanel {
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
 
             // Check-in button
-            btnCheckIn = new JButton("Check-in");
+            btnCheckIn = new JButton("Nhận phòng");
             btnCheckIn.setFont(CustomUI.verySmallFont);
             btnCheckIn.setBackground(CustomUI.darkGreen);
-            btnCheckIn.setForeground(Color.WHITE);
-            btnCheckIn.setPreferredSize(new Dimension(120, 30));
+            btnCheckIn.setForeground(CustomUI.white);
+            btnCheckIn.setPreferredSize(new Dimension(130, 30));
             btnCheckIn.setFocusPainted(false);
             btnCheckIn.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnCheckIn.addActionListener(e -> {
@@ -641,9 +641,9 @@ public class PreReservationManagementPanel extends JPanel {
             // Change room button
             btnChangeRoom = new JButton("Đổi phòng");
             btnChangeRoom.setFont(CustomUI.verySmallFont);
-            btnChangeRoom.setBackground(CustomUI.lightBlue);
-            btnChangeRoom.setForeground(Color.WHITE);
-            btnChangeRoom.setPreferredSize(new Dimension(120, 30));
+            btnChangeRoom.setBackground(CustomUI.blue);
+            btnChangeRoom.setForeground(CustomUI.white);
+            btnChangeRoom.setPreferredSize(new Dimension(130, 30));
             btnChangeRoom.setFocusPainted(false);
             btnChangeRoom.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnChangeRoom.addActionListener(e -> {
@@ -666,7 +666,7 @@ public class PreReservationManagementPanel extends JPanel {
             trashIcon = new ImageIcon(trashIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
             btnCancel = new JButton(trashIcon);
             btnCancel.setBackground(CustomUI.red);
-            btnCancel.setForeground(Color.WHITE);
+            btnCancel.setForeground(CustomUI.white);
             btnCancel.setPreferredSize(new Dimension(30, 30));
             btnCancel.setFocusPainted(false);
             btnCancel.putClientProperty(FlatClientProperties.STYLE, " arc: 8");

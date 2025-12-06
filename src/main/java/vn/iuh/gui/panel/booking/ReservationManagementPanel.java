@@ -140,7 +140,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private void createFilterPanel() {
         JPanel filterPanel = new JPanel(new GridBagLayout());
-        filterPanel.setBackground(Color.WHITE);
+        filterPanel.setBackground(CustomUI.white);
         filterPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
             BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -226,7 +226,7 @@ public class ReservationManagementPanel extends JPanel {
         btnReset = new JButton("Hoàn tác");
         btnReset.setFont(CustomUI.smallFont);
         btnReset.setBackground(CustomUI.lightGray);
-        btnReset.setForeground(Color.BLACK);
+        btnReset.setForeground(CustomUI.black);
         btnReset.setFocusPainted(false);
         btnReset.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
     }
@@ -319,14 +319,14 @@ public class ReservationManagementPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 if (row % 2 == 0) {
                     component.setBackground(CustomUI.ROW_EVEN);
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             setHorizontalAlignment(JLabel.CENTER);
@@ -552,10 +552,10 @@ public class ReservationManagementPanel extends JPanel {
             setOpaque(true);
 
             btnViewDetail = new JButton("Xem chi tiết");
-            btnViewDetail.setFont(CustomUI.verySmallFont);
-            btnViewDetail.setBackground(CustomUI.lightBlue);
-            btnViewDetail.setForeground(Color.WHITE);
-            btnViewDetail.setPreferredSize(new Dimension(120, 30));
+            btnViewDetail.setFont(CustomUI.smallFont);
+            btnViewDetail.setBackground(CustomUI.orange);
+            btnViewDetail.setForeground(CustomUI.white);
+            btnViewDetail.setPreferredSize(new Dimension(130, 30));
             btnViewDetail.setFocusPainted(false);
             btnViewDetail.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
 
@@ -586,10 +586,10 @@ public class ReservationManagementPanel extends JPanel {
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
 
             btnViewDetail = new JButton("Xem chi tiết");
-            btnViewDetail.setFont(CustomUI.verySmallFont);
-            btnViewDetail.setBackground(CustomUI.lightBlue);
-            btnViewDetail.setForeground(Color.WHITE);
-            btnViewDetail.setPreferredSize(new Dimension(120, 30));
+            btnViewDetail.setFont(CustomUI.smallFont);
+            btnViewDetail.setBackground(CustomUI.orange);
+            btnViewDetail.setForeground(CustomUI.white);
+            btnViewDetail.setPreferredSize(new Dimension(130, 30));
             btnViewDetail.setFocusPainted(false);
             btnViewDetail.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnViewDetail.addActionListener(e -> {

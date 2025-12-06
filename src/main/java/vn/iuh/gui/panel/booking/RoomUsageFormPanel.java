@@ -137,7 +137,7 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void initializeComponents() {
-        setBackground(Color.WHITE);
+        setBackground(CustomUI.white);
         setLayout(new BorderLayout(10, 10));
 
 
@@ -203,7 +203,7 @@ public class RoomUsageFormPanel extends JPanel {
 
     private void styleButton(JButton button, Color backgroundColor) {
         button.setBackground(backgroundColor);
-        button.setForeground(Color.WHITE);
+        button.setForeground(CustomUI.white);
         button.setFont(CustomUI.normalFont);
         button.setFocusPainted(false);
         button.setPreferredSize(new Dimension(150, 40));
@@ -242,8 +242,8 @@ public class RoomUsageFormPanel extends JPanel {
 
         btnClose = new JButton("x");
         btnClose.setFont(CustomUI.bigFont);
-        btnClose.setBackground(Color.RED);
-        btnClose.setForeground(Color.WHITE);
+        btnClose.setBackground(CustomUI.red);
+        btnClose.setForeground(CustomUI.white);
         btnClose.setPreferredSize(new Dimension(50, 20));
         btnClose.setFocusPainted(false);
         btnClose.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
@@ -254,7 +254,7 @@ public class RoomUsageFormPanel extends JPanel {
         // Create main content panel with overlay capability for service panel
         mainContentPanel = new JPanel();
         mainContentPanel.setLayout(new OverlayLayout(mainContentPanel));
-        mainContentPanel.setBackground(Color.white);
+        mainContentPanel.setBackground(CustomUI.white);
 
         // Base content panel
         JPanel basePanel = createBaseContentPanel();
@@ -269,7 +269,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Set scroll speed
         mainScrollPane.getVerticalScrollBar().setUnitIncrement(40);
-        mainScrollPane.getViewport().setBackground(Color.WHITE);
+        mainScrollPane.getViewport().setBackground(CustomUI.white);
 
         // Add to main panel
         add(headerPanel, BorderLayout.NORTH);
@@ -278,13 +278,13 @@ public class RoomUsageFormPanel extends JPanel {
 
     private JPanel createBaseContentPanel() {
         JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setBackground(Color.WHITE);
+        contentPanel.setBackground(CustomUI.white);
         contentPanel.setOpaque(true);
         GridBagConstraints gbc = new GridBagConstraints();
 
         // LEFT COLUMN - Row 0: Booking info panel (WHITE background) - SWAPPED TO TOP
         JPanel bookingPanel = createBookingInfoPanel();
-        bookingPanel.setBackground(Color.WHITE);
+        bookingPanel.setBackground(CustomUI.white);
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
@@ -296,7 +296,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Right Column - Row 0: Action menu panel (WHITE background)
         JPanel actionMenu = createActionMenuPanel();
-        bookingPanel.setBackground(Color.WHITE);
+        bookingPanel.setBackground(CustomUI.white);
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
@@ -308,7 +308,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // LEFT COLUMN - Row 1: Room info panel (WHITE background)
         JPanel rightRoomPanel = createRoomInfoPanel();
-        rightRoomPanel.setBackground(Color.WHITE);
+        rightRoomPanel.setBackground(CustomUI.white);
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 1;
@@ -335,7 +335,7 @@ public class RoomUsageFormPanel extends JPanel {
 
     private JPanel createCustomerInfoPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(CustomUI.white);
 
         ImageIcon customerIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/customer.png")));
         customerIcon = new ImageIcon(customerIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
@@ -349,7 +349,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Create content panel
         customerInfoContent = new JPanel(new GridBagLayout());
-        customerInfoContent.setBackground(Color.WHITE);
+        customerInfoContent.setBackground(CustomUI.white);
         customerInfoContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
@@ -375,7 +375,7 @@ public class RoomUsageFormPanel extends JPanel {
 
     private JPanel createActionMenuPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(CustomUI.white);
 
         ImageIcon menuIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/action.png")));
         menuIcon = new ImageIcon(menuIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
@@ -389,7 +389,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Create content panel - flexible grid based on number of actions
         actionMenuContent = new JPanel();
-        actionMenuContent.setBackground(Color.WHITE);
+        actionMenuContent.setBackground(CustomUI.white);
         actionMenuContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
@@ -406,20 +406,20 @@ public class RoomUsageFormPanel extends JPanel {
 
     private JPanel createBookingInfoPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(CustomUI.white);
 
         ImageIcon bookingIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/booking.png")));
         bookingIcon = new ImageIcon(bookingIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(bookingIcon, "THÔNG TIN ĐẶT PHÒNG",
-                                                     CustomUI.darkGreen, Color.WHITE, () -> {
+                                                     CustomUI.darkGreen, CustomUI.white, () -> {
                     isBookingInfoCollapsed = !isBookingInfoCollapsed;
                     togglePanelVisibility(bookingInfoContent, isBookingInfoCollapsed);
                 });
 
         // Create content panel
         bookingInfoContent = new JPanel(new GridBagLayout());
-        bookingInfoContent.setBackground(Color.WHITE);
+        bookingInfoContent.setBackground(CustomUI.white);
         bookingInfoContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CustomUI.darkGreen, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
@@ -498,7 +498,7 @@ public class RoomUsageFormPanel extends JPanel {
         gbc.weighty = 1.0;
         JTextArea txtNote = new JTextArea();
         txtNote.setPreferredSize(new Dimension(300, 100));
-        txtNote.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
+        txtNote.setBorder(BorderFactory.createLineBorder(CustomUI.gray, 1));
         txtNote.setEditable(false);
         bookingInfoContent.add(txtNote, gbc);
 
@@ -512,21 +512,21 @@ public class RoomUsageFormPanel extends JPanel {
         RoomFurnitureItems = roomService.getAllFurnitureInRoom(selectedRoom.getRoomId());
 
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(CustomUI.white);
 
         ImageIcon roomIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/room.png")));
         roomIcon = new ImageIcon(roomIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(roomIcon, "CHI TIẾT PHÒNG",
-                                                     CustomUI.orange, Color.WHITE, () -> {
+                                                     CustomUI.orange, CustomUI.white, () -> {
                     isRoomInfoCollapsed = !isRoomInfoCollapsed;
                     togglePanelVisibility(roomInfoContent, isRoomInfoCollapsed);
                 });
 
         // Create content panel with proper overflow handling
         roomInfoContent = new JPanel(new GridBagLayout());
-        roomInfoContent.setBackground(Color.WHITE);
+        roomInfoContent.setBackground(CustomUI.white);
         roomInfoContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CustomUI.orange, 2),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)
@@ -554,7 +554,7 @@ public class RoomUsageFormPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(15, 10, 8, 10);
         JSeparator separator = new JSeparator();
-        separator.setForeground(Color.GRAY);
+        separator.setForeground(CustomUI.gray);
         roomInfoContent.add(separator, gbc);
 
         // Reset for additional fields
@@ -621,7 +621,7 @@ public class RoomUsageFormPanel extends JPanel {
         // Text label
         JLabel textLabel = new JLabel(item.getText(), SwingConstants.CENTER);
         textLabel.setFont(CustomUI.normalFont);
-        textLabel.setForeground(Color.WHITE);
+        textLabel.setForeground(CustomUI.white);
         textLabel.setOpaque(false);
 
         button.add(iconLabel, BorderLayout.CENTER);
