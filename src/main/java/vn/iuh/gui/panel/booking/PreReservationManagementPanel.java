@@ -359,6 +359,8 @@ public class PreReservationManagementPanel extends JPanel {
 
         reservationFilter = new ReservationFilter(null, null, null);
         filteredReservations = new ArrayList<>(allReservations);
+
+        applyFilters();
         populateTable();
     }
 

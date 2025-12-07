@@ -582,8 +582,16 @@ public class BookingManagementPanel extends JPanel {
     }
 
     private void handleCheckinDateChange() {
+        try {
+            spnCheckInDate.commitEdit();
+            spnCheckOutDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
         Date now = new Date();
         Date checkInDate = (Date) spnCheckInDate.getValue();
+        System.out.println("Check-in date changed to: " + checkInDate);
         Date currentCheckOutDate = (Date) spnCheckOutDate.getValue();
 
         // Handle past check-in date
@@ -623,6 +631,13 @@ public class BookingManagementPanel extends JPanel {
     }
 
     private void handleCheckoutDateChange() {
+        try {
+            spnCheckInDate.commitEdit();
+            spnCheckOutDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
         Date checkInDate = (Date) spnCheckInDate.getValue();
         Date checkOutDate = (Date) spnCheckOutDate.getValue();
 

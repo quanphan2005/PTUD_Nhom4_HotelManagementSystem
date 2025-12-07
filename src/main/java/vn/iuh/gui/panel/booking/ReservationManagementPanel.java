@@ -20,6 +20,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -110,8 +111,10 @@ public class ReservationManagementPanel extends JPanel {
                 applyFilters();
             }
         });
-        spnStartDate.addChangeListener(e -> applyFilters());
-        spnEndDate.addChangeListener(e -> applyFilters());
+
+        spnStartDate.addChangeListener(e -> handleStartDateSpinnerChange());
+        spnEndDate.addChangeListener(e -> handleEndDateSpinnerChange());
+
         chkCurrentReservations.addActionListener(e -> applyFilters());
         btnReset.addActionListener(e -> resetFilters());
     }
@@ -357,6 +360,49 @@ public class ReservationManagementPanel extends JPanel {
         component.setPreferredSize(new Dimension(180, 35));
         component.setMinimumSize(new Dimension(150, 35));
         panel.add(component, gbc);
+    }
+
+    private void handleStartDateSpinnerChange() {
+        try {
+            spnStartDate.commitEdit();
+            spnEndDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
+        Date startDate = (Date) spnStartDate.getValue();
+        Date endDate = (Date) spnEndDate.getValue();
+
+        // Start date must be at least 1 minute before end date
+        if (startDate.after(Date.from(endDate.toInstant().minus(1, ChronoUnit.MINUTES)))) {
+            // Adjust end date = start date + 1 day
+            Date newEndDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // +1 day
+            spnEndDate.setValue(newEndDate);
+        }
+
+        applyFilters();
+    }
+
+    // Handle events
+    private void handleEndDateSpinnerChange() {
+        try {
+            spnStartDate.commitEdit();
+            spnEndDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
+        Date startDate = (Date) spnStartDate.getValue();
+        Date endDate = (Date) spnEndDate.getValue();
+
+        // End date must be at least 1 minute after start date
+        if (endDate.before(Date.from(startDate.toInstant().plus(1, ChronoUnit.MINUTES)))) {
+            // Adjust start date = end date - 1 day
+            Date newStartDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000); // -1 day
+            spnStartDate.setValue(newStartDate);
+        }
+
+        applyFilters();
     }
 
     private void applyFilters() {
