@@ -659,13 +659,15 @@ public class ReservationInfoDetailPanel extends JPanel {
             rowData[3] = history.getTimeOut() != null ? dateFormat.format(history.getTimeOut()) : "N/A";
 
             // Determine note based on timeIn and timeOut
-            String note;
-            if (history.getTimeIn() == null) {
-                note = "checkout";
-            } else if (history.getTimeOut() == null) {
-                note = "checkin";
-            } else {
-                note = "-";
+            String note = history.getNote();
+            if (note == null || note.isEmpty()) {
+                if (history.getTimeIn() == null) {
+                    note = "Đã rời phòng";
+                } else if (history.getTimeOut() == null) {
+                    note = "Đã vào phòng";
+                } else {
+                    note = "N/A";
+                }
             }
             rowData[4] = note;
 

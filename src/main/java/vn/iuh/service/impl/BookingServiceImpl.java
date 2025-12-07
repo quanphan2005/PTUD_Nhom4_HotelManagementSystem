@@ -1075,7 +1075,7 @@ public class BookingServiceImpl implements BookingService {
                         reservationIdToRoomName.get(lsdv.getMaChiTietDatPhong()),
                         lsdv.getThoiGianTao(),
                         null,
-                        "Checkin"
+                        lsdv.getLaLanDauTien() ? "Checkin" : null
                 ));
                 i++;
             }
@@ -1091,7 +1091,7 @@ public class BookingServiceImpl implements BookingService {
                         reservationIdToRoomName.get(lsrn.getMaChiTietDatPhong()),
                         null,
                         lsrn.getThoiGianTao(),
-                        "Checkout"
+                        lsrn.isLaLanCuoiCung() ? "Checkout" : null
                 ));
                 j++;
             }

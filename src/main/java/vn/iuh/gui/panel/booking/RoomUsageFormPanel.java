@@ -136,7 +136,6 @@ public class RoomUsageFormPanel extends JPanel {
         setBackground(CustomUI.white);
         setLayout(new BorderLayout(10, 10));
 
-
         ServiceSelectionPanel servicePanel =
                 new ServiceSelectionPanel(PanelName.ROOM_USING.getName(), 1,
                                           Collections.singletonList(selectedRoom.getRoomName()),
@@ -231,6 +230,15 @@ public class RoomUsageFormPanel extends JPanel {
         ImageIcon checkoutIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/leaving.png")));
         checkoutIcon = new ImageIcon(checkoutIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH));
         btnLeaving = new JButton(checkoutIcon);
+
+        boolean isExisted = movingHistoryService.isExisted(selectedRoom.getMaChiTietDatPhong());
+        if (isExisted) {
+            btnEntering.setEnabled(true);
+            btnLeaving.setEnabled(false);
+        } else {
+            btnEntering.setEnabled(false);
+            btnLeaving.setEnabled(true);
+        }
 
         titlePanel.add(btnEntering);
         titlePanel.add(titleLabel);
@@ -970,8 +978,6 @@ public class RoomUsageFormPanel extends JPanel {
     }
 
     private void setDefaultValues() {
-        // Set initial price based on daily rate
-
         spnCheckOutDate.setValue(selectedRoom.getTimeOut());
         spnCheckInDate.setValue(selectedRoom.getTimeIn());
 
@@ -979,7 +985,6 @@ public class RoomUsageFormPanel extends JPanel {
 
         txtTotalServicePrice.setText(priceFormatter.format(customerInfoWithPayments.getTotalServiceCost()) + " VNĐ");
         txtDepositPrice.setText(priceFormatter.format(customerInfoWithPayments.getTotalDepositPayment()) + " VNĐ");
-
 
         txtCustomerName.setText(customerInfoWithPayments.getCustomerName());
         txtPhoneNumber.setText(customerInfoWithPayments.getCustomerPhone());
@@ -1018,6 +1023,8 @@ public class RoomUsageFormPanel extends JPanel {
                     "Ghi nhận khách nhận phòng thất bại cho " + selectedRoom.getRoomName(),
                     "Thất bại", JOptionPane.ERROR_MESSAGE);
         }
+
+        RefreshManager.refreshAfterCheckIn();
     }
 
     private void handleLeaving() {
