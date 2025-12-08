@@ -236,11 +236,11 @@ public class BookingServiceImpl implements BookingService {
                     soGioSuDung = 0;
                 }
 
-                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                    ChiTietHoaDon chiTietHoaDonMoiNhat = chiTietHoaDonDAO.layChiTietHoaDonMoiNhat();
-                    String maChiTietHoaDonMoiNhat = chiTietHoaDonMoiNhat == null
-                            ? null : chiTietHoaDonMoiNhat.getMaChiTietHoaDon();
+                ChiTietHoaDon chiTietHoaDonMoiNhat = chiTietHoaDonDAO.layChiTietHoaDonMoiNhat();
+                String maChiTietHoaDonMoiNhat = chiTietHoaDonMoiNhat == null
+                        ? null : chiTietHoaDonMoiNhat.getMaChiTietHoaDon();
 
+                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
                     BigDecimal donGiaPhongHienTai = isLessThanHalfDay ?
                             hourlyPriceMap.get(chiTietDatPhong.getMaPhong()) :
                             dailyPriceMap.get(chiTietDatPhong.getMaPhong());
@@ -264,6 +264,10 @@ public class BookingServiceImpl implements BookingService {
                             thoiGianDung
                     );
 
+                    maChiTietHoaDonMoiNhat = EntityUtil.increaseEntityID(maChiTietHoaDonMoiNhat,
+                                                                           EntityIDSymbol.INVOICE_DETAIL_PREFIX.getPrefix(),
+                                                                           EntityIDSymbol.INVOICE_DETAIL_PREFIX.getLength());
+
                     chiTietHoaDon.setTongTien(tongTien);
                     chiTietHoaDon.setTenPhong(RoomIdToRoomName.get(chiTietDatPhong.getMaPhong()));
                     danhSachChiTietHoaDon.add(chiTietHoaDon);
@@ -275,7 +279,6 @@ public class BookingServiceImpl implements BookingService {
                         }
                     });
                 }
-
 
                 hoaDonDatCoc.setChiTietHoaDonList(danhSachChiTietHoaDon);
                 hoaDonDAO.createInvoice(hoaDonDatCoc);

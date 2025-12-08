@@ -67,6 +67,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     private JButton btnPrintReceipt;
     private JButton btnCheckoutAndPrintReceipt;
     private JButton btnTranferRoomHistory;
+    private JButton btnExtendTime;
 
     private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
@@ -126,8 +127,8 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+//        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.BOTH;
 
         // Initialize labels
         lblCCCD = new JLabel();
@@ -166,13 +167,23 @@ public class ReservationInfoDetailPanel extends JPanel {
         gbc.gridwidth = 1;
         gbc.gridheight = 1;
         gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.NORTHEAST;
+        gbc.ipadx = 8;
+        gbc.ipady = 5;
 
+        btnTranferRoomHistory = createTransferRoomHistoryBtn();
+        infoPanel.add(btnTranferRoomHistory, gbc);
+
+        gbc.gridy = 1;
+        btnExtendTime = createExtendTimeBtn();
+        infoPanel.add(btnExtendTime, gbc);
+
+        // Button 2 - Row 1
+        gbc.gridx = 5;
+
+        gbc.gridy = 0;
         btnPrintInvoice = createPrintInvoiceBtn();
         infoPanel.add(btnPrintInvoice, gbc);
 
-        // Button 2 - Row 1
         gbc.gridy = 1;
         if (isEndedStatus(reservationInfo.getStatus())) {
             btnPrintReceipt = createPrintReceiptBtn();
@@ -183,16 +194,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         }
 
         // Button 3 - Row 2
-        gbc.gridy = 2;
-        btnTranferRoomHistory = new JButton("Xem lịch sử đổi phòng");
-        btnTranferRoomHistory.setFont(CustomUI.verySmallFont);
-        btnTranferRoomHistory.setBackground(CustomUI.orange);
-        btnTranferRoomHistory.setForeground(CustomUI.white);
-        btnTranferRoomHistory.setPreferredSize(new Dimension(220, 35));
-        btnTranferRoomHistory.setFocusPainted(false);
-        btnTranferRoomHistory.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
-        btnTranferRoomHistory.addActionListener(e -> handleCheckTranferRoomHistory(reservationInfo));
-        infoPanel.add(btnTranferRoomHistory, gbc);
+//        gbc.gridy = 2
 
         JPanel wrapper = new JPanel(new BorderLayout());
 
@@ -205,24 +207,36 @@ public class ReservationInfoDetailPanel extends JPanel {
     private void addInfoRow(JPanel panel, GridBagConstraints gbc, int row, int startCol, String labelText, JLabel valueLabel) {
         gbc.gridy = row;
         gbc.gridx = startCol;
-        gbc.weightx = 0.0;
         gbc.gridheight = 1;
+        gbc.gridwidth = 1;
 
         JLabel label = new JLabel(labelText);
         label.setFont(CustomUI.smallFont);
         panel.add(label, gbc);
 
         gbc.gridx = startCol + 1;
-        gbc.weightx = 0.5;
 
         JLabel valueLabelCopy = valueLabel;
-        label.setFont(CustomUI.smallFont);
+        valueLabelCopy.setFont(CustomUI.smallFont);
         panel.add(valueLabelCopy, gbc);
     }
 
     private boolean isEndedStatus(String status) {
         return Objects.equals(status, ReservationStatus.COMPLETED.getStatus())
             || Objects.equals(status, ReservationStatus.CANCELLED.getStatus());
+    }
+
+    public boolean canCheckChangeRoomHistory(String status) {
+        return Objects.equals(status, ReservationStatus.USING.getStatus())
+               || Objects.equals(status, ReservationStatus.CHECKING.getStatus())
+               || Objects.equals(status, ReservationStatus.CHECKOUT_LATE.getStatus())
+                || Objects.equals(status, ReservationStatus.COMPLETED.getStatus());
+    }
+
+    private boolean canExtendTime(String status) {
+        return Objects.equals(status, ReservationStatus.CHECKED_IN.getStatus())
+               || Objects.equals(status, ReservationStatus.CHECKING.getStatus())
+               || Objects.equals(status, ReservationStatus.USING.getStatus());
     }
 
     private boolean canCheckout(String status) {
@@ -307,13 +321,14 @@ public class ReservationInfoDetailPanel extends JPanel {
     private JButton createPrintInvoiceBtn() {
         // Print Invoice button
         JButton btnPrintInvoice = new JButton("Xem hóa đơn đặt cọc");
-        btnPrintInvoice.setFont(CustomUI.verySmallFont);
+        btnPrintInvoice.setFont(CustomUI.smallFont);
         btnPrintInvoice.setPreferredSize(new Dimension(220, 35));
         btnPrintInvoice.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+        btnPrintInvoice.setFocusPainted(false);
+
         if (reservationInfo.isAdvance()) {
             btnPrintInvoice.setBackground(CustomUI.blue);
             btnPrintInvoice.setForeground(CustomUI.white);
-            btnPrintInvoice.setFocusPainted(false);
             btnPrintInvoice.addActionListener(e -> handlePrintInvoice(reservationInfo));
         } else {
             btnPrintInvoice.setBackground(CustomUI.gray);
@@ -327,7 +342,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     private JButton createPrintReceiptBtn() {
         // Print Receipt button
         JButton btnPrintReceipt = new JButton("Xem hóa đơn thanh toán");
-        btnPrintReceipt.setFont(CustomUI.verySmallFont);
+        btnPrintReceipt.setFont(CustomUI.smallFont);
         btnPrintReceipt.setBackground(CustomUI.darkGreen);
         btnPrintReceipt.setForeground(CustomUI.white);
         btnPrintReceipt.setPreferredSize(new Dimension(220, 35));
@@ -338,10 +353,54 @@ public class ReservationInfoDetailPanel extends JPanel {
         return btnPrintReceipt;
     }
 
+    private JButton createTransferRoomHistoryBtn() {
+        JButton btnTransferRoomHistoryBtn = new JButton("Xem lịch sử đổi phòng");
+        btnTransferRoomHistoryBtn.setFont(CustomUI.smallFont);
+        btnTransferRoomHistoryBtn.setPreferredSize(new Dimension(220, 35));
+        btnTransferRoomHistoryBtn.setFocusPainted(false);
+        btnTransferRoomHistoryBtn.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+
+        if (canCheckChangeRoomHistory(reservationInfo.getStatus())) {
+            btnTransferRoomHistoryBtn.setBackground(CustomUI.orange);
+            btnTransferRoomHistoryBtn.setForeground(CustomUI.white);
+            btnTransferRoomHistoryBtn.addActionListener(e -> handleCheckTranferRoomHistory(reservationInfo));
+        } else {
+            btnTransferRoomHistoryBtn.setBackground(CustomUI.gray);
+            btnTransferRoomHistoryBtn.setForeground(CustomUI.white);
+            btnTransferRoomHistoryBtn.setEnabled(false);
+        }
+
+
+        return btnTransferRoomHistoryBtn;
+    }
+
+    private JButton createExtendTimeBtn() {
+        JButton btnExtendTime = new JButton("Gia hạn thời gian");
+        btnExtendTime.setFont(CustomUI.smallFont);
+        btnExtendTime.setPreferredSize(new Dimension(220, 35));
+        btnExtendTime.setFocusPainted(false);
+        btnExtendTime.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+
+        if (canExtendTime(reservationInfo.getStatus())) {
+            btnExtendTime.setBackground(CustomUI.orange);
+            btnExtendTime.setForeground(CustomUI.white);
+            btnExtendTime.addActionListener(e -> handleExtendTime(reservationInfo.getDetails().get(0)));
+        } else {
+            btnExtendTime.setBackground(CustomUI.gray);
+            btnExtendTime.setForeground(CustomUI.white);
+            btnExtendTime.setEnabled(false);
+        }
+
+        // TODO: Change this line to pass Reservation instead of Detail
+        btnExtendTime.addActionListener(e -> handleExtendTime(reservationInfo.getDetails().get(0)));
+
+        return btnExtendTime;
+    }
+
     private JButton createCheckoutAndPrintReceiptBtn() {
         // Checkout button
         btnCheckoutAndPrintReceipt = new JButton("Thanh toán & In hóa đơn");
-        btnCheckoutAndPrintReceipt.setFont(CustomUI.verySmallFont);
+        btnCheckoutAndPrintReceipt.setFont(CustomUI.smallFont);
         btnCheckoutAndPrintReceipt.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
         if (canCheckout(reservationInfo.getStatus())) {
             btnCheckoutAndPrintReceipt.setBackground(CustomUI.darkGreen);
@@ -401,20 +460,6 @@ public class ReservationInfoDetailPanel extends JPanel {
         btnChangeRoom.addActionListener(e -> handleChangeRoom(detail));
 
         return btnChangeRoom;
-    }
-
-    private JButton createExtendTimeBtn(ReservationDetailResponse detail) {
-        // Change Extend time button
-        JButton btnExtendTime = new JButton("Gia hạn");
-        btnExtendTime.setFont(CustomUI.verySmallFont);
-        btnExtendTime.setBackground(CustomUI.orange);
-        btnExtendTime.setForeground(CustomUI.white);
-        btnExtendTime.setPreferredSize(new Dimension(100, 30));
-        btnExtendTime.setFocusPainted(false);
-        btnExtendTime.putClientProperty(FlatClientProperties.STYLE, "arc: 8");
-        btnExtendTime.addActionListener(e -> handleExtendTime(detail));
-
-        return btnExtendTime;
     }
 
     private JButton createCancelBtn(ReservationDetailResponse detail) {
@@ -688,7 +733,6 @@ public class ReservationInfoDetailPanel extends JPanel {
         JButton btnOrderService = createOrderServiceBtn(detail);
         JButton btnCheckIn = createCheckinBtn(detail);
         JButton btnChangeRoom = createChangeRoomBtn(detail);
-        JButton btnExtendTime = createExtendTimeBtn(detail);
         JButton btnCancel = createCancelBtn(detail);
 
         switch (ReservationStatus.fromStatus(status)) {
@@ -701,7 +745,6 @@ public class ReservationInfoDetailPanel extends JPanel {
             case USING:
                 panel.add(btnOrderService);
                 panel.add(btnChangeRoom);
-                panel.add(btnExtendTime);
                 break;
             case CHECKOUT_LATE:
             case null:

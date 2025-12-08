@@ -10,7 +10,7 @@ import java.awt.event.ActionListener;
 public class Menu extends JComponent {
     private MigLayout migLayout;
     private String[][] menuItems = new String[][]{
-            {"Đơn đặt phòng",  "Quản lý đơn đặt phòng", "Quản lý đơn đặt phòng trước"},
+            {"Đơn đặt phòng",  "Quản lý đơn đặt phòng"},
             {"Phòng", "Quản lý đặt phòng","Quản lý phòng", "Quản lý loại phòng", "Tìm phòng", "Thống kê hiệu suất"},
             {"Dịch vụ", "Tìm dịch vụ","Quản lý dịch vụ", "Quản lý loại dịch vụ"},
             {"Hóa đơn", "Tìm hóa đơn", "Thống kê doanh thu"},

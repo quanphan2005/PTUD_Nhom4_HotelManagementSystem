@@ -8,7 +8,6 @@ import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 public class RefreshManager {
     private static BookingManagementPanel bookingManagementPanel;
     private static ReservationManagementPanel reservationManagementPanel;
-    private static PreReservationManagementPanel preReservationManagementPanel;
     private static PreReservationSearchPanel preReservationSearchPanel;
 
     // Registration methods
@@ -23,7 +22,6 @@ public class RefreshManager {
     }
 
     public static void setPreReservationManagementPanel(PreReservationManagementPanel panel) {
-        preReservationManagementPanel = panel;
         System.out.println("RefreshManager: PreReservationManagementPanel registered");
     }
 
@@ -43,11 +41,6 @@ public class RefreshManager {
             reservationManagementPanel.refreshPanel();
     }
 
-    public static void refreshPreReservationManagementPanel() {
-        if (preReservationManagementPanel != null)
-            preReservationManagementPanel.refreshPanel();
-    }
-
     public static void refreshPreReservationSearchPanel() {
         if (preReservationSearchPanel != null)
             preReservationSearchPanel.refreshPanel();
@@ -58,7 +51,6 @@ public class RefreshManager {
         System.out.println("RefreshManager: Refreshing all panels...");
         refreshBookingManagementPanel();
         refreshReservationManagementPanel();
-        refreshPreReservationManagementPanel();
         refreshPreReservationSearchPanel();
     }
 
@@ -67,7 +59,6 @@ public class RefreshManager {
         System.out.println("RefreshManager: Refreshing after booking operation...");
         refreshBookingManagementPanel();
         refreshReservationManagementPanel();
-        refreshPreReservationManagementPanel();
         refreshPreReservationSearchPanel();
     }
 
@@ -75,7 +66,6 @@ public class RefreshManager {
         System.out.println("RefreshManager: Refreshing after cancel reservation...");
         refreshBookingManagementPanel();
         refreshReservationManagementPanel();
-        refreshPreReservationManagementPanel();
         refreshPreReservationSearchPanel();
     }
 
@@ -83,7 +73,6 @@ public class RefreshManager {
         System.out.println("RefreshManager: Refreshing after CheckIn operation...");
         refreshBookingManagementPanel();
         refreshReservationManagementPanel();
-        refreshPreReservationManagementPanel();
         refreshPreReservationSearchPanel();
     }
 
@@ -91,7 +80,6 @@ public class RefreshManager {
         System.out.println("RefreshManager: Refreshing after transfer room operation...");
         refreshBookingManagementPanel();
         refreshReservationManagementPanel();
-        refreshPreReservationManagementPanel();
         refreshPreReservationSearchPanel();
     }
 
@@ -99,7 +87,6 @@ public class RefreshManager {
         System.out.println("RefreshManager: Refreshing after Checkout operation...");
         refreshBookingManagementPanel();
         refreshReservationManagementPanel();
-        refreshPreReservationManagementPanel();
         refreshPreReservationSearchPanel();
     }
 
