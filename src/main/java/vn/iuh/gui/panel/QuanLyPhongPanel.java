@@ -12,7 +12,6 @@ import vn.iuh.gui.base.CustomUI;
 import vn.iuh.service.RoomService;
 import vn.iuh.service.impl.RoomServiceImpl;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -22,16 +21,13 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+// Panel Quản lý phòng (Ảnh / Icon đã bị loại bỏ hoàn toàn để tối ưu thời gian khởi động)
 public class QuanLyPhongPanel extends JPanel {
 
     // Các hằng số dùng chung cho kích thước, font và thông số hiển thị
@@ -48,9 +44,6 @@ public class QuanLyPhongPanel extends JPanel {
     // Fonts cho thẻ phòng (không dùng nhiều trong phiên bản table nhưng giữ để tương thích)
     private static final Font FONT_ROOM_NAME  = new Font("Arial", Font.BOLD, 30);
     private static final Font FONT_ROOM_SUB   = new Font("Arial", Font.BOLD, 23);
-
-    // Cache cho icons/ảnh scale+rounded
-    private static final Map<String, ImageIcon> ICON_CACHE = new HashMap<>();
 
     // Các thành phần trong panel tìm kiếm
     private final JTextField searchTextField = new JTextField();
@@ -107,10 +100,10 @@ public class QuanLyPhongPanel extends JPanel {
         // Cấu hình nút tìm
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
-        // Các nút hành động (thêm/sửa/xóa) — tạo ngay nhưng icon load async
-        addButton    = createActionButtonAsync("Thêm phòng", "", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
-        editButton   = createActionButtonAsync("Sửa phòng", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
-        deleteButton = createActionButtonAsync("Xóa phòng", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
+        // Các nút hành động (thêm/sửa/xóa) — tạo ngay nhưng **KHÔNG** tải icon/hình ảnh để tối ưu khởi động
+        addButton    = createActionButton("Thêm phòng", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
+        editButton   = createActionButton("Sửa phòng", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
+        deleteButton = createActionButton("Xóa phòng", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
 
         // Các nút category (1 người, 2 người... VIP...)
         onePeopleButton   = createCategoryButton("1 người", "#1BA1E2", CATEGORY_BUTTON_SIZE);
@@ -227,8 +220,8 @@ public class QuanLyPhongPanel extends JPanel {
         return button;
     }
 
-    // Tạo các action button
-    private JButton createActionButtonAsync(String text, String iconPath, Dimension size, String bgHex, String borderHex) {
+    // Tạo các action button (phiên bản tối giản: không tải icon)
+    private JButton createActionButton(String text, Dimension size, String bgHex, String borderHex) {
         JButton button = new JButton(text);
         button.setPreferredSize(size);
         button.setMinimumSize(size);
@@ -243,12 +236,7 @@ public class QuanLyPhongPanel extends JPanel {
 
         // Bo góc và viền màu
         button.putClientProperty(FlatClientProperties.STYLE, "arc: 20; borderWidth: 2; borderColor:" + borderHex);
-
-        // Load icon
-        loadIconAsync(iconPath, 20, 20, icon -> {
-            if (icon != null) button.setIcon(icon);
-        });
-
+        // NOTE: intentionally do NOT load any icon here to reduce startup cost
         return button;
     }
 
@@ -916,117 +904,6 @@ public class QuanLyPhongPanel extends JPanel {
         return check;
     }
 
-    // --- Vẫn giữ các hàm load icon/rounded image (không thay đổi) ---
-    private static String iconCacheKey(String path, int w, int h, int arc) {
-        return path + "|" + w + "x" + h + "|arc:" + arc;
-    }
-
-    private static ImageIcon loadRoundedIconSync(Class<?> cls, String path, int width, int height, int arc) {
-        String key = iconCacheKey(path, width, height, arc);
-        synchronized (ICON_CACHE) {
-            if (ICON_CACHE.containsKey(key)) return ICON_CACHE.get(key);
-        }
-        try (InputStream is = cls.getResourceAsStream(path)) {
-            if (is == null) return null;
-            BufferedImage orig = ImageIO.read(is);
-            if (orig == null) return null;
-
-            BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = scaled.createGraphics();
-            try {
-                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                g.drawImage(orig, 0, 0, width, height, null);
-            } finally {
-                g.dispose();
-            }
-
-            BufferedImage rounded = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = rounded.createGraphics();
-            try {
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                Shape clip = new RoundRectangle2D.Float(0, 0, width, height, arc, arc);
-                g2.setClip(clip);
-                g2.drawImage(scaled, 0, 0, null);
-            } finally {
-                g2.dispose();
-            }
-
-            ImageIcon ic = new ImageIcon(rounded);
-            synchronized (ICON_CACHE) {
-                ICON_CACHE.put(key, ic);
-            }
-            return ic;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static void loadIconAsync(String path, int w, int h, Consumer<ImageIcon> callback) {
-        String key = iconCacheKey(path, w, h, 0);
-        synchronized (ICON_CACHE) {
-            ImageIcon cached = ICON_CACHE.get(key);
-            if (cached != null) {
-                SwingUtilities.invokeLater(() -> callback.accept(cached));
-                return;
-            }
-        }
-
-        SwingWorker<ImageIcon, Void> wk = new SwingWorker<ImageIcon, Void>() {
-            @Override
-            protected ImageIcon doInBackground() {
-                try (InputStream is = QuanLyPhongPanel.class.getResourceAsStream(path)) {
-                    if (is == null) return null;
-                    BufferedImage img = ImageIO.read(is);
-                    if (img == null) return null;
-                    Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-                    ImageIcon ic = new ImageIcon(scaled);
-                    synchronized (ICON_CACHE) {
-                        ICON_CACHE.put(iconCacheKey(path, w, h, 0), ic);
-                    }
-                    return ic;
-                } catch (Exception ex) {
-                    return null;
-                }
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    ImageIcon ic = get();
-                    if (ic != null) callback.accept(ic);
-                } catch (Exception ignored) {}
-            }
-        };
-        wk.execute();
-    }
-
-    private static void loadRoundedIconAsync(String path, int w, int h, int arc, Consumer<ImageIcon> callback) {
-        String key = iconCacheKey(path, w, h, arc);
-        synchronized (ICON_CACHE) {
-            ImageIcon cached = ICON_CACHE.get(key);
-            if (cached != null) {
-                SwingUtilities.invokeLater(() -> callback.accept(cached));
-                return;
-            }
-        }
-
-        SwingWorker<ImageIcon, Void> wk = new SwingWorker<ImageIcon, Void>() {
-            @Override
-            protected ImageIcon doInBackground() {
-                return loadRoundedIconSync(QuanLyPhongPanel.class, path, w, h, arc);
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    ImageIcon ic = get();
-                    if (ic != null) callback.accept(ic);
-                } catch (Exception ignored) {}
-            }
-        };
-        wk.execute();
-    }
+    // NOTE: Đã loại bỏ toàn bộ cache ảnh / hàm load ảnh để tối ưu thời gian khởi động
 
 }
