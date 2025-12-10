@@ -18,6 +18,8 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.temporal.ChronoUnit;
@@ -92,6 +94,19 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void setUpEvents() {
+        reservationTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if(e.getClickCount() == 2){
+                    int selectedRow = reservationTable.getSelectedRow();
+                    if(selectedRow != -1){
+                        String reservationId = (String) tableModel.getValueAt(selectedRow , 2);
+                        handleViewDetail(reservationId);
+                    }
+                }
+            }
+        });
+
         // Events are set up in the component initialization methods
         txtMaDon.addKeyListener(new KeyAdapter() {
             @Override
@@ -236,7 +251,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private void createTablePanel() {
         // Create table model
-        String[] columnNames = {"Số CCCD", "Khách hàng", "Mã đơn", "Loại đơn", "Checkin", "Checkout", "Trạng thái", "Thao tác"};
+        String[] columnNames = {"Số CCCD", "Khách hàng", "Mã đơn", "Loại đơn", "Checkin", "Checkout", "Trạng thái"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -289,20 +304,16 @@ public class ReservationManagementPanel extends JPanel {
                 int tableWidth = reservationTable.getWidth();
                 TableColumnModel columnModel = reservationTable.getColumnModel();
 
-                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Số CCCD
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.15)); // 10% - Số CCCD
                 columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Khách hàng
                 columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Mã đơn
                 columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.10)); // 10% - Phòng
-                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.12)); // 15% - Checkin
-                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.12)); // 15% - Checkout
-                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.12)); // 10% - Trạng thái
-                columnModel.getColumn(7).setPreferredWidth((int) (tableWidth * 0.15)); // 10% - Thao tác
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Checkin
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.15)); // 15% - Checkout
+                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.15)); // 10% - Trạng thái
             }
         });
 
-        // Set cell renderer and editor for action column
-        reservationTable.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
-        reservationTable.getColumn("Thao tác").setCellEditor(new ActionButtonEditor());
 
         // Create scroll pane
         JScrollPane scrollPane = new JScrollPane(reservationTable);
@@ -510,7 +521,7 @@ public class ReservationManagementPanel extends JPanel {
 
         // Add filtered reservations to table
         for (ReservationResponse reservation : filteredReservations) {
-            Object[] rowData = new Object[8];
+            Object[] rowData = new Object[7];
             rowData[0] = reservation.getCCCD();
             rowData[1] = reservation.getCustomerName();
             rowData[2] = reservation.getMaDonDatPhong();
@@ -518,19 +529,18 @@ public class ReservationManagementPanel extends JPanel {
             rowData[4] = reservation.getTimeIn() != null ? dateFormat.format(reservation.getTimeIn()) : "N/A";
             rowData[5] = reservation.getTimeOut() != null ? dateFormat.format(reservation.getTimeOut()) : "N/A";
             rowData[6] = reservation.getStatus();
-            rowData[7] = reservation; // Store the reservation object for action buttons
 
             tableModel.addRow(rowData);
         }
     }
 
-    private void handleViewDetail(ReservationResponse reservation) {
-        if (reservation == null) return;
+    private void handleViewDetail(String reservationId) {
+        if (reservationId == null) return;
 
         try {
             // Fetch detailed reservation information from service
-            ReservationInfoDetailResponse detailInfo = bookingService.getReservationDetailInfo(reservation.getMaDonDatPhong());
-            
+            ReservationInfoDetailResponse detailInfo = bookingService.getReservationDetailInfo(reservationId);
+
             if (detailInfo == null) {
                 JOptionPane.showMessageDialog(this,
                     "Không thể tải thông tin chi tiết đơn đặt phòng.",
@@ -540,7 +550,7 @@ public class ReservationManagementPanel extends JPanel {
 
             // Create detail panel
             ReservationInfoDetailPanel detailPanel = new ReservationInfoDetailPanel(detailInfo, this);
-            
+
             // Navigate to detail panel using CardLayout
             if (parentContainer != null) {
                 // Check if detail panel already exists, if so remove it
@@ -551,17 +561,17 @@ public class ReservationManagementPanel extends JPanel {
                         break;
                     }
                 }
-                
+
                 // Add new detail panel
-                String subPanelName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservation.getMaDonDatPhong();
+                String subPanelName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservationId;
                 parentContainer.add(detailPanel, subPanelName);
-                
+
                 // Show detail panel
                 CardLayout layout = (CardLayout) parentContainer.getLayout();
                 layout.show(parentContainer, subPanelName);
             } else {
                 // Fallback: Open in dialog if parent container is not set
-                JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Đơn " + reservation.getMaDonDatPhong(), true);
+                JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Đơn " + reservationId, true);
 
                 // Wrap detail panel in a scroll pane
                 JScrollPane scrollPane = new JScrollPane(detailPanel);
@@ -587,88 +597,6 @@ public class ReservationManagementPanel extends JPanel {
     public void refreshPanel() {
         loadReservationData();
         applyFilters();
-    }
-
-    // Custom cell renderer for action button
-    private class ActionButtonRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
-        private JButton btnViewDetail;
-
-        public ActionButtonRenderer() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 3, 3));
-            setOpaque(true);
-
-            btnViewDetail = new JButton("Xem chi tiết");
-            btnViewDetail.setFont(CustomUI.smallFont);
-            btnViewDetail.setBackground(CustomUI.orange);
-            btnViewDetail.setForeground(CustomUI.white);
-            btnViewDetail.setPreferredSize(new Dimension(130, 30));
-            btnViewDetail.setFocusPainted(false);
-            btnViewDetail.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
-
-            add(btnViewDetail);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column) {
-            if (isSelected) {
-                setBackground(table.getSelectionBackground());
-            } else {
-                setBackground(table.getBackground());
-            }
-            return this;
-        }
-    }
-
-    // Custom cell editor for action button
-    private class ActionButtonEditor extends DefaultCellEditor {
-        private JPanel panel;
-        private JButton btnViewDetail;
-        private ReservationResponse currentReservation;
-
-        public ActionButtonEditor() {
-            super(new JCheckBox());
-
-            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
-
-            btnViewDetail = new JButton("Xem chi tiết");
-            btnViewDetail.setFont(CustomUI.smallFont);
-            btnViewDetail.setBackground(CustomUI.orange);
-            btnViewDetail.setForeground(CustomUI.white);
-            btnViewDetail.setPreferredSize(new Dimension(130, 30));
-            btnViewDetail.setFocusPainted(false);
-            btnViewDetail.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
-            btnViewDetail.addActionListener(e -> {
-                ReservationResponse reservationToProcess = currentReservation;
-
-                SwingUtilities.invokeLater(() -> {
-                    fireEditingStopped();
-
-                    if (reservationToProcess != null) {
-                        handleViewDetail(reservationToProcess);
-                    }
-                });
-            });
-
-            panel.add(btnViewDetail);
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
-                                                     int row, int column) {
-            try {
-                currentReservation = (ReservationResponse) value;
-                return panel;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        public Object getCellEditorValue() {
-            return currentReservation;
-        }
     }
 }
 

@@ -346,7 +346,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(customerIcon, "THÔNG TIN KHÁCH HÀNG",
-                                                     new Color(70, 130, 180), CustomUI.white, () -> {
+                                                     CustomUI.darkBlue, CustomUI.white, () -> {
                     isCustomerInfoCollapsed = !isCustomerInfoCollapsed;
                     togglePanelVisibility(customerInfoContent, isCustomerInfoCollapsed);
                 });
@@ -355,7 +355,7 @@ public class RoomUsageFormPanel extends JPanel {
         customerInfoContent = new JPanel(new GridBagLayout());
         customerInfoContent.setBackground(CustomUI.white);
         customerInfoContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -386,7 +386,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(menuIcon, "BẢNG THAO TÁC",
-                                                     new Color(70, 130, 180), CustomUI.white, () -> {
+                                                     CustomUI.darkBlue, CustomUI.white, () -> {
                     isActionMenuCollapsed = !isActionMenuCollapsed;
                     togglePanelVisibility(actionMenuContent, isActionMenuCollapsed);
                 });
@@ -395,7 +395,7 @@ public class RoomUsageFormPanel extends JPanel {
         actionMenuContent = new JPanel();
         actionMenuContent.setBackground(CustomUI.white);
         actionMenuContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -416,7 +416,7 @@ public class RoomUsageFormPanel extends JPanel {
         bookingIcon = new ImageIcon(bookingIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(bookingIcon, "THÔNG TIN ĐẶT PHÒNG",
-                                                     CustomUI.darkGreen, CustomUI.white, () -> {
+                                                     CustomUI.darkBlue, CustomUI.white, () -> {
                     isBookingInfoCollapsed = !isBookingInfoCollapsed;
                     togglePanelVisibility(bookingInfoContent, isBookingInfoCollapsed);
                 });
@@ -425,7 +425,7 @@ public class RoomUsageFormPanel extends JPanel {
         bookingInfoContent = new JPanel(new GridBagLayout());
         bookingInfoContent.setBackground(CustomUI.white);
         bookingInfoContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomUI.darkGreen, 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -523,7 +523,7 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(roomIcon, "CHI TIẾT PHÒNG",
-                                                     CustomUI.orange, CustomUI.white, () -> {
+                                                     CustomUI.darkBlue, CustomUI.white, () -> {
                     isRoomInfoCollapsed = !isRoomInfoCollapsed;
                     togglePanelVisibility(roomInfoContent, isRoomInfoCollapsed);
                 });
@@ -532,7 +532,7 @@ public class RoomUsageFormPanel extends JPanel {
         roomInfoContent = new JPanel(new GridBagLayout());
         roomInfoContent.setBackground(CustomUI.white);
         roomInfoContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomUI.orange, 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)
         ));
 

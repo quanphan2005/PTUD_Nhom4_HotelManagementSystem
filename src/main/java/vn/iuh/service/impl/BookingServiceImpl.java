@@ -745,7 +745,7 @@ public class BookingServiceImpl implements BookingService {
         for (ReservationResponse response : responses) {
             for (KhachHang customer : customers) {
                 if (Objects.equals(response.getMaKhachHang(), customer.getMaKhachHang())) {
-                    response.setCCCD(customer.getTenKhachHang());
+                    response.setCCCD(customer.getCCCD());
                     response.setCustomerName(customer.getTenKhachHang());
                 }
             }

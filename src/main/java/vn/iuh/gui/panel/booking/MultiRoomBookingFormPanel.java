@@ -326,7 +326,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
 
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(roomIcon, "DANH SÁCH PHÒNG ĐÃ CHỌN",
-                                                     CustomUI.orange, Color.WHITE, () -> {
+                                                     CustomUI.darkBlue, Color.WHITE, () -> {
                     isRoomListCollapsed = !isRoomListCollapsed;
                     togglePanelVisibility(roomListContent, isRoomListCollapsed);
                 });
@@ -335,7 +335,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         roomListContent = new JPanel(new BorderLayout());
         roomListContent.setBackground(Color.WHITE);
         roomListContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomUI.orange, 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)
         ));
 
@@ -439,7 +439,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         customerIcon = new ImageIcon(customerIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
         JPanel headerPanel = createCollapsibleHeader(customerIcon, "THÔNG TIN KHÁCH HÀNG",
-            new Color(70, 130, 180), CustomUI.white, () -> {
+            CustomUI.darkBlue, CustomUI.white, () -> {
                 isCustomerInfoCollapsed = !isCustomerInfoCollapsed;
                 togglePanelVisibility(customerInfoContent, isCustomerInfoCollapsed);
             });
@@ -447,7 +447,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         customerInfoContent = new JPanel(new GridBagLayout());
         customerInfoContent.setBackground(Color.WHITE);
         customerInfoContent.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
+            BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
             BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -486,7 +486,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         bookingIcon = new ImageIcon(bookingIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
         JPanel headerPanel = createCollapsibleHeader(bookingIcon, "THÔNG TIN ĐẶT PHÒNG",
-                                                     CustomUI.darkGreen, Color.WHITE, () -> {
+                                                     CustomUI.darkBlue, Color.WHITE, () -> {
                     isBookingInfoCollapsed = !isBookingInfoCollapsed;
                     togglePanelVisibility(bookingInfoContent, isBookingInfoCollapsed);
                 });
@@ -494,7 +494,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         bookingInfoContent = new JPanel(new GridBagLayout());
         bookingInfoContent.setBackground(Color.WHITE);
         bookingInfoContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomUI.darkGreen, 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 

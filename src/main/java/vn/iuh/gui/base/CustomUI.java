@@ -22,6 +22,7 @@ public class CustomUI {
     public static final Color cyan = new Color(0, 206, 209);
     public static final Color mine = new Color(240, 240, 240);
     public static final Color yellow = new Color(255, 223, 0);
+    public static final Color be = new Color(241, 172, 135);
 
     public static final Font italicSmallFont = new Font("Arial", Font.ITALIC, 12);
 
@@ -41,7 +42,7 @@ public class CustomUI {
     public static final Color TABLE_HEADER_FOREGROUND = Color.WHITE;
     public static final Color tableBorder = new Color(189, 195, 199); // Light gray border
 
-    public static final Color ROW_EVEN = new Color(247, 249, 250); // Very light gray for alternating rows
+    public static final Color ROW_EVEN = new Color(250, 247, 249); // Very light gray for alternating rows
     public static final Color ROW_ODD = Color.WHITE;
     public static final Color ROW_SELECTED_COLOR = new Color(210, 230, 255); // Light blue selection
 

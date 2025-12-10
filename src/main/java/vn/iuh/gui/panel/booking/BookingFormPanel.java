@@ -239,11 +239,14 @@ public class BookingFormPanel extends JPanel {
         JPanel footerPanel = new JPanel(new BorderLayout());
         footerPanel.setPreferredSize(new Dimension(0, 50));
         footerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        footerPanel.setBackground(CustomUI.darkBlue);
+        footerPanel.setBackground(CustomUI.white);
+
+        // gray line border on top
+        footerPanel.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, CustomUI.gray));
 
         // Button panel with horizontal layout
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
-        buttonPanel.setBackground(CustomUI.darkBlue);
+        buttonPanel.setBackground(CustomUI.white);
         buttonPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         buttonPanel.setOpaque(true);
 
@@ -344,7 +347,7 @@ public class BookingFormPanel extends JPanel {
 
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(customerIcon, "THÔNG TIN KHÁCH HÀNG",
-            new Color(70, 130, 180), CustomUI.white, () -> {
+            CustomUI.darkBlue, CustomUI.white, () -> {
                 isCustomerInfoCollapsed = !isCustomerInfoCollapsed;
                 togglePanelVisibility(customerInfoContent, isCustomerInfoCollapsed);
             });
@@ -353,7 +356,7 @@ public class BookingFormPanel extends JPanel {
         customerInfoContent = new JPanel(new GridBagLayout());
         customerInfoContent.setBackground(Color.WHITE);
         customerInfoContent.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
+            BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
             BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -392,7 +395,7 @@ public class BookingFormPanel extends JPanel {
         bookingIcon = new ImageIcon(bookingIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(bookingIcon, "THÔNG TIN ĐẶT PHÒNG",
-                                                     CustomUI.darkGreen, Color.WHITE, () -> {
+                                                     CustomUI.darkBlue, Color.WHITE, () -> {
                     isBookingInfoCollapsed = !isBookingInfoCollapsed;
                     togglePanelVisibility(bookingInfoContent, isBookingInfoCollapsed);
                 });
@@ -401,7 +404,7 @@ public class BookingFormPanel extends JPanel {
         bookingInfoContent = new JPanel(new GridBagLayout());
         bookingInfoContent.setBackground(Color.WHITE);
         bookingInfoContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomUI.darkGreen, 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -475,7 +478,7 @@ public class BookingFormPanel extends JPanel {
 
         // Create collapsible header
         JPanel headerPanel = createCollapsibleHeader(roomIcon, "CHI TIẾT PHÒNG",
-                                                     CustomUI.orange, Color.WHITE, () -> {
+                                                     CustomUI.darkBlue, Color.WHITE, () -> {
                     isRoomInfoCollapsed = !isRoomInfoCollapsed;
                     togglePanelVisibility(roomInfoContent, isRoomInfoCollapsed);
                 });
@@ -484,7 +487,7 @@ public class BookingFormPanel extends JPanel {
         roomInfoContent = new JPanel(new GridBagLayout());
         roomInfoContent.setBackground(Color.WHITE);
         roomInfoContent.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomUI.orange, 2),
+                BorderFactory.createLineBorder(CustomUI.darkBlue, 2),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)
         ));
 
