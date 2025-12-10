@@ -1,9 +1,6 @@
 package vn.iuh.service.impl;
 
-import vn.iuh.constraint.ActionType;
-import vn.iuh.constraint.EntityIDSymbol;
-import vn.iuh.constraint.Fee;
-import vn.iuh.constraint.RoomStatus;
+import vn.iuh.constraint.*;
 import vn.iuh.dao.*;
 import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.entity.*;
@@ -170,7 +167,7 @@ public class CheckinServiceImpl implements CheckinService {
                             prevJobId = newJobId;
                             String tenTrangThaiChecking = RoomStatus.ROOM_CHECKING_STATUS.getStatus();
                             Timestamp tgBatDauChecking = now;
-                            Timestamp tgKetThucChecking = new Timestamp(tgBatDauChecking.getTime() + 30L * 60L * 1000L);
+                            Timestamp tgKetThucChecking = new Timestamp(tgBatDauChecking.getTime() + WorkTimeCost.CHECKING_WAITING_TIME.getMinutes() * 60L * 1000L);
                             CongViec checkingJob = new CongViec(newJobId, tenTrangThaiChecking, tgBatDauChecking, tgKetThucChecking, trimToNull(ct.getMaPhong()), tgBatDauChecking);
                             congViecDAO.themCongViec(checkingJob);
                         }
@@ -235,7 +232,7 @@ public class CheckinServiceImpl implements CheckinService {
 
                         String tenTrangThaiChecking = RoomStatus.ROOM_CHECKING_STATUS.getStatus();
                         Timestamp tgBatDauChecking = now;
-                        Timestamp tgKetThucChecking = new Timestamp(tgBatDauChecking.getTime() + 30L * 60L * 1000L);
+                        Timestamp tgKetThucChecking = new Timestamp(tgBatDauChecking.getTime() + WorkTimeCost.CHECKING_WAITING_TIME.getMinutes() * 60L * 1000L);
                         CongViec checkingJob = new CongViec(newJobId, tenTrangThaiChecking, tgBatDauChecking, tgKetThucChecking, maPh, tgBatDauChecking);
                         congViecDAO.themCongViec(checkingJob);
 
@@ -340,7 +337,7 @@ public class CheckinServiceImpl implements CheckinService {
 
                             String tenTrangThai = RoomStatus.ROOM_CHECKING_STATUS.getStatus();
                             Timestamp tgBatDau = now;
-                            Timestamp tgKetThuc = new Timestamp(tgBatDau.getTime() + 30L * 60L * 1000L);
+                            Timestamp tgKetThuc = new Timestamp(tgBatDau.getTime() + WorkTimeCost.CHECKING_WAITING_TIME.getMinutes() * 60L * 1000L);
                             CongViec jobMoi = new CongViec(newJobId, tenTrangThai, tgBatDau, tgKetThuc, roomId, tgBatDau);
                             congViecDAO.themCongViec(jobMoi);
                         }
@@ -492,7 +489,7 @@ public class CheckinServiceImpl implements CheckinService {
 
             String tenTrangThai = RoomStatus.ROOM_CHECKING_STATUS.getStatus();
             Timestamp tgBatDau = now;
-            Timestamp tgKetThuc = new Timestamp(tgBatDau.getTime() + 30L * 60L * 1000L);
+            Timestamp tgKetThuc = new Timestamp(tgBatDau.getTime() + WorkTimeCost.CHECKING_WAITING_TIME.getMinutes()  * 60L * 1000L);
             CongViec jobMoi = new CongViec(newJobId, tenTrangThai, tgBatDau, tgKetThuc, maPh, tgBatDau);
             congViecDAO.themCongViec(jobMoi);
 

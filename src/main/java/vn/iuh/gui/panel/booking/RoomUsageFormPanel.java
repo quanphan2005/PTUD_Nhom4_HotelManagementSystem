@@ -2,15 +2,15 @@ package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
+import vn.iuh.constraint.ReservationType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.dao.PhongDAO;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.BookThemGioInfo;
 import vn.iuh.dto.repository.RoomFurnitureItem;
-import vn.iuh.dto.response.BookingResponse;
-import vn.iuh.dto.response.CustomerInfoResponse;
-import vn.iuh.dto.response.InvoiceResponse;
+import vn.iuh.dto.response.*;
+import vn.iuh.entity.DonDatPhong;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.entity.Phong;
 import vn.iuh.gui.base.CustomUI;
@@ -93,6 +93,7 @@ public class RoomUsageFormPanel extends JPanel {
 
     // Main content components
     private JPanel mainContentPanel;
+    private JPanel parentContainer;
 
     // Dropdown panel states
     private boolean isRoomInfoCollapsed = false;
@@ -1056,19 +1057,85 @@ public class RoomUsageFormPanel extends JPanel {
                 "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
-            InvoiceResponse invoiceResponse = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
-            if (invoiceResponse != null) {
-                SwingUtilities.invokeLater(() -> {
-                    InvoiceDialog2 dialog = new InvoiceDialog2(invoiceResponse);
-                    dialog.setVisible(true);
-                    RefreshManager.refreshAfterCheckout();
-                    Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
-                });
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Trả phòng thất bại cho " + selectedRoom.getRoomName(),
-                        "Thất bại", JOptionPane.ERROR_MESSAGE);
+            DonDatPhong reservation = checkOutService.checkReservation(selectedRoom.getMaChiTietDatPhong());
+            if(ReservationType.SINGLE.getType().equalsIgnoreCase(reservation.getLoai())){
+                InvoiceResponse invoiceResponse = checkOutService.checkOutByReservationDetail(selectedRoom.getMaChiTietDatPhong());
+                if (invoiceResponse != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        InvoiceDialog2 dialog = new InvoiceDialog2(invoiceResponse);
+                        dialog.setVisible(true);
+                        RefreshManager.refreshAfterCheckout();
+                        Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
+                    });
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Trả phòng thất bại cho " + selectedRoom.getRoomName(),
+                            "Thất bại", JOptionPane.ERROR_MESSAGE);
+                }
             }
+            else {
+                handleViewDetail(reservation.getMaDonDatPhong());
+            }
+        }
+    }
+
+    private void handleViewDetail(String reservationId) {
+        if (reservationId == null) return;
+
+        try {
+            // Fetch detailed reservation information from service
+            ReservationInfoDetailResponse detailInfo = bookingService.getReservationDetailInfo(reservationId);
+
+            if (detailInfo == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể tải thông tin chi tiết đơn đặt phòng.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Create detail panel
+            ReservationInfoDetailPanel detailPanel = new ReservationInfoDetailPanel(detailInfo);
+
+            // Navigate to detail panel using CardLayout
+            if (parentContainer != null) {
+                // Check if detail panel already exists, if so remove it
+                Component[] components = parentContainer.getComponents();
+                for (Component comp : components) {
+                    if (comp instanceof ReservationInfoDetailPanel) {
+                        parentContainer.remove(comp);
+                        break;
+                    }
+                }
+
+                // Add new detail panel
+                String subPanelName = PanelName.RESERVATION_INFO_DETAIL.getName() + "_" + reservationId;
+                parentContainer.add(detailPanel, subPanelName);
+
+                // Show detail panel
+                CardLayout layout = (CardLayout) parentContainer.getLayout();
+                layout.show(parentContainer, subPanelName);
+            } else {
+                // Fallback: Open in dialog if parent container is not set
+                JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Đơn " + reservationId, true);
+
+                // Wrap detail panel in a scroll pane
+                JScrollPane scrollPane = new JScrollPane(detailPanel);
+                scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+                scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+                scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+                dialog.setContentPane(scrollPane);
+                dialog.setSize(1000, 700); // Reduced width from 1200 to 1000
+                dialog.setLocationRelativeTo(null); // Center on screen
+                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                dialog.setResizable(false);
+                dialog.setVisible(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Có lỗi xảy ra khi tải thông tin chi tiết: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 

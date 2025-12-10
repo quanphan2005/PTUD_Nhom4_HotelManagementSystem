@@ -47,4 +47,8 @@ public class CustomUI {
     // Collapsible panel colors
     public static final Color COLLAPSIBLE_BG = new Color(240, 245, 250); // Very light blue-gray
     public static final Color COLLAPSIBLE_HOVER = new Color(225, 235, 245); // Slightly darker on hover
+
+    //btn size
+    public static final Dimension BUTTON_SIZE = new Dimension(45,35);
+
 }

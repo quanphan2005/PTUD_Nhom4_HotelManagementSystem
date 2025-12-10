@@ -335,16 +335,17 @@ public class DatPhongDAO {
             return new ArrayList<>();
 
         StringBuilder query = new StringBuilder(
-                "SELECT p.ma_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
-                " FROM Phong p" +
-                " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
-                " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
-                " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
-                " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
-                " AND ctdp.tg_nhan_phong <= GETDATE()" +
-                " AND (GETDATE() <= DATEADD(MINUTE, ?, ctdp.tg_tra_phong) OR cv.ten_trang_thai = ?)" +
-                " AND ddp.da_xoa = 0" +
-                " WHERE p.ma_phong IN (");
+                "SELECT DISTINCT p.ma_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
+                        " FROM Phong p" +
+                        " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
+                        " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
+                        " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
+                        " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
+                        " WHERE ctdp.tg_nhan_phong <= GETDATE()" +
+                        " AND (GETDATE() <= DATEADD(MINUTE, ?, ctdp.tg_tra_phong)" +
+                        " AND cv.ten_trang_thai != ?)" +
+                        " AND cv.da_xoa = 0" +
+                        " AND p.ma_phong IN (");
 
         for (int i = 0; i < phongKhongKhaDungs.size(); i++) {
             query.append("?");
@@ -361,7 +362,7 @@ public class DatPhongDAO {
             int i = 1;
             ps.setInt(i, WorkTimeCost.CHECKOUT_LATE_MIN.getMinutes());
             i++;
-            ps.setString(i, RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus());
+            ps.setString(i, RoomStatus.ROOM_CLEANING_STATUS.getStatus());
             i++;
 
             for (String maPhong : phongKhongKhaDungs) {

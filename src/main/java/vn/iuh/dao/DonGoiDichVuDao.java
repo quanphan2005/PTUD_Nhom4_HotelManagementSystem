@@ -193,7 +193,7 @@ public class DonGoiDichVuDao {
                         "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong "+
                         "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
                         "WHERE ctdp.ma_don_dat_phong = ? " +
-                        "ORDER BY pddv.duoc_tang, pddv.so_luong desc";
+                        "ORDER BY pddv.so_luong desc";
         try{
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1,maDonDatPhong);

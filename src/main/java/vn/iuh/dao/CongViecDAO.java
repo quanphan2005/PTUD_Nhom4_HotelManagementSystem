@@ -2,11 +2,13 @@ package vn.iuh.dao;
 
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.repository.RoomJob;
+import vn.iuh.dto.repository.WarningReservation;
 import vn.iuh.entity.CongViec;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CongViecDAO {
@@ -14,31 +16,6 @@ public class CongViecDAO {
 
     public CongViecDAO() {
         this.connection = DatabaseUtil.getConnect();
-    }
-    public void thucHienGiaoTac() {
-        try {
-            if (connection != null && !connection.getAutoCommit()) {
-                connection.commit();
-                DatabaseUtil.disableTransaction(connection);
-            }
-        } catch (SQLException e) {
-            System.out.println("Lỗi commit transaction: " + e.getMessage());
-            DatabaseUtil.closeConnection(connection);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void hoanTacGiaoTac() {
-        try {
-            if (connection != null && !connection.getAutoCommit()) {
-                connection.rollback();
-                DatabaseUtil.disableTransaction(connection);
-            }
-        } catch (SQLException e) {
-            System.out.println("Lỗi rollback transaction: " + e.getMessage());
-            DatabaseUtil.closeConnection(connection);
-            throw new RuntimeException(e);
-        }
     }
 
     public CongViecDAO(Connection connection) {
@@ -364,5 +341,62 @@ public class CongViecDAO {
         }
 
         return danhSachCongViec;
+    }
+
+
+    public List<WarningReservation> getAllWarningReservations() {
+        String query =
+                "select \n" +
+                        "\tddp.ma_don_dat_phong,\n" +
+                        "\tddp.loai,\n" +
+                        "\tddp.da_dat_truoc,\n" +
+                        "\tddp.tg_nhan_phong,\n" +
+                        "\tddp.tg_tra_phong,\n" +
+                        "\tctdp.ma_chi_tiet_dat_phong,\n" +
+                        "\tp.ma_phong,\n" +
+                        "\tcv.ma_cong_viec,\n" +
+                        "\tcv.tg_bat_dau,\n" +
+                        "\tcv.tg_ket_thuc,\n" +
+                        "\tcv.ten_trang_thai,\n" +
+                        "\tdatediff(MILLISECOND,cv.tg_ket_thuc, getdate()) as thoi_gian_qua_han\n" +
+                        "from DonDatPhong ddp\n" +
+                        "join ChiTietDatPhong ctdp on ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong \n" +
+                        "\tand ctdp.kieu_ket_thuc is null\n" +
+                        "\tand ctdp.da_xoa = 0\n" +
+                        "join Phong p on p.ma_phong = ctdp.ma_phong\n" +
+                        "\tand p.da_xoa = 0\n" +
+                        "join CongViec cv on cv.ma_phong = p.ma_phong\n" +
+                        "\tand cv.da_xoa = 0\n" +
+                        "\tand getdate() >= cv.tg_ket_thuc\n" +
+                        "where ddp.da_xoa = 0\n" +
+                        "order by ddp.ma_don_dat_phong";
+
+        List<WarningReservation> warningList = new ArrayList<>();
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                WarningReservation wr = new WarningReservation(
+                        rs.getString("ma_don_dat_phong"),     // reservationId
+                        rs.getString("loai"),                 // reservationType
+                        rs.getBoolean("da_dat_truoc"),        // isAdvanced
+                        rs.getTimestamp("tg_nhan_phong"),     // checkinTime
+                        rs.getTimestamp("tg_tra_phong"),      // checkoutTime
+                        rs.getString("ma_chi_tiet_dat_phong"),// reservationDetailId
+                        rs.getString("ma_phong"),             // roomId
+                        rs.getString("ma_cong_viec"),         // jobId
+                        rs.getTimestamp("tg_bat_dau"),        // startTimeJob
+                        rs.getTimestamp("tg_ket_thuc"),       // endTimeJob
+                        rs.getString("ten_trang_thai"),        // jobName
+                        rs.getLong("thoi_gian_qua_han")
+                );
+
+                warningList.add(wr);
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return warningList;
     }
 }

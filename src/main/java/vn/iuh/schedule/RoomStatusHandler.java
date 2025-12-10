@@ -31,7 +31,6 @@ public class RoomStatusHandler implements Job {
     private final CongViecService congViecService = new CongViecServiceImpl();
     private final CongViecDAO congViecDAO = new CongViecDAO();
     private final DatPhongDAO datPhongDAO = new DatPhongDAO();
-    private final BookingService bookingService = new BookingServiceImpl();
     private final CheckOutService checkOutService = new CheckOutServiceImpl();
     private final CongViecDAO jobDAO = new CongViecDAO();
     private final ChiTietDatPhongDAO chiTietDatPhongDAO = new ChiTietDatPhongDAO();

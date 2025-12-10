@@ -294,16 +294,16 @@ public class BookingServiceImpl implements BookingService {
                 String newId = EntityUtil.increaseEntityID(jobId,
                                                            EntityIDSymbol.JOB_PREFIX.getPrefix(),
                                                            EntityIDSymbol.JOB_PREFIX.getLength());
-                int thoiGianKiemTra = 30; //phút
+
                 if (bookingCreationEvent.isDaDatTruoc()) {
                     congViecs.add(new CongViec(newId, RoomStatus.ROOM_BOOKED_STATUS.getStatus(),
-                                               bookingCreationEvent.getTgNhanPhong(),
-                                               bookingCreationEvent.getTgTraPhong(),
+                                               bookingCreationEvent.getTgNhanPhong(), new Timestamp(
+                                    bookingCreationEvent.getTgNhanPhong().getTime() + (long) WorkTimeCost.CHECKIN_LATE_MAX.getMinutes() * 60 * 1000),
                                                roomId, null));
                 } else {
                     congViecs.add(new CongViec(newId, RoomStatus.ROOM_CHECKING_STATUS.getStatus(),
                                                bookingCreationEvent.getTgNhanPhong(), new Timestamp(
-                            bookingCreationEvent.getTgNhanPhong().getTime() + thoiGianKiemTra * 60 * 1000),
+                                    bookingCreationEvent.getTgNhanPhong().getTime() + (long) WorkTimeCost.CHECKING_WAITING_TIME.getMinutes() * 60 * 1000),
                                                roomId, null));
                 }
                 jobId = newId;

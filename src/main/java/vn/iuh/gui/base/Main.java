@@ -19,6 +19,8 @@ import vn.iuh.gui.panel.booking.BookingManagementPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 import vn.iuh.gui.panel.statistic.RoomProductivityPanel;
+import vn.iuh.service.WarningReservationService;
+import vn.iuh.service.impl.WarningReservationImpl;
 
 import javax.swing.*;
 import java.awt.*;
@@ -57,9 +59,13 @@ public class Main extends JFrame {
     private QuanLyTaiKhoanPanel pnlQuanLyTaiKhoan;
     private RevenueStatisticPanel pnlStatistic;
     private RoomProductivityPanel pnlRoomProductivity;
+    private SystemConfigPanel pnlThietLapHeThong;
+    private WarningReservationService warningReservationService;
+
     public void init() {
         this.taiKhoanDAO = new TaiKhoanDAO();
         this.nhanVienDAO = new NhanVienDAO();
+        this.warningReservationService = new WarningReservationImpl();
         //Set hiển thị mặc định toàn màn hình
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
         //Hiển thị chính giữa
@@ -92,6 +98,7 @@ public class Main extends JFrame {
         pnlMainUI.add(createASideBar(), BorderLayout.WEST);
         pnlMainUI.add(createTopCounting(), BorderLayout.NORTH);
         pnlMainUI.add(createCenterPanel(), BorderLayout.CENTER);
+        warningReservationService.excute();
         initializeMainPanels();
         pnlRoot.add(pnlMainUI, "MainUI");
 
@@ -307,6 +314,7 @@ public class Main extends JFrame {
         QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
         pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
         pnlQuanLyPhuPhi = new QuanLyPhuPhiPanel();
+        pnlThietLapHeThong =  new SystemConfigPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
@@ -323,6 +331,7 @@ public class Main extends JFrame {
         pnlCenter.add(pnlQuanLyNhanVien, "Quản lý nhân viên");
         pnlCenter.add(pnlRoomProductivity, "Thống kê hiệu suất");
         pnlCenter.add(pnlQuanLyPhuPhi, "Quản lý phụ phí");
+        pnlCenter.add(pnlThietLapHeThong, "Thiết lập hệ thống");
 //        showCard("Quản lý đặt phòng");
 
         showCenterCard("Quản lý đặt phòng");
@@ -359,6 +368,5 @@ public class Main extends JFrame {
             cl.show(pnlCenter, name);
         }
     }
-
 
 }
