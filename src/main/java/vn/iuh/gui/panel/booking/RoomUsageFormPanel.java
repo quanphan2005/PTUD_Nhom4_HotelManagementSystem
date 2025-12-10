@@ -2,6 +2,7 @@ package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import vn.iuh.constraint.PanelName;
+import vn.iuh.constraint.ReservationStatus;
 import vn.iuh.constraint.ReservationType;
 import vn.iuh.constraint.RoomStatus;
 import vn.iuh.dto.event.create.DonGoiDichVu;
@@ -33,9 +34,7 @@ import vn.iuh.util.RefreshManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.time.temporal.ChronoUnit;
@@ -1105,7 +1104,7 @@ public class RoomUsageFormPanel extends JPanel {
             }
 
             // Create detail panel
-            ReservationInfoDetailPanel detailPanel = new ReservationInfoDetailPanel(detailInfo);
+            ReservationInfoDetailPanel detailPanel = new ReservationInfoDetailPanel(detailInfo, true);
 
             // Navigate to detail panel using CardLayout
             if (parentContainer != null) {
@@ -1135,12 +1134,24 @@ public class RoomUsageFormPanel extends JPanel {
                 scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
                 scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
+                dialog.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        var infoResult = detailPanel.getReservationInfo();
+                        if(ReservationStatus.COMPLETED.getStatus().equalsIgnoreCase(infoResult.getStatus())){
+                            Main.showCenterCard("Quản lý đặt phòng");
+                            RefreshManager.refreshAfterCheckout();
+                        }
+                    }
+                });
+
                 dialog.setContentPane(scrollPane);
                 dialog.setSize(1000, 700); // Reduced width from 1200 to 1000
                 dialog.setLocationRelativeTo(null); // Center on screen
                 dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                 dialog.setResizable(false);
                 dialog.setVisible(true);
+
             }
         } catch (Exception e) {
             e.printStackTrace();

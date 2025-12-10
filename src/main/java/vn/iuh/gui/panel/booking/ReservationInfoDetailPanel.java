@@ -71,6 +71,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    private boolean isDialog;
 
     public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo, ReservationManagementPanel parentPanel) {
         this.reservationInfo = reservationInfo;
@@ -85,12 +86,13 @@ public class ReservationInfoDetailPanel extends JPanel {
         loadData();
     }
 
-    public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo) {
+    public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo, boolean isDialog) {
         this.reservationInfo = reservationInfo;
 
         this.bookingService = new BookingServiceImpl();
         this.checkinService = new CheckinServiceImpl();
         this.checkOutService = new CheckOutServiceImpl();
+        this.isDialog = isDialog;
 
         setLayout(new BorderLayout());
         init();
@@ -896,10 +898,12 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     private void handleCheckoutAndPrintReceipt(ReservationInfoDetailResponse detail) {
-        int result = JOptionPane.showConfirmDialog(null,
-                "Xác nhận trả đơn đặt phòng " + detail.getMaDonDatPhong() + "?",
-                "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
-
+        int result = 0;
+        if(!this.isDialog){
+            result = JOptionPane.showConfirmDialog(null,
+                    "Xác nhận trả đơn đặt phòng " + detail.getMaDonDatPhong() + "?",
+                    "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+        }
         if (result == JOptionPane.YES_OPTION) {
             InvoiceResponse invoiceResponse = checkOutService.checkOutReservation(detail.getMaDonDatPhong());
             if (invoiceResponse != null) {
@@ -1252,5 +1256,8 @@ public class ReservationInfoDetailPanel extends JPanel {
         setLayout(new BorderLayout());
         init();
         loadData();
+    }
+    public ReservationInfoDetailResponse getReservationInfo() {
+        return reservationInfo;
     }
 }
