@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import com.github.lgooddatepicker.zinternaltools.Pair;
+import vn.iuh.constraint.PriceType;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.gui.panel.statistic.RoomCategoryStatistic;
@@ -231,21 +232,21 @@ public class LoaiPhongDAO {
         return null;
     }
 
-    public Map<String, BigDecimal> layGiaLoaiPhongTheoMaPhong(String maPhong) {
+    public Map<PriceType, BigDecimal> layGiaLoaiPhongTheoMaPhong(String maPhong) {
         String query = "select top 1  gp.gia_ngay_moi as gia_ngay , gp.gia_gio_moi as gia_gio from Phong p\n" +
                         "left join LoaiPhong lp on lp.ma_loai_phong = p.ma_loai_phong\n" +
                         "left join GiaPhong gp on lp.ma_loai_phong = gp.ma_loai_phong\n" +
                         "where gp.da_xoa = 0 and ma_phong = ? \n" +
                         "order by gp.thoi_gian_tao desc";
-        Map<String, BigDecimal> listPrice = new HashMap<>();
+        Map<PriceType, BigDecimal> listPrice = new HashMap<>();
 
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maPhong);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                listPrice.put("gia_ngay", rs.getBigDecimal("gia_ngay"));
-                listPrice.put("gia_gio", rs.getBigDecimal("gia_gio"));
+                listPrice.put(PriceType.GIA_NGAY, rs.getBigDecimal("gia_ngay"));
+                listPrice.put(PriceType.GIA_GIO, rs.getBigDecimal("gia_gio"));
             }
 
             return listPrice;

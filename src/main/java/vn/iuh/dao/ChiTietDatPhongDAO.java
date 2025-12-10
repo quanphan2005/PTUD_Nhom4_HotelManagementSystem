@@ -40,7 +40,7 @@ public class ChiTietDatPhongDAO {
     public int capNhatKetThucCTDP(List<String> chiTietDatPhongs, String kieuKetThuc) {
         if (chiTietDatPhongs == null || chiTietDatPhongs.isEmpty()) return 0;
 
-        StringBuilder query = new StringBuilder("UPDATE ChiTietDatPhong SET kieu_ket_thuc = ? WHERE ma_chi_tiet_dat_phong IN (");
+        StringBuilder query = new StringBuilder("UPDATE ChiTietDatPhong SET kieu_ket_thuc = ? WHERE kieu_ket_thuc is null and ma_chi_tiet_dat_phong IN (");
         for (int i = 0; i < chiTietDatPhongs.size(); i++) {
             query.append("?");
             if (i < chiTietDatPhongs.size() - 1) query.append(",");
@@ -110,12 +110,13 @@ public class ChiTietDatPhongDAO {
     
     public List<ThongTinSuDungPhong> layThongTinSuDungPhong(String maDonDatPhong) {
         String query = "select ddp.ma_don_dat_phong , ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, dv.thoi_gian_tao as gio_check_in, \n" +
-                "p.ma_phong, p.ten_phong, ctdp.kieu_ket_thuc, lp.ma_loai_phong  from DonDatPhong ddp\n" +
+                "p.ma_phong, p.ten_phong, ctdp.kieu_ket_thuc, ctdp.ghi_chu ,lp.ma_loai_phong  from DonDatPhong ddp\n" +
                 "left join ChiTietDatPhong ctdp on ctdp.ma_don_dat_phong = ddp.ma_don_dat_phong\n" +
                 "left join LichSuDiVao dv on dv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong and la_lan_dau_tien = 1 \n" +
                 "left join Phong p on p.ma_phong = ctdp.ma_phong\n" +
                 "left join LoaiPhong lp on lp.ma_loai_phong = p.ma_loai_phong\n" +
-                "where ddp.ma_don_dat_phong = ?";
+                "where ddp.ma_don_dat_phong = ?\n" +
+                "order by ctdp.ma_chi_tiet_dat_phong";
 
         List<ThongTinSuDungPhong> thongTinSuDungPhongList = new ArrayList<>();
         try {
@@ -134,12 +135,44 @@ public class ChiTietDatPhongDAO {
                 thongTin.setKieuKetThuc(rs.getString("kieu_ket_thuc"));
                 thongTin.setMaLoaiPhong(rs.getString("ma_loai_phong"));
                 thongTin.setTenPhong(rs.getString("ten_phong"));
+                thongTin.setGhiChu(rs.getString("ghi_chu"));
                 thongTinSuDungPhongList.add(thongTin);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return thongTinSuDungPhongList;
+    }
+
+    public ThongTinSuDungPhong layThongTinSuDungPhongCuaCTDP(String maChiTietDatPhong) {
+        String query = "select ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, dv.thoi_gian_tao as gio_check_in, \n" +
+                "p.ma_phong, p.ten_phong, ctdp.kieu_ket_thuc, ctdp.ghi_chu, lp.ma_loai_phong  from ChiTietDatPhong ctdp" +
+                "left join LichSuDiVao dv on dv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong and la_lan_dau_tien = 1 \n" +
+                "left join Phong p on p.ma_phong = ctdp.ma_phong\n" +
+                "left join LoaiPhong lp on lp.ma_loai_phong = p.ma_loai_phong\n" +
+                "where ctdp.ma_chi_tiet_dat_phong = ?";
+        try {
+            var ps = connection.prepareStatement(query);
+            ps.setString(1, maChiTietDatPhong);
+
+            var rs = ps.executeQuery();
+            if (rs.next()) {
+                ThongTinSuDungPhong thongTin = new ThongTinSuDungPhong();
+                thongTin.setMaPhong(rs.getString("ma_phong"));
+                thongTin.setTgNhanPhong(rs.getTimestamp("tg_nhan_phong"));
+                thongTin.setTgTraPhong(rs.getTimestamp("tg_tra_phong"));
+                thongTin.setGioCheckIn(rs.getTimestamp("gio_check_in"));
+                thongTin.setMaChiTietDatPhong(rs.getString("ma_chi_tiet_dat_phong"));
+                thongTin.setKieuKetThuc(rs.getString("kieu_ket_thuc"));
+                thongTin.setMaLoaiPhong(rs.getString("ma_loai_phong"));
+                thongTin.setTenPhong(rs.getString("ten_phong"));
+                thongTin.setGhiChu(rs.getString("ghi_chu"));
+                return thongTin;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     public String findFormIDByDetail(String maChiTietDatPhong){

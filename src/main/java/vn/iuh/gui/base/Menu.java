@@ -16,7 +16,7 @@ public class Menu extends JComponent {
             {"Hóa đơn", "Tìm hóa đơn", "Thống kê doanh thu"},
             {"Nhân viên", "Quản lý nhân viên", "Quản lý tài khoản"},
             {"Khách hàng", "Tìm khách hàng", "Quản lý khách hàng"},
-            {"Hệ thống", "Quản lý phụ phí", "Thiết lập nghiệp vụ", "Trợ giúp"}
+            {"Hệ thống", "Quản lý phụ phí", "Thiết lập hệ thống", "Trợ giúp"}
     };
         public Menu(Main mainFrame) {
         init(mainFrame);

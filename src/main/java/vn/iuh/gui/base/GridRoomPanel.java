@@ -57,5 +57,4 @@ public class GridRoomPanel extends JPanel implements Serializable {
         revalidate();
         repaint();
     }
-
 }

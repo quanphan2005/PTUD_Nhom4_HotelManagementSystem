@@ -85,6 +85,18 @@ public class ReservationInfoDetailPanel extends JPanel {
         loadData();
     }
 
+    public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo) {
+        this.reservationInfo = reservationInfo;
+
+        this.bookingService = new BookingServiceImpl();
+        this.checkinService = new CheckinServiceImpl();
+        this.checkOutService = new CheckOutServiceImpl();
+
+        setLayout(new BorderLayout());
+        init();
+        loadData();
+    }
+
     private void init() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         createTopPanel();

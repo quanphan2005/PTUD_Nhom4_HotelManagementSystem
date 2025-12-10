@@ -14,34 +14,42 @@ import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.entity.NoiThat;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.HashMap;
+import java.awt.event.*;
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.function.Consumer;
 
-// Panel quản lý loại phòng
+/*
+ Panel quản lý loại phòng (tối giản: thay RoundedButton bằng JButton thuần, vẫn giữ bo góc bằng FlatLaf)
+ Đã chỉnh sửa:
+  - Thêm RoundedButton đảm bảo bo góc luôn hiện ngay cả khi nhấn.
+  - Loại bỏ nút 3 người.
+  - Sửa filter để "Thường" / "VIP" hoạt động.
+  - Di chuyển nút "Thường" sang hàng cùng với "VIP" (bên cạnh VIP).
+*/
 public class QuanLyLoaiPhongPanel extends JPanel {
-
-    // ... (giữ nguyên tất cả hằng số, fonts, ICON_CACHE, các trường UI như trước)
 
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(520, 45);
     private static final Dimension SEARCH_BUTTON_SIZE = new Dimension(90, 40);
-    private static final Dimension ACTION_BUTTON_SIZE = new Dimension(290, 55);
+    // *** Thay đổi kích thước nút: thu nhỏ để vừa vặn hơn trong search panel
+    private static final Dimension ACTION_BUTTON_SIZE = new Dimension(220, 46);
     private static final Dimension CATEGORY_BUTTON_SIZE = new Dimension(190, 52);
 
     private static final Font FONT_LABEL      = new Font("Arial", Font.BOLD, 15);
-    private static final Font FONT_ACTION     = new Font("Arial", Font.BOLD, 20);
+    private static final Font FONT_ACTION     = new Font("Arial", Font.BOLD, 18);
     private static final Font FONT_CATEGORY   = new Font("Arial", Font.BOLD, 18);
 
     private static final Font FONT_MA         = new Font("Arial", Font.PLAIN, 14);
@@ -49,13 +57,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
     private static final Font FONT_PEOPLE     = new Font("Arial", Font.BOLD, 18);
     private static final Font FONT_PHANLOAI   = new Font("Arial", Font.BOLD, 18);
 
-    private static final int CATEGORY_CARD_WIDTH  = 1300;
-    private static final int CATEGORY_CARD_HEIGHT = 150;
-    private static final int CATEGORY_CARD_ARC    = 20;
-
-    private static final Map<String, ImageIcon> ICON_CACHE = new HashMap<>();
-
-    // UI components that we need to access from multiple methods -> make them fields
     private final JTextField searchTextField = new JTextField();
     private final JButton searchButton = new JButton("TÌM");
     private JButton addButton;
@@ -64,52 +65,56 @@ public class QuanLyLoaiPhongPanel extends JPanel {
 
     private JButton onePeopleButton;
     private JButton twoPeopleButton;
-    private JButton threePeopleButton;
+    // removed threePeopleButton as requested
     private JButton fourPeopleButton;
     private JButton vipButton;
     private JButton normalButton;
     private JButton allCategoryButton;
 
-    private final JPanel listPanelContainer = new JPanel();
+    // Table components to replace card list
+    private JTable categoryTable;
+    private DefaultTableModel categoryTableModel;
 
-    // ---- New: services used by panel ----
-    private final LoaiPhongService loaiPhongService;
-    private final NoiThatService noiThatService;
+    // services
+    private LoaiPhongService loaiPhongService;
+    private NoiThatService noiThatService;
+    private volatile boolean lazyInitialized = false;
 
-    // ---- New: search & filter controls as fields so listeners can access them ----
     private JComboBox<String> searchTypeComboBox;
     private JTextField categoryCodeField;
+    private JTextField categoryNameField; // <-- mới: ô tìm theo tên
     private JComboBox<String> statusComboBox;
     private static final String CODE_PLACEHOLDER = "Mã loại phòng";
+    private static final String NAME_PLACEHOLDER = "Tên loại phòng";
 
-    // ---- New: caching and active filters ----
     private List<CategoryData> fullDataset = new ArrayList<>();
-    private Integer activePeopleFilter = null; // 1,2,3,4 or null
-    private String activeTypeFilter = null; // "Thường" or "VIP" or null
+    private Integer activePeopleFilter = null;
+    private String activeTypeFilter = null;
     private JButton activeCategoryButton = null;
 
     public QuanLyLoaiPhongPanel() {
-        // khởi tạo services (implements cần có trong project)
-        LoaiPhongService lps = null;
-        NoiThatService nts = null;
-        try {
-            lps = new LoaiPhongServiceImpl();
-        } catch (Throwable t) {
-            // fall back null -> panel vẫn hoạt động với dataset tĩnh
-            lps = null;
-        }
-        try {
-            nts = new NoiThatServiceImpl();
-        } catch (Throwable t) {
-            nts = null;
-        }
-        this.loaiPhongService = lps;
-        this.noiThatService = nts;
+        // không khởi tạo service ngay tại startup để giảm blocking UI
+        this.loaiPhongService = null;
+        this.noiThatService = null;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(CustomUI.white);
         init();
+
+        // lazy init: khi panel được thêm vào hierarchy và hiển thị lần đầu, tạo services & load data ở background
+        addHierarchyListener(new HierarchyListener() {
+            @Override
+            public void hierarchyChanged(HierarchyEvent e) {
+                // kiểm tra panel đã hiển thị (showing) và chưa init lần nào
+                if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+                    if (isShowing()) {
+                        ensureLazyInit(); // gọi lazy init
+                    }
+                }
+            }
+        });
     }
+
 
     private void init() {
         initButtons();
@@ -117,50 +122,83 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         add(Box.createVerticalStrut(10));
         createSearchAndCategoryPanel();
         add(Box.createVerticalStrut(10));
-        createListCategoryPanel(); // sẽ populate dần bên trong
+        // create table-based list (replaces previous card list)
+        createListCategoryPanel();
     }
 
+    /**
+     * initButtons - tạo 3 nút action có cùng kích thước ACTION_BUTTON_SIZE.
+     * Sửa và Xóa luôn bật (enabled). Khi nhấn mà không có selection -> hiển thị thông báo.
+     */
     private void initButtons() {
         configureSearchTextField(searchTextField, SEARCH_TEXT_SIZE, CODE_PLACEHOLDER);
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
 
-        addButton    = createActionButtonAsync("Thêm loại phòng", "/icons/add.png", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
-        editButton   = createActionButtonAsync("Sửa loại phòng", "/icons/edit.png", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
-        deleteButton = createActionButtonAsync("Xóa loại phòng", "/icons/delete.png", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
+        // tạo action button KHÔNG tải icon - giờ cả 3 nút có cùng kích thước ACTION_BUTTON_SIZE
+        addButton    = createActionButton("Thêm loại phòng", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
+        editButton   = createActionButton("Sửa loại phòng", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
+        deleteButton = createActionButton("Xóa loại phòng", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
 
-        // gắn sự kiện cho nút Thêm: mở dialog ThemLoaiPhongDialog
+        // Thêm action cho Thêm
         addButton.addActionListener(e -> {
             Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
-            // dialog constructor: ThemLoaiPhongDialog(Frame owner, LoaiPhongService, NoiThatService)
             try {
                 ThemLoaiPhongDialog dlg = new ThemLoaiPhongDialog(owner, loaiPhongService, noiThatService);
                 dlg.setVisible(true);
             } catch (Throwable ex) {
-                // nếu service null hoặc lỗi, vẫn mở dialog (constructor có thể xử lý null service)
-                try {
-                    ThemLoaiPhongDialog dlg = new ThemLoaiPhongDialog(owner, loaiPhongService, noiThatService);
-                    dlg.setVisible(true);
-                } catch (Throwable ignore) {}
+                try { ThemLoaiPhongDialog dlg = new ThemLoaiPhongDialog(owner, loaiPhongService, noiThatService); dlg.setVisible(true); }
+                catch (Throwable ignore) {}
+            } finally { reloadListFromService(); }
+        });
+
+        // Sửa: nếu không chọn hàng -> thông báo; nếu có -> mở form sửa
+        editButton.addActionListener(e -> {
+            CategoryData sel = getSelectedCategoryData();
+            if (sel == null) {
+                JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Vui lòng chọn 1 loại phòng để sửa", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            SwingUtilities.invokeLater(() -> openCategoryDetail(sel));
+        });
+
+        // Xóa: nếu không chọn hàng -> thông báo; nếu có -> thực hiện xóa như trước
+        deleteButton.addActionListener(e -> {
+            CategoryData sel = getSelectedCategoryData();
+            if (sel == null) {
+                JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Vui lòng chọn 1 loại phòng để xóa", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            if (loaiPhongService == null) {
+                JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Không có service để xóa", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(QuanLyLoaiPhongPanel.this, "Bạn có chắc muốn xóa loại phòng " + sel.code + " ?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) return;
+            String maPhien = System.getProperty("user.name"); if (maPhien == null) maPhien = "UNKNOWN";
+            try {
+                boolean deleted = ((LoaiPhongServiceImpl) loaiPhongService).deleteRoomCategoryWithAudit(sel.code, maPhien);
+                if (deleted) JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Xóa loại phòng thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                else JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Không thể xóa loại phòng", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Lỗi khi xóa loại phòng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
             } finally {
-                // reload danh sách sau khi dialog đóng (ngay cả khi lỗi)
                 reloadListFromService();
             }
         });
 
-        onePeopleButton   = createCategoryButton("1 người (10)", "#1BA1E2", CATEGORY_BUTTON_SIZE);
-        twoPeopleButton   = createCategoryButton("2 người (10)", "#34D399", CATEGORY_BUTTON_SIZE);
-        threePeopleButton = createCategoryButton("3 người (10)", "#FB923C", CATEGORY_BUTTON_SIZE);
-        fourPeopleButton  = createCategoryButton("4 người (10)", "#A78BFA", CATEGORY_BUTTON_SIZE);
-        vipButton         = createCategoryButton("VIP (10)", "#E3C800", CATEGORY_BUTTON_SIZE);
-        normalButton      = createCategoryButton("Thường (10)", "#647687", CATEGORY_BUTTON_SIZE);
-        allCategoryButton = createCategoryButton("Toàn bộ (10)", "#3B82F6", CATEGORY_BUTTON_SIZE);
+        onePeopleButton   = createCategoryButton("1 người", "#1BA1E2", CATEGORY_BUTTON_SIZE);
+        twoPeopleButton   = createCategoryButton("2 người", "#34D399", CATEGORY_BUTTON_SIZE);
+        // threePeopleButton removed intentionally per request
+        fourPeopleButton  = createCategoryButton("4 người", "#A78BFA", CATEGORY_BUTTON_SIZE);
+        vipButton         = createCategoryButton("VIP", "#E3C800", CATEGORY_BUTTON_SIZE);
+        normalButton      = createCategoryButton("Thường", "#647687", CATEGORY_BUTTON_SIZE);
+        allCategoryButton = createCategoryButton("Toàn bộ", "#3B82F6", CATEGORY_BUTTON_SIZE);
 
-        // Attach behavior for category buttons: set filters and apply
         onePeopleButton.addActionListener(e -> setActiveCategoryFilter(1, null, onePeopleButton));
         twoPeopleButton.addActionListener(e -> setActiveCategoryFilter(2, null, twoPeopleButton));
-        threePeopleButton.addActionListener(e -> setActiveCategoryFilter(3, null, threePeopleButton));
         fourPeopleButton.addActionListener(e -> setActiveCategoryFilter(4, null, fourPeopleButton));
-        vipButton.addActionListener(e -> setActiveCategoryFilter(null, "Vip", vipButton));
+        vipButton.addActionListener(e -> setActiveCategoryFilter(null, "VIP", vipButton));
         normalButton.addActionListener(e -> setActiveCategoryFilter(null, "Thường", normalButton));
         allCategoryButton.addActionListener(e -> setActiveCategoryFilter(null, null, allCategoryButton));
     }
@@ -168,13 +206,15 @@ public class QuanLyLoaiPhongPanel extends JPanel {
     private void setActiveCategoryFilter(Integer people, String type, JButton btn) {
         this.activePeopleFilter = people;
         this.activeTypeFilter = type;
-        // update button visuals (simple approach: border highlight)
+        // thay vì setBorder, dùng clientProperty "active" để RoundedButton vẽ viền phù hợp
         if (activeCategoryButton != null) {
-            activeCategoryButton.setBorder(null);
+            activeCategoryButton.putClientProperty("active", Boolean.FALSE);
+            activeCategoryButton.repaint();
         }
         activeCategoryButton = btn;
         if (activeCategoryButton != null) {
-            activeCategoryButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2, true));
+            activeCategoryButton.putClientProperty("active", Boolean.TRUE);
+            activeCategoryButton.repaint();
         }
         applyFilters();
     }
@@ -188,19 +228,11 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         field.setForeground(Color.GRAY);
         field.setText(placeholder);
         field.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override
-            public void focusGained(java.awt.event.FocusEvent e) {
-                if (Objects.equals(field.getText(), placeholder)) {
-                    field.setText("");
-                    field.setForeground(Color.BLACK);
-                }
+            @Override public void focusGained(java.awt.event.FocusEvent e) {
+                if (Objects.equals(field.getText(), placeholder)) { field.setText(""); field.setForeground(Color.BLACK); }
             }
-            @Override
-            public void focusLost(java.awt.event.FocusEvent e) {
-                if (field.getText().isEmpty()) {
-                    field.setForeground(Color.GRAY);
-                    field.setText(placeholder);
-                }
+            @Override public void focusLost(java.awt.event.FocusEvent e) {
+                if (field.getText().isEmpty()) { field.setForeground(Color.GRAY); field.setText(placeholder); }
             }
         });
     }
@@ -215,34 +247,50 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         btn.setBackground(Color.decode("#1D4ED8"));
     }
 
+    /**
+     * Tạo category button bằng RoundedButton để bo góc luôn luôn.
+     */
     private JButton createCategoryButton(String text, String hexColor, Dimension size) {
-        JButton button = new JButton(text);
+        RoundedButton button = new RoundedButton(text, 20);
         button.setPreferredSize(size);
         button.setMinimumSize(size);
         button.setMaximumSize(size);
-        button.setBackground(Color.decode(hexColor));
-        button.setForeground(CustomUI.white);
+
+        // set colors
+        try {
+            Color bg = Color.decode(hexColor);
+            button.setBackground(bg);
+            // chọn màu chữ dựa trên độ tương phản (luminance)
+            double lum = (bg.getRed() * 0.299 + bg.getGreen() * 0.587 + bg.getBlue() * 0.114);
+            button.setForeground(lum > 186 ? Color.BLACK : Color.WHITE);
+        } catch (Exception ex) {
+            button.setBackground(Color.GRAY);
+            button.setForeground(Color.WHITE);
+        }
+
         button.setFont(FONT_CATEGORY);
-        button.putClientProperty(FlatClientProperties.STYLE,
-                "arc: 20; borderWidth: 2; borderColor: #D1D5DB; focusWidth: 0; innerFocusWidth: 0;");
         button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // ensure default not active
+        button.putClientProperty("active", Boolean.FALSE);
+
         return button;
     }
 
-    private JButton createActionButtonAsync(String text, String iconPath, Dimension size, String bgHex, String borderHex) {
+    private JButton createActionButton(String text, Dimension size, String bgHex, String borderHex) {
         JButton button = new JButton(text);
         button.setPreferredSize(size);
         button.setMinimumSize(size);
         button.setMaximumSize(size);
         button.setFont(FONT_ACTION);
-        button.setBackground(Color.decode(bgHex));
+        try { button.setBackground(Color.decode(bgHex)); } catch (Exception e) { button.setBackground(new Color(0x888888)); }
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.setOpaque(true);
         button.putClientProperty(FlatClientProperties.STYLE, "arc: 20; borderWidth: 2; borderColor:" + borderHex);
-        loadIconAsync(iconPath, 20, 20, icon -> {
-            if (icon != null) button.setIcon(icon);
-        });
+
         return button;
     }
 
@@ -251,16 +299,24 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         JLabel lblTop = new JLabel("Quản lý loại phòng", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.normalFont != null ? CustomUI.normalFont : FONT_NAME);
-
         pnlTop.setBackground(CustomUI.blue);
         pnlTop.add(lblTop, BorderLayout.CENTER);
         pnlTop.setPreferredSize(new Dimension(0, 50));
         pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
-
         add(pnlTop);
     }
 
+    /**
+     * createSearchPanel - chỉnh layout:
+     * - row 1: search controls
+     * - row 2: Thêm + Sửa (chung 1 hàng, centered)
+     * - row 3: Xóa (hàng dưới, centered)
+     * Các nút có kích thước đồng nhất ACTION_BUTTON_SIZE.
+     *
+     * Lưu ý: giảm khoảng cách dọc giữa row2 và row3, đồng thời thêm một khoảng nhỏ dưới cùng
+     * để tránh nút Xóa đè mất viền dưới của search panel.
+     */
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
@@ -268,11 +324,11 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         searchPanel.setMaximumSize(new Dimension(650, 200));
         searchPanel.setBackground(CustomUI.white);
         searchPanel.setOpaque(true);
+        // giữ insets nhưng viền vẫn rõ ràng
         searchPanel.setBorder(new FlatLineBorder(new Insets(12,12,12,12), Color.decode("#CED4DA"), 2, 30));
 
-        String[] searchOptions = {"Mã loại phòng", "Trạng thái"};
+        String[] searchOptions = {"Mã loại phòng", "Tên loại phòng", "Trạng thái"};
         searchTypeComboBox = new JComboBox<>(searchOptions);
-
         Dimension searchTypeSize = new Dimension(120, 45);
         searchTypeComboBox.setPreferredSize(searchTypeSize);
         searchTypeComboBox.setMaximumSize(searchTypeSize);
@@ -280,17 +336,21 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         searchTypeComboBox.setFont(new Font("Arial", Font.BOLD, 14));
 
         JPanel inputPanel = new JPanel(new CardLayout());
-
         Dimension inputSize = new Dimension(380, 45);
         inputPanel.setPreferredSize(inputSize);
         inputPanel.setMaximumSize(inputSize);
         inputPanel.setMinimumSize(inputSize);
 
-        // make categoryCodeField a field
         categoryCodeField = new JTextField();
         configureSearchTextField(categoryCodeField, new Dimension(380,45), CODE_PLACEHOLDER);
         categoryCodeField.setMaximumSize(new Dimension(380,45));
         categoryCodeField.setMinimumSize(new Dimension(380,45));
+
+        // name search field
+        categoryNameField = new JTextField();
+        configureSearchTextField(categoryNameField, new Dimension(380,45), NAME_PLACEHOLDER);
+        categoryNameField.setMaximumSize(new Dimension(380,45));
+        categoryNameField.setMinimumSize(new Dimension(380,45));
 
         String[] statusOptions = {"Thường", "VIP", "Tất cả"};
         statusComboBox = new JComboBox<>(statusOptions);
@@ -301,6 +361,7 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         statusComboBox.putClientProperty(FlatClientProperties.STYLE, "arc:12");
 
         inputPanel.add(categoryCodeField, "Mã loại phòng");
+        inputPanel.add(categoryNameField, "Tên loại phòng");
         inputPanel.add(statusComboBox, "Trạng thái");
 
         searchTypeComboBox.addActionListener(e -> {
@@ -319,31 +380,27 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         row1.add(Box.createHorizontalStrut(10));
         row1.add(searchButton);
 
-        // nút TÌM behaviour (tương tự như trước)
-        searchButton.addActionListener(ev -> {
-            // no-op: dynamic filtering handles searches in real-time
-        });
-
-        // Dynamic filtering: when user types in mã loại phòng -> filter immediately
         categoryCodeField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) { applyFilters(); }
-            @Override
-            public void removeUpdate(DocumentEvent e) { applyFilters(); }
-            @Override
-            public void changedUpdate(DocumentEvent e) { applyFilters(); }
+            @Override public void insertUpdate(DocumentEvent e) { applyFilters(); }
+            @Override public void removeUpdate(DocumentEvent e) { applyFilters(); }
+            @Override public void changedUpdate(DocumentEvent e) { applyFilters(); }
+        });
+        categoryNameField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { applyFilters(); }
+            @Override public void removeUpdate(DocumentEvent e) { applyFilters(); }
+            @Override public void changedUpdate(DocumentEvent e) { applyFilters(); }
         });
 
-        // Dynamic filtering: when user changes status selection -> filter immediately
         statusComboBox.addActionListener(ev -> {
             String sel = (String) statusComboBox.getSelectedItem();
-            if (sel == null || "Tất cả".equals(sel)) {
-                // do not override activeTypeFilter unless user explicitly chooses the status box
-                activeTypeFilter = null;
-            } else {
-                // map displayed values to internal representation matches DB sample ("Thường" / "Vip")
-                if (sel.equalsIgnoreCase("VIP")) activeTypeFilter = "Vip";
-                else activeTypeFilter = sel;
+            if (sel == null || "Tất cả".equals(sel)) activeTypeFilter = null;
+            else if (sel.equalsIgnoreCase("VIP")) activeTypeFilter = "VIP";
+            else activeTypeFilter = sel;
+            // khi thay đổi statusComboBox, clear any activeCategoryButton highlight (optional)
+            if (activeCategoryButton != null) {
+                activeCategoryButton.putClientProperty("active", Boolean.FALSE);
+                activeCategoryButton.repaint();
+                activeCategoryButton = null;
             }
             applyFilters();
         });
@@ -351,22 +408,37 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         searchPanel.add(row1);
         searchPanel.add(Box.createVerticalStrut(10));
 
-        // Row2: chỉ giữ nút Thêm, căn giữa
-        JPanel row2 = new JPanel();
-        row2.setLayout(new BoxLayout(row2, BoxLayout.X_AXIS));
-        row2.setBackground(CustomUI.white);
-        row2.setMaximumSize(new Dimension(650, ACTION_BUTTON_SIZE.height + 10));
+        // ---------- First action row: Thêm & Sửa (căn giữa) ----------
+        JPanel actionRow1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 6));
+        actionRow1.setBackground(CustomUI.white);
 
-        row2.add(Box.createHorizontalGlue());
-        row2.add(addButton);
-        row2.add(Box.createHorizontalGlue());
+        // Đồng bộ kích thước 3 nút bằng ACTION_BUTTON_SIZE
+        Dimension btnSize = new Dimension(ACTION_BUTTON_SIZE.width, ACTION_BUTTON_SIZE.height);
+        addButton.setPreferredSize(btnSize);
+        editButton.setPreferredSize(btnSize);
+        deleteButton.setPreferredSize(btnSize);
 
-        searchPanel.add(row2);
+        // addButton nằm bên trái của editButton; cả cặp được căn giữa
+        actionRow1.add(addButton);
+        actionRow1.add(Box.createHorizontalStrut(12));
+        actionRow1.add(editButton);
+        searchPanel.add(actionRow1);
+
+        // giảm khoảng cách dọc giữa 2 hàng (nhỏ hơn trước)
+        searchPanel.add(Box.createVerticalStrut(6));
+
+        // ---------- Second action row: Xóa (căn giữa) ----------
+        JPanel actionRow2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 6));
+        actionRow2.setBackground(CustomUI.white);
+        actionRow2.add(deleteButton);
+        searchPanel.add(actionRow2);
+
+        // thêm khoảng đệm nhỏ phía dưới để nút Xóa không chạm viền dưới của searchPanel
+        searchPanel.add(Box.createVerticalStrut(8));
 
         return searchPanel;
     }
 
-    // CREATE CATEGORY PANEL (phần nút bộ lọc bên phải) — đã chỉnh: mỗi hàng 3 nút, trái->phải
     private JPanel createCategoryPanel() {
         JPanel categoryPanel = new JPanel();
         categoryPanel.setLayout(new BoxLayout(categoryPanel, BoxLayout.Y_AXIS));
@@ -376,35 +448,23 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         categoryPanel.setOpaque(true);
         categoryPanel.setBorder(new FlatLineBorder(new Insets(12,12,12,12), Color.decode("#CED4DA"), 2, 30));
 
-        // Row 1: Toàn bộ, 1 người, 2 người (left-aligned)
         JPanel row1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         row1.setBackground(CustomUI.white);
         row1.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row1.add(allCategoryButton);
-        row1.add(onePeopleButton);
-        row1.add(twoPeopleButton);
-        categoryPanel.add(row1);
-        categoryPanel.add(Box.createVerticalStrut(10));
+        row1.add(allCategoryButton); row1.add(onePeopleButton); row1.add(twoPeopleButton);
+        categoryPanel.add(row1); categoryPanel.add(Box.createVerticalStrut(10));
 
-        // Row 2: 3 người, 4 người, VIP (left-aligned)
         JPanel row2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         row2.setBackground(CustomUI.white);
         row2.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row2.add(threePeopleButton);
+        // removed threePeopleButton - add fourPeople, vip and normal here (normal moved next to VIP)
         row2.add(fourPeopleButton);
         row2.add(vipButton);
-        categoryPanel.add(row2);
-        categoryPanel.add(Box.createVerticalStrut(10));
+        row2.add(normalButton);
+        categoryPanel.add(row2); categoryPanel.add(Box.createVerticalStrut(10));
 
-        // Row 3: Thường + 2 placeholder (left-aligned to keep 3-col layout)
-        JPanel row3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
-        row3.setBackground(CustomUI.white);
-        row3.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row3.add(normalButton);
-        // placeholders giữ kích thước giống nút
-        row3.add(Box.createRigidArea(new Dimension(CATEGORY_BUTTON_SIZE.width, CATEGORY_BUTTON_SIZE.height)));
-        row3.add(Box.createRigidArea(new Dimension(CATEGORY_BUTTON_SIZE.width, CATEGORY_BUTTON_SIZE.height)));
-        categoryPanel.add(row3);
+        // no separate row for 'normalButton' now; keep small spacing below
+        // (if you want further reflow, we can adjust sizes or add/remove rigid areas)
 
         return categoryPanel;
     }
@@ -422,474 +482,429 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         add(searchAndCategoryPanel);
     }
 
-    // ------------- IMAGE UTILITIES (giữ nguyên) ----------------
-    private static String iconCacheKey(String path, int w, int h, int arc) {
-        return path + "|" + w + "x" + h + "|arc:" + arc;
-    }
-
-    private static ImageIcon loadRoundedIconSync(Class<?> cls, String path, int width, int height, int arc) {
-        String key = iconCacheKey(path, width, height, arc);
-        synchronized (ICON_CACHE) {
-            if (ICON_CACHE.containsKey(key)) return ICON_CACHE.get(key);
-        }
-        try (InputStream is = cls.getResourceAsStream(path)) {
-            if (is == null) return null;
-            BufferedImage orig = ImageIO.read(is);
-            if (orig == null) return null;
-
-            BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = scaled.createGraphics();
-            try {
-                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                g.drawImage(orig, 0, 0, width, height, null);
-            } finally {
-                g.dispose();
-            }
-
-            BufferedImage rounded = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = rounded.createGraphics();
-            try {
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                Shape clip = new RoundRectangle2D.Float(0, 0, width, height, arc, arc);
-                g2.setClip(clip);
-                g2.drawImage(scaled, 0, 0, null);
-            } finally {
-                g2.dispose();
-            }
-
-            ImageIcon ic = new ImageIcon(rounded);
-            synchronized (ICON_CACHE) {
-                ICON_CACHE.put(key, ic);
-            }
-            return ic;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static void loadIconAsync(String path, int w, int h, Consumer<ImageIcon> callback) {
-        String key = iconCacheKey(path, w, h, 0);
-        synchronized (ICON_CACHE) {
-            ImageIcon cached = ICON_CACHE.get(key);
-            if (cached != null) {
-                SwingUtilities.invokeLater(() -> callback.accept(cached));
-                return;
-            }
-        }
-
-        SwingWorker<ImageIcon, Void> wk = new SwingWorker<>() {
-            @Override
-            protected ImageIcon doInBackground() {
-                try (InputStream is = QuanLyLoaiPhongPanel.class.getResourceAsStream(path)) {
-                    if (is == null) return null;
-                    BufferedImage img = ImageIO.read(is);
-                    if (img == null) return null;
-                    Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-                    ImageIcon ic = new ImageIcon(scaled);
-                    synchronized (ICON_CACHE) {
-                        ICON_CACHE.put(iconCacheKey(path, w, h, 0), ic);
-                    }
-                    return ic;
-                } catch (Exception ex) {
-                    return null;
-                }
-            }
-            @Override
-            protected void done() {
-                try {
-                    ImageIcon ic = get();
-                    if (ic != null) callback.accept(ic);
-                } catch (Exception ignored) {}
-            }
-        };
-        wk.execute();
-    }
-
-    private static void loadRoundedIconAsync(String path, int w, int h, int arc, Consumer<ImageIcon> callback) {
-        String key = iconCacheKey(path, w, h, arc);
-        synchronized (ICON_CACHE) {
-            ImageIcon cached = ICON_CACHE.get(key);
-            if (cached != null) {
-                SwingUtilities.invokeLater(() -> callback.accept(cached));
-                return;
-            }
-        }
-
-        SwingWorker<ImageIcon, Void> wk = new SwingWorker<>() {
-            @Override
-            protected ImageIcon doInBackground() {
-                return loadRoundedIconSync(QuanLyLoaiPhongPanel.class, path, w, h, arc);
-            }
-            @Override
-            protected void done() {
-                try {
-                    ImageIcon ic = get();
-                    if (ic != null) callback.accept(ic);
-                } catch (Exception ignored) {}
-            }
-        };
-        wk.execute();
-    }
-
-    // ------------- CARD CREATION (thay đổi: gắn action cho editBtn) ----------------
-
-    private JPanel createCategoryCard(String maLoai, String tenLoaiPhong, int soNguoi, String phanLoai, String imageResource) {
-        String backgroundColor;
-        switch (soNguoi) {
-            case 1: backgroundColor = "#1BA1E2"; break;
-            case 2: backgroundColor = "#34D399"; break;
-            case 3: backgroundColor = "#FB923C"; break;
-            case 4: backgroundColor = "#A78BFA"; break;
-            default: backgroundColor = "#647687"; break;
-        }
-
-        String anhPhong = (imageResource == null || imageResource.isEmpty()) ? "/images/room_category.jpg" : imageResource;
-
-        JPanel card = new JPanel(new BorderLayout());
-        card.putClientProperty(FlatClientProperties.STYLE,
-                "arc: " + CATEGORY_CARD_ARC + "; background: " + backgroundColor + ";");
-        card.setPreferredSize(new Dimension(CATEGORY_CARD_WIDTH, CATEGORY_CARD_HEIGHT));
-        card.setMaximumSize(new Dimension(CATEGORY_CARD_WIDTH, CATEGORY_CARD_HEIGHT));
-
-        final int imgW = 160;
-        final int imgH = CATEGORY_CARD_HEIGHT - 4;
-        JLabel imgLabel = new JLabel("Loading...", SwingConstants.CENTER);
-        imgLabel.setPreferredSize(new Dimension(imgW, imgH));
-        imgLabel.setOpaque(true);
-        imgLabel.setBackground(new Color(0xdddddd));
-        imgLabel.setForeground(Color.BLACK);
-
-        // async load rounded image
-        loadRoundedIconAsync(anhPhong, imgW, imgH, CATEGORY_CARD_ARC, icon -> {
-            SwingUtilities.invokeLater(() -> {
-                imgLabel.setText(null);
-                imgLabel.setIcon(icon);
-                imgLabel.setOpaque(false);
-                imgLabel.setBackground(null);
-            });
-        });
-
-        JPanel imagePanel = new JPanel(new BorderLayout());
-        imagePanel.setOpaque(false);
-        imagePanel.setPreferredSize(new Dimension(imgW, CATEGORY_CARD_HEIGHT));
-        imagePanel.add(imgLabel, BorderLayout.CENTER);
-        card.add(imagePanel, BorderLayout.WEST);
-
-        JPanel contentRow = new JPanel();
-        contentRow.setLayout(new BoxLayout(contentRow, BoxLayout.X_AXIS));
-        contentRow.setOpaque(false);
-        contentRow.setBorder(BorderFactory.createEmptyBorder(12, 18, 12, 18));
-
-        JPanel infoPanel = new JPanel();
-        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-        infoPanel.setOpaque(false);
-
-        JLabel lblMa = new JLabel(maLoai);
-        lblMa.setFont(FONT_MA);
-        lblMa.setForeground(Color.WHITE);
-        lblMa.setOpaque(false);
-
-        JLabel lblName = new JLabel(tenLoaiPhong);
-        lblName.setFont(FONT_NAME);
-        lblName.setForeground(Color.WHITE);
-        lblName.setOpaque(false);
-
-        JLabel lblPeople = new JLabel("Số người tối đa: " + soNguoi);
-        lblPeople.setFont(FONT_PEOPLE);
-        lblPeople.setForeground(Color.WHITE);
-        lblPeople.setOpaque(false);
-
-        JLabel lblCategory = new JLabel("Phân loại: " + phanLoai);
-        lblCategory.setFont(FONT_PHANLOAI);
-        lblCategory.setForeground(Color.WHITE);
-        lblCategory.setOpaque(false);
-
-        infoPanel.add(lblMa);
-        infoPanel.add(Box.createVerticalStrut(6));
-        infoPanel.add(lblName);
-        infoPanel.add(Box.createVerticalStrut(10));
-        infoPanel.add(lblPeople);
-        infoPanel.add(Box.createVerticalStrut(6));
-        infoPanel.add(lblCategory);
-
-        contentRow.add(infoPanel);
-        contentRow.add(Box.createHorizontalGlue());
-        card.add(contentRow, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-        buttonPanel.setOpaque(false);
-
-        Dimension btnSize = new Dimension(35, 35);
-        JButton editBtn = createIconOnlyButtonAsync("/icons/edit.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
-        JButton deleteBtn = createIconOnlyButtonAsync("/icons/delete.png", btnSize, "arc: 10; background: #FFFFFF; foreground: #FFFFFF;");
-
-        // ---- gắn sự kiện cho nút SỬA: mở SuaLoaiPhongDialog với dữ liệu từ service ----
-        editBtn.addActionListener(evt -> {
-            Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
-            LoaiPhong lp = null;
-            try {
-                if (loaiPhongService != null) {
-                    lp = loaiPhongService.getRoomCategoryByIDV2(maLoai);
-                }
-            } catch (Exception ex) {
-                lp = null;
-            }
-
-            if (lp == null) {
-
-                String fallbackName = tenLoaiPhong != null ? tenLoaiPhong : "";
-                LoaiPhong tmp = new LoaiPhong();
-                tmp.setMaLoaiPhong(maLoai);
-                tmp.setTenLoaiPhong(fallbackName);
-                // thông báo cho user
-                JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin đầy đủ cho loại phòng. Vẫn mở form với dữ liệu sẵn có.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                lp = tmp;
-            }
-
-            List<NoiThat> furniture = new ArrayList<>();
-            try {
-                if (noiThatService != null) {
-                    furniture = noiThatService.getNoiThatByLoaiPhong(maLoai);
-                }
-            } catch (Exception ignored) { furniture = new ArrayList<>(); }
-
-            try {
-                SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture);
-                dlg.setVisible(true);
-            } catch (Throwable ex) {
-                // fallback attempt
-                try {
-                    SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture);
-                    dlg.setVisible(true);
-                } catch (Throwable ignore) {}
-            } finally {
-                reloadListFromService();
-            }
-        });
-
-
-        // ---- gắn sự kiện cho nút XÓA (nếu bạn muốn xử lý xóa) ----
-        deleteBtn.addActionListener(evt -> {
-            if (loaiPhongService == null) {
-                JOptionPane.showMessageDialog(this, "Không có service để xóa", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa loại phòng " + maLoai + " ?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-            if (confirm != JOptionPane.YES_OPTION) return;
-
-            // Lấy mã phiên/nhân viên hiện tại. Thay bằng cách lấy session thực tế nếu có.
-            String maPhien = System.getProperty("user.name");
-            if (maPhien == null) maPhien = "UNKNOWN";
-
-            try {
-                // gọi trực tiếp impl (nếu interface LoaiPhongService không khai báo phương thức này)
-                boolean deleted = ((vn.iuh.service.impl.LoaiPhongServiceImpl) loaiPhongService)
-                        .deleteRoomCategoryWithAudit(maLoai, maPhien);
-                if (deleted) {
-                    JOptionPane.showMessageDialog(this, "Xóa loại phòng thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, "Không thể xóa loại phòng", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (vn.iuh.exception.BusinessException be) {
-                JOptionPane.showMessageDialog(this, be.getMessage(), "Không thể xóa", JOptionPane.WARNING_MESSAGE);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xóa loại phòng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace();
-            } finally {
-                reloadListFromService();
-            }
-        });
-
-        buttonPanel.add(editBtn);
-        buttonPanel.add(deleteBtn);
-
-        card.add(buttonPanel, BorderLayout.EAST);
-
-        return card;
-    }
-
-    private JButton createIconOnlyButtonAsync(String iconPath, Dimension size, String flatStyle) {
-        JButton btn = new JButton();
-        btn.setPreferredSize(size);
-        btn.putClientProperty(FlatClientProperties.STYLE, flatStyle);
-        btn.setFocusPainted(false);
-
-        loadIconAsync(iconPath, 20, 20, icon -> {
-            if (icon != null) btn.setIcon(icon);
-        });
-
-        return btn;
-    }
-
-    // ------------- LIST POPULATION (load from DB via service; no sample data) -------------
+    // --- Thay thế createListCategoryPanel: tạo table và scrollpane (không có cột Ảnh, đã thêm 2 cột giá) ---
     private void createListCategoryPanel() {
-        listPanelContainer.setLayout(new BoxLayout(listPanelContainer, BoxLayout.Y_AXIS));
-        listPanelContainer.setBackground(CustomUI.white);
-        listPanelContainer.setOpaque(true);
-        listPanelContainer.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.decode("#E5E7EB"), 2, true),
-                BorderFactory.createEmptyBorder(8, 8, 8, 8)
-        ));
+        String[] cols = {"Mã loại", "Tên loại", "Phân loại", "Số người", "Giá ngày", "Giá giờ"};
+        categoryTableModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
 
-        // Add a light placeholder so the scroll area appears immediately
-        JPanel placeholder = new JPanel();
-        placeholder.setPreferredSize(new Dimension(0, 40));
-        placeholder.setOpaque(false);
-        listPanelContainer.add(placeholder);
+        // JTable override prepareRenderer để cập nhật ngay background khi chọn dòng
+        categoryTable = new JTable(categoryTableModel) {
+            @Override public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                c.setFont(CustomUI.TABLE_FONT);
 
-        JScrollPane scrollPane = new JScrollPane(listPanelContainer,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(null);
+                if (isRowSelected(row)) {
+                    c.setBackground(CustomUI.ROW_SELECTED_COLOR);
+                    c.setForeground(CustomUI.black);
+                } else {
+                    if (row % 2 == 0) {
+                        c.setBackground(CustomUI.ROW_EVEN != null ? CustomUI.ROW_EVEN : Color.WHITE);
+                    } else {
+                        c.setBackground(CustomUI.ROW_ODD != null ? CustomUI.ROW_ODD : new Color(0xF7F9FB));
+                    }
+                    c.setForeground(CustomUI.black);
+                }
+
+                if (c instanceof JLabel) {
+                    ((JLabel) c).setHorizontalAlignment(JLabel.CENTER);
+                }
+                setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, CustomUI.tableBorder));
+                return c;
+            }
+        };
+
+        categoryTable.setRowHeight(48);
+        categoryTable.getTableHeader().setPreferredSize(new Dimension(categoryTable.getWidth(), 40));
+        categoryTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
+        categoryTable.getTableHeader().setBackground(CustomUI.blue);
+        categoryTable.getTableHeader().setForeground(CustomUI.white);
+        categoryTable.getTableHeader().setOpaque(true);
+
+        // reuse default renderer to ensure alignment & border on non-overridden scenarios
+        categoryTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(JLabel.CENTER);
+                setBorder(BorderFactory.createMatteBorder(0,0,1,1, CustomUI.tableBorder));
+                comp.setFont(CustomUI.TABLE_FONT);
+                return comp;
+            }
+        });
+
+        // double-click to view/edit
+        categoryTable.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    int row = categoryTable.rowAtPoint(e.getPoint());
+                    if (row >= 0) {
+                        CategoryData d = getCategoryDataAtViewRow(row);
+                        if (d != null) {
+                            SwingUtilities.invokeLater(() -> openCategoryDetail(d));
+                        }
+                    }
+                } else {
+                    // single click: repaint to show selection immediately and keep buttons enabled
+                    SwingUtilities.invokeLater(() -> categoryTable.repaint());
+                }
+            }
+        });
+
+        categoryTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        categoryTable.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override public void componentResized(java.awt.event.ComponentEvent e) {
+                int tableWidth = categoryTable.getWidth();
+                TableColumnModel columnModel = categoryTable.getColumnModel();
+                if (columnModel.getColumnCount() < 6) return;
+                columnModel.getColumn(0).setPreferredWidth((int)(tableWidth*0.12));
+                columnModel.getColumn(1).setPreferredWidth((int)(tableWidth*0.35));
+                columnModel.getColumn(2).setPreferredWidth((int)(tableWidth*0.12));
+                columnModel.getColumn(3).setPreferredWidth((int)(tableWidth*0.11));
+                columnModel.getColumn(4).setPreferredWidth((int)(tableWidth*0.15));
+                columnModel.getColumn(5).setPreferredWidth((int)(tableWidth*0.15));
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(categoryTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.getViewport().setBackground(CustomUI.white);
         scrollPane.setPreferredSize(new Dimension(0, 500));
-        this.add(scrollPane);
+        add(scrollPane);
 
-        // load items (use service)
+        // load data
         reloadListFromService();
     }
 
-    /**
-     * Reload danh sách loại phòng bằng cách gọi service (bắt lỗi và không sử dụng dữ liệu mẫu).
-     * Nếu service == null -> hiển thị thông báo và để list rỗng.
-     */
-    private void reloadListFromService() {
-        // clear current items
-        listPanelContainer.removeAll();
+    private void openCategoryDetail(CategoryData d) {
+        Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
+        LoaiPhong lp = null;
+        try {
+            if (loaiPhongService != null) lp = loaiPhongService.getRoomCategoryByIDV2(d.code);
+        } catch (Exception ignored) { lp = null; }
+        if (lp == null) {
+            lp = new LoaiPhong(); lp.setMaLoaiPhong(d.code); lp.setTenLoaiPhong(d.name);
+            JOptionPane.showMessageDialog(this, "Không tìm thấy dữ liệu đầy đủ, mở form với dữ liệu sẵn có.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        }
+        List<NoiThat> furniture = new ArrayList<>();
+        try { if (noiThatService != null) furniture = noiThatService.getNoiThatByLoaiPhong(d.code); } catch (Exception ignored) { }
+        try {
+            SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture);
+            dlg.setVisible(true);
+        } catch (Throwable ex) {
+            try { SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture); dlg.setVisible(true); } catch (Throwable ignore) {}
+        } finally { reloadListFromService(); }
+    }
 
-        // show temporary "loading" row
-        JLabel loading = new JLabel("Đang tải danh sách loại phòng...", SwingConstants.CENTER);
-        loading.setPreferredSize(new Dimension(0, 40));
-        loading.setForeground(Color.GRAY);
-        listPanelContainer.add(loading);
-        listPanelContainer.revalidate();
-        listPanelContainer.repaint();
+    // reload uses existing SwingWorker implementation but now populates table model
+    // reload uses existing SwingWorker implementation but now populates table model and fetches prices from DB
+    private void reloadListFromService() {
+        // show temporary placeholder while loading
+        if (categoryTableModel != null) categoryTableModel.setRowCount(0);
 
         SwingWorker<List<CategoryData>, Void> wk = new SwingWorker<>() {
             private Exception error = null;
-
-            @Override
-            protected List<CategoryData> doInBackground() {
+            @Override protected List<CategoryData> doInBackground() {
                 List<CategoryData> dataset = new ArrayList<>();
                 if (loaiPhongService == null) {
-                    throw new IllegalStateException("LoaiPhongService chưa được khởi tạo.");
+                    return dataset; // empty
                 }
-
                 try {
                     List<RoomCategoryResponse> list = loaiPhongService.getAllRoomCategories();
-                    if (list == null) return dataset; // return empty list if null
+                    if (list == null) return dataset;
+
                     for (RoomCategoryResponse r : list) {
-                        // Map fields from RoomCategoryResponse to CategoryData
                         String code = r.getMaLoaiPhong();
                         String name = r.getTenLoaiPhong();
                         int people = r.getSoLuongKhach();
                         String type = r.getPhanLoai();
-                        // image: keep default or allow RoomCategoryResponse to carry image path in future
-                        String image = "/images/room_category.jpg";
-                        dataset.add(new CategoryData(code, name, people, type, image));
+
+                        // lấy giá từ service (layGiaTheoLoaiPhong) nếu có
+                        String giaNgayStr = "-";
+                        String giaGioStr = "-";
+                        try {
+                            BigDecimal giaNgay = null;
+                            BigDecimal giaGio = null;
+
+                            // nếu loaiPhongService khai báo phương thức layGiaTheoLoaiPhong, gọi trực tiếp
+                            try {
+                                if (loaiPhongService instanceof LoaiPhongServiceImpl) {
+                                    giaNgay = ((LoaiPhongServiceImpl) loaiPhongService).layGiaTheoLoaiPhong(code, true);
+                                    giaGio  = ((LoaiPhongServiceImpl) loaiPhongService).layGiaTheoLoaiPhong(code, false);
+                                } else {
+                                    // cố gắng gọi qua reflection như fallback (hiếm gặp)
+                                    try {
+                                        java.lang.reflect.Method m = loaiPhongService.getClass().getMethod("layGiaTheoLoaiPhong", String.class, boolean.class);
+                                        Object o1 = m.invoke(loaiPhongService, code, true);
+                                        Object o2 = m.invoke(loaiPhongService, code, false);
+                                        if (o1 instanceof BigDecimal) giaNgay = (BigDecimal) o1;
+                                        if (o2 instanceof BigDecimal) giaGio  = (BigDecimal) o2;
+                                    } catch (NoSuchMethodException ignored) { }
+                                }
+                            } catch (Throwable ex) {
+                                // nếu có lỗi khi gọi service, ta catch và tiếp tục — sẽ hiển thị "-"
+                                ex.printStackTrace();
+                            }
+
+                            if (giaNgay != null) giaNgayStr = formatPrice(giaNgay);
+                            if (giaGio  != null) giaGioStr  = formatPrice(giaGio);
+                        } catch (Exception ex) {
+                            // keep "-" on error
+                            ex.printStackTrace();
+                        }
+
+                        dataset.add(new CategoryData(code, name, people, type, giaNgayStr, giaGioStr));
                     }
                     return dataset;
-                } catch (Exception ex) {
-                    error = ex;
-                    return new ArrayList<>();
-                }
+                } catch (Exception ex) { error = ex; return new ArrayList<>(); }
             }
-
-            @Override
-            protected void done() {
-                listPanelContainer.removeAll();
+            @Override protected void done() {
                 try {
-                    if (error != null) {
-                        // show non-blocking error label and log stacktrace to console
-                        JLabel lbl = new JLabel("Lỗi khi tải danh sách loại phòng: " + error.getMessage(), SwingConstants.CENTER);
-                        lbl.setForeground(Color.RED);
-                        lbl.setPreferredSize(new Dimension(0, 40));
-                        listPanelContainer.add(lbl);
-                        error.printStackTrace();
-                    } else {
-                        List<CategoryData> dataset = get();
-                        // cache full dataset for filtering
-                        fullDataset = dataset == null ? new ArrayList<>() : dataset;
-                        // render using current filters
-                        renderList(fullDataset);
-                    }
+                    List<CategoryData> dataset = get();
+                    fullDataset = dataset == null ? new ArrayList<>() : dataset;
+                    applyFilters();
                 } catch (Exception ex) {
-                    JLabel lbl = new JLabel("Lỗi khi hiển thị danh sách loại phòng", SwingConstants.CENTER);
-                    lbl.setForeground(Color.RED);
-                    lbl.setPreferredSize(new Dimension(0, 40));
-                    listPanelContainer.add(lbl);
                     ex.printStackTrace();
-                } finally {
-                    listPanelContainer.revalidate();
-                    listPanelContainer.repaint();
                 }
             }
         };
-
         wk.execute();
     }
 
-    // New: apply filters to cached fullDataset and render
+    /**
+     * Thử lấy giá từ RoomCategoryResponse qua reflection với một số tên getter phổ biến.
+     * Trả về chuỗi "-" nếu không tìm thấy giá hợp lệ.
+     */
+    private String extractPriceFromResponse(RoomCategoryResponse r, String... candidateGetters) {
+        if (r == null) return "-";
+        for (String mName : candidateGetters) {
+            try {
+                Method m = r.getClass().getMethod(mName);
+                Object val = m.invoke(r);
+                if (val != null) {
+                    return val.toString();
+                }
+            } catch (NoSuchMethodException ignored) {
+            } catch (Throwable ignored) {
+            }
+        }
+        return "-";
+    }
+
+    // filter and update table
     private void applyFilters() {
         if (fullDataset == null) return;
+        String selectedSearch = (searchTypeComboBox != null) ? (String) searchTypeComboBox.getSelectedItem() : "Mã loại phòng";
 
-        String txt = categoryCodeField.getText();
-        boolean isPlaceholder = categoryCodeField.getForeground().equals(Color.GRAY) && CODE_PLACEHOLDER.equals(txt);
-        String codeFilter = (!isPlaceholder && txt != null && !txt.isBlank()) ? txt.trim().toLowerCase() : null;
+        // code filter
+        String txtCode = categoryCodeField.getText();
+        boolean isPlaceholderCode = categoryCodeField.getForeground().equals(Color.GRAY) && CODE_PLACEHOLDER.equals(txtCode);
+        String codeFilter = (!isPlaceholderCode && txtCode != null && !txtCode.isBlank()) ? txtCode.trim().toLowerCase() : null;
+
+        // name filter
+        String txtName = categoryNameField.getText();
+        boolean isPlaceholderName = categoryNameField.getForeground().equals(Color.GRAY) && NAME_PLACEHOLDER.equals(txtName);
+        String nameFilter = (!isPlaceholderName && txtName != null && !txtName.isBlank()) ? txtName.trim().toLowerCase() : null;
 
         List<CategoryData> filtered = new ArrayList<>();
         for (CategoryData d : fullDataset) {
             boolean ok = true;
-            if (codeFilter != null) {
-                // filter by mã loại phòng contains
-                if (d.code == null || !d.code.toLowerCase().contains(codeFilter)) {
-                    ok = false;
-                }
-            }
+            // apply search type for code/name
+            if ("Mã loại phòng".equals(selectedSearch)) {
+                if (codeFilter != null) { if (d.code == null || !d.code.toLowerCase().contains(codeFilter)) ok = false; }
+            } else if ("Tên loại phòng".equals(selectedSearch)) {
+                if (nameFilter != null) { if (d.name == null || !d.name.toLowerCase().contains(nameFilter)) ok = false; }
+            } // nếu là "Trạng thái" thì statusComboBox đã cập nhật activeTypeFilter
+
+            // apply activeTypeFilter (luôn áp dụng, không phụ thuộc vào selectedSearch)
             if (ok && activeTypeFilter != null) {
                 if (d.type == null || !d.type.equalsIgnoreCase(activeTypeFilter)) ok = false;
             }
-            if (ok && activePeopleFilter != null) {
-                if (d.people != activePeopleFilter) ok = false;
-            }
+
+            if (ok && activePeopleFilter != null) { if (d.people != activePeopleFilter) ok = false; }
             if (ok) filtered.add(d);
         }
-
-        renderList(filtered);
+        populateCategoryTable(filtered);
     }
 
-    private void renderList(List<CategoryData> dataset) {
-        listPanelContainer.removeAll();
-        if (dataset == null || dataset.isEmpty()) {
-            JLabel empty = new JLabel("Không có loại phòng nào phù hợp.", SwingConstants.CENTER);
-            empty.setPreferredSize(new Dimension(0, 40));
-            empty.setForeground(Color.GRAY);
-            listPanelContainer.add(empty);
-            listPanelContainer.revalidate();
-            listPanelContainer.repaint();
-            return;
-        }
-
-        for (CategoryData d : dataset) {
-            JPanel card = createCategoryCard(d.code, d.name, d.people, d.type, d.image);
-            listPanelContainer.add(card);
-            listPanelContainer.add(Box.createVerticalStrut(12));
-        }
-        listPanelContainer.add(Box.createVerticalGlue());
-        listPanelContainer.revalidate();
-        listPanelContainer.repaint();
+    private void populateCategoryTable(List<CategoryData> dataset) {
+        if (categoryTableModel == null) return;
+        SwingUtilities.invokeLater(() -> {
+            categoryTableModel.setRowCount(0);
+            if (dataset == null || dataset.isEmpty()) {
+                categoryTableModel.addRow(new Object[] {"-","Không có loại phòng phù hợp.","-","-", "-", "-"});
+                return;
+            }
+            for (CategoryData d : dataset) {
+                Object[] row = new Object[6];
+                row[0] = d.code;
+                row[1] = d.name;
+                row[2] = d.type;
+                row[3] = d.people;
+                row[4] = d.priceDay;
+                row[5] = d.priceHour;
+                categoryTableModel.addRow(row);
+            }
+            // clear selection after reload so users must re-select explicit row
+            categoryTable.clearSelection();
+        });
     }
 
-    // small data holder (giữ nguyên)
+    // helper: lấy CategoryData theo mã từ fullDataset
+    private CategoryData getCategoryDataByCode(String code) {
+        if (code == null) return null;
+        if (fullDataset == null) return null;
+        for (CategoryData d : fullDataset) {
+            if (code.equals(d.code)) return d;
+        }
+        return null;
+    }
+
+    private CategoryData getCategoryDataAtViewRow(int viewRow) {
+        if (viewRow < 0) return null;
+        int modelRow = categoryTable.convertRowIndexToModel(viewRow);
+        Object codeObj = categoryTableModel.getValueAt(modelRow, 0);
+        if (codeObj == null) return null;
+        return getCategoryDataByCode(codeObj.toString());
+    }
+
+    private CategoryData getSelectedCategoryData() {
+        int viewRow = categoryTable.getSelectedRow();
+        if (viewRow < 0) return null;
+        return getCategoryDataAtViewRow(viewRow);
+    }
+
+    // small data holder (đã thêm giá ngày & giá giờ)
     private static class CategoryData {
-        final String code, name, image, type;
+        final String code, name, type;
         final int people;
-        CategoryData(String code, String name, int people, String type, String image) {
-            this.code = code; this.name = name; this.people = people; this.type = type; this.image = image;
+        final String priceDay;
+        final String priceHour;
+        CategoryData(String code, String name, int people, String type, String priceDay, String priceHour) {
+            this.code = code; this.name = name; this.people = people; this.type = type;
+            this.priceDay = priceDay == null ? "-" : priceDay;
+            this.priceHour = priceHour == null ? "-" : priceHour;
         }
     }
+
+    /**
+     * Khởi tạo lười: tạo service trong background (không chặn EDT) rồi tải dữ liệu.
+     * Gọi an toàn nhiều lần — thực hiện duy nhất 1 lần.
+     */
+    private synchronized void ensureLazyInit() {
+        if (lazyInitialized) return;
+        lazyInitialized = true;
+
+        // tạo services trong background để không block UI thread
+        new SwingWorker<Void, Void>() {
+            private Exception setupEx = null;
+            @Override
+            protected Void doInBackground() {
+                try {
+                    // tạo impl có thể mở kết nối, load config... thực hiện ở background
+                    try {
+                        loaiPhongService = new LoaiPhongServiceImpl();
+                    } catch (Throwable t) {
+                        loaiPhongService = null;
+                        // optional: log t
+                    }
+                    try {
+                        noiThatService = new NoiThatServiceImpl();
+                    } catch (Throwable t) {
+                        noiThatService = null;
+                    }
+                } catch (Exception ex) {
+                    setupEx = ex;
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                // sau khi tạo xong service, load dữ liệu (cũng trong SwingWorker riêng nếu cần)
+                // reloadListFromService đã dùng SwingWorker để load data -> an toàn gọi trực tiếp
+                reloadListFromService();
+
+                if (setupEx != null) {
+                    // không block UI; chỉ thông báo qua console. Nếu muốn, hiện non-blocking label ở UI.
+                    setupEx.printStackTrace();
+                }
+            }
+        }.execute();
+    }
+
+    private String formatPrice(BigDecimal p) {
+        if (p == null) return "-";
+        try {
+            // làm tròn tới đồng và hiển thị không có phần thập phân
+            BigDecimal rounded = p.setScale(0, RoundingMode.HALF_UP);
+            // định dạng với dấu phân cách hàng nghìn
+            DecimalFormat df = new DecimalFormat("#,###");
+            return df.format(rounded.longValue()) + " đ";
+        } catch (Exception e) {
+            return p.toPlainString();
+        }
+    }
+
+    /**
+     * RoundedButton: JButton tùy chỉnh để vẽ nền bo góc và viền tùy trạng thái.
+     * - luôn vẽ bo góc bất kể trạng thái pressed/rollover.
+     * - dùng clientProperty("active") = Boolean.TRUE để vẽ viền dày khi được chọn.
+     */
+    private static class RoundedButton extends JButton {
+        private final int arc;
+        public RoundedButton(String text, int arc) {
+            super(text);
+            this.arc = arc;
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setForeground(Color.WHITE);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            Color bg = getBackground() != null ? getBackground() : new Color(0x888888);
+            ButtonModel model = getModel();
+
+            if (model.isPressed()) {
+                // make pressed slightly darker
+                bg = bg.darker();
+            } else if (model.isRollover()) {
+                // slightly brighter on hover
+                bg = bg.brighter();
+            }
+
+            g2.setColor(bg);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+
+            // draw border: thick when active, thin otherwise
+            Object active = getClientProperty("active");
+            if (Boolean.TRUE.equals(active)) {
+                g2.setStroke(new BasicStroke(2f));
+                g2.setColor(Color.BLACK);
+                g2.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, arc, arc);
+            } else {
+                g2.setStroke(new BasicStroke(1f));
+                // subtle border color
+                Color borderColor = new Color(0,0,0,30);
+                g2.setColor(borderColor);
+                g2.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, arc, arc);
+            }
+
+            g2.dispose();
+
+            // let UI draw the text and focus/selected state (component is non-opaque so no background)
+            super.paintComponent(g);
+        }
+
+        @Override
+        public void setBorder(Border border) {
+            // ignore external border changes to keep rounded shape consistent
+        }
+    }
+
 }
