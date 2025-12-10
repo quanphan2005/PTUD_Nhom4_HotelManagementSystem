@@ -93,7 +93,7 @@ public class BookingFormPanel extends JPanel {
     private JPanel actionMenuContent;
 
     // Buttons on bottom navbar
-    private JButton btnGoDichVu;
+    private JButton btnGoiDichVu;
     private JButton btnDatPhong;
 
     // Close button
@@ -118,7 +118,11 @@ public class BookingFormPanel extends JPanel {
         setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
 
-        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.BOOKING.getName(), 1, selectedRoom.getMaChiTietDatPhong(), (services) -> {
+        ServiceSelectionPanel servicePanel = new ServiceSelectionPanel(PanelName.BOOKING.getName(), 1,
+                                                                       Collections.singletonList(
+                                                                               selectedRoom.getRoomName()),
+                                                                       selectedRoom.getMaChiTietDatPhong(),
+                                                                       (services) -> {
                 serviceOrdered.clear();
                 serviceOrdered.addAll(services);
                 updateTotalServicePrice(); // Update service price when services are selected
@@ -167,8 +171,8 @@ public class BookingFormPanel extends JPanel {
         txtNote.setWrapStyleWord(true);
 
         // Initialize navbar buttons
-        btnGoDichVu = new JButton("Gọi dịch vụ");
-        btnDatPhong = new JButton("Đặt phòng");
+        btnGoiDichVu = new JButton("GỌI DỊCH VỤ");
+        btnDatPhong = new JButton("ĐẶT PHÒNG");
     }
 
     private void setupLayout() {
@@ -235,56 +239,56 @@ public class BookingFormPanel extends JPanel {
         JPanel footerPanel = new JPanel(new BorderLayout());
         footerPanel.setPreferredSize(new Dimension(0, 50));
         footerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        footerPanel.setBackground(CustomUI.lightGray);
+        footerPanel.setBackground(CustomUI.darkBlue);
 
         // Button panel with horizontal layout
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
-        buttonPanel.setBackground(CustomUI.lightGray);
+        buttonPanel.setBackground(CustomUI.darkBlue);
         buttonPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         buttonPanel.setOpaque(true);
 
         // Style and configure buttons
-        btnGoDichVu.setFont(CustomUI.bigFont);
-        btnGoDichVu.setBackground(CustomUI.blue);
-        btnGoDichVu.setForeground(Color.WHITE);
-        btnGoDichVu.setPreferredSize(new Dimension(300, 45));
-        btnGoDichVu.setFocusPainted(false);
-        btnGoDichVu.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
+        btnGoiDichVu.setFont(CustomUI.bigFont);
+        btnGoiDichVu.setBackground(CustomUI.blue);
+        btnGoiDichVu.setForeground(CustomUI.white);
+        btnGoiDichVu.setPreferredSize(new Dimension(300, 40));
+        btnGoiDichVu.setFocusPainted(false);
+        btnGoiDichVu.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         btnDatPhong.setFont(CustomUI.bigFont);
-        btnDatPhong.setBackground(CustomUI.darkGreen);
-        btnDatPhong.setForeground(Color.WHITE);
-        btnDatPhong.setPreferredSize(new Dimension(300, 45));
+        btnDatPhong.setBackground(CustomUI.darkGreen.brighter());
+        btnDatPhong.setForeground(CustomUI.white);
+        btnDatPhong.setPreferredSize(new Dimension(300, 40));
         btnDatPhong.setFocusPainted(false);
         btnDatPhong.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         // Add hover effects
-        btnGoDichVu.addMouseListener(new MouseAdapter() {
+        btnGoiDichVu.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnGoDichVu.setBackground(CustomUI.blue.brighter());
+                btnGoiDichVu.setBackground(CustomUI.blue.brighter());
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                btnGoDichVu.setBackground(CustomUI.blue);
+                btnGoiDichVu.setBackground(CustomUI.blue);
             }
         });
 
         btnDatPhong.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnDatPhong.setBackground(CustomUI.darkGreen.brighter());
+                btnDatPhong.setBackground(CustomUI.darkGreen);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                btnDatPhong.setBackground(CustomUI.darkGreen);
+                btnDatPhong.setBackground(CustomUI.darkGreen.brighter());
             }
         });
 
-        buttonPanel.add(btnGoDichVu);
-        buttonPanel.add(Box.createHorizontalStrut(80));
+        buttonPanel.add(btnGoiDichVu);
+        buttonPanel.add(Box.createHorizontalStrut(170));
         buttonPanel.add(btnDatPhong);
 
         footerPanel.add(buttonPanel, BorderLayout.CENTER);
@@ -804,9 +808,7 @@ public class BookingFormPanel extends JPanel {
     private void updateTotalServicePrice() {
         double totalServicePrice = 0.0;
         for (DonGoiDichVu service : serviceOrdered) {
-            if (!service.isDuocTang()) { // Only count non-gift services
-                totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
-            }
+            totalServicePrice += service.getGiaThoiDiemDo() * service.getSoLuong();
         }
         txtTotalServicePrice.setText(priceFormatter.format(totalServicePrice) + " VNĐ");
         calculateDepositPrice(); // Recalculate deposit when service price changes
@@ -1092,6 +1094,11 @@ public class BookingFormPanel extends JPanel {
         boolean daDatTruoc = chkIsAdvanced.isSelected();
         List<String> danhSachMaPhong = java.util.Arrays.asList(selectedRoom.getRoomId());
 
+        // Assign roomId for each service ordered
+        for (DonGoiDichVu service : serviceOrdered) {
+            service.setMaPhong(selectedRoom.getRoomId());
+        }
+
         String maPhienDangNhap = Main.getCurrentLoginSession();
 
         return new BookingCreationEvent(tenKhachHang, soDienThoai, cccd, moTa,
@@ -1109,7 +1116,7 @@ public class BookingFormPanel extends JPanel {
         chkIsAdvanced.addActionListener(e -> handleCalculateDeposit());
         reservationButton.addActionListener(e -> handleShowReservationManagement());
 
-        btnGoDichVu.addActionListener(e -> handleCallService());
+        btnGoiDichVu.addActionListener(e -> handleCallService());
         btnDatPhong.addActionListener(e -> handleConfirmBooking());
     }
 

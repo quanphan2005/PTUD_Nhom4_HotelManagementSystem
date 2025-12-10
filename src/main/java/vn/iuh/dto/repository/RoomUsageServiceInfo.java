@@ -18,7 +18,7 @@ public class RoomUsageServiceInfo {
     public RoomUsageServiceInfo() {
     }
 
-    public RoomUsageServiceInfo(String maPhongDungDichVu, int soLuong, double giaThoiDiemDo, boolean duocTang,
+    public RoomUsageServiceInfo(String maPhongDungDichVu, int soLuong, double giaThoiDiemDo,
                                 String maChiTietDatPhong, String tenPhong, String maDichVu, String maPhienDangNhap,
                                 Timestamp thoiGianTao, String tenDichVu, BigDecimal tongTien) {
         this.maPhongDungDichVu = maPhongDungDichVu;

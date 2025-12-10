@@ -21,7 +21,7 @@ import java.util.Objects;
 
 public class RoomItem extends JPanel {
     private BookingResponse bookingResponse;
-        private boolean isSelected = false;
+    private boolean isSelected = false;
     private boolean isMultiBookingMode = false;
     private MultiRoomSelectionCallback selectionCallback;
     private JPanel overlayPanel;

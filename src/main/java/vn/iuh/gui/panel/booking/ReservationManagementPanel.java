@@ -20,6 +20,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -110,8 +111,10 @@ public class ReservationManagementPanel extends JPanel {
                 applyFilters();
             }
         });
-        spnStartDate.addChangeListener(e -> applyFilters());
-        spnEndDate.addChangeListener(e -> applyFilters());
+
+        spnStartDate.addChangeListener(e -> handleStartDateSpinnerChange());
+        spnEndDate.addChangeListener(e -> handleEndDateSpinnerChange());
+
         chkCurrentReservations.addActionListener(e -> applyFilters());
         btnReset.addActionListener(e -> resetFilters());
     }
@@ -140,7 +143,7 @@ public class ReservationManagementPanel extends JPanel {
 
     private void createFilterPanel() {
         JPanel filterPanel = new JPanel(new GridBagLayout());
-        filterPanel.setBackground(Color.WHITE);
+        filterPanel.setBackground(CustomUI.white);
         filterPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
             BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -226,7 +229,7 @@ public class ReservationManagementPanel extends JPanel {
         btnReset = new JButton("Hoàn tác");
         btnReset.setFont(CustomUI.smallFont);
         btnReset.setBackground(CustomUI.lightGray);
-        btnReset.setForeground(Color.BLACK);
+        btnReset.setForeground(CustomUI.black);
         btnReset.setFocusPainted(false);
         btnReset.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
     }
@@ -319,14 +322,14 @@ public class ReservationManagementPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 if (row % 2 == 0) {
                     component.setBackground(CustomUI.ROW_EVEN);
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             setHorizontalAlignment(JLabel.CENTER);
@@ -357,6 +360,49 @@ public class ReservationManagementPanel extends JPanel {
         component.setPreferredSize(new Dimension(180, 35));
         component.setMinimumSize(new Dimension(150, 35));
         panel.add(component, gbc);
+    }
+
+    private void handleStartDateSpinnerChange() {
+        try {
+            spnStartDate.commitEdit();
+            spnEndDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
+        Date startDate = (Date) spnStartDate.getValue();
+        Date endDate = (Date) spnEndDate.getValue();
+
+        // Start date must be at least 1 minute before end date
+        if (startDate.after(Date.from(endDate.toInstant().minus(1, ChronoUnit.MINUTES)))) {
+            // Adjust end date = start date + 1 day
+            Date newEndDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // +1 day
+            spnEndDate.setValue(newEndDate);
+        }
+
+        applyFilters();
+    }
+
+    // Handle events
+    private void handleEndDateSpinnerChange() {
+        try {
+            spnStartDate.commitEdit();
+            spnEndDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
+        Date startDate = (Date) spnStartDate.getValue();
+        Date endDate = (Date) spnEndDate.getValue();
+
+        // End date must be at least 1 minute after start date
+        if (endDate.before(Date.from(startDate.toInstant().plus(1, ChronoUnit.MINUTES)))) {
+            // Adjust start date = end date - 1 day
+            Date newStartDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000); // -1 day
+            spnStartDate.setValue(newStartDate);
+        }
+
+        applyFilters();
     }
 
     private void applyFilters() {
@@ -552,10 +598,10 @@ public class ReservationManagementPanel extends JPanel {
             setOpaque(true);
 
             btnViewDetail = new JButton("Xem chi tiết");
-            btnViewDetail.setFont(CustomUI.verySmallFont);
-            btnViewDetail.setBackground(CustomUI.lightBlue);
-            btnViewDetail.setForeground(Color.WHITE);
-            btnViewDetail.setPreferredSize(new Dimension(120, 30));
+            btnViewDetail.setFont(CustomUI.smallFont);
+            btnViewDetail.setBackground(CustomUI.orange);
+            btnViewDetail.setForeground(CustomUI.white);
+            btnViewDetail.setPreferredSize(new Dimension(130, 30));
             btnViewDetail.setFocusPainted(false);
             btnViewDetail.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
 
@@ -586,10 +632,10 @@ public class ReservationManagementPanel extends JPanel {
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
 
             btnViewDetail = new JButton("Xem chi tiết");
-            btnViewDetail.setFont(CustomUI.verySmallFont);
-            btnViewDetail.setBackground(CustomUI.lightBlue);
-            btnViewDetail.setForeground(Color.WHITE);
-            btnViewDetail.setPreferredSize(new Dimension(120, 30));
+            btnViewDetail.setFont(CustomUI.smallFont);
+            btnViewDetail.setBackground(CustomUI.orange);
+            btnViewDetail.setForeground(CustomUI.white);
+            btnViewDetail.setPreferredSize(new Dimension(130, 30));
             btnViewDetail.setFocusPainted(false);
             btnViewDetail.putClientProperty(FlatClientProperties.STYLE, " arc: 8");
             btnViewDetail.addActionListener(e -> {

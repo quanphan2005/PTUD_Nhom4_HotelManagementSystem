@@ -1,16 +1,22 @@
 package vn.iuh.dto.response;
 
-public class CustomerInfoResponse {
+public class CustomerInfoWithPayments {
     private final String customerId;
     private final String CCCD;
     private final String customerName;
     private final String customerPhone;
+    private final double totalServiceCost;
+    private final double totalDepositPayment;
 
-    public CustomerInfoResponse(String customerId, String CCCD, String customerName, String customerPhone) {
+    public CustomerInfoWithPayments(String customerId, String CCCD, String customerName,
+                                    String customerPhone, double totalServiceCost,
+                                    double totalDepositPayment) {
         this.customerId = customerId;
         this.CCCD = CCCD;
         this.customerName = customerName;
         this.customerPhone = customerPhone;
+        this.totalServiceCost = totalServiceCost;
+        this.totalDepositPayment = totalDepositPayment;
     }
 
     public String getCustomerId() {
@@ -27,6 +33,14 @@ public class CustomerInfoResponse {
 
     public String getCustomerPhone() {
         return customerPhone;
+    }
+
+    public double getTotalServiceCost() {
+        return totalServiceCost;
+    }
+
+    public double getTotalDepositPayment() {
+        return totalDepositPayment;
     }
 
     @Override

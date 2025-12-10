@@ -158,7 +158,8 @@ CREATE TABLE ChiTietDatPhong (
     ma_chi_tiet_dat_phong CHAR(11) PRIMARY KEY,
     tg_nhan_phong DATETIME not null,
     tg_tra_phong DATETIME not null,
-	kieu_ket_thuc NVARCHAR(255),
+	kieu_ket_thuc NVARCHAR(255),     -- "KẾT THÚC | ĐỔI PHÒNG | TÁCH ĐƠN"
+    ghi_chu NVARCHAR(255),                                                   -- "---------| ma:time <>| ma | "
     ma_don_dat_phong CHAR(11),
 	ma_phong CHAR(11),
 	ma_phien_dang_nhap CHAR(11),

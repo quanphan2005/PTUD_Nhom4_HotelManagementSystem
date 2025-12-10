@@ -36,7 +36,7 @@ public class PreReservationSearchPanel extends JPanel {
     private JTextField txtCustomerName;
     private JSpinner spnCheckinDate;
     private JButton btnReset;
-    private JButton btnUndo;
+    private JButton btnClose;
 
     // Table components
     private JTable reservationTable;
@@ -94,20 +94,19 @@ public class PreReservationSearchPanel extends JPanel {
         ImageIcon undoIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/undo.png")));
         undoIcon = new ImageIcon(undoIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
-        btnUndo = new JButton();
-        btnUndo.setBackground(CustomUI.red);
-        btnUndo.setIcon(undoIcon);
-        btnUndo.setForeground(Color.WHITE);
-        btnUndo.setFont(CustomUI.normalFont);
-        btnUndo.setPreferredSize(new Dimension(60, 40));
-        btnUndo.setFocusPainted(false);
-        btnUndo.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        btnUndo.addActionListener(e -> {
+        btnClose = new JButton("x");
+        btnClose.setFont(CustomUI.bigFont);
+        btnClose.setBackground(CustomUI.red);
+        btnClose.setForeground(CustomUI.white);
+        btnClose.setPreferredSize(new Dimension(50, 20));
+        btnClose.setFocusPainted(false);
+        btnClose.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
+        btnClose.addActionListener(e -> {
             Main.showCard(parentPanelName);
         });
 
-        pnlTop.add(btnUndo, BorderLayout.WEST);
         pnlTop.add(lblTop, BorderLayout.CENTER);
+        pnlTop.add(btnClose, BorderLayout.EAST);
 
         add(pnlTop, BorderLayout.NORTH);
     }

@@ -336,16 +336,16 @@ public class DatPhongDAO {
 
         StringBuilder query = new StringBuilder(
                 "SELECT DISTINCT p.ma_phong, kh.ten_khach_hang, ddp.ma_don_dat_phong, ctdp.ma_chi_tiet_dat_phong, ctdp.tg_nhan_phong, ctdp.tg_tra_phong" +
-                        " FROM Phong p" +
-                        " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
-                        " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
-                        " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
-                        " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
-                        " WHERE ctdp.tg_nhan_phong <= GETDATE()" +
-                        " AND (GETDATE() <= DATEADD(MINUTE, ?, ctdp.tg_tra_phong)" +
-                        " AND cv.ten_trang_thai != ?)" +
-                        " AND cv.da_xoa = 0" +
-                        " AND p.ma_phong IN (");
+                " FROM Phong p" +
+                " JOIN ChiTietDatPhong ctdp ON p.ma_phong = ctdp.ma_phong" +
+                " JOIN DonDatPhong ddp ON ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong" +
+                " JOIN KhachHang kh ON kh.ma_khach_hang = ddp.ma_khach_hang" +
+                " JOIN CongViec cv ON cv.ma_phong = p.ma_phong " +
+                " WHERE ctdp.tg_nhan_phong <= GETDATE()" +
+                " AND (GETDATE() <= DATEADD(MINUTE, ?, ctdp.tg_tra_phong)" +
+                " AND cv.ten_trang_thai != ?)" +
+                " AND cv.da_xoa = 0" +
+                " AND p.ma_phong IN (");
 
         for (int i = 0; i < phongKhongKhaDungs.size(); i++) {
             query.append("?");
@@ -923,7 +923,7 @@ public class DatPhongDAO {
 
     public List<ReservationDetailRepository> getReservationDetailByReservationId(String maDonDatPhong) {
         List<ReservationDetailRepository> reservationDetails = new ArrayList<>();
-        String query = "SELECT DISTINCT ctdp.ma_chi_tiet_dat_phong, ctdp.ma_phong, p.ten_phong, lsdv.la_lan_dau_tien, " +
+        String query = "SELECT DISTINCT ctdp.ma_chi_tiet_dat_phong, ctdp.ma_don_dat_phong, ctdp.ma_phong, p.ten_phong, lsdv.la_lan_dau_tien, " +
                        "ctdp.kieu_ket_thuc, ctdp.tg_nhan_phong, ctdp.tg_tra_phong, ctdp.da_xoa " +
                        "FROM ChiTietDatPhong ctdp " +
                        "LEFT JOIN LichSuDiVao lsdv ON ctdp.ma_chi_tiet_dat_phong = lsdv.ma_chi_tiet_dat_phong " +
@@ -939,6 +939,7 @@ public class DatPhongDAO {
             while (rs.next()) {
                 reservationDetails.add(new ReservationDetailRepository(
                         rs.getString("ma_chi_tiet_dat_phong"),
+                        rs.getString("ma_don_dat_phong"),
                         rs.getString("ma_phong"),
                         rs.getString("ten_phong"),
                         rs.getString("kieu_ket_thuc"),

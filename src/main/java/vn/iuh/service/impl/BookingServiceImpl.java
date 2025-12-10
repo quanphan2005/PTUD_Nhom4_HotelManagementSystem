@@ -167,25 +167,24 @@ public class BookingServiceImpl implements BookingService {
                 serviceIdToNameMap.put(dichVu.getMaDichVu(), dichVu.getTenDichVu());
             }
 
+            Map<String, String> RoomIdToReservationDetailId = new HashMap<>();
+            for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
+                RoomIdToReservationDetailId.put(chiTietDatPhong.getMaPhong(), chiTietDatPhong.getMaChiTietDatPhong());
+            }
+
             List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
             PhongDungDichVu phongDungDichVuMoiNhat = donGoiDichVuDao.timPhongDungDichVuMoiNhat();
             String maPhongDungDichVuMoiNhat =
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
             for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
-
-                // If booking multiple rooms, divide service equally to each booked room
-                dichVu.setSoLuong(dichVu.getSoLuong() / bookingCreationEvent.getDanhSachMaPhong().size());
-
-                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
                     phongDungDichVuMoiNhat =
                             createRoomUsageServiceEntity(bookingCreationEvent,
                                                          maPhongDungDichVuMoiNhat,
-                                                         chiTietDatPhong.getMaChiTietDatPhong(),
+                                                         RoomIdToReservationDetailId.get(dichVu.getMaPhong()),
                                                          dichVu);
                     maPhongDungDichVuMoiNhat = phongDungDichVuMoiNhat.getMaPhongDungDichVu();
                     danhSachPhongDungDichVu.add(phongDungDichVuMoiNhat);
-                }
             }
 
             // 2.6. Create Deposite Invoice if and invoice details if there is advance payment
@@ -237,11 +236,11 @@ public class BookingServiceImpl implements BookingService {
                     soGioSuDung = 0;
                 }
 
-                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
-                    ChiTietHoaDon chiTietHoaDonMoiNhat = chiTietHoaDonDAO.layChiTietHoaDonMoiNhat();
-                    String maChiTietHoaDonMoiNhat = chiTietHoaDonMoiNhat == null
-                            ? null : chiTietHoaDonMoiNhat.getMaChiTietHoaDon();
+                ChiTietHoaDon chiTietHoaDonMoiNhat = chiTietHoaDonDAO.layChiTietHoaDonMoiNhat();
+                String maChiTietHoaDonMoiNhat = chiTietHoaDonMoiNhat == null
+                        ? null : chiTietHoaDonMoiNhat.getMaChiTietHoaDon();
 
+                for (ChiTietDatPhong chiTietDatPhong : chiTietDatPhongs) {
                     BigDecimal donGiaPhongHienTai = isLessThanHalfDay ?
                             hourlyPriceMap.get(chiTietDatPhong.getMaPhong()) :
                             dailyPriceMap.get(chiTietDatPhong.getMaPhong());
@@ -265,6 +264,10 @@ public class BookingServiceImpl implements BookingService {
                             thoiGianDung
                     );
 
+                    maChiTietHoaDonMoiNhat = EntityUtil.increaseEntityID(maChiTietHoaDonMoiNhat,
+                                                                           EntityIDSymbol.INVOICE_DETAIL_PREFIX.getPrefix(),
+                                                                           EntityIDSymbol.INVOICE_DETAIL_PREFIX.getLength());
+
                     chiTietHoaDon.setTongTien(tongTien);
                     chiTietHoaDon.setTenPhong(RoomIdToRoomName.get(chiTietDatPhong.getMaPhong()));
                     danhSachChiTietHoaDon.add(chiTietHoaDon);
@@ -276,7 +279,6 @@ public class BookingServiceImpl implements BookingService {
                         }
                     });
                 }
-
 
                 hoaDonDatCoc.setChiTietHoaDonList(danhSachChiTietHoaDon);
                 hoaDonDAO.createInvoice(hoaDonDatCoc);
@@ -483,18 +485,48 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public CustomerInfoResponse getCustomerInfoByBookingId(String maChiTietDatPhong) {
+    public CustomerInfoWithPayments getCustomerInfoWithPaymentsBookingId(String maChiTietDatPhong) {
+
+        // 1. Get Customer Info by ReservationDetail ID
         CustomerInfo customerInfo = datPhongDAO.timThongTinKhachHangBangMaChiTietDatPhong(maChiTietDatPhong);
         if (Objects.isNull(customerInfo)) {
             System.out.println("Không tìm thấy thông tin khách hàng cho mã chi tiết đặt phòng: " + maChiTietDatPhong);
             return null;
         }
 
-        return new CustomerInfoResponse(
+        // 2. Get Customer Payments by ReservationDetail ID
+        CustomerPayments customerPayments =
+                hoaDonDAO.timThongTinThanhToanCuaKhachHangBangMaChiTietDatPhong(maChiTietDatPhong);
+
+        if (Objects.isNull(customerPayments)) {
+            customerPayments = new CustomerPayments(BigDecimal.ZERO, BigDecimal.ZERO);
+        } else {
+            // 3. Remove decimal part
+            if (customerPayments.getTotalServiceCost() != null) {
+                customerPayments.setTotalServiceCost(
+                        customerPayments.getTotalServiceCost().setScale(0, RoundingMode.HALF_UP)
+                );
+            } else {
+                customerPayments.setTotalServiceCost(BigDecimal.ZERO);
+            }
+
+            if (customerPayments.getAdvancePayment() != null) {
+                customerPayments.setAdvancePayment(
+                        customerPayments.getAdvancePayment().setScale(0, RoundingMode.HALF_UP)
+                );
+            } else {
+                customerPayments.setAdvancePayment(BigDecimal.ZERO);
+            }
+        }
+
+        // 4. Create CustomerInfoWithPayments
+        return new CustomerInfoWithPayments(
                 customerInfo.getMaKhachHang(),
                 customerInfo.getCCCD(),
                 customerInfo.getTenKhachHang(),
-                customerInfo.getSoDienThoai()
+                customerInfo.getSoDienThoai(),
+                customerPayments.getTotalServiceCost().toBigInteger().doubleValue(),
+                customerPayments.getAdvancePayment().toBigInteger().doubleValue()
         );
     }
 
@@ -627,7 +659,7 @@ public class BookingServiceImpl implements BookingService {
 
             // 5. Handle RoomUsageService
             List<PhongDungDichVu> danhSachPhongDungDichVu =
-                    donGoiDichVuDao.timDonGoiDichVuBangChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
+                    donGoiDichVuDao.timDonGoiDichVuBangMaDatPhong(chiTietDatPhong.getMaDonDatPhong());
             if (!danhSachPhongDungDichVu.isEmpty()) {
                 for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu)
 //                  // 4.1 Update Service Quantity if any
@@ -946,6 +978,7 @@ public class BookingServiceImpl implements BookingService {
             String status = getReservationDetailStatus(reservationDetailRepository);
             reservationDetailResponses.add(new ReservationDetailResponse(
                     reservationDetailRepository.getReservationDetailId(),
+                    reservationDetailRepository.getReservationId(),
                     reservationDetailRepository.getRoomId(),
                     reservationDetailRepository.getRoomName(),
                     reservationDetailRepository.getTimeIn(),
@@ -1045,7 +1078,7 @@ public class BookingServiceImpl implements BookingService {
                         reservationIdToRoomName.get(lsdv.getMaChiTietDatPhong()),
                         lsdv.getThoiGianTao(),
                         null,
-                        "Checkin"
+                        lsdv.getLaLanDauTien() ? "Checkin" : null
                 ));
                 i++;
             }
@@ -1061,7 +1094,7 @@ public class BookingServiceImpl implements BookingService {
                         reservationIdToRoomName.get(lsrn.getMaChiTietDatPhong()),
                         null,
                         lsrn.getThoiGianTao(),
-                        "Checkout"
+                        lsrn.isLaLanCuoiCung() ? "Checkout" : null
                 ));
                 j++;
             }

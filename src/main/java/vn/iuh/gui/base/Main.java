@@ -308,23 +308,26 @@ public class Main extends JFrame {
         blue.setBackground(Color.blue);
         BookingManagementPanel bookingManagementPanel = new BookingManagementPanel();
         ReservationManagementPanel reservationManagementPanel = new ReservationManagementPanel();
-        PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
+//        PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
         pnlStatistic = new RevenueStatisticPanel();
         QuanLyHoaDonPanel pnlQuanLyHoaDon = new QuanLyHoaDonPanel();
         QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
         pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
         pnlQuanLyPhuPhi = new QuanLyPhuPhiPanel();
+        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
+        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
+        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         pnlThietLapHeThong =  new SystemConfigPanel();
 //        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
 //        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
 //        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         pnlRoomProductivity = new RoomProductivityPanel();
-//        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
-//        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
-//        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý khách hàng");
+        pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
+        pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
+        pnlCenter.add(pnlQuanLyKhachHang, "Quản lý khách hàng");
         pnlCenter.add(bookingManagementPanel, PanelName.BOOKING_MANAGEMENT.getName());
         pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
-        pnlCenter.add(preReservationManagementPanel, PanelName.PRE_RESERVATION_MANAGEMENT.getName());
+//        pnlCenter.add(preReservationManagementPanel, PanelName.PRE_RESERVATION_MANAGEMENT.getName());
         pnlCenter.add(pnlQuanLyTaiKhoan, "Quản lý tài khoản");
         pnlCenter.add(pnlStatistic, "Thống kê doanh thu");
         pnlCenter.add(pnlQuanLyHoaDon, "Tìm hóa đơn");
@@ -368,5 +371,6 @@ public class Main extends JFrame {
             cl.show(pnlCenter, name);
         }
     }
+
 
 }

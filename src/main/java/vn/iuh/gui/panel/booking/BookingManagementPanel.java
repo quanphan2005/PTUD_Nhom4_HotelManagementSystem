@@ -157,7 +157,7 @@ public class BookingManagementPanel extends JPanel {
 
     private JPanel createSearchPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(CustomUI.white);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
@@ -238,7 +238,7 @@ public class BookingManagementPanel extends JPanel {
 
     private JPanel createStatusPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(CustomUI.white);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CustomUI.green, 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
@@ -287,7 +287,7 @@ public class BookingManagementPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 2;
         panel.add(btnCleaning, gbc);
 
-        JButton btnMaintenance = createStatusButton(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus() + " (" + maintenanceCount + ")", Color.LIGHT_GRAY, RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+        JButton btnMaintenance = createStatusButton(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus() + " (" + maintenanceCount + ")", CustomUI.gray, RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
         gbc.gridx = 1; gbc.gridy = 2;
         panel.add(btnMaintenance, gbc);
 
@@ -356,7 +356,7 @@ public class BookingManagementPanel extends JPanel {
     private JButton createStatusButton(String text, Color color, String statusValue) {
         JButton statusBtn = new JButton(text);
         statusBtn.setBackground(color);
-        statusBtn.setForeground(Color.BLACK);
+        statusBtn.setForeground(CustomUI.black);
         statusBtn.setFont(CustomUI.verySmallFont);
         statusBtn.setPreferredSize(new Dimension(160, 40));
         statusBtn.setMinimumSize(new Dimension(160, 40));
@@ -375,7 +375,7 @@ public class BookingManagementPanel extends JPanel {
 
     private void createModeTogglePanel() {
         JPanel modePanel = new JPanel(new BorderLayout());
-        modePanel.setBackground(Color.WHITE);
+        modePanel.setBackground(CustomUI.white);
         modePanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CustomUI.lightGray, 2),
                 BorderFactory.createEmptyBorder(5, 15, 5, 15
@@ -383,7 +383,7 @@ public class BookingManagementPanel extends JPanel {
 
         // Left panel with toggle button
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        leftPanel.setBackground(Color.WHITE);
+        leftPanel.setBackground(CustomUI.white);
 
         // Multi-booking toggle button with icon and shorter text
         btnMultiBookingToggle = new JToggleButton();
@@ -410,7 +410,7 @@ public class BookingManagementPanel extends JPanel {
 
         // Right panel with selection info and confirm button
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
-        rightPanel.setBackground(Color.WHITE);
+        rightPanel.setBackground(CustomUI.white);
 
         // Selected rooms label
         lblSelectedRooms = new JLabel("Đã chọn: 0 phòng");
@@ -422,7 +422,7 @@ public class BookingManagementPanel extends JPanel {
         btnConfirmSelection = new JButton("Xác nhận");
         btnConfirmSelection.setFont(CustomUI.normalFont);
         btnConfirmSelection.setBackground(CustomUI.darkGreen);
-        btnConfirmSelection.setForeground(Color.WHITE);
+        btnConfirmSelection.setForeground(CustomUI.white);
         btnConfirmSelection.setPreferredSize(new Dimension(150, 35));
         btnConfirmSelection.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
         btnConfirmSelection.setEnabled(false);
@@ -453,14 +453,17 @@ public class BookingManagementPanel extends JPanel {
             } catch (Exception e) {
                 // Fallback without icon
             }
-            btnMultiBookingToggle.setText("Thoát đặt nhiều");
-            btnMultiBookingToggle.setBackground(new Color(220, 53, 69));
-            btnMultiBookingToggle.setForeground(Color.WHITE);
+            btnMultiBookingToggle.setText("THOÁT ĐẶT NHIỀU");
+            btnMultiBookingToggle.setBackground(CustomUI.darkRed);
         } else {
             btnMultiBookingToggle.setIcon(null);
-            btnMultiBookingToggle.setText("Đặt nhiều phòng");
-            btnMultiBookingToggle.setBackground(new Color(108, 117, 125));
+            btnMultiBookingToggle.setText("ĐẶT NHIỀU PHÒNG");
+            btnMultiBookingToggle.setBackground(CustomUI.darkGray);
         }
+
+        btnMultiBookingToggle.setForeground(CustomUI.white);
+        btnMultiBookingToggle.setFont(CustomUI.normalFont);
+        btnMultiBookingToggle.setFocusPainted(false);
     }
 
     private void toggleMultiBookingMode() {
@@ -544,7 +547,7 @@ public class BookingManagementPanel extends JPanel {
 
     private void createCenterPanel() {
         gridRoomPanels = new GridRoomPanel(allRoomItems);
-        gridRoomPanels.setBackground(Color.WHITE);
+        gridRoomPanels.setBackground(CustomUI.white);
         gridRoomPanels.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JScrollPane scrollPane = new JScrollPane(gridRoomPanels,
                                                  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -579,8 +582,16 @@ public class BookingManagementPanel extends JPanel {
     }
 
     private void handleCheckinDateChange() {
+        try {
+            spnCheckInDate.commitEdit();
+            spnCheckOutDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
         Date now = new Date();
         Date checkInDate = (Date) spnCheckInDate.getValue();
+        System.out.println("Check-in date changed to: " + checkInDate);
         Date currentCheckOutDate = (Date) spnCheckOutDate.getValue();
 
         // Handle past check-in date
@@ -620,6 +631,13 @@ public class BookingManagementPanel extends JPanel {
     }
 
     private void handleCheckoutDateChange() {
+        try {
+            spnCheckInDate.commitEdit();
+            spnCheckOutDate.commitEdit();
+        } catch (java.text.ParseException e) {
+            System.out.println("Error parsing date from spinner: " + e.getMessage());
+        }
+
         Date checkInDate = (Date) spnCheckInDate.getValue();
         Date checkOutDate = (Date) spnCheckOutDate.getValue();
 
@@ -762,6 +780,13 @@ public class BookingManagementPanel extends JPanel {
         // Status filter
         if (roomFilter.roomStatus != null && !roomFilter.roomStatus.equals(ALL_STATUS)) {
             if (!bookingResponse.getRoomStatus().equalsIgnoreCase(roomFilter.roomStatus)) {
+                return false;
+            }
+        }
+
+        // Accept cleaning room only when room status filter is set to cleaning
+        if (roomFilter.roomStatus == null || !roomFilter.roomStatus.equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
+            if (bookingResponse.getRoomStatus().equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
                 return false;
             }
         }

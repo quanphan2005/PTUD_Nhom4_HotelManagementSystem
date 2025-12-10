@@ -74,7 +74,7 @@ public class ServiceOrderedHistoryPanel extends JPanel {
 
     private void createInfoPanel() {
         JPanel infoPanel = new JPanel(new GridBagLayout());
-        infoPanel.setBackground(Color.WHITE);
+        infoPanel.setBackground(CustomUI.white);
         infoPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
             BorderFactory.createEmptyBorder(10, 15, 10, 15)
@@ -131,7 +131,7 @@ public class ServiceOrderedHistoryPanel extends JPanel {
 
     private void createServicesTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBackground(Color.WHITE);
+        tablePanel.setBackground(CustomUI.white);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
         // Create collapsible title panel
@@ -219,14 +219,14 @@ public class ServiceOrderedHistoryPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 if (row % 2 == 0) {
                     component.setBackground(CustomUI.ROW_EVEN);
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             setHorizontalAlignment(JLabel.CENTER);

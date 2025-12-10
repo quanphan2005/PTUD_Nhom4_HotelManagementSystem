@@ -5,4 +5,5 @@ import vn.iuh.dto.response.EventResponse;
 public interface MovingHistoryService {
     boolean createEnteringHistory(String maChiTietDatPhong);
     boolean createLeavingHistory(String maChiTietDatPhong);
+    boolean isExisted(String maChiTietDatPhong);
 }

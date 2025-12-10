@@ -1,12 +1,8 @@
 package vn.iuh.gui.panel.booking;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import vn.iuh.constraint.PanelName;
 import vn.iuh.dto.event.create.DonGoiDichVu;
 import vn.iuh.dto.repository.ThongTinDichVu;
-import vn.iuh.dto.response.ReservationInfoDetailResponse;
-import vn.iuh.dto.response.ReservationResponse;
-import vn.iuh.dto.response.RoomUsageServiceResponse;
 import vn.iuh.entity.LoaiDichVu;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
@@ -22,7 +18,8 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
@@ -36,6 +33,7 @@ public class ServiceSelectionPanel extends JPanel {
     // Left Components
     private JTextField txtSearchService;
     private JComboBox<String> cmbServiceType;
+    private JComboBox<String> cmbSelectedRoom;
     private JButton btnOrderHistory;
     private JLabel lblTotalServices;
     private JLabel lblAvailableServices;
@@ -55,7 +53,8 @@ public class ServiceSelectionPanel extends JPanel {
     private DefaultTableModel selectedServicesTableModel;
 
     // Selected rooms
-    private int selectedRooms;
+    private int totalRoom;
+    private List<String> selectedRoomNames;
 
     // For existing booking
     private String maChiTietDatPhong;
@@ -63,7 +62,7 @@ public class ServiceSelectionPanel extends JPanel {
     // Data
     private List<ThongTinDichVu> allServices;
     private List<ThongTinDichVu> filteredServices;
-    private Map<String, Integer> selectedServicesMap;
+    private List<DonGoiDichVu> serviceOrders;
     private Map<String, Double> servicePricesMap; // Track service prices for total cost calculation
     private ServiceSelectionCallback callback;
 
@@ -71,20 +70,23 @@ public class ServiceSelectionPanel extends JPanel {
     private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
 
     private final String ALL_SERVICE = "Tất cả loại dịch vụ";
+    private final String ALL_ROOMS = "Tất cả phòng";
 
     public interface ServiceSelectionCallback {
         void onServiceConfirmed(List<DonGoiDichVu> ServiceOrders);
     }
 
-    public ServiceSelectionPanel(String parentName, int selectedRooms, String maChiTietDatPhong, ServiceSelectionCallback callback) {
+    // For new booking
+    public ServiceSelectionPanel(String parentName, int totalRoom, List<String> selectedRoomNames, String maChiTietDatPhong, ServiceSelectionCallback callback) {
         this.parentName = parentName;
 
         this.serviceCategoryService = new ServiceCategoryServiceImpl();
         this.goiDichVuService = new GoiDichVuServiceImpl();
         this.callback = callback;
-        this.selectedServicesMap = new HashMap<>();
+        this.serviceOrders = new ArrayList<>();
 
-        this.selectedRooms = selectedRooms;
+        this.totalRoom = totalRoom;
+        this.selectedRoomNames = selectedRoomNames;
         this.maChiTietDatPhong = maChiTietDatPhong;
 
         setLayout(new BorderLayout());
@@ -95,13 +97,16 @@ public class ServiceSelectionPanel extends JPanel {
         setupEventHandlers();
     }
 
-    public ServiceSelectionPanel(String maChiTietDatPhong) {
+    // For existing booking
+    public ServiceSelectionPanel(String maChiTietDatPhong, String roomName) {
         this.serviceCategoryService = new ServiceCategoryServiceImpl();
         this.goiDichVuService = new GoiDichVuServiceImpl();
-        this.selectedServicesMap = new HashMap<>();
+        this.serviceOrders = new ArrayList<>();
 
         this.maChiTietDatPhong = maChiTietDatPhong;
-        this.selectedRooms = 1; // Default to 1 for viewing existing bookings
+        this.totalRoom = 1; // Default to 1 for viewing existing bookings
+        this.selectedRoomNames = new ArrayList<>();
+        this.selectedRoomNames.add(roomName);
 
         setLayout(new BorderLayout());
 
@@ -109,6 +114,8 @@ public class ServiceSelectionPanel extends JPanel {
         setupLayout();
         loadData();
         setupEventHandlers();
+
+        hideCloseButton();
     }
 
     private void initializeComponents() {
@@ -116,30 +123,35 @@ public class ServiceSelectionPanel extends JPanel {
         cmbServiceType = new JComboBox<>();
         cmbServiceType.setFont(CustomUI.smallFont);
         cmbServiceType.setPreferredSize(new Dimension(200, 30));
-        cmbServiceType.setMinimumSize(new Dimension(180, 30));
+        cmbServiceType.setMinimumSize(new Dimension(200, 30));
 
         txtSearchService = new JTextField();
         txtSearchService.setFont(CustomUI.normalFont);
-        txtSearchService.setPreferredSize(new Dimension(500, 35));
-        txtSearchService.setMinimumSize(new Dimension(500, 35)); // Add minimum size
+        txtSearchService.setPreferredSize(new Dimension(400, 35));
+        txtSearchService.setMinimumSize(new Dimension(400, 35)); // Add minimum size
         txtSearchService.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tên dịch vụ");
 
-        // Info labels with fixed sizes
+        // Room selected & Info labels with fixed sizes
+        cmbSelectedRoom = new JComboBox<>();
+        cmbSelectedRoom.setFont(CustomUI.smallFont);
+        cmbSelectedRoom.setPreferredSize(new Dimension(100, 30));
+        cmbSelectedRoom.setMinimumSize(new Dimension(100, 30));
+
         lblTotalServices = new JLabel("Tổng dịch vụ: 0");
         lblTotalServices.setFont(CustomUI.normalFont);
         lblTotalServices.setOpaque(true);
         lblTotalServices.setForeground(CustomUI.black);
         lblTotalServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        lblTotalServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
-        lblTotalServices.setMinimumSize(new Dimension(150, 40)); // Fixed minimum
+        lblTotalServices.setPreferredSize(new Dimension(120, 40)); // Fixed size
+        lblTotalServices.setMinimumSize(new Dimension(120, 40)); // Fixed minimum
 
         lblAvailableServices = new JLabel("Dịch vụ khả dụng: 0");
         lblAvailableServices.setFont(CustomUI.normalFont);
         lblAvailableServices.setOpaque(true);
         lblAvailableServices.setForeground(CustomUI.black);
         lblAvailableServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        lblAvailableServices.setPreferredSize(new Dimension(150, 40)); // Fixed size
-        lblAvailableServices.setMinimumSize(new Dimension(150, 40)); // Fixed minimum
+        lblAvailableServices.setPreferredSize(new Dimension(120, 40)); // Fixed size
+        lblAvailableServices.setMinimumSize(new Dimension(120, 40)); // Fixed minimum
 
         // Service table - Remove gift column
         String[] serviceColumns = {"Dịch vụ", "Loại", "Giá", "Tồn kho", "Đã chọn"};
@@ -192,7 +204,7 @@ public class ServiceSelectionPanel extends JPanel {
         serviceTable.getColumnModel().getColumn(4).setCellEditor(new QuantityEditor());
 
         // Selected services table with fixed column widths
-        String[] selectedColumns = {"Dịch vụ", "SL", "Thành tiền"};
+        String[] selectedColumns = {"Phòng", "Dịch vụ", "SL", "Thành tiền"};
         selectedServicesTableModel = new DefaultTableModel(selectedColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -242,10 +254,10 @@ public class ServiceSelectionPanel extends JPanel {
             public void componentResized(java.awt.event.ComponentEvent e) {
                 int tableWidth = selectedServicesTable.getWidth();
                 TableColumnModel columnModel = selectedServicesTable.getColumnModel();
-
-                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.40)); // 20% - Tên dịch vụ
-                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.10)); // 25% - Số lượng
-                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.50)); // 15% - Thành tiền
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.20)); // 20% - Tên dịch vụ
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.30)); // 20% - Tên dịch vụ
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.10)); // 25% - Số lượng
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.40)); // 15% - Thành tiền
             }
         });
 
@@ -286,8 +298,8 @@ public class ServiceSelectionPanel extends JPanel {
 
         btnClose = new JButton("x");
         btnClose.setFont(CustomUI.bigFont);
-        btnClose.setBackground(Color.RED);
-        btnClose.setForeground(Color.WHITE);
+        btnClose.setBackground(CustomUI.red);
+        btnClose.setForeground(CustomUI.white);
         btnClose.setPreferredSize(new Dimension(50, 20));
         btnClose.setFocusPainted(false);
         btnClose.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
@@ -313,8 +325,7 @@ public class ServiceSelectionPanel extends JPanel {
         headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         headerPanel.setBackground(CustomUI.blue);
 
-
-        JLabel titleLabel = new JLabel("Gọi dịch vụ (" + selectedRooms + " Phòng)", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Gọi dịch vụ (" + totalRoom + " Phòng)", SwingConstants.CENTER);
         titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
 
@@ -323,7 +334,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         // Main content panel with GridBagLayout
         JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(CustomUI.white);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -333,26 +344,29 @@ public class ServiceSelectionPanel extends JPanel {
         // Search area
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 0.8;
+        gbc.gridwidth = 3;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 0.6;
         JPanel searchPanel = createSearchPanel();
         mainPanel.add(searchPanel, gbc);
 
         // Info labels
-        gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.weightx = 0.2;
-        mainPanel.add(lblTotalServices, gbc);
+        gbc.gridy = 1;
+        mainPanel.add(cmbSelectedRoom, gbc);
 
         gbc.gridx = 1;
-        gbc.weightx = 0.2;
+        mainPanel.add(lblTotalServices, gbc);
+
+        gbc.gridx = 2;
+//        gbc.weightx = 0.2;
         mainPanel.add(lblAvailableServices, gbc);
 
         // Service table
         gbc.gridx = 0;
         gbc.gridy = 2;
-        gbc.gridwidth = 2;
+        gbc.gridwidth = 3;
         gbc.gridheight = 3;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 0.6;
@@ -365,7 +379,7 @@ public class ServiceSelectionPanel extends JPanel {
 
         // RIGHT COLUMN
         // Action buttons
-        gbc.gridx = 2;
+        gbc.gridx = 3;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
         gbc.gridheight = 1;
@@ -403,7 +417,7 @@ public class ServiceSelectionPanel extends JPanel {
 
     private JPanel createSearchPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(CustomUI.white);
         panel.add(cmbServiceType);
         panel.add(txtSearchService);
         return panel;
@@ -412,6 +426,7 @@ public class ServiceSelectionPanel extends JPanel {
     private void loadData() {
         loadServiceType();
         loadServices();
+        loadSelectedRooms();
     }
 
     private void loadServiceType() {
@@ -434,8 +449,27 @@ public class ServiceSelectionPanel extends JPanel {
         updateInfoLabels();
     }
 
+    private void loadSelectedRooms() {
+        // Single room for existing booking
+        if (selectedRoomNames.size() == 1) {
+            cmbSelectedRoom.addItem(selectedRoomNames.get(0));
+            cmbSelectedRoom.setEnabled(false);
+        }
+
+        // Multiple rooms for new booking
+        else {
+            cmbSelectedRoom.addItem(ALL_ROOMS);
+            for (String roomName : selectedRoomNames) {
+                cmbSelectedRoom.addItem(roomName);
+            }
+            cmbSelectedRoom.setSelectedIndex(0);
+        }
+    }
+
     private void setupEventHandlers() {
         cmbServiceType.addActionListener(e -> handleCmbServiceChangeEvent());
+
+        cmbSelectedRoom.addActionListener(e -> handleCmbSelectedRoomChangeEvent());
 
         btnOrderHistory.addActionListener(e -> handleFindServiceOrderedHistory());
 
@@ -452,7 +486,6 @@ public class ServiceSelectionPanel extends JPanel {
 
         btnClose.addActionListener(e -> {Main.showCard(parentName);});
     }
-
     private void resetPanel() {
         resetAllSelections();
         loadServices();
@@ -464,7 +497,8 @@ public class ServiceSelectionPanel extends JPanel {
             serviceTable.getCellEditor().stopCellEditing();
         }
 
-        selectedServicesMap.clear();
+//        selectedServicesMap.clear();
+        serviceOrders.clear();
 
         resetAllRowEditingCell();
 
@@ -478,10 +512,7 @@ public class ServiceSelectionPanel extends JPanel {
     }
 
     private void resetAllRowEditingCell() {
-        // Reset data in maps first
-        for (ThongTinDichVu service : filteredServices) {
-            selectedServicesMap.put(service.getMaDichVu(), 0);
-        }
+        serviceOrders.clear();
 
         // Then update table display
         for (int i = 0; i < serviceTableModel.getRowCount(); i++) {
@@ -492,9 +523,8 @@ public class ServiceSelectionPanel extends JPanel {
         serviceTable.repaint();
     }
 
-
     private void confirmSelection() {
-        if (selectedServicesMap.isEmpty() || selectedServicesMap.values().stream().allMatch(qty -> qty == 0)) {
+        if (serviceOrders.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                                           "Vui lòng chọn ít nhất một dịch vụ",
                                           "Thông báo",
@@ -502,26 +532,13 @@ public class ServiceSelectionPanel extends JPanel {
             return;
         }
 
-        // Filter out services with 0 quantity
-        List<DonGoiDichVu> serviceOrdered = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : selectedServicesMap.entrySet()) {
-            if (entry.getValue() > 0) {
-                String serviceId = entry.getKey();
-                double price = servicePricesMap.getOrDefault(serviceId, 0.0);
-                int quantity = entry.getValue();
-                serviceOrdered.add(new DonGoiDichVu(serviceId, price, quantity, false));
-            }
-        }
-
-        validateServiceQuantity(serviceOrdered);
-
         // Service ordered for existing booking
         if (maChiTietDatPhong != null) {
-            boolean success = goiDichVuService.goiDichVu(maChiTietDatPhong, serviceOrdered,
+            boolean success = goiDichVuService.goiDichVu(maChiTietDatPhong, serviceOrders,
                                                          Main.getCurrentLoginSession());
             if (success) {
                 JOptionPane.showMessageDialog(this,
-                                              "Gọi thêm " + serviceOrdered.size() + " dịch vụ thành công.",
+                                              "Gọi thêm " + serviceOrders.size() + " dịch vụ thành công.",
                                               "Thành công",
                                               JOptionPane.INFORMATION_MESSAGE);
                 resetPanel();
@@ -536,19 +553,18 @@ public class ServiceSelectionPanel extends JPanel {
         }
 
         if (callback != null) {
-            callback.onServiceConfirmed(serviceOrdered);
+            callback.onServiceConfirmed(serviceOrders);
         }
 
         // Show dialog base on selected rooms
-        if (selectedRooms > 1) {
+        if (totalRoom > 1) {
             JOptionPane.showMessageDialog(this,
-                                          "Đã thêm " + serviceOrdered.size() + " dịch vụ cho " + selectedRooms + " phòng\n" +
-                                          "Số lượng dịch vụ đã gọi sẽ được chia đều cho (" + selectedRooms + " phòng)",
+                                          "Tạo " + serviceOrders.size() + " đơn dùng dịch vụ cho " + totalRoom + " phòng\n",
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                                          "Đã thêm " + serviceOrdered.size() + " dịch vụ cho phòng",
+                                          "Tạo " + serviceOrders.size() + " đơn dùng dịch vụ cho phòng: " + selectedRoomNames.get(0),
                                           "Xác nhận",
                                           JOptionPane.INFORMATION_MESSAGE);
         }
@@ -560,7 +576,21 @@ public class ServiceSelectionPanel extends JPanel {
         serviceTableModel.setRowCount(0);
 
         for (ThongTinDichVu service : filteredServices) {
-            int selectedQuantity = selectedServicesMap.getOrDefault(service.getMaDichVu(), 0);
+            int selectedQuantity = 0;
+            for (DonGoiDichVu order : serviceOrders) {
+                // For "All Rooms" selection
+                if (cmbSelectedRoom.getSelectedItem().toString().equalsIgnoreCase(ALL_ROOMS)) {
+                    if (order.getMaDichVu().equalsIgnoreCase(service.getMaDichVu())) {
+                        selectedQuantity += order.getSoLuong();
+                    }
+                }
+                // For single room selection
+                else if (order.getMaDichVu().equalsIgnoreCase(service.getMaDichVu()) &&
+                         order.getTenPhong().equalsIgnoreCase(cmbSelectedRoom.getSelectedItem().toString())) {
+                    selectedQuantity = order.getSoLuong();
+                    break;
+                }
+            }
             Object[] row = {
                     service.getTenDichVu(),
                     service.getTenLoaiDichVu(),
@@ -575,18 +605,17 @@ public class ServiceSelectionPanel extends JPanel {
     private void updateSelectedServicesTable() {
         selectedServicesTableModel.setRowCount(0);
 
-        for (Map.Entry<String, Integer> entry : selectedServicesMap.entrySet()) {
-            if (entry.getValue() > 0) {
-                ThongTinDichVu service = findServiceById(entry.getKey());
-                if (service != null) {
-                    double totalPrice = service.getDonGia() * entry.getValue(); // 0 if gift
-                    Object[] row = {
-                            service.getTenDichVu(),
-                            entry.getValue(),
-                            priceFormatter.format(totalPrice) + " VNĐ"
-                    };
-                    selectedServicesTableModel.addRow(row);
-                }
+        for (DonGoiDichVu order : serviceOrders) {
+            ThongTinDichVu service = findServiceById(order.getMaDichVu());
+            if (service != null) {
+                double totalPrice = service.getDonGia() * order.getSoLuong(); // 0 if gift
+                Object[] row = {
+                        order.getTenPhong(),
+                        service.getTenDichVu(),
+                        order.getSoLuong(),
+                        priceFormatter.format(totalPrice) + " VNĐ"
+                };
+                selectedServicesTableModel.addRow(row);
             }
         }
 
@@ -605,30 +634,15 @@ public class ServiceSelectionPanel extends JPanel {
 
     private void updateTotalCost() {
         double total = 0;
-        for (Map.Entry<String, Integer> entry : selectedServicesMap.entrySet()) {
-            if (entry.getValue() > 0) {
-                ThongTinDichVu service = findServiceById(entry.getKey());
-                if (service != null) {
-                    total += service.getDonGia() * entry.getValue();
-                }
-            }
-        }
-        lblTotalCost.setText("Tổng tiền: " + priceFormatter.format(total) + " VNĐ");
-    }
 
-    // Validate that ordered quantities that can divide equally for selected rooms
-    private void validateServiceQuantity(List<DonGoiDichVu> serviceOrdered) {
-        for (DonGoiDichVu order : serviceOrdered) {
+        for (DonGoiDichVu order : serviceOrders) {
             ThongTinDichVu service = findServiceById(order.getMaDichVu());
-            if (order.getSoLuong() % selectedRooms != 0) {
-                JOptionPane.showMessageDialog(this,
-                                              "Số lượng dịch vụ '" + service.getTenDichVu() +
-                                              "' phải chia hết cho số phòng đã chọn (" + selectedRooms + " phòng).",
-                                              "Lỗi",
-                                              JOptionPane.ERROR_MESSAGE);
-                return;
+            if (service != null) {
+                total += service.getDonGia() * order.getSoLuong();
             }
         }
+
+        lblTotalCost.setText("Tổng tiền: " + priceFormatter.format(total) + " VNĐ");
     }
 
     private void handleResetBtn() {
@@ -647,8 +661,21 @@ public class ServiceSelectionPanel extends JPanel {
     }
 
     private void handleCmbServiceChangeEvent() {
+        // Make table stop editing to capture any in-progress changes
+        if (serviceTable.isEditing()) {
+            serviceTable.getCellEditor().stopCellEditing();
+        }
         filterServices();
     }
+
+    private void handleCmbSelectedRoomChangeEvent() {
+        // Make table stop editing to capture any in-progress changes
+        if (serviceTable.isEditing()) {
+            serviceTable.getCellEditor().stopCellEditing();
+        }
+        updateServiceTable();
+    }
+
 
     private void handleFindServiceOrderedHistory() {
         ServiceOrderedHistoryPanel serviceOrderedHistoryPanel =
@@ -689,111 +716,6 @@ public class ServiceSelectionPanel extends JPanel {
         updateInfoLabels();
     }
 
-    // Custom renderer for gift column
-    private class GiftRenderer extends JPanel implements TableCellRenderer {
-        private JCheckBox giftCheckBox;
-
-        public GiftRenderer() {
-            setLayout(new GridBagLayout()); // Use GridBagLayout for perfect centering
-            giftCheckBox = new JCheckBox();
-            giftCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
-            giftCheckBox.setVerticalAlignment(SwingConstants.CENTER);
-            giftCheckBox.setPreferredSize(new Dimension(50, 50)); // Make checkbox bigger
-            giftCheckBox.setOpaque(false); // Make checkbox background transparent
-
-            // Add checkbox to center of panel
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.anchor = GridBagConstraints.CENTER;
-            add(giftCheckBox, gbc);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus, int row, int column) {
-
-            boolean isGift = (Boolean) value;
-            giftCheckBox.setSelected(isGift);
-
-            // Check if service is giftable
-            ThongTinDichVu service = filteredServices.get(row);
-            giftCheckBox.setEnabled(service.isCoTheTang());
-
-            if (isSelected) {
-                setBackground(table.getSelectionBackground());
-            } else {
-                setBackground(table.getBackground());
-            }
-
-            return this;
-        }
-    }
-
-    // Custom editor for gift column
-    private class GiftEditor extends AbstractCellEditor implements TableCellEditor {
-        private JPanel panel;
-        private JCheckBox giftCheckBox;
-        private boolean currentGiftStatus;
-        private int currentRow;
-
-        public GiftEditor() {
-            panel = new JPanel(new GridBagLayout()); // Use GridBagLayout for perfect centering
-            giftCheckBox = new JCheckBox();
-            giftCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
-            giftCheckBox.setVerticalAlignment(SwingConstants.CENTER);
-            giftCheckBox.setOpaque(false); // Make checkbox background transparent
-
-            // Add checkbox to center of panel
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.anchor = GridBagConstraints.CENTER;
-            panel.add(giftCheckBox, gbc);
-
-            giftCheckBox.addActionListener(e -> {
-                currentGiftStatus = giftCheckBox.isSelected();
-                updateGiftStatus();
-            });
-        }
-
-        private void updateGiftStatus() {
-            ThongTinDichVu service = filteredServices.get(currentRow);
-
-            // Only update if service is giftable
-            if (service.isCoTheTang()) {
-
-                // Update the main table
-                serviceTableModel.setValueAt(currentGiftStatus, currentRow, 4);
-
-                // Show feedback message
-                if (currentGiftStatus) {
-                    JOptionPane.showMessageDialog(panel,
-                                                  "Dịch vụ '" + service.getTenDichVu() +
-                                                  "' đã được đánh dấu là quà tặng (miễn phí)",
-                                                  "Quà tặng",
-                                                  JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
-
-            currentGiftStatus = (Boolean) value;
-            currentRow = row;
-            giftCheckBox.setSelected(currentGiftStatus);
-
-            // Check if service is giftable
-            ThongTinDichVu service = filteredServices.get(row);
-            giftCheckBox.setEnabled(service.isCoTheTang());
-
-            return panel;
-        }
-
-        @Override
-        public Object getCellEditorValue() {
-            return currentGiftStatus;
-        }
-    }
-
     // Custom renderer for quantity column (updated for new column index)
     private class QuantityRenderer extends JPanel implements TableCellRenderer {
         // Change label to text field to support user can edit directly
@@ -807,17 +729,20 @@ public class ServiceSelectionPanel extends JPanel {
             btnDecrease = new JButton("▼");
             btnDecrease.setPreferredSize(new Dimension(25, 25));
             btnDecrease.setFont(new Font("Arial", Font.BOLD, 10));
+            // Prevent button from taking focus to avoid editor issues
+            btnDecrease.setFocusable(false);
 
             quantityField = new JTextField("0", 3);
             quantityField.setPreferredSize(new Dimension(40, 25));
             quantityField.setHorizontalAlignment(SwingConstants.CENTER);
-            quantityField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            quantityField.setBorder(BorderFactory.createLineBorder(CustomUI.gray));
             quantityField.setFont(new Font("Arial", Font.PLAIN, 12));
-            quantityField.setEditable(false); // Make read-only in renderer
 
             btnIncrease = new JButton("▲");
             btnIncrease.setPreferredSize(new Dimension(25, 25));
             btnIncrease.setFont(new Font("Arial", Font.BOLD, 10));
+            // Prevent button from taking focus to avoid editor issues
+            btnIncrease.setFocusable(false);
 
             add(btnDecrease);
             add(quantityField);
@@ -836,7 +761,7 @@ public class ServiceSelectionPanel extends JPanel {
                 quantityField.setBackground(table.getSelectionBackground());
             } else {
                 setBackground(table.getBackground());
-                quantityField.setBackground(Color.WHITE);
+                quantityField.setBackground(CustomUI.white);
             }
 
             return this;
@@ -858,16 +783,20 @@ public class ServiceSelectionPanel extends JPanel {
             btnDecrease = new JButton("▼");
             btnDecrease.setPreferredSize(new Dimension(25, 25));
             btnDecrease.setFont(new Font("Arial", Font.BOLD, 10));
+            // Prevent button from taking focus to avoid editor issues
+            btnDecrease.setFocusable(false);
 
             quantityField = new JTextField("0", 3);
             quantityField.setPreferredSize(new Dimension(40, 25));
             quantityField.setHorizontalAlignment(SwingConstants.CENTER);
-            quantityField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            quantityField.setBorder(BorderFactory.createLineBorder(CustomUI.gray));
             quantityField.setFont(new Font("Arial", Font.PLAIN, 12));
 
             btnIncrease = new JButton("▲");
             btnIncrease.setPreferredSize(new Dimension(25, 25));
             btnIncrease.setFont(new Font("Arial", Font.BOLD, 10));
+            // Prevent button from taking focus to avoid editor issues
+            btnIncrease.setFocusable(false);
 
             panel.add(btnDecrease);
             panel.add(quantityField);
@@ -881,21 +810,23 @@ public class ServiceSelectionPanel extends JPanel {
                 if (currentQuantity >= decrementAmount) {
                     currentQuantity -= decrementAmount;
                     quantityField.setText(String.valueOf(currentQuantity));
-                    updateQuantity();
+                    updateServiceOrdersAndUpdateTable(Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString(), -decrementAmount, false);
 
                     // Show feedback for multi-room decrements
-                    if (selectedRooms > 1 && decrementAmount > 1) {
-                        showQuantityFeedback("Giảm " + decrementAmount + " (" + selectedRooms + " phòng)", false);
+                    if (cmbSelectedRoom.getSelectedItem().toString().equalsIgnoreCase(ALL_ROOMS) && decrementAmount > 1) {
+                        showQuantityFeedback("Giảm " + decrementAmount + " (" + totalRoom + " phòng)", false);
                     }
                 } else {
                     // If can't decrease by full amount, set to 0
                     if (currentQuantity > 0) {
                         currentQuantity = 0;
                         quantityField.setText("0");
-                        updateQuantity();
+                        updateServiceOrdersAndUpdateTable(Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString(), -decrementAmount, false);
                         showQuantityFeedback("Đặt về 0", false);
                     }
                 }
+
+                this.fireEditingStopped();
             });
 
             btnIncrease.addActionListener(e -> {
@@ -905,11 +836,11 @@ public class ServiceSelectionPanel extends JPanel {
                 if (currentQuantity + incrementAmount <= service.getTonKho()) {
                     currentQuantity += incrementAmount;
                     quantityField.setText(String.valueOf(currentQuantity));
-                    updateQuantity();
+                    updateServiceOrdersAndUpdateTable(Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString(), incrementAmount, false);
 
                     // Show feedback for multi-room increments
-                    if (selectedRooms > 1 && incrementAmount > 1) {
-                        showQuantityFeedback("Tăng " + incrementAmount + " (" + selectedRooms + " phòng)", true);
+                    if (cmbSelectedRoom.getSelectedItem().toString().equalsIgnoreCase(ALL_ROOMS)  && incrementAmount > 1) {
+                        showQuantityFeedback("Tăng " + incrementAmount + " (" + totalRoom + " phòng)", true);
                     }
                 } else {
                     // Try to add as much as possible up to stock limit
@@ -918,12 +849,14 @@ public class ServiceSelectionPanel extends JPanel {
                         int actualIncrement = maxPossible - currentQuantity;
                         currentQuantity = maxPossible;
                         quantityField.setText(String.valueOf(currentQuantity));
-                        updateQuantity();
+                        updateServiceOrdersAndUpdateTable(Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString(), actualIncrement, false);
                         showQuantityFeedback("Tăng tối đa " + actualIncrement + " (giới hạn tồn kho)", true);
                     } else {
                         showStockLimitWarning(service);
                     }
                 }
+
+                this.fireEditingStopped();
             });
 
             // TextField event handlers for direct input
@@ -965,38 +898,38 @@ public class ServiceSelectionPanel extends JPanel {
          * Calculate optimal increment amount based on current quantity and selected rooms
          */
         private int getOptimalIncrementAmount(int currentQuantity, ThongTinDichVu service) {
-            // For single room booking, always increment by 1
-            if (selectedRooms == 1) {
-                return 1;
+            // For multi-room booking, increment by cmbSelectedRoom
+            String selectedRoom = Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString();
+            if (selectedRoom.equalsIgnoreCase(ALL_ROOMS)) {
+                int maxPossible = service.getTonKho() - currentQuantity;
+                return Math.min(totalRoom, maxPossible);
             }
 
-            // For multi-room booking, increment by selectedRooms
-            // But ensure we don't exceed stock limit
-            int maxPossible = service.getTonKho() - currentQuantity;
-            return Math.min(selectedRooms, maxPossible);
+            // Single room selected from multiple rooms
+            return 1;
         }
 
         /**
          * Calculate optimal decrement amount based on current quantity and selected rooms
          */
         private int getOptimalDecrementAmount(int currentQuantity, ThongTinDichVu service) {
-            // For single room booking, always decrement by 1
-            if (selectedRooms == 1) {
-                return 1;
+            // For multi-room booking, decrement by cmbSelectedRoom
+            String selectedRoom = Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString();
+            if (selectedRoom.equalsIgnoreCase(ALL_ROOMS)) {
+                return Math.min(totalRoom, currentQuantity);
             }
 
-            // For multi-room booking, decrement by selectedRooms
-            // But ensure we don't go below 0
-            return Math.min(selectedRooms, currentQuantity);
+            // Single room selected from multiple rooms
+            return 1;
         }
 
         /**
          * Get maximum possible quantity that satisfies room division requirement
          */
         private int getMaxPossibleQuantity(ThongTinDichVu service) {
-            // Calculate max quantity that divides evenly by selectedRooms
+            // Calculate max quantity that divides evenly by totalRoom
             int maxStock = service.getTonKho();
-            return (maxStock / selectedRooms) * selectedRooms;
+            return (maxStock / totalRoom) * totalRoom;
         }
 
         /**
@@ -1039,8 +972,8 @@ public class ServiceSelectionPanel extends JPanel {
                     "(%d phòng × %d = %d)",
                     service.getTonKho(),
                     maxPossible,
-                    selectedRooms,
-                    maxPossible / selectedRooms,
+                    totalRoom,
+                    maxPossible / totalRoom,
                     maxPossible
             );
 
@@ -1058,11 +991,61 @@ public class ServiceSelectionPanel extends JPanel {
                 int newQuantity = Integer.parseInt(text);
                 ThongTinDichVu service = filteredServices.get(currentRow);
 
-                // Validate bounds with improved logic
-                newQuantity = validateServiceQuantityWithSuggestion(newQuantity, service);
+                if (newQuantity == currentQuantity) {
+                    return; // No change
+                }
 
-                currentQuantity = newQuantity;
-                updateQuantity();
+                if (newQuantity < 0) {
+                    quantityField.setText(String.valueOf(currentQuantity));
+                    JOptionPane.showMessageDialog(panel,
+                                                  "Số lượng không thể âm!",
+                                                  "Thông báo",
+                                                  JOptionPane.WARNING_MESSAGE);
+                }
+                // Remove service ordered if quantity is zero
+                else if (newQuantity == 0) {
+                    quantityField.setText("0");
+                    currentQuantity = 0;
+                    updateServiceOrdersAndUpdateTable(Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString(), 0, false);
+                }
+                else if (newQuantity > service.getTonKho()) {
+                        quantityField.setText(String.valueOf(currentQuantity));
+                        JOptionPane.showMessageDialog(panel,
+                                                      "Số lượng vượt quá tồn kho!",
+                                                      "Thông báo",
+                                                      JOptionPane.WARNING_MESSAGE);
+                }
+                else {
+                    // Check it can divide evenly for multiple rooms - if not, split equally first, the remain will put for last room
+                    if (cmbSelectedRoom.getSelectedItem().toString().equalsIgnoreCase(ALL_ROOMS)) {
+//                            if (newQuantity % totalRoom != 0) {
+//                                quantityField.setText(String.valueOf(currentQuantity));
+//                                JOptionPane.showMessageDialog(panel,
+//                                                              "Số lượng dịch vụ đã chọn phải chia hết cho " + totalRoom + " phòng!",
+//                                                              "Thông báo",
+//                                                              JOptionPane.WARNING_MESSAGE);
+//                                return;
+//                            }
+                        currentQuantity = newQuantity;
+                        int quantity = newQuantity / totalRoom;
+                        System.out.println("Quantity per room: " + quantity);
+                        updateServiceOrdersAndUpdateTable(Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString(), quantity, true);
+
+                        if (newQuantity % totalRoom != 0) {
+                            // Handle remainder for last room
+                            int remainder = newQuantity % totalRoom;
+                            String lastRoom = selectedRoomNames.get(selectedRoomNames.size() - 1);
+
+                            updateServiceOrdersAndUpdateTable(lastRoom, remainder, false);
+                            currentQuantity += remainder;
+                        }
+                        return;
+                    }
+
+                    int quantityChange = newQuantity - currentQuantity;
+                    currentQuantity = newQuantity;
+                    updateServiceOrdersAndUpdateTable(Objects.requireNonNull(cmbSelectedRoom.getSelectedItem()).toString(), quantityChange, true);
+                }
 
             } catch (NumberFormatException e) {
                 // Reset to current valid value if invalid input
@@ -1074,65 +1057,135 @@ public class ServiceSelectionPanel extends JPanel {
             }
         }
 
-        /**
-         * Enhanced validation with helpful suggestions
-         */
-        private int validateServiceQuantityWithSuggestion(int newQuantity, ThongTinDichVu service) {
-            if (newQuantity < 0) {
-                newQuantity = 0;
-                quantityField.setText("0");
-                JOptionPane.showMessageDialog(panel,
-                                              "Số lượng không thể âm!",
-                                              "Thông báo",
-                                              JOptionPane.WARNING_MESSAGE);
-            } else
-                if (newQuantity > service.getTonKho()) {
-                    int maxPossible = getMaxPossibleQuantity(service);
-                    newQuantity = maxPossible;
-                    quantityField.setText(String.valueOf(newQuantity));
-                    showStockLimitWarning(service);
-                } else
-                    if (newQuantity % selectedRooms != 0) {
-                        // Provide smart suggestions for quantity adjustment
-                        int roundedDown = (newQuantity / selectedRooms) * selectedRooms;
-                        int roundedUp = roundedDown + selectedRooms;
-
-                        // Choose the closer valid value, but don't exceed stock
-                        int maxPossible = getMaxPossibleQuantity(service);
-                        int suggestion;
-
-                        if (roundedUp <= maxPossible && (newQuantity - roundedDown) > (roundedUp - newQuantity)) {
-                            suggestion = roundedUp;
-                        } else {
-                            suggestion = roundedDown;
+        private void updateServiceOrdersAndUpdateTable(String tenPhong, int quantity, boolean isDirectSet) {
+            // If direct set, calculate difference
+            if (isDirectSet) {
+                // Update all selected rooms
+                ThongTinDichVu service = filteredServices.get(currentRow);
+                if (Objects.equals(tenPhong, ALL_ROOMS)) {
+                    for (String roomName : selectedRoomNames) {
+                        // Update existing order if found
+                        boolean found = false;
+                        for (DonGoiDichVu order : serviceOrders) {
+                            if (order.getMaDichVu().equals(service.getMaDichVu()) &&
+                                order.getTenPhong().equals(roomName)) {
+                                order.setSoLuong(quantity);
+                                found = true;
+                                break;
+                            }
                         }
 
-                        newQuantity = suggestion;
-                        quantityField.setText(String.valueOf(newQuantity));
-
-                        String message = String.format(
-                                "Số lượng dịch vụ phải chia hết cho số phòng đã chọn (%d).\n" +
-                                "Đã điều chỉnh thành: %d\n" +
-                                "(Mỗi phòng sẽ nhận: %d)",
-                                selectedRooms,
-                                suggestion,
-                                suggestion / selectedRooms
-                        );
-
-                        JOptionPane.showMessageDialog(panel, message, "Điều chỉnh số lượng",
-                                                      JOptionPane.INFORMATION_MESSAGE);
+                        // If not found, add new order
+                        if (!found) {
+                            serviceOrders.add(new DonGoiDichVu(
+                                    service.getMaDichVu(),
+                                    roomName,
+                                    service.getDonGia(),
+                                    quantity
+                            ));
+                        }
                     }
-            return newQuantity;
-        }
+                }
+                // Single room selected
+                else {
+                    // Update existing order if found
+                    boolean found = false;
+                    for (DonGoiDichVu order : serviceOrders) {
+                        if (order.getMaDichVu().equals(service.getMaDichVu()) &&
+                            order.getTenPhong().equals(tenPhong)) {
+                            order.setSoLuong(order.getSoLuong() + quantity);
+                            found = true;
+                            break;
+                        }
+                    }
 
-        // Keep existing validateServiceQuantity method for backward compatibility
-        private int validateServiceQuantity(int newQuantity, ThongTinDichVu service) {
-            return validateServiceQuantityWithSuggestion(newQuantity, service);
-        }
+                    // If not found, add new order
+                    if (!found) {
+                        serviceOrders.add(new DonGoiDichVu(
+                                service.getMaDichVu(),
+                                tenPhong,
+                                service.getDonGia(),
+                                quantity
+                        ));
+                    }
+                }
 
-        private void updateQuantity() {
+                // Check and remove any orders with zero quantity
+                serviceOrders.removeIf(order -> order.getSoLuong() <= 0);
+
+                updateSelectedServicesTable();
+                serviceTableModel.setValueAt(currentQuantity, currentRow, 4);
+                return;
+            }
+
+            // Handle zero quantity case
+            if (quantity == 0) {
+                // Remove service order if quantity is zero
+                ThongTinDichVu service = filteredServices.get(currentRow);
+                if (tenPhong.equalsIgnoreCase(ALL_ROOMS)) {
+                    serviceOrders.removeIf(order -> order.getMaDichVu().equals(service.getMaDichVu()));
+                } else {
+                    serviceOrders.removeIf(order -> order.getMaDichVu().equals(service.getMaDichVu()) &&
+                                                    order.getTenPhong().equals(tenPhong));
+                }
+
+                updateSelectedServicesTable();
+                serviceTableModel.setValueAt(currentQuantity, currentRow, 4);
+                return;
+            }
+
+            // Update all selected rooms
             ThongTinDichVu service = filteredServices.get(currentRow);
-            selectedServicesMap.put(service.getMaDichVu(), currentQuantity);
+            if (Objects.equals(tenPhong, ALL_ROOMS)) {
+                for (String roomName : selectedRoomNames) {
+                    // Update existing order if found
+                    boolean found = false;
+                    for (DonGoiDichVu order : serviceOrders) {
+                        if (order.getMaDichVu().equals(service.getMaDichVu()) &&
+                            order.getTenPhong().equals(roomName)) {
+                            order.setSoLuong(order.getSoLuong() + (quantity / totalRoom));
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    // If not found, add new order
+                    if (!found) {
+                        serviceOrders.add(new DonGoiDichVu(
+                                service.getMaDichVu(),
+                                roomName,
+                                service.getDonGia(),
+                                quantity / totalRoom
+                        ));
+                    }
+                }
+            }
+            // Single room selected
+            else {
+                // Update existing order if found
+                boolean found = false;
+                for (DonGoiDichVu order : serviceOrders) {
+                    if (order.getMaDichVu().equals(service.getMaDichVu()) &&
+                        order.getTenPhong().equals(tenPhong)) {
+                        order.setSoLuong(order.getSoLuong() + quantity);
+                        found = true;
+                        break;
+                    }
+                }
+
+                // If not found, add new order
+                if (!found) {
+                    serviceOrders.add(new DonGoiDichVu(
+                            service.getMaDichVu(),
+                            tenPhong,
+                            service.getDonGia(),
+                            quantity
+                    ));
+                }
+            }
+
+            // Check and remove any orders with zero quantity
+            serviceOrders.removeIf(order -> order.getSoLuong() <= 0);
 
             updateSelectedServicesTable();
 
@@ -1157,6 +1210,10 @@ public class ServiceSelectionPanel extends JPanel {
         }
     }
 
+    private void hideCloseButton() {
+        btnClose.setVisible(false);
+    }
+
     // Custom renderer for service table with alternating row colors and proper styling
     private class ServiceTableRenderer extends DefaultTableCellRenderer {
         @Override
@@ -1169,7 +1226,7 @@ public class ServiceSelectionPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
@@ -1177,7 +1234,7 @@ public class ServiceSelectionPanel extends JPanel {
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             // Center align text for all columns except custom rendered columns (4 and 5)
@@ -1204,7 +1261,7 @@ public class ServiceSelectionPanel extends JPanel {
 
             if (isSelected) {
                 component.setBackground(CustomUI.ROW_SELECTED_COLOR);
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             } else {
                 // Alternating row colors
                 if (row % 2 == 0) {
@@ -1212,7 +1269,7 @@ public class ServiceSelectionPanel extends JPanel {
                 } else {
                     component.setBackground(CustomUI.ROW_ODD);
                 }
-                component.setForeground(Color.BLACK);
+                component.setForeground(CustomUI.black);
             }
 
             // Center align text for all columns
@@ -1222,117 +1279,6 @@ public class ServiceSelectionPanel extends JPanel {
             setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, CustomUI.tableBorder));
 
             return component;
-        }
-    }
-
-    // Custom glass pane for blur effect
-    private static class BlurGlassPane extends JComponent {
-        private BufferedImage blurBuffer;
-        private JFrame parentFrame;
-
-        public BlurGlassPane(JFrame parent) {
-            this.parentFrame = parent;
-            setOpaque(false);
-            createBlurEffect();
-        }
-
-        private void createBlurEffect() {
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    // Capture the parent frame content
-                    Rectangle bounds = parentFrame.getBounds();
-                    Robot robot = new Robot();
-                    BufferedImage screenshot = robot.createScreenCapture(bounds);
-
-                    // Create blurred version
-                    blurBuffer = createBlurredImage(screenshot);
-
-                    repaint();
-                } catch (Exception e) {
-                    System.err.println("Failed to create blur effect: " + e.getMessage());
-                    // Fallback to semi-transparent overlay
-                    createFallbackOverlay();
-                }
-            });
-        }
-
-        private BufferedImage createBlurredImage(BufferedImage source) {
-            if (source == null) return null;
-
-            int width = source.getWidth();
-            int height = source.getHeight();
-
-            BufferedImage blurred = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = blurred.createGraphics();
-
-            // Apply blur using convolution
-            float[] blurKernel = {
-                    1f / 16f, 2f / 16f, 1f / 16f,
-                    2f / 16f, 4f / 16f, 2f / 16f,
-                    1f / 16f, 2f / 16f, 1f / 16f
-            };
-
-            try {
-                java.awt.image.ConvolveOp blurOp = new java.awt.image.ConvolveOp(
-                        new java.awt.image.Kernel(3, 3, blurKernel),
-                        java.awt.image.ConvolveOp.EDGE_NO_OP,
-                        null
-                );
-
-                // Apply blur effect multiple times for stronger blur
-                BufferedImage temp = source;
-                for (int i = 0; i < 3; i++) {
-                    temp = blurOp.filter(temp, null);
-                }
-
-                g2d.drawImage(temp, 0, 0, null);
-
-                // Add semi-transparent overlay for better effect
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
-                g2d.setColor(Color.BLACK);
-                g2d.fillRect(0, 0, width, height);
-
-            } finally {
-                g2d.dispose();
-            }
-
-            return blurred;
-        }
-
-        private void createFallbackOverlay() {
-            // Simple fallback - semi-transparent dark overlay
-            blurBuffer = new BufferedImage(
-                    parentFrame.getWidth(),
-                    parentFrame.getHeight(),
-                    BufferedImage.TYPE_INT_ARGB
-            );
-
-            Graphics2D g2d = blurBuffer.createGraphics();
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-            g2d.setColor(Color.BLACK);
-            g2d.fillRect(0, 0, blurBuffer.getWidth(), blurBuffer.getHeight());
-            g2d.dispose();
-
-            repaint();
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-
-            if (blurBuffer != null) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-
-                // Draw the blurred background
-                g2d.drawImage(blurBuffer, 0, 0, getWidth(), getHeight(), null);
-
-                g2d.dispose();
-            } else {
-                // Fallback overlay while blur is being created
-                g.setColor(new Color(0, 0, 0, 100));
-                g.fillRect(0, 0, getWidth(), getHeight());
-            }
         }
     }
 }

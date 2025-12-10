@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 
 public class ReservationDetailRepository {
     private String ReservationDetailId;
+    private String ReservationId;
     private String roomId;
     private String roomName;
     private String endType;
@@ -12,9 +13,10 @@ public class ReservationDetailRepository {
     private Timestamp timeOut;
     private Boolean isDeleted;
 
-    public ReservationDetailRepository(String reservationDetailId, String roomId, String roomName, String endType,
+    public ReservationDetailRepository(String reservationDetailId, String ReservationId, String roomId, String roomName, String endType,
                                        Boolean isCheckin, Timestamp timeIn, Timestamp timeOut, Boolean isDeleted) {
         ReservationDetailId = reservationDetailId;
+        this.ReservationId = ReservationId;
         this.roomId = roomId;
         this.roomName = roomName;
         this.endType = endType;
@@ -26,6 +28,10 @@ public class ReservationDetailRepository {
 
     public String getReservationDetailId() {
         return ReservationDetailId;
+    }
+
+    public String getReservationId() {
+        return ReservationId;
     }
 
     public String getRoomId() {
