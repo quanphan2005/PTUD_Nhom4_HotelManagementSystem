@@ -383,7 +383,8 @@ public class QuanLyPhongPanel extends JPanel {
         // Dùng FlatLineBorder để có viền bo tròn và offset
         searchPanel.setBorder(new FlatLineBorder(new Insets(12,12,12,12), Color.decode("#CED4DA"), 2, 30));
 
-        String[] searchOptions = {"Mã phòng", "Trạng thái"};
+        // Thêm tùy chọn tìm: Mã phòng, Tên phòng, Trạng thái
+        String[] searchOptions = {"Mã phòng", "Tên phòng", "Trạng thái"};
         JComboBox<String> searchTypeComboBox = new JComboBox<>(searchOptions);
 
         Dimension searchTypeSize = new Dimension(120, 45);
@@ -399,12 +400,19 @@ public class QuanLyPhongPanel extends JPanel {
         inputPanel.setMaximumSize(inputSize);
         inputPanel.setMinimumSize(inputSize);
 
-        // Dùng JTextField cho case "Mã phòng"
+        // JTextField cho case "Mã phòng"
         JTextField roomCodeField = new JTextField();
         final String roomPlaceholder = "Mã phòng";
         configureSearchTextField(roomCodeField, new Dimension(380,45), roomPlaceholder);
         roomCodeField.setMaximumSize(new Dimension(380,45));
         roomCodeField.setMinimumSize(new Dimension(380,45));
+
+        // JTextField cho case "Tên phòng" (mới thêm)
+        JTextField roomNameField = new JTextField();
+        final String namePlaceholder = "Tên phòng";
+        configureSearchTextField(roomNameField, new Dimension(380,45), namePlaceholder);
+        roomNameField.setMaximumSize(new Dimension(380,45));
+        roomNameField.setMinimumSize(new Dimension(380,45));
 
         // JComboBox cho case "Trạng thái"
         String[] statusOptions = {
@@ -418,8 +426,9 @@ public class QuanLyPhongPanel extends JPanel {
         statusComboBox.setFont(new Font("Arial", Font.BOLD, 15));
         statusComboBox.putClientProperty(FlatClientProperties.STYLE, "arc:12");
 
-        // Thêm 2 view vào CardLayout để chuyển giữa input text và combobox
+        // Thêm 3 view vào CardLayout để chuyển giữa input text (Mã/Tên) và combobox (Trạng thái)
         inputPanel.add(roomCodeField, "Mã phòng");
+        inputPanel.add(roomNameField, "Tên phòng");
         inputPanel.add(statusComboBox, "Trạng thái");
 
         // Khi thay đổi dropdown thì chuyển view tương ứng trong CardLayout
@@ -431,11 +440,10 @@ public class QuanLyPhongPanel extends JPanel {
             // Khi đổi chế độ tìm, ngay lập tức kích hoạt tìm tương ứng
             if ("Mã phòng".equals(selected)) {
                 String txt = roomCodeField.getText();
-                // Nếu đang là placeholder -> load toàn bộ
                 if (txt == null || txt.trim().isEmpty() || (roomPlaceholder.equals(txt) && roomCodeField.getForeground().equals(Color.GRAY))) {
                     reloadRoomsAsync(() -> roomService.getAllQuanLyPhongPanel());
                 } else {
-                    String q = txt.trim();
+                    final String q = txt.trim();
                     reloadRoomsAsync(() -> {
                         List<Phong> all = roomService.getAllQuanLyPhongPanel();
                         if (all == null) return Collections.emptyList();
@@ -449,21 +457,38 @@ public class QuanLyPhongPanel extends JPanel {
                         return res;
                     });
                 }
+            } else if ("Tên phòng".equals(selected)) {
+                String txt = roomNameField.getText();
+                if (txt == null || txt.trim().isEmpty() || (namePlaceholder.equals(txt) && roomNameField.getForeground().equals(Color.GRAY))) {
+                    reloadRoomsAsync(() -> roomService.getAllQuanLyPhongPanel());
+                } else {
+                    final String q = txt.trim();
+                    reloadRoomsAsync(() -> {
+                        List<Phong> all = roomService.getAllQuanLyPhongPanel();
+                        if (all == null) return Collections.emptyList();
+                        String qLower = q.toLowerCase();
+                        List<Phong> res = new ArrayList<>();
+                        for (Phong p : all) {
+                            if (p.getTenPhong() != null && p.getTenPhong().toLowerCase().contains(qLower)) {
+                                res.add(p);
+                            }
+                        }
+                        return res;
+                    });
+                }
             } else { // Trạng thái
                 String status = (String) statusComboBox.getSelectedItem();
                 reloadRoomsAsync(() -> roomService.getRoomsByStatus(status));
             }
         });
 
-        // Mỗi khi user nhập vào ô mã phòng hệ thông sẽ tự loc
+        // Realtime filter: Mã phòng field
         roomCodeField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             private void update() {
-                // Chỉ xử lý khi đang ở chế độ "Mã phòng"
                 if (!"Mã phòng".equals((String) searchTypeComboBox.getSelectedItem())) return;
 
                 String txt = roomCodeField.getText();
                 if (txt == null) txt = "";
-                // Nếu hiện là placeholder (màu xám) -> load tất cả
                 if (txt.isEmpty() || (roomPlaceholder.equals(txt) && roomCodeField.getForeground().equals(Color.GRAY))) {
                     reloadRoomsAsync(() -> roomService.getAllQuanLyPhongPanel());
                     return;
@@ -475,8 +500,37 @@ public class QuanLyPhongPanel extends JPanel {
                     if (all == null) return Collections.emptyList();
                     List<Phong> filtered = new ArrayList<>();
                     for (Phong p : all) {
-                        // Tìm theo mã phòng
                         if (p.getMaPhong() != null && p.getMaPhong().toLowerCase().contains(query)) {
+                            filtered.add(p);
+                        }
+                    }
+                    return filtered;
+                });
+            }
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
+        });
+
+        // Realtime filter: Tên phòng field (mới thêm)
+        roomNameField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void update() {
+                if (!"Tên phòng".equals((String) searchTypeComboBox.getSelectedItem())) return;
+
+                String txt = roomNameField.getText();
+                if (txt == null) txt = "";
+                if (txt.isEmpty() || (namePlaceholder.equals(txt) && roomNameField.getForeground().equals(Color.GRAY))) {
+                    reloadRoomsAsync(() -> roomService.getAllQuanLyPhongPanel());
+                    return;
+                }
+                final String query = txt.trim().toLowerCase();
+
+                reloadRoomsAsync(() -> {
+                    List<Phong> all = roomService.getAllQuanLyPhongPanel();
+                    if (all == null) return Collections.emptyList();
+                    List<Phong> filtered = new ArrayList<>();
+                    for (Phong p : all) {
+                        if (p.getTenPhong() != null && p.getTenPhong().toLowerCase().contains(query)) {
                             filtered.add(p);
                         }
                     }
@@ -490,7 +544,6 @@ public class QuanLyPhongPanel extends JPanel {
 
         // Khi chọn trạng thái trong combobox ==> Lọc theo trạng thái
         statusComboBox.addActionListener(e -> {
-            // Chỉ xử lý khi đang ở chế độ "Trạng thái"
             if (!"Trạng thái".equals((String) searchTypeComboBox.getSelectedItem())) return;
             String status = (String) statusComboBox.getSelectedItem();
             reloadRoomsAsync(() -> roomService.getRoomsByStatus(status));
@@ -508,7 +561,7 @@ public class QuanLyPhongPanel extends JPanel {
         row1.add(Box.createHorizontalStrut(10));
         row1.add(searchButton);
 
-        // Sự kiện của nút tìm
+        // Sự kiện của nút tìm (bắt cả 3 trường hợp)
         searchButton.addActionListener(e -> {
             String mode = (String) searchTypeComboBox.getSelectedItem();
             if ("Mã phòng".equals(mode)) {
@@ -528,7 +581,24 @@ public class QuanLyPhongPanel extends JPanel {
                         return filtered;
                     });
                 }
-            } else {
+            } else if ("Tên phòng".equals(mode)) {
+                String txt = roomNameField.getText();
+                if (txt == null) txt = "";
+                if (txt.isEmpty() || (namePlaceholder.equals(txt) && roomNameField.getForeground().equals(Color.GRAY))) {
+                    reloadRoomsAsync(() -> roomService.getAllQuanLyPhongPanel());
+                } else {
+                    final String q = txt.trim().toLowerCase();
+                    reloadRoomsAsync(() -> {
+                        List<Phong> all = roomService.getAllQuanLyPhongPanel();
+                        if (all == null) return Collections.emptyList();
+                        List<Phong> filtered = new ArrayList<>();
+                        for (Phong p : all) {
+                            if (p.getTenPhong() != null && p.getTenPhong().toLowerCase().contains(q)) filtered.add(p);
+                        }
+                        return filtered;
+                    });
+                }
+            } else { // Trạng thái
                 String status = (String) statusComboBox.getSelectedItem();
                 reloadRoomsAsync(() -> roomService.getRoomsByStatus(status));
             }
@@ -567,6 +637,7 @@ public class QuanLyPhongPanel extends JPanel {
 
         return searchPanel;
     }
+
 
     // Panel bên phải chứa các nút category (bộ lọc nhanh theo số người/loại)
     private JPanel createCategoryPanel() {
