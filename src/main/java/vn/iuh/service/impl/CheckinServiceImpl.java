@@ -6,6 +6,7 @@ import vn.iuh.dto.repository.ThongTinPhuPhi;
 import vn.iuh.entity.*;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.CheckinService;
+import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.FeeValue;
 
@@ -47,17 +48,16 @@ public class CheckinServiceImpl implements CheckinService {
         DatPhongDAO datPhongDAO = new DatPhongDAO();
         try {
             // 1) Bắt đầu transaction
-            datPhongDAO.khoiTaoGiaoTac();
-            Connection conn = datPhongDAO.getConnection();
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // 2) Khởi tạo DAO dùng chung connection (để rollback khi cần)
-            LichSuDiVaoDAO lichSuDiVaoDAO = new LichSuDiVaoDAO(conn);
-            CongViecDAO congViecDAO = new CongViecDAO(conn);
-            LichSuThaoTacDAO lichSuThaoTacDAO = new LichSuThaoTacDAO(conn);
-            ChiTietDatPhongDAO chiTietDatPhongDAO = new ChiTietDatPhongDAO(conn);
-            PhongTinhPhuPhiDAO phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO(conn);
-            PhuPhiDAO phuPhiDAO = new PhuPhiDAO(conn);
-            PhongDAO phongDAO = new PhongDAO(conn);
+            LichSuDiVaoDAO lichSuDiVaoDAO = new LichSuDiVaoDAO();
+            CongViecDAO congViecDAO = new CongViecDAO();
+            LichSuThaoTacDAO lichSuThaoTacDAO = new LichSuThaoTacDAO();
+            ChiTietDatPhongDAO chiTietDatPhongDAO = new ChiTietDatPhongDAO();
+            PhongTinhPhuPhiDAO phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO();
+            PhuPhiDAO phuPhiDAO = new PhuPhiDAO();
+            PhongDAO phongDAO = new PhongDAO();
 
             // Xóa khoảng trắng cho các tham số truyền vào
             String maDonDatPhongMain = trimToNull(maDonDatPhong);
@@ -104,7 +104,7 @@ public class CheckinServiceImpl implements CheckinService {
             boolean alreadyCheckedIn = lichSuDiVaoDAO.daTonTai(maChiTietDatPhongMain);
             if (alreadyCheckedIn) {
                 thongBaoLoi = "Đơn này đã được check-in trước đó.";
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
@@ -185,7 +185,7 @@ public class CheckinServiceImpl implements CheckinService {
                         lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
 
                         // Commit và return
-                        datPhongDAO.thucHienGiaoTac();
+                        DatabaseUtil.thucHienGiaoTac();
                         thongBaoLoi = null;
                         return true;
                     }
@@ -249,7 +249,7 @@ public class CheckinServiceImpl implements CheckinService {
                         lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
 
                         // Commit và trả về
-                        datPhongDAO.thucHienGiaoTac();
+                        DatabaseUtil.thucHienGiaoTac();
                         thongBaoLoi = null;
                         return true;
                     }
@@ -263,7 +263,7 @@ public class CheckinServiceImpl implements CheckinService {
 
                     if (forbidden) {
                         thongBaoLoi = "Phòng đang ở trạng thái '" + congViecHienTai.getTenTrangThai() + "'. Không thể check-in.";
-                        datPhongDAO.hoanTacGiaoTac();
+                        DatabaseUtil.hoanTacGiaoTac();
                         return false;
                     }
                 }
@@ -415,7 +415,7 @@ public class CheckinServiceImpl implements CheckinService {
                     lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
 
                     // Commit
-                    datPhongDAO.thucHienGiaoTac();
+                    DatabaseUtil.thucHienGiaoTac();
                     thongBaoLoi = null;
                     return true;
 
@@ -505,14 +505,14 @@ public class CheckinServiceImpl implements CheckinService {
             lichSuThaoTacDAO.themLichSuThaoTac(newLichSuThaoTac);
 
             // Commit nếu mọi thứ OK
-            datPhongDAO.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
             thongBaoLoi = null;
             return true;
 
         } catch (Exception e) {
             // Rollback transaction nếu có lỗi
             try {
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
             } catch (Exception ex) {
                 System.err.println("Lỗi khi rollback trong checkin: " + ex.getMessage());
                 ex.printStackTrace();

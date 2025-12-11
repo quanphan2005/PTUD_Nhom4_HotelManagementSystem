@@ -11,20 +11,11 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class NoiThatDAO {
-    private final Connection connection;
-
-    public NoiThatDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public NoiThatDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public NoiThat themNoiThat(NoiThat noiThat) {
         String query = "INSERT INTO NoiThat (ma_noi_that, ten_noi_that, mo_ta) VALUES (?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, noiThat.getMaNoiThat());
             ps.setString(2, noiThat.getTenNoiThat());
@@ -43,6 +34,7 @@ public class NoiThatDAO {
         String query = "UPDATE NoiThat SET ten_noi_that = ?, mo_ta = ? WHERE ma_noi_that = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, noiThat.getTenNoiThat());
             ps.setString(2, noiThat.getMoTa());
@@ -72,6 +64,7 @@ public class NoiThatDAO {
         String query = "UPDATE NoiThat SET da_xoa = 1 WHERE ma_noi_that = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
@@ -91,6 +84,7 @@ public class NoiThatDAO {
         String query = "SELECT * FROM NoiThat WHERE ma_noi_that = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
@@ -111,8 +105,8 @@ public class NoiThatDAO {
         String query = "SELECT TOP 1 * FROM NoiThat WHERE da_xoa = 0 ORDER BY ma_noi_that DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
-
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return chuyenKetQuaThanhNoiThat(rs);
@@ -142,6 +136,7 @@ public class NoiThatDAO {
         String query = "SELECT * FROM NoiThat WHERE da_xoa = 0";
         List<NoiThat> list = new java.util.ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {

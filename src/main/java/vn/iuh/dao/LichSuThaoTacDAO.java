@@ -9,20 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LichSuThaoTacDAO {
-    private final Connection connection;
-
-    public LichSuThaoTacDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public LichSuThaoTacDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public LichSuThaoTac timLichSuThaoTac(String id) {
         String query = "SELECT * FROM LichSuThaoTac WHERE ma_lich_su_thao_tac = ? AND da_xoa = 0";
-
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
@@ -44,6 +34,7 @@ public class LichSuThaoTacDAO {
                 + "VALUES (?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, wh.getMaLichSuThaoTac());
             ps.setString(2, wh.getTenThaoTac());
@@ -61,6 +52,7 @@ public class LichSuThaoTacDAO {
         String query = "SELECT TOP 1 * FROM LichSuThaoTac WHERE da_xoa = 0 ORDER BY ma_lich_su_thao_tac DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
@@ -90,23 +82,24 @@ public class LichSuThaoTacDAO {
         }
     }
 
-public List<LichSuThaoTac> timThaoTacTheoPhienDN(String maPhienDangNhap){
-        String query = "SELECT  * FROM LichSuThaoTac WHERE da_xoa = 0 and ma_phien_dang_nhap = ?";
-        List<LichSuThaoTac> danhSachThaoTac = new ArrayList<>();
+    public List<LichSuThaoTac> timThaoTacTheoPhienDN(String maPhienDangNhap){
+            String query = "SELECT  * FROM LichSuThaoTac WHERE da_xoa = 0 and ma_phien_dang_nhap = ?";
+            List<LichSuThaoTac> danhSachThaoTac = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
-            ps.setString(1, maPhienDangNhap);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                danhSachThaoTac.add(mapResultSetToWorkingHistory(rs));
+                ps.setString(1, maPhienDangNhap);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    danhSachThaoTac.add(mapResultSetToWorkingHistory(rs));
+                }
+                return danhSachThaoTac;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            } catch (TableEntityMismatch et) {
+                System.out.println(et.getMessage());
             }
-            return danhSachThaoTac;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (TableEntityMismatch et) {
-            System.out.println(et.getMessage());
-        }
-        return null;
+            return null;
     }
 }
 

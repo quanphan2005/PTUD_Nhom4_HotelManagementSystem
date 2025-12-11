@@ -13,21 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PhuPhiDAO {
-    private final Connection connection;
-
-    public PhuPhiDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public PhuPhiDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public PhuPhi timPhuPhi(String id) {
         String query = "SELECT * FROM PhuPhi WHERE ma_phu_phi = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
 
             ResultSet rs = ps.executeQuery();
@@ -48,7 +40,10 @@ public class PhuPhiDAO {
     public PhuPhi themPhuPhi(PhuPhi phuPhi) {
         String query = "INSERT INTO PhuPhi (ma_phu_phi, ten_phu_phi) VALUES (?, ?)";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, phuPhi.getMaPhuPhi());
             ps.setString(2, phuPhi.getTenPhuPhi());
 
@@ -64,7 +59,10 @@ public class PhuPhiDAO {
     public PhuPhi capNhatPhuPhi(PhuPhi phuPhi) {
         String query = "UPDATE PhuPhi SET ten_phu_phi = ? WHERE ma_phu_phi = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setDate(1, new java.sql.Date(phuPhi.getThoiGianTao().getTime()));
             ps.setString(2, phuPhi.getMaPhuPhi());
 
@@ -92,7 +90,9 @@ public class PhuPhiDAO {
         String query = "DELETE FROM PhuPhi WHERE ma_phu_phi = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
@@ -111,7 +111,9 @@ public class PhuPhiDAO {
         String query = "SELECT TOP 1 * FROM PhuPhi WHERE da_xoa = 0 ORDER BY ma_phu_phi DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -156,7 +158,9 @@ public class PhuPhiDAO {
                         +"order by gpp.thoi_gian_tao desc";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, name);
 
             ResultSet rs = ps.executeQuery();
@@ -186,8 +190,11 @@ public class PhuPhiDAO {
             ) AS gpp
         """;
 
-        try (PreparedStatement ps = connection.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 list.add(chuyenKetQuaThanhThongTinPhuPhi(rs));
             }

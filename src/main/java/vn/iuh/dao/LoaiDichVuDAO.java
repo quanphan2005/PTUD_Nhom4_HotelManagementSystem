@@ -8,20 +8,11 @@ import java.sql.*;
 import java.util.List;
 
 public class LoaiDichVuDAO {
-    private final Connection connection;
-
-    public LoaiDichVuDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public LoaiDichVuDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public LoaiDichVu timLoaiDichVu(String id) {
         String query = "SELECT * FROM LoaiDichVu WHERE ma_loai_dich_vu = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
@@ -42,6 +33,7 @@ public class LoaiDichVuDAO {
         String query = "SELECT * FROM LoaiDichVu WHERE da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
@@ -64,6 +56,7 @@ public class LoaiDichVuDAO {
                 " WHERE ma_loai_dich_vu = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, loaiDichVu.getTenDichVu());
             ps.setString(2, loaiDichVu.getMaLoaiDichVu());
@@ -90,6 +83,7 @@ public class LoaiDichVuDAO {
         String query = "UPDATE LoaiDichVu SET da_xoa = 1 WHERE ma_loai_dich_vu = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
@@ -108,6 +102,7 @@ public class LoaiDichVuDAO {
         String query = "SELECT TOP 1 * FROM LoaiDichVu WHERE da_xoa = 0 ORDER BY ma_loai_dich_vu DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();

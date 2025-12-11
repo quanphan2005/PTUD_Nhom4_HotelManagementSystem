@@ -14,20 +14,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class PhongDAO {
-    private final Connection connection;
-
-    public PhongDAO() {
-        connection = DatabaseUtil.getConnect();
-    }
-
-    public PhongDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public Phong timPhong(String roomID) {
         String query = "SELECT * FROM Phong WHERE ma_phong = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, roomID);
 
@@ -48,6 +39,7 @@ public class PhongDAO {
         String query = "SELECT * FROM Phong WHERE ten_phong = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, tenPhong);
 
@@ -69,6 +61,7 @@ public class PhongDAO {
         List<Phong> phongs = new ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -112,6 +105,7 @@ public class PhongDAO {
         List<RoomWithCategory> results = new ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             for (int i = 0; i < danhSachMaPhong.size(); i++) {
                 ps.setString(i + 1, danhSachMaPhong.get(i));
@@ -141,6 +135,7 @@ public class PhongDAO {
         List<RoomFurnitureItem> furnitureItems = new ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, roomID);
 
@@ -161,6 +156,7 @@ public class PhongDAO {
         String query = "INSERT INTO Phong (ma_phong, ten_phong, dang_hoat_dong, ghi_chu, mo_ta_phong, ma_loai_phong) " +
                        "VALUES (?, ?, ?, ?, ?, ?)";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, phong.getMaPhong());
             ps.setString(2, phong.getTenPhong());
@@ -187,6 +183,7 @@ public class PhongDAO {
                        "mo_ta_phong = ?, ma_loai_phong = ? WHERE ma_phong = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, phong.getTenPhong());
             ps.setBoolean(2, phong.isDangHoatDong());
@@ -215,6 +212,7 @@ public class PhongDAO {
         String query = "DELETE FROM Phong WHERE ma_phong = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, roomID);
 
@@ -230,6 +228,7 @@ public class PhongDAO {
         String query = "SELECT TOP 1 * FROM Phong ORDER BY ma_phong DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -302,14 +301,14 @@ public class PhongDAO {
                     "WHERE p.ma_phong = ?";
 
             String maLoaiPhong = null;
-            try (PreparedStatement ps = connection.prepareStatement(qGetLoai)) {
-                ps.setString(1, currentRoomId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        maLoaiPhong = rs.getString("ma_loai_phong");
-                    } else {
-                        return results;
-                    }
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(qGetLoai);
+            ps.setString(1, currentRoomId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    maLoaiPhong = rs.getString("ma_loai_phong");
+                } else {
+                    return results;
                 }
             }
 
@@ -399,7 +398,10 @@ public class PhongDAO {
         double[] price = new double[]{0.0, 0.0};
         String query = "SELECT TOP 1 gia_ngay_moi, gia_gio_moi FROM GiaPhong WHERE ma_loai_phong = ? AND ISNULL(da_xoa,0)=0 ORDER BY thoi_gian_tao DESC";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, maLoaiPhong);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -428,7 +430,10 @@ public class PhongDAO {
 
         List<RoomFurnitureItem> furnitureItems = new ArrayList<>();
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, maLoaiPhong);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -451,7 +456,9 @@ public class PhongDAO {
         String query = "UPDATE Phong SET da_xoa = 1 WHERE ma_phong = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, roomID);
 
             int rowsAffected = ps.executeUpdate();
@@ -467,7 +474,9 @@ public class PhongDAO {
         List<Phong> phongs = new ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
 
             var rs = ps.executeQuery();
             while (rs.next())
@@ -489,7 +498,10 @@ public class PhongDAO {
                 "        OR (tg_bat_dau IS NOT NULL AND tg_ket_thuc IS NULL AND tg_bat_dau <= ?) ) " +
                 "ORDER BY tg_bat_dau DESC";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             Timestamp now = new Timestamp(System.currentTimeMillis());
             ps.setString(1, maPhong);
             ps.setTimestamp(2, now);
