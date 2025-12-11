@@ -11,6 +11,7 @@ import vn.iuh.gui.base.Main;
 import vn.iuh.service.CheckOutService;
 import vn.iuh.service.CongViecService;
 import vn.iuh.service.LoaiPhongService;
+import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.FeeValue;
 import java.math.BigDecimal;
@@ -88,7 +89,7 @@ public class CheckOutServiceImpl implements CheckOutService {
     public InvoiceResponse checkOutReservation(String reservationId) {
         InvoiceResponse response = null;
         try {
-            datPhongDAO.khoiTaoGiaoTac();
+            DatabaseUtil.khoiTaoGiaoTac();
             //Tìm đơn đặt phòng
             var reservation = validateDonDatPhong(reservationId);
 
@@ -260,20 +261,20 @@ public class CheckOutServiceImpl implements CheckOutService {
                     danhSachPhongTinhPhuPhi);
         } catch (BusinessException e) {
             System.out.println(e.getMessage());
-            datPhongDAO.hoanTacGiaoTac();
+            DatabaseUtil.hoanTacGiaoTac();
             System.out.println("Lỗi khi check out");
             return null;
         } catch (Exception e) {
             e.printStackTrace();
         }
-        datPhongDAO.thucHienGiaoTac();
+        DatabaseUtil.thucHienGiaoTac();
         return response;
     }
 
     @Override
     public void handleSimpleAutoCheckOut(WarningReservation wr){
         try {
-            datPhongDAO.khoiTaoGiaoTac();
+            DatabaseUtil.khoiTaoGiaoTac();
             //Tìm đơn đặt phòng
             var reservation = validateDonDatPhong(wr.getReservationId());
 
@@ -416,12 +417,12 @@ public class CheckOutServiceImpl implements CheckOutService {
             chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
         } catch (BusinessException e) {
             System.out.println(e.getMessage());
-            datPhongDAO.hoanTacGiaoTac();
+            DatabaseUtil.hoanTacGiaoTac();
             System.out.println("Lỗi khi check out");
         } catch (Exception e) {
             e.printStackTrace();
         }
-        datPhongDAO.thucHienGiaoTac();
+        DatabaseUtil.thucHienGiaoTac();
     }
 
     private void xoaCongViecChoCheckIn(String maDonDatPhong){
@@ -619,7 +620,7 @@ public class CheckOutServiceImpl implements CheckOutService {
         List<String> danhSachMaCTDPDaCheckout = new ArrayList<>();
 
         try {
-            datPhongDAO.khoiTaoGiaoTac();
+            DatabaseUtil.khoiTaoGiaoTac();
             String reservationId = chiTietDatPhongDAO.findFormIDByDetail(reservationDetail);
             //Tìm đơn đặt phòng
             var reservation = validateDonDatPhong(reservationId);
@@ -766,11 +767,11 @@ public class CheckOutServiceImpl implements CheckOutService {
 
             //Chèn danh sách chi tiết hóa đơn đã tạo
             chiTietHoaDonDAO.themDanhSachChiTietHoaDon(danhSachChiTietHoaDon);
-            datPhongDAO.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
 
         } catch (BusinessException e) {
             System.out.println("Lỗi khi tạo hóa đơn: " + e.getMessage());
-            datPhongDAO.hoanTacGiaoTac();
+            DatabaseUtil.hoanTacGiaoTac();
             return new ArrayList<>();
         }
 

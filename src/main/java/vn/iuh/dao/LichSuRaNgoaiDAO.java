@@ -13,21 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LichSuRaNgoaiDAO {
-    private final Connection connection;
-
-    public LichSuRaNgoaiDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public LichSuRaNgoaiDAO(Connection connection) {
-        this.connection = connection;
-    }
     public LichSuRaNgoai themLichSuRaNgoai(LichSuRaNgoai lichSuRaNgoai) {
         String query = "INSERT INTO LichSuRaNgoai" +
                 " (ma_lich_su_ra_ngoai, la_lan_cuoi_cung, ma_chi_tiet_dat_phong)" +
                 " VALUES (?, ?, ?)";
         try {
-            var ps = connection.prepareStatement(query);
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, lichSuRaNgoai.getMaLichSuRaNgoai());
             ps.setBoolean(2, lichSuRaNgoai.isLaLanCuoiCung());
             ps.setString(3, lichSuRaNgoai.getMaChiTietDatPhong());
@@ -40,7 +32,9 @@ public class LichSuRaNgoaiDAO {
     }
     public int themDanhSachLichSuRaNgoai(List<LichSuRaNgoai> danhSach) {
         String query = "INSERT INTO LichSuRaNgoai (ma_lich_su_ra_ngoai, la_lan_cuoi_cung, ma_chi_tiet_dat_phong) VALUES (?, ?, ?)";
-        try (var ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             for (LichSuRaNgoai lichSu : danhSach) {
                 ps.setString(1, lichSu.getMaLichSuRaNgoai());
                 ps.setBoolean(2, lichSu.isLaLanCuoiCung());
@@ -62,6 +56,7 @@ public class LichSuRaNgoaiDAO {
         String query = "SELECT * FROM LichSuRaNgoai WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maChiTietDatPhong);
 
@@ -80,6 +75,7 @@ public class LichSuRaNgoaiDAO {
         String query = "SELECT TOP 1 * FROM LichSuRaNgoai ORDER BY ma_lich_su_ra_ngoai DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -99,6 +95,7 @@ public class LichSuRaNgoaiDAO {
                        "WHERE ctdp.ma_don_dat_phong = ? AND ctdp.da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maDonDatPhong);
 
@@ -129,6 +126,7 @@ public class LichSuRaNgoaiDAO {
         queryBuilder.append(") AND da_xoa = 0");
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(queryBuilder.toString());
             for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
                 ps.setString(i + 1, danhSachMaChiTietDatPhong.get(i));

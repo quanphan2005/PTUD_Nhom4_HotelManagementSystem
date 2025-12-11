@@ -241,7 +241,7 @@ public class SystemConfigPanel extends JPanel {
         if ("Ngày hôm nay".equalsIgnoreCase(backupType)) {
             fileName += "-DIF";
         } else if ("Toàn bộ".equalsIgnoreCase(backupType)) {
-            fileName += "-FULL";
+            fileName += "T-FULL";
         }
 
         return fileName;
@@ -306,6 +306,8 @@ public class SystemConfigPanel extends JPanel {
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
+        backupNameField.setEditable(false);
+        backupNameField.setFocusable(false);
 
         backupNameField.setText(generateFileName("Ngày hôm nay"));
 

@@ -15,20 +15,12 @@ import java.util.Collections;
 import java.util.List;
 
 public class PhongTinhPhuPhiDAO {
-    private final Connection connection;
-
-    public PhongTinhPhuPhiDAO() {
-        connection = DatabaseUtil.getConnect();
-    }
-
-    public PhongTinhPhuPhiDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public boolean insert(PhongTinhPhuPhi ptpp){
         String query = "insert into PhongTinhPhuPhi(ma_phong_tinh_phu_phi, ma_chi_tiet_dat_phong, ma_phu_phi, don_gia_phu_phi) values (?, ? ,?, ?)";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, ptpp.getMaPhongTinhPhuPhi());
             ps.setString(2, ptpp.getMaChiTietDatPhong());
             ps.setString(3, ptpp.getMaPhuPhi());
@@ -42,6 +34,7 @@ public class PhongTinhPhuPhiDAO {
     public boolean themDanhSachPhuPhiChoCacPhong(List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi){
         String query = "INSERT INTO PhongTinhPhuPhi (ma_phong_tinh_phu_phi, ma_chi_tiet_dat_phong, ma_phu_phi, don_gia_phu_phi, tong_tien) VALUES (?, ?, ?, ?, ?)";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             for (PhongTinhPhuPhi congViec : danhSachPhongTinhPhuPhi) {
                 ps.setString(1, congViec.getMaPhongTinhPhuPhi());
@@ -64,6 +57,7 @@ public class PhongTinhPhuPhiDAO {
                         "ORDER BY ma_phong_tinh_phu_phi DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -89,7 +83,9 @@ public class PhongTinhPhuPhiDAO {
                 "join DonDatPhong ddp on ddp.ma_don_dat_phong = ctdp.ma_don_dat_phong\n" +
                 "where ddp.ma_don_dat_phong = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
 
             ps.setString(1, donDatPhong);
 
@@ -122,7 +118,9 @@ public class PhongTinhPhuPhiDAO {
                             "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
                             "WHERE cthd.ma_hoa_don = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
 
             ps.setString(1, maHoaDon);
 
@@ -159,7 +157,10 @@ public class PhongTinhPhuPhiDAO {
 
     public boolean daTonTai(String maChiTiet, String maPhuPhi) {
         String q = "SELECT COUNT(1) AS cnt FROM PhongTinhPhuPhi WHERE ma_chi_tiet_dat_phong = ? AND ma_phu_phi = ? AND da_xoa = 0";
-        try (PreparedStatement ps = connection.prepareStatement(q)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(q);
+
             ps.setString(1, maChiTiet);
             ps.setString(2, maPhuPhi);
             try (ResultSet rs = ps.executeQuery()) {
@@ -186,7 +187,10 @@ public class PhongTinhPhuPhiDAO {
 
         List<PhongTinhPhuPhi> danhSachPhongTinhPhuPhi = new ArrayList<>();
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             for (int i = 0; i < maChiTietDatPhongList.size(); i++) {
                 ps.setString(i + 1, maChiTietDatPhongList.get(i));
             }

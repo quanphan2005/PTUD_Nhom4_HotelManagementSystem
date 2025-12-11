@@ -119,13 +119,13 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
         Connection conn = null;
         try {
             conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // DAO dùng chung connection để nằm trong cùng 1 transaction
-            LoaiPhongDAO lpDao = new LoaiPhongDAO(conn);
-            GiaPhongDAO gpDao = new GiaPhongDAO(conn);
-            NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO(conn);
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+            LoaiPhongDAO lpDao = new LoaiPhongDAO();
+            GiaPhongDAO gpDao = new GiaPhongDAO();
+            NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO();
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
 
             // --- Sinh ma_loai_phong nếu chưa có (theo quy ước LP + 8 chữ số) ---
             if (loaiPhong.getMaLoaiPhong() == null || loaiPhong.getMaLoaiPhong().isBlank()) {
@@ -173,7 +173,7 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
 
             boolean priceInserted = gpDao.insertGiaPhong(gp);
             if (!priceInserted) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 throw new RuntimeException("Không thể thêm giá cho loại phòng");
             }
 
@@ -181,7 +181,7 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             List<NoiThatAssignment> assignments = itemsWithQty == null ? new java.util.ArrayList<>() : itemsWithQty;
             boolean mappingsOk = ntlpDao.replaceMappingsWithQuantities(maLoai, assignments);
             if (!mappingsOk) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 throw new RuntimeException("Không thể gán nội thất cho loại phòng");
             }
 
@@ -209,19 +209,16 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             }
 
             // commit transaction
-            conn.commit();
-            conn.setAutoCommit(true);
+            DatabaseUtil.thucHienGiaoTac();
 
             // trả về LoaiPhong vừa tạo (lấy lại bằng DAO dùng cùng connection/hoặc mới tuỳ impl)
             return lpDao.getRoomCategoryByID(maLoai);
         } catch (BusinessException be) {
-            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            try { if (conn != null) DatabaseUtil.hoanTacGiaoTac(); } catch (Exception ignored) {}
             throw be;
         } catch (Exception ex) {
-            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            try { if (conn != null) DatabaseUtil.hoanTacGiaoTac(); } catch (Exception ignored) {}
             throw new RuntimeException("Lỗi khi tạo loại phòng: " + ex.getMessage(), ex);
-        } finally {
-            try { if (conn != null && !conn.isClosed()) conn.close(); } catch (Exception ignored) {}
         }
     }
 
@@ -304,10 +301,10 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
         Connection conn = null;
         try {
             conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // DAO dùng cùng connection để đảm bảo transaction
-            ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO(conn);
+            ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO();
             // phương thức bạn đã thêm: hasCurrentOrFutureBookingsForLoaiPhong(String maLoai)
             boolean hasBooking = ctDao.hasCurrentOrFutureBookingsForLoaiPhong(loaiPhong.getMaLoaiPhong());
             if (hasBooking) {
@@ -315,26 +312,24 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
                 return false; // không cập nhật nếu đang có booking
             }
 
-            LoaiPhongDAO lpDao = new LoaiPhongDAO(conn);
+            LoaiPhongDAO lpDao = new LoaiPhongDAO();
             LoaiPhong updated = lpDao.capNhatLoaiPhong(loaiPhong);
             if (updated == null) {
-                conn.rollback();
-                conn.setAutoCommit(true);
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
             // cập nhật mapping nội thất (soft-delete cũ + insert mới) với số lượng
-            NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO(conn);
+            NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO();
             boolean replaced = ntlpDao.replaceMappingsWithQuantities(loaiPhong.getMaLoaiPhong(),
                     itemsWithQty == null ? new java.util.ArrayList<>() : itemsWithQty);
             if (!replaced) {
-                conn.rollback();
-                conn.setAutoCommit(true);
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
             // ghi lịch sử thao tác
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
             LichSuThaoTac wh = new LichSuThaoTac();
             // tạo id đơn giản (bạn có thể thay bằng EntityUtil tăng id nếu muốn)
             wh.setMaLichSuThaoTac("LS" + System.currentTimeMillis());
@@ -344,18 +339,11 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             wh.setMaPhienDangNhap(maPhienDangNhap);
             lichSuDao.themLichSuThaoTac(wh);
 
-            conn.commit();
-            conn.setAutoCommit(true);
+            DatabaseUtil.thucHienGiaoTac();
             return true;
         } catch (Exception ex) {
-            try {
-                if (conn != null) conn.rollback();
-            } catch (Exception e) { /* ignore */ }
+            DatabaseUtil.hoanTacGiaoTac();
             throw new RuntimeException("Lỗi khi cập nhật loại phòng (transaction): " + ex.getMessage(), ex);
-        } finally {
-            try {
-                if (conn != null && !conn.isClosed()) conn.close();
-            } catch (Exception ignored) {}
         }
     }
 

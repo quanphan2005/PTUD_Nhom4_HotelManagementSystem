@@ -16,20 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 public class LoaiPhongDAO {
-    private final Connection connection;
-
-    public LoaiPhongDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public LoaiPhongDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public LoaiPhong getRoomCategoryByID(String id) {
         String query = "SELECT * FROM LoaiPhong WHERE ma_loai_phong = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
@@ -53,6 +44,7 @@ public class LoaiPhongDAO {
         List<LoaiPhong> danhSachLoaiPhong = new java.util.ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
@@ -79,6 +71,7 @@ public class LoaiPhongDAO {
         List<RoomStatistic> danhSachPhong = new java.util.ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setTimestamp(1, startTime);
             ps.setTimestamp(2, endTime);
@@ -108,6 +101,7 @@ public class LoaiPhongDAO {
                 "VALUES (?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, loaiPhong.getMaLoaiPhong());
             ps.setString(2, loaiPhong.getTenLoaiPhong());
@@ -133,6 +127,7 @@ public class LoaiPhongDAO {
                 " WHERE ma_loai_phong = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, loaiPhong.getTenLoaiPhong());
             ps.setInt(2, loaiPhong.getSoLuongKhach());
@@ -161,6 +156,7 @@ public class LoaiPhongDAO {
         String query = "UPDATE LoaiPhong SET da_xoa = 1 WHERE ma_loai_phong = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
@@ -179,6 +175,7 @@ public class LoaiPhongDAO {
         String query = "SELECT TOP 1 * FROM LoaiPhong WHERE da_xoa = 0 ORDER BY ma_loai_phong DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
@@ -215,6 +212,7 @@ public class LoaiPhongDAO {
         Map<String, Double> listPrice = new HashMap<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, loaiPhongId);
             ResultSet rs = ps.executeQuery();
@@ -241,6 +239,7 @@ public class LoaiPhongDAO {
         Map<PriceType, BigDecimal> listPrice = new HashMap<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maPhong);
             ResultSet rs = ps.executeQuery();
@@ -261,6 +260,7 @@ public class LoaiPhongDAO {
     public LoaiPhong timLoaiPhongMoiNhatBaoGomDaXoa() {
         String query = "SELECT TOP 1 * FROM LoaiPhong ORDER BY ma_loai_phong DESC";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -286,7 +286,9 @@ public class LoaiPhongDAO {
 
         Timestamp now = loaiPhong.getThoiGianTao() != null ? loaiPhong.getThoiGianTao() : new Timestamp(System.currentTimeMillis());
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, loaiPhong.getMaLoaiPhong());
             ps.setString(2, loaiPhong.getTenLoaiPhong());
             ps.setInt(3, loaiPhong.getSoLuongKhach());
