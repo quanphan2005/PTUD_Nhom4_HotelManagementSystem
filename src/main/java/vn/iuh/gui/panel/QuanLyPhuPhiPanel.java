@@ -40,7 +40,6 @@ public class QuanLyPhuPhiPanel extends RoleChecking {
     private DefaultTableModel tableModel;
     private List<ThongTinPhuPhi> dsPhuPhi;
 
-
     public QuanLyPhuPhiPanel() {
         super();
         this.phuPhiDAO = new PhuPhiDAO();

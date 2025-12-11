@@ -6,6 +6,7 @@ import vn.iuh.constraint.EntityIDSymbol;
 import vn.iuh.dao.NhanVienDAO;
 import vn.iuh.entity.NhanVien;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.base.RoleChecking;
 import vn.iuh.gui.dialog.EmployeeDialog;
 import vn.iuh.service.EmployeeService;
 import vn.iuh.service.impl.NhanVienServiceImpl;
@@ -22,7 +23,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.List;
 
-public class QuanLyNhanVienPanel extends JPanel {
+public class QuanLyNhanVienPanel extends RoleChecking {
     private static final int SEARCH_CONTROL_HEIGHT = 40; // chiều cao cố định cho combo, textfield, button
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(520, SEARCH_CONTROL_HEIGHT);
 
@@ -56,10 +57,18 @@ public class QuanLyNhanVienPanel extends JPanel {
     private JTextField phoneField;
 
     public QuanLyNhanVienPanel() {
+        super();
+        setLayout(new BorderLayout());
         this.nhanVienDao = new NhanVienDAO();
         employeeService = new NhanVienServiceImpl();
+//        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+//        setBackground(CustomUI.white);
+//        init();
+    }
+
+    @Override
+    protected void buildAdminUI() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBackground(CustomUI.white);
         init();
     }
 
@@ -88,7 +97,6 @@ public class QuanLyNhanVienPanel extends JPanel {
         });
 
         addButton.addActionListener(e -> {
-
             NhanVien nvMoiNhat = nhanVienDao.timNhanVienMoiNhat();
             String maNhanVienMoiNhat = (nvMoiNhat == null) ? null : nvMoiNhat.getMaNhanVien();
 
@@ -156,7 +164,7 @@ public class QuanLyNhanVienPanel extends JPanel {
             String employeeName = (String) tableModel.getValueAt(selectedRow, 1);
 
             int confirm = JOptionPane.showConfirmDialog(this,
-                    "Bạn có chắc chắn muốn xóa nhân viên '" + employeeName + "' (Mã: " + employeeId + ") không?",
+                    "Bạn có chắc chắn muốn xóa nhân viên. Xóa nhân viên đồng nghĩa xóa luôn tài khoản'" + employeeName + "' (Mã: " + employeeId + ") không?",
                     "Xác nhận xóa",
                     JOptionPane.YES_NO_OPTION);
 
