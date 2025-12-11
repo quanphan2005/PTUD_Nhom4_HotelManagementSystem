@@ -11,6 +11,8 @@ import vn.iuh.entity.LichSuThaoTac;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.exception.BusinessException;
 import vn.iuh.gui.base.Main;
+import vn.iuh.gui.panel.QuanLyLoaiPhongPanel;
+import vn.iuh.gui.panel.QuanLyPhongPanel;
 import vn.iuh.gui.panel.statistic.FillterRoomStatistic;
 import vn.iuh.gui.panel.statistic.RoomStatistic;
 import vn.iuh.service.LoaiPhongService;
@@ -20,13 +22,13 @@ import vn.iuh.util.EntityUtil;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Timestamp;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class LoaiPhongServiceImpl implements LoaiPhongService {
     private final LoaiPhongDAO loaiPhongDao;
     private final GiaPhongDAO giaPhongDAO;
+    private volatile List<RoomCategoryResponse> cachedRoomCategories = new ArrayList<>();
+
 
     public LoaiPhongServiceImpl() {
 
@@ -221,7 +223,7 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
             throw new RuntimeException("Lỗi khi tạo loại phòng: " + ex.getMessage(), ex);
         } finally {
-            try { if (conn != null && !conn.isClosed()) conn.close(); } catch (Exception ignored) {}
+
         }
     }
 
@@ -298,14 +300,14 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
         return deleted;
     }
 
-    public boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty, String maPhienDangNhap) {
+    public boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty) {
         if (loaiPhong == null || loaiPhong.getMaLoaiPhong() == null) throw new IllegalArgumentException("loaiPhong null/không có mã");
 
         Connection conn = null;
         try {
             conn = DatabaseUtil.getConnect();
             conn.setAutoCommit(false);
-
+            String maPhienDangNhap = Main.getCurrentLoginSession();
             // DAO dùng cùng connection để đảm bảo transaction
             ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO(conn);
             // phương thức bạn đã thêm: hasCurrentOrFutureBookingsForLoaiPhong(String maLoai)
@@ -337,7 +339,9 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
             LichSuThaoTac wh = new LichSuThaoTac();
             // tạo id đơn giản (bạn có thể thay bằng EntityUtil tăng id nếu muốn)
-            wh.setMaLichSuThaoTac("LS" + System.currentTimeMillis());
+            String maMoiNhat = lichSuDao.timLichSuThaoTacMoiNhat().getMaLichSuThaoTac();
+            String maLichSu = EntityUtil.increaseEntityID(maMoiNhat, EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(), EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
+            wh.setMaLichSuThaoTac(maLichSu);
             wh.setTenThaoTac("CẬP_NHẬT_LOẠI_PHÒNG");
             wh.setMoTa(String.format("Cập nhật loại phòng %s; nội thất=%d", loaiPhong.getMaLoaiPhong(),
                     itemsWithQty == null ? 0 : itemsWithQty.size()));
@@ -354,7 +358,7 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             throw new RuntimeException("Lỗi khi cập nhật loại phòng (transaction): " + ex.getMessage(), ex);
         } finally {
             try {
-                if (conn != null && !conn.isClosed()) conn.close();
+
             } catch (Exception ignored) {}
         }
     }

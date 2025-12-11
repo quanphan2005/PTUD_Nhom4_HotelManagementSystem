@@ -305,7 +305,7 @@ public class SuaLoaiPhongDialog extends JDialog {
             if (loaiPhongService instanceof LoaiPhongServiceImpl) {
                 // nếu implement của bạn có method transaction + audit, gọi nó
                 LoaiPhongServiceImpl impl = (LoaiPhongServiceImpl) loaiPhongService;
-                boolean ok = impl.updateRoomCategoryWithAudit(current, newAssignments, maPhien);
+                boolean ok = impl.updateRoomCategoryWithAudit(current, newAssignments);
                 if (ok) {
                     JOptionPane.showMessageDialog(this, "Cập nhật thành công", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                     dispose();
