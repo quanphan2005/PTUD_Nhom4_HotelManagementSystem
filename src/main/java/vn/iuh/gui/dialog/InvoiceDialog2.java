@@ -21,6 +21,7 @@ import vn.iuh.entity.ChiTietHoaDon;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.entity.PhongTinhPhuPhi;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.util.ExportWriter;
 import vn.iuh.util.PriceFormat;
 import vn.iuh.util.TimeFormat;
 
@@ -532,9 +533,10 @@ public class InvoiceDialog2 extends JDialog {
             document.close();
 
             // ===== Thông báo & tự mở file =====
-            JOptionPane.showMessageDialog(this, "Xuất file PDF thành công tại:\n" + filePath);
+//            JOptionPane.showMessageDialog(this, "Xuất file PDF thành công tại:\n" + filePath);
             File file = new File(filePath);
             if (file.exists()) {
+                ExportWriter.printPdf(filePath);
                 Desktop.getDesktop().open(file);
             }
 
