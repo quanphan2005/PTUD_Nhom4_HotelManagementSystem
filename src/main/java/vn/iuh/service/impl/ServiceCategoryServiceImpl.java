@@ -16,6 +16,7 @@ import vn.iuh.util.EntityUtil;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ServiceCategoryServiceImpl implements ServiceCategoryService {
@@ -64,15 +65,13 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
         if (loaiDichVu == null || loaiDichVu.getTenDichVu() == null || loaiDichVu.getTenDichVu().trim().isEmpty())
             throw new IllegalArgumentException("Tên loại dịch vụ không được rỗng");
 
-        Connection conn = null;
         try {
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+            DatabaseUtil.khoiTaoGiaoTac();
 
-            LoaiDichVuDAO daoTx = new LoaiDichVuDAO(conn);
+            LoaiDichVuDAO daoTx = new LoaiDichVuDAO();
             // 1) kiểm tra trùng tên
             if (daoTx.existsByTenLoaiDichVu(loaiDichVu.getTenDichVu().trim())) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null; // caller sẽ hiển thị thông báo trùng tên
             }
 
@@ -83,12 +82,12 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
             // 3) chèn loại dịch vụ
             boolean ok = daoTx.insertLoaiDichVu(maMoi, loaiDichVu.getTenDichVu().trim());
             if (!ok) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
             // 4) Ghi lịch sử thao tác
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
             LichSuThaoTac last = lichSuDao.timLichSuThaoTacMoiNhat();
             String lastMaLs = last != null ? last.getMaLichSuThaoTac() : null;
             String maLichSu = EntityUtil.increaseEntityID(lastMaLs, EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(), EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
@@ -100,26 +99,17 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
             ls.setMaPhienDangNhap(Main.getCurrentLoginSession());
             lichSuDao.themLichSuThaoTac(ls);
 
-            conn.commit();
+            DatabaseUtil.thucHienGiaoTac();
 
             // trả về entity mới (lấy lại từ DB cho đầy đủ)
             return daoTx.timLoaiDichVu(maMoi);
 
         } catch (Exception ex) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (Exception ignored) {
-                }
+            try {
+                DatabaseUtil.hoanTacGiaoTac();
+            } catch (Exception ignored) {
             }
             throw new RuntimeException("Lỗi khi tạo loại dịch vụ: " + ex.getMessage(), ex);
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (Exception ignored) {
-                }
-            }
         }
     }
 
@@ -131,18 +121,16 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
         if (loaiDichVu.getTenDichVu() == null || loaiDichVu.getTenDichVu().trim().isEmpty())
             throw new IllegalArgumentException("Tên loại dịch vụ không được rỗng");
 
-        Connection conn = null;
         try {
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+            DatabaseUtil.khoiTaoGiaoTac();
 
-            LoaiDichVuDAO daoTx = new LoaiDichVuDAO(conn);
+            LoaiDichVuDAO daoTx = new LoaiDichVuDAO();
 
             // 1) Lấy bản ghi hiện tại từ DB
             LoaiDichVu current = daoTx.timLoaiDichVu(loaiDichVu.getMaLoaiDichVu());
             if (current == null) {
                 // không tồn tại -> rollback và trả về null
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
@@ -151,7 +139,7 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
 
             // 2) Nếu tên không thay đổi -> trả về current (không cần cập nhật)
             if (currentName.equals(newName)) {
-                conn.rollback(); // không có thay đổi, chỉ trả về current (rollback để không giữ transaction open)
+                DatabaseUtil.hoanTacGiaoTac(); // không có thay đổi, chỉ trả về current (rollback để không giữ transaction open)
                 return current;
             }
 
@@ -161,7 +149,7 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
             // else nếu tồn tại và không phải bản ghi hiện tại -> duplicate
             if (existsByName) {
                 // để chính xác: nếu tồn tại tên và tên khác với currentName -> duplicate
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
@@ -172,12 +160,12 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
 
             LoaiDichVu updated = daoTx.capNhatLoaiDichVuDAO(toUpdate);
             if (updated == null) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
             // 5) Ghi lịch sử thao tác
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
             var last = lichSuDao.timLichSuThaoTacMoiNhat();
             String lastMaLs = last != null ? last.getMaLichSuThaoTac() : null;
             String maLichSu = EntityUtil.increaseEntityID(lastMaLs, EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(), EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
@@ -190,20 +178,14 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
             ls.setMaPhienDangNhap(Main.getCurrentLoginSession());
             lichSuDao.themLichSuThaoTac(ls);
 
-            conn.commit();
+            DatabaseUtil.thucHienGiaoTac();
 
             // trả về bản ghi mới (lấy lại đầy đủ)
             return daoTx.timLoaiDichVu(updated.getMaLoaiDichVu());
 
         } catch (Exception ex) {
-            if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
-            }
+            DatabaseUtil.hoanTacGiaoTac();
             throw new RuntimeException("Lỗi khi cập nhật loại dịch vụ: " + ex.getMessage(), ex);
-        } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); } catch (SQLException ignored) {}
-            }
         }
     }
 
@@ -228,7 +210,7 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
         // 0) Đầu tiên: lấy toàn bộ dịch vụ và lọc theo maLoai (dùng ServiceImpl để tận dụng DAO hiện có)
         ServiceService service = new ServiceImpl();
         List<ServiceResponse> all = service.layTatCaDichVuCungGia();
-        List<ServiceResponse> inCategory = new java.util.ArrayList<>();
+        List<ServiceResponse> inCategory = new ArrayList<>();
         if (all != null) {
             for (ServiceResponse sr : all) {
                 if (maLoai.equals(sr.getMaLoaiDichVu())) inCategory.add(sr);
@@ -253,23 +235,20 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
             }
         }
 
-        // 2) Nếu không có dịch vụ nào đang dùng -> thực hiện xóa loại (logical delete) trong transaction,
-        //    đồng thời ghi lịch sử thao tác.
-        Connection conn = null;
+        // 2) Nếu không có dịch vụ nào đang dùng -> thực hiện xóa loại (logical delete) trong transaction
         try {
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+            DatabaseUtil.khoiTaoGiaoTac();
 
-            LoaiDichVuDAO daoTx = new LoaiDichVuDAO(conn);
+            LoaiDichVuDAO daoTx = new LoaiDichVuDAO();
             // Sử dụng method xóa đã có trong DAO (logical delete)
             boolean ok = daoTx.xoaLoaiDichVu(maLoai);
             if (!ok) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
             // Ghi lịch sử thao tác
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
             var last = lichSuDao.timLichSuThaoTacMoiNhat();
             String lastMa = last != null ? last.getMaLichSuThaoTac() : null;
             String maLichSu = EntityUtil.increaseEntityID(lastMa, EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(), EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
@@ -281,24 +260,15 @@ public class ServiceCategoryServiceImpl implements ServiceCategoryService {
             ls.setMaPhienDangNhap(Main.getCurrentLoginSession());
             lichSuDao.themLichSuThaoTac(ls);
 
-            conn.commit();
+            DatabaseUtil.thucHienGiaoTac();
             return true;
 
         } catch (IllegalStateException ise) {
-            // truyền thẳng IllegalStateException để caller biết nguyên nhân (dịch vụ đang dùng)
-            if (conn != null) {
-                try { conn.rollback(); } catch (Exception ignored) {}
-            }
+            DatabaseUtil.hoanTacGiaoTac();
             throw ise;
         } catch (Exception ex) {
-            if (conn != null) {
-                try { conn.rollback(); } catch (Exception ignored) {}
-            }
+            DatabaseUtil.hoanTacGiaoTac();
             throw new RuntimeException("Lỗi khi xóa loại dịch vụ: " + ex.getMessage(), ex);
-        } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); } catch (Exception ignored) {}
-            }
         }
     }
 

@@ -12,6 +12,7 @@ import vn.iuh.service.ServiceService;
 import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 
+import javax.xml.crypto.Data;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -65,18 +66,15 @@ public class ServiceImpl implements ServiceService {
         }
 
         // mở connection mới và dùng transaction
-        Connection conn = null;
         try {
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
-
-            DichVuDAO dichVuDAO = new DichVuDAO(conn);
-            GiaDichVuDAO giaDao = new GiaDichVuDAO(conn);
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+            DatabaseUtil.khoiTaoGiaoTac();
+            DichVuDAO dichVuDAO = new DichVuDAO();
+            GiaDichVuDAO giaDao = new GiaDichVuDAO();
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
 
             // 1) kiểm tra trùng tên
             if (dichVuDAO.existsByTenDichVu(tenDichVu)) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null; // caller GUI sẽ hiển thị thông báo trùng tên
             }
 
@@ -87,7 +85,7 @@ public class ServiceImpl implements ServiceService {
             // 3) chèn dich vu
             boolean ok = dichVuDAO.insertNewDichVu(maMoi, tenDichVu, tonKho, coTheTang, maLoaiDichVu);
             if (!ok) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
@@ -97,7 +95,7 @@ public class ServiceImpl implements ServiceService {
             // giaCu ta để null (lần đầu)
             boolean okGia = giaDao.insertGiaDichVu(maGiaMoi, null, giaMoi, Main.getCurrentLoginSession(), maMoi);
             if (!okGia) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
@@ -117,7 +115,7 @@ public class ServiceImpl implements ServiceService {
 //            }
 
             // commit
-            conn.commit();
+           DatabaseUtil.thucHienGiaoTac();
 
             // tạo ServiceResponse để trả về (bạn có thể thêm constructor / setter tương ứng)
             ServiceResponse created = new ServiceResponse();
@@ -129,21 +127,9 @@ public class ServiceImpl implements ServiceService {
 
             return created;
 
-        } catch (SQLException ex) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ignored) {
-                }
-            }
+        } catch (Exception ex) {
+            DatabaseUtil.hoanTacGiaoTac();
             throw new RuntimeException("Lỗi khi thêm dịch vụ mới: " + ex.getMessage(), ex);
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (SQLException ignored) {
-                }
-            }
         }
     }
 
@@ -152,27 +138,25 @@ public class ServiceImpl implements ServiceService {
         if (maDichVu == null || maDichVu.trim().isEmpty()) throw new IllegalArgumentException("Mã dịch vụ không hợp lệ");
         if (tenDichVu == null || tenDichVu.trim().isEmpty()) throw new IllegalArgumentException("Tên dịch vụ không được rỗng");
 
-        Connection conn = null;
         try {
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // dùng DAO với connection chung để transaction
-            DichVuDAO dichVuDAO = new DichVuDAO(conn);
-            GiaDichVuDAO giaDao = new GiaDichVuDAO(conn);
-            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO(conn);
+            DichVuDAO dichVuDAO = new DichVuDAO();
+            GiaDichVuDAO giaDao = new GiaDichVuDAO();
+            LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
 
             // Lấy thông tin hiện tại của dịch vụ (để so sánh tên / giá hiện tại)
             ServiceResponse existing = dichVuDAO.timDichVuV2(maDichVu); // nếu bạn chưa có hàm timDichVu(conn) -> timDichVu ở DichVuDAO hiện có dùng connection trường
             if (existing == null) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
             // 1) nếu tên đổi (khác với existing.getTenDichVu()), kiểm tra trùng tên (ngoại trừ chính bản thân)
             if (!existing.getTenDichVu().equalsIgnoreCase(tenDichVu)) {
                 if (dichVuDAO.existsByTenDichVuExceptId(tenDichVu, maDichVu)) {
-                    conn.rollback();
+                    DatabaseUtil.hoanTacGiaoTac();
                     return null; // trùng tên
                 }
             }
@@ -181,7 +165,7 @@ public class ServiceImpl implements ServiceService {
             boolean coTheTang = false;
             boolean okUpd = dichVuDAO.capNhatDichVu(maDichVu, tenDichVu, tonKho, coTheTang, maLoaiDichVu);
             if (!okUpd) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
@@ -192,7 +176,7 @@ public class ServiceImpl implements ServiceService {
             Double giaCu = existing.getGiaHienTai() != null ? existing.getGiaHienTai() : null;
             boolean okGia = giaDao.insertGiaDichVu(maGiaMoi, giaCu, giaMoi, Main.getCurrentLoginSession(), maDichVu);
             if (!okGia) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
@@ -201,7 +185,7 @@ public class ServiceImpl implements ServiceService {
             String lastMaLichSu = null;
             try {
                 // nếu có method timLichSuThaoTacMoiNhat() trả entity
-                var last = new LichSuThaoTacDAO(conn).timLichSuThaoTacMoiNhat();
+                var last = new LichSuThaoTacDAO().timLichSuThaoTacMoiNhat();
                 lastMaLichSu = last != null ? last.getMaLichSuThaoTac() : null;
             } catch (Exception ex) {
                 // fallback: lấy raw mã
@@ -218,10 +202,10 @@ public class ServiceImpl implements ServiceService {
             lichSu.setMoTa(moTa);
             lichSu.setMaPhienDangNhap(Main.getCurrentLoginSession());
             // dùng DAO để insert
-            new LichSuThaoTacDAO(conn).themLichSuThaoTac(lichSu);
+            new LichSuThaoTacDAO().themLichSuThaoTac(lichSu);
 
             // commit
-            conn.commit();
+            DatabaseUtil.thucHienGiaoTac();
 
             // trả về ServiceResponse mới (cập nhật)
             ServiceResponse updated = new ServiceResponse();
@@ -234,15 +218,9 @@ public class ServiceImpl implements ServiceService {
 
             return updated;
 
-        } catch (SQLException ex) {
-            if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
-            }
+        } catch (Exception ex) {
+            DatabaseUtil.hoanTacGiaoTac();
             throw new RuntimeException("Lỗi khi cập nhật dịch vụ: " + ex.getMessage(), ex);
-        } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); } catch (SQLException ignored) {}
-            }
         }
     }
 
@@ -264,36 +242,34 @@ public class ServiceImpl implements ServiceService {
             throw new IllegalArgumentException("Mã dịch vụ không hợp lệ");
         }
 
-        Connection conn = null;
         try {
             // 1) open connection & transaction
-            conn = DatabaseUtil.getConnect();
-            conn.setAutoCommit(false);
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // DAO dùng connection chung
-            DonGoiDichVuDao donGoiDichVuDaoTx = new DonGoiDichVuDao(conn);
+            DonGoiDichVuDao donGoiDichVuDaoTx = new DonGoiDichVuDao();
             // double-check: nếu đang dùng thì chặn
             if (donGoiDichVuDaoTx.isServiceCurrentlyUsed(maDichVu)) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 throw new IllegalStateException("Không thể xóa dịch vụ do dịch vụ này đang được sử dụng");
             }
 
-            DichVuDAO dichVuDaoTx = new DichVuDAO(conn);
-            GiaDichVuDAO giaDaoTx = new GiaDichVuDAO(conn);
-            LichSuThaoTacDAO lichSuDaoTx = new LichSuThaoTacDAO(conn);
+            DichVuDAO dichVuDaoTx = new DichVuDAO();
+            GiaDichVuDAO giaDaoTx = new GiaDichVuDAO();
+            LichSuThaoTacDAO lichSuDaoTx = new LichSuThaoTacDAO();
 
             // 2) logical delete giá dịch vụ
             boolean okGia = giaDaoTx.deleteServicePrice(maDichVu);
             if (!okGia) {
                 // vẫn có thể continue hoặc rollback tùy bạn — ở đây rollback
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
             // 3) logical delete dịch vụ (DichVu.da_xoa = 1)
             boolean okDv = dichVuDaoTx.markAsDeleted(maDichVu);
             if (!okDv) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
@@ -313,18 +289,12 @@ public class ServiceImpl implements ServiceService {
             lichSuDaoTx.themLichSuThaoTac(lichSu);
 
             // commit
-            conn.commit();
+           DatabaseUtil.thucHienGiaoTac();
             return true;
 
-        } catch (SQLException ex) {
-            if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
-            }
+        } catch (Exception ex) {
+            DatabaseUtil.hoanTacGiaoTac();
             throw new RuntimeException("Lỗi khi xóa dịch vụ: " + ex.getMessage(), ex);
-        } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); } catch (SQLException ignored) {}
-            }
         }
     }
 

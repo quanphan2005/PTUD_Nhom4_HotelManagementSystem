@@ -20,7 +20,6 @@ import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -118,12 +117,9 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             }
         }
 
-        Connection conn = null;
         try {
-            conn = DatabaseUtil.getConnect();
             DatabaseUtil.khoiTaoGiaoTac();
 
-            // DAO dùng chung connection để nằm trong cùng 1 transaction
             LoaiPhongDAO lpDao = new LoaiPhongDAO();
             GiaPhongDAO gpDao = new GiaPhongDAO();
             NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO();
@@ -144,7 +140,7 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             // 2.a) Insert loại phòng
             LoaiPhong inserted = lpDao.insertLoaiPhong(loaiPhong);
             if (inserted == null) {
-                conn.rollback();
+                DatabaseUtil.hoanTacGiaoTac();
                 throw new RuntimeException("Không thể tạo loại phòng");
             }
             String maLoai = inserted.getMaLoaiPhong();
@@ -213,13 +209,13 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             // commit transaction
             DatabaseUtil.thucHienGiaoTac();
 
-            // trả về LoaiPhong vừa tạo (lấy lại bằng DAO dùng cùng connection/hoặc mới tuỳ impl)
+            // trả về LoaiPhong vừa tạo
             return lpDao.getRoomCategoryByID(maLoai);
         } catch (BusinessException be) {
-            try { if (conn != null) DatabaseUtil.hoanTacGiaoTac(); } catch (Exception ignored) {}
+            DatabaseUtil.hoanTacGiaoTac();
             throw be;
         } catch (Exception ex) {
-            try { if (conn != null) DatabaseUtil.hoanTacGiaoTac(); } catch (Exception ignored) {}
+            DatabaseUtil.hoanTacGiaoTac();
             throw new RuntimeException("Lỗi khi tạo loại phòng: " + ex.getMessage(), ex);
         }
     }
@@ -300,9 +296,7 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
     public boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty) {
         if (loaiPhong == null || loaiPhong.getMaLoaiPhong() == null) throw new IllegalArgumentException("loaiPhong null/không có mã");
 
-        Connection conn = null;
         try {
-            conn = DatabaseUtil.getConnect();
             DatabaseUtil.khoiTaoGiaoTac();
 
             String maPhienDangNhap = Main.getCurrentLoginSession();
@@ -311,7 +305,6 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             // phương thức bạn đã thêm: hasCurrentOrFutureBookingsForLoaiPhong(String maLoai)
             boolean hasBooking = ctDao.hasCurrentOrFutureBookingsForLoaiPhong(loaiPhong.getMaLoaiPhong());
             if (hasBooking) {
-                conn.setAutoCommit(true);
                 return false; // không cập nhật nếu đang có booking
             }
 
