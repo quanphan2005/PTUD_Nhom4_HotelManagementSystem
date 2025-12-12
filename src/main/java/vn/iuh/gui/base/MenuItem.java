@@ -33,6 +33,7 @@ public class MenuItem extends JButton{
         setBorderPainted(false);
         setFocusable(false);
         setBorder(new EmptyBorder(0,10, 0,0));
+        setFont(CustomUI.subMenuFont);
     }
 
     public void initSubMenu(int subMenuIndex, int length){

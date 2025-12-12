@@ -10,20 +10,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class KhachHangDAO {
-    private final Connection connection;
-
-    public KhachHangDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public KhachHangDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public KhachHang timKhachHang(String id) {
         String query = "SELECT * FROM KhachHang WHERE ma_khach_hang = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
@@ -44,6 +35,7 @@ public class KhachHangDAO {
         String query = "SELECT * FROM KhachHang WHERE CCCD = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, cccd);
 
@@ -64,8 +56,8 @@ public class KhachHangDAO {
         String query = "SELECT TOP 1 * FROM KhachHang WHERE da_xoa = 0 ORDER BY ma_khach_hang DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
-
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return chuyenKetQuaThanhKhachHang(rs);
@@ -84,6 +76,7 @@ public class KhachHangDAO {
                 "VALUES (?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, khachHang.getMaKhachHang());
             ps.setString(2, khachHang.getCCCD());
@@ -103,7 +96,8 @@ public class KhachHangDAO {
         String query = "UPDATE KhachHang SET CCCD = ? ,ten_khach_hang = ?, so_dien_thoai = ?" +
                 "WHERE ma_khach_hang = ?";
 
-        try{
+        try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, khachHang.getCCCD());
             ps.setString(2, khachHang.getTenKhachHang());
@@ -131,7 +125,9 @@ public class KhachHangDAO {
 
         String query = "UPDATE KhachHang SET da_xoa = 1 WHERE ma_khach_hang = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {

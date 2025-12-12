@@ -12,20 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CongViecDAO {
-    private final Connection connection;
-
-    public CongViecDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public CongViecDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public CongViec timCongViecMoiNhat() {
         String query = "SELECT TOP 1 * FROM CongViec ORDER BY ma_cong_viec DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
@@ -45,6 +36,7 @@ public class CongViecDAO {
 
         String query = "INSERT INTO CongViec (ma_cong_viec, ten_trang_thai, tg_bat_dau, tg_ket_thuc, ma_phong) VALUES (?, ?, ?, ?, ?)";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, newCV.getMaCongViec());
             ps.setString(2, newCV.getTenTrangThai());
@@ -63,6 +55,7 @@ public class CongViecDAO {
     public void themDanhSachCongViec(List<CongViec> congViecs) {
         String query = "INSERT INTO CongViec (ma_cong_viec, ten_trang_thai, tg_bat_dau, tg_ket_thuc, ma_phong) VALUES (?, ?, ?, ?, ?)";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             for (CongViec congViec : congViecs) {
                 ps.setString(1, congViec.getMaCongViec());
@@ -83,6 +76,7 @@ public class CongViecDAO {
         String query = "SELECT COUNT(*) AS count FROM CongViec WHERE ma_phong = ? AND (tg_bat_dau < ? AND tg_ket_thuc > ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maPhong);
             ps.setTimestamp(2, tgKetThuc);
@@ -105,6 +99,7 @@ public class CongViecDAO {
 
         String query = "UPDATE CongViec SET tg_ket_thuc = ?, da_xoa = ? WHERE ma_cong_viec = ?";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setTimestamp(1, tgKetThuc);
             ps.setBoolean(2, isFinish);
@@ -122,6 +117,7 @@ public class CongViecDAO {
         String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? AND getdate() >= dateadd(second, -60, tg_bat_dau) and da_xoa = 0 ORDER BY tg_bat_dau DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maPhong);
 
@@ -152,6 +148,7 @@ public class CongViecDAO {
 
         List<CongViec> danhSachCongViec = new java.util.ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             for (int i = 0; i < danhSachMaPhong.size(); i++) {
                 ps.setString(i + 1, danhSachMaPhong.get(i));
@@ -197,6 +194,7 @@ public class CongViecDAO {
                         "\torder by cv.thoi_gian_tao\n" +
                         ") as cv";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
@@ -219,6 +217,7 @@ public class CongViecDAO {
     public boolean removeJob(String maCongViec) {
         String query = "UPDATE CongViec SET da_xoa = 1 WHERE ma_cong_viec = ?";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maCongViec);
             return  ps.executeUpdate() > 0;
@@ -246,6 +245,7 @@ public class CongViecDAO {
         String query = string.toString();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             for (int i = 0; i < danhSacMaCongViec.size(); i++) {
                 ps.setString(i + 1, danhSacMaCongViec.get(i));
@@ -263,6 +263,7 @@ public class CongViecDAO {
         String query = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? and da_xoa = 0 ORDER BY tg_bat_dau DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maPhong);
 
@@ -285,6 +286,7 @@ public class CongViecDAO {
                        " AND ma_phong = (SELECT TOP 1 ma_phong FROM ChiTietDatPhong Phong WHERE ma_chi_tiet_dat_phong = ? )" +
                        " AND da_xoa = 0";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maChiTietDatPhong);
 
@@ -301,7 +303,9 @@ public class CongViecDAO {
     // Cập nhật trường ma_phong cho một CongViec (cập nhập luôn thoi_gian_tao)
     public boolean capNhatMaPhongChoCongViec(String maCongViec, String maPhongMoi, Timestamp thoiGianCapNhat) {
         String sql = "UPDATE CongViec SET ma_phong = ?, thoi_gian_tao = ? WHERE ma_cong_viec = ? AND ISNULL(da_xoa,0)=0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maPhongMoi);
             ps.setTimestamp(2, thoiGianCapNhat);
             ps.setString(3, maCongViec);
@@ -330,6 +334,7 @@ public class CongViecDAO {
 
         List<CongViec> danhSachCongViec = new java.util.ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maDonDatPhong);
             ResultSet rs =ps.executeQuery();
@@ -373,6 +378,7 @@ public class CongViecDAO {
 
         List<WarningReservation> warningList = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {

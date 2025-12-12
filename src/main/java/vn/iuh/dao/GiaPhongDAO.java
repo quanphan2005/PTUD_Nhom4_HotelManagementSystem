@@ -12,16 +12,6 @@ import java.sql.*;
  * Giả sử bảng có các cột: ma_loai_phong, gia_ngay_moi, gia_gio_moi, thoi_gian_tao, da_xoa (da_xoa mặc định 0).
  */
 public class GiaPhongDAO {
-    private final Connection connection;
-
-    public GiaPhongDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public GiaPhongDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     /**
      * Insert giá mới cho loại phòng.
      * Nếu connection đang trong transaction (autoCommit = false) thì caller sẽ commit/rollback.
@@ -30,7 +20,9 @@ public class GiaPhongDAO {
         if (gp.getMaLoaiPhong() == null) return false;
         String sql = "INSERT INTO GiaPhong (ma_gia_phong, ma_loai_phong, gia_ngay_cu, gia_gio_cu, gia_ngay_moi, gia_gio_moi)" +
                            " VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, gp.getMaGiaPhong());
             ps.setString(2, gp.getMaLoaiPhong()) ;
             ps.setDouble(3, gp.getGiaNgayCu());
@@ -47,6 +39,7 @@ public class GiaPhongDAO {
         String query = "SELECT TOP 1 * FROM GiaPhong ORDER BY ma_gia_phong DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();

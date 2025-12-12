@@ -14,20 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GiaPhuPhiDAO {
-    private final Connection connection;
-
-    public GiaPhuPhiDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public GiaPhuPhiDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public GiaPhuPhi themGiaPhuPhi(GiaPhuPhi giaPhuPhi) {
         String query = "INSERT INTO GiaPhuPhi (ma_gia_phu_phi, gia_truoc_do, gia_hien_tai,ma_phien_dang_nhap,ma_phu_phi, la_phan_tram) VALUES (?, ?, ?, ? , ?, ?)";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1,giaPhuPhi.getMaGiaPhuPhi());
             ps.setDouble(2, giaPhuPhi.getGiaTruocDo());
             ps.setDouble(3, giaPhuPhi.getGiaHienTai());
@@ -46,8 +39,10 @@ public class GiaPhuPhiDAO {
     public GiaPhuPhi timPhuPhiMoiNhat() {
         String query = "SELECT TOP 1 * FROM GiaPhuPhi WHERE da_xoa = 0 ORDER BY ma_gia_phu_phi DESC";
 
-        try (PreparedStatement ps = connection.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return mapResultSetToGiaPhuPhi(rs);
             }
@@ -60,7 +55,7 @@ public class GiaPhuPhiDAO {
     public List<HistoryFeeResponse> getHistoryByMaPhuPhi(String maPhuPhi) {
         List<HistoryFeeResponse> list = new ArrayList<>();
 
-        String sql = """
+        String query = """
         SELECT gpp.thoi_gian_tao AS ngay_thay_doi,
                gpp.gia_hien_tai,
                nv.ma_nhan_vien,
@@ -73,7 +68,9 @@ public class GiaPhuPhiDAO {
         ORDER BY gpp.thoi_gian_tao DESC
     """;
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
 
             ps.setString(1, maPhuPhi);
             try (ResultSet rs = ps.executeQuery()) {

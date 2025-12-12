@@ -14,6 +14,7 @@ import vn.iuh.entity.CongViec;
 import vn.iuh.entity.LichSuThaoTac;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookThemGioService;
+import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 
 import java.sql.Connection;
@@ -177,18 +178,17 @@ public class BookThemGioServiceImpl implements BookThemGioService {
         DatPhongDAO datPhongDAO = new DatPhongDAO();
         try {
             // mở transaction
-            datPhongDAO.khoiTaoGiaoTac();
-            Connection conn = datPhongDAO.getConnection();
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // khai báo các DAO (sử dụng cùng connection)
-            ChiTietDatPhongDAO chiDaoTx = new ChiTietDatPhongDAO(conn);
-            CongViecDAO congViecDaoTx = new CongViecDAO(conn);
-            LichSuThaoTacDAO lichSuDaoTx = new LichSuThaoTacDAO(conn);
+            ChiTietDatPhongDAO chiDaoTx = new ChiTietDatPhongDAO();
+            CongViecDAO congViecDaoTx = new CongViecDAO();
+            LichSuThaoTacDAO lichSuDaoTx = new LichSuThaoTacDAO();
 
             // 1) Lấy chi tiết đặt phòng hiện tại
             ChiTietDatPhong current = chiDaoTx.timChiTietDatPhong(maChiTietDatPhong);
             if (current == null) {
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
@@ -201,7 +201,7 @@ public class BookThemGioServiceImpl implements BookThemGioService {
                 String huyPhong = RoomEndType.HUY_PHONG.getStatus();
                 if (kk.equalsIgnoreCase(tra) || kk.equalsIgnoreCase(traLoi) || kk.equalsIgnoreCase(huyPhong)) {
                     // không cho gia hạn nếu đã trả phòng (bình thường hoặc do lỗi) hoặc đã hủy phòng
-                    datPhongDAO.hoanTacGiaoTac();
+                    DatabaseUtil.hoanTacGiaoTac();
                     return false;
                 }
             }
@@ -211,7 +211,7 @@ public class BookThemGioServiceImpl implements BookThemGioService {
             if (congViecHienTai != null && congViecHienTai.getTenTrangThai() != null) {
                 String ten = congViecHienTai.getTenTrangThai().toUpperCase();
                 if (ten.contains("TRỄ") || ten.contains("CHECKOUT TRỄ")) {
-                    datPhongDAO.hoanTacGiaoTac();
+                    DatabaseUtil.hoanTacGiaoTac();
                     return false;
                 }
             }
@@ -223,7 +223,7 @@ public class BookThemGioServiceImpl implements BookThemGioService {
 
             boolean updatedCT = chiDaoTx.ketThucChiTietDatPhong(current.getMaChiTietDatPhong(), newTra, current.getKieuKetThuc());
             if (!updatedCT) {
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
@@ -254,7 +254,7 @@ public class BookThemGioServiceImpl implements BookThemGioService {
 
                     boolean jobOk = congViecDaoTx.capNhatThoiGianKetThuc(congViecHienTai.getMaCongViec(), jobNewEnd, false);
                     if (!jobOk) {
-                        datPhongDAO.hoanTacGiaoTac();
+                        DatabaseUtil.hoanTacGiaoTac();
                         return false;
                     }
                 }
@@ -278,13 +278,13 @@ public class BookThemGioServiceImpl implements BookThemGioService {
             lichSuDaoTx.themLichSuThaoTac(newLSTT);
 
             // 8) Commit transaction
-            datPhongDAO.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
             return true;
 
         } catch (Exception ex) {
             ex.printStackTrace();
             try {
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
             } catch (Exception ignore) {}
             return false;
         }

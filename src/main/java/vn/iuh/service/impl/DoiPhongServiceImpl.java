@@ -6,6 +6,7 @@ import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.entity.*;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.DoiPhongService;
+import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.FeeValue;
 
@@ -83,17 +84,16 @@ public class DoiPhongServiceImpl implements DoiPhongService {
         DatPhongDAO datPhongDAO = new DatPhongDAO();
         try {
             // 1) Khởi tạo transaction
-            datPhongDAO.khoiTaoGiaoTac();
-            Connection conn = datPhongDAO.getConnection();
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // 2) DAO dùng chung connection (đảm bảo transaction chạy đúng cách)
-            ChiTietDatPhongDAO chiTietDao = new ChiTietDatPhongDAO(conn);
-            LichSuDiVaoDAO lichSuDiVaoDAO = new LichSuDiVaoDAO(conn);
-            LichSuRaNgoaiDAO lichSuRaNgoaiDAO = new LichSuRaNgoaiDAO(conn);
-            CongViecDAO congViecDAO = new CongViecDAO(conn);
-            LichSuThaoTacDAO lichSuThaoTacDAO = new LichSuThaoTacDAO(conn);
-            PhongTinhPhuPhiDAO phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO(conn);
-            PhuPhiDAO phuPhiDAO = new PhuPhiDAO(conn);
+            ChiTietDatPhongDAO chiTietDao = new ChiTietDatPhongDAO();
+            LichSuDiVaoDAO lichSuDiVaoDAO = new LichSuDiVaoDAO();
+            LichSuRaNgoaiDAO lichSuRaNgoaiDAO = new LichSuRaNgoaiDAO();
+            CongViecDAO congViecDAO = new CongViecDAO();
+            LichSuThaoTacDAO lichSuThaoTacDAO = new LichSuThaoTacDAO();
+            PhongTinhPhuPhiDAO phongTinhPhuPhiDAO = new PhongTinhPhuPhiDAO();
+            PhuPhiDAO phuPhiDAO = new PhuPhiDAO();
 
             Timestamp now = new Timestamp(System.currentTimeMillis());
 
@@ -115,7 +115,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
 
             if (target == null) {
                 lastError = "Không tìm thấy chi tiết đặt phòng phù hợp để đổi (room=" + oldRoomId + ", booking=" + reservationId + ")";
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
@@ -131,7 +131,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                 boolean updated = chiTietDao.capNhatMaPhongChoChiTiet(maChiTiet, newRoomId, now);
                 if (!updated) {
                     lastError = "Không thể cập nhật mã phòng cho ChiTietDatPhong.";
-                    datPhongDAO.hoanTacGiaoTac();
+                    DatabaseUtil.hoanTacGiaoTac();
                     return false;
                 }
 
@@ -159,7 +159,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                     boolean insertedFee = phongTinhPhuPhiDAO.insert(ptpp);
                     if (!insertedFee) {
                         lastError = "Không thể thêm bản ghi PhongTinhPhuPhi.";
-                        datPhongDAO.hoanTacGiaoTac();
+                        DatabaseUtil.hoanTacGiaoTac();
                         return false;
                     }
                 }
@@ -171,7 +171,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                     boolean jobUpdated = congViecDAO.capNhatMaPhongChoCongViec(oldJob.getMaCongViec(), newRoomId, now);
                     if (!jobUpdated) {
                         lastError = "Không thể cập nhật công việc hiện tại sang phòng mới.";
-                        datPhongDAO.hoanTacGiaoTac();
+                        DatabaseUtil.hoanTacGiaoTac();
                         return false;
                     }
                 }
@@ -187,7 +187,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                 lichSuThaoTacDAO.themLichSuThaoTac(wh);
 
                 // Commit transaction
-                datPhongDAO.thucHienGiaoTac();
+                DatabaseUtil.thucHienGiaoTac();
                 lastError = null;
                 return true;
             }
@@ -205,7 +205,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
             boolean ktEnd = chiTietDao.ketThucChiTietDatPhong(maChiTiet, now, kieuKetThuc);
             if (!ktEnd) {
                 lastError = "Không thể kết thúc chi tiết đặt phòng cũ.";
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
@@ -218,7 +218,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
             boolean inserted = chiTietDao.insert(newCt);
             if (!inserted) {
                 lastError = "Không thể tạo ChiTietDatPhong mới cho phòng được đổi.";
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
                 return false;
             }
 
@@ -249,7 +249,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
                 boolean feeInserted = phongTinhPhuPhiDAO.insert(ptppNew);
                 if (!feeInserted) {
                     lastError = "Không thể thêm phụ phí cho chi tiết mới.";
-                    datPhongDAO.hoanTacGiaoTac();
+                    DatabaseUtil.hoanTacGiaoTac();
                     return false;
                 }
             }
@@ -306,14 +306,14 @@ public class DoiPhongServiceImpl implements DoiPhongService {
             lichSuThaoTacDAO.themLichSuThaoTac(wh2);
 
             // Commit transaction
-            datPhongDAO.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
             lastError = null;
             return true;
 
         } catch (Exception ex) {
             ex.printStackTrace();
             try {
-                datPhongDAO.hoanTacGiaoTac();
+                DatabaseUtil.hoanTacGiaoTac();
             } catch (Exception e) {
                 // hehe
             }

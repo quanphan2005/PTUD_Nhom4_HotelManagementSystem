@@ -24,19 +24,20 @@ public class CustomUI {
     public static final Color yellow = new Color(255, 223, 0);
     public static final Color be = new Color(241, 172, 135);
 
-    public static final Font italicSmallFont = new Font("Arial", Font.ITALIC, 12);
+    public static final Font italicSmallFont = new Font("Segoe UI", Font.ITALIC, 12);
 
-    public static final Font supperSmallFont = new Font("Arial", Font.BOLD, 12);
-    public static final Font verySmallFont = new Font("Arial", Font.BOLD, 13);
-    public static final Font smallFont = new Font("Arial", Font.BOLD, 16);
-    public static final Font normalFont = new Font("Arial", Font.BOLD, 20);
-    public static final Font bigFont = new Font("Arial", Font.BOLD, 24);
-    public static final Font veryBigFont = new Font("Arial", Font.BOLD, 30);
+    public static final Font supperSmallFont = new Font("Segoe UI", Font.BOLD, 12);
+    public static final Font verySmallFont = new Font("Segoe UI", Font.BOLD, 13);
+    public static final Font subMenuFont = new Font("Segoe UI", Font.BOLD, 14);
+    public static final Font smallFont = new Font("Segoe UI", Font.BOLD, 16);
+    public static final Font normalFont = new Font("Segoe UI", Font.BOLD, 20);
+    public static final Font bigFont = new Font("Segoe UI", Font.BOLD, 24);
+    public static final Font veryBigFont = new Font("Segoe UI", Font.BOLD, 30);
 
 
     // Table font and color settings
-    public static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 16);
-    public static final Font TABLE_FONT  = new Font("Arial", Font.PLAIN, 13);
+    public static final Font HEADER_FONT = new Font("Segoe UI", Font.BOLD, 16);
+    public static final Font TABLE_FONT  = new Font("Segoe UI", Font.PLAIN, 13);
 
     public static final Color TABLE_HEADER_BACKGROUND = new Color(30, 144, 255); // Professional blue
     public static final Color TABLE_HEADER_FOREGROUND = Color.WHITE;

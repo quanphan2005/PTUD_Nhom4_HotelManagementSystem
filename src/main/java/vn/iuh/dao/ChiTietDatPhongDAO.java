@@ -9,20 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChiTietDatPhongDAO {
-    private final Connection connection;
-
-    public ChiTietDatPhongDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public ChiTietDatPhongDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public ChiTietDatPhong timChiTietDatPhong(String maChiTietDatPhong) {
         String query = "SELECT * FROM ChiTietDatPhong WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             var ps = connection.prepareStatement(query);
             ps.setString(1, maChiTietDatPhong);
 
@@ -47,7 +38,9 @@ public class ChiTietDatPhongDAO {
         }
         query.append(")");
 
-        try (var ps = connection.prepareStatement(query.toString())) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            var ps = connection.prepareStatement(query.toString());
             // Set kieu_ket_thuc parameter
             ps.setString(1, kieuKetThuc);
             // Set ma_chi_tiet_dat_phong parameters
@@ -64,6 +57,7 @@ public class ChiTietDatPhongDAO {
         String query = "SELECT TOP 1 * FROM ChiTietDatPhong WHERE ma_phong = ? and  tg_nhan_phong >= getdate() ORDER BY tg_nhan_phong asc";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             var ps = connection.prepareStatement(query);
             ps.setString(1, roomID);
 
@@ -95,6 +89,7 @@ public class ChiTietDatPhongDAO {
         String query = "SELECT * FROM ChiTietDatPhong WHERE ma_don_dat_phong = ? and da_xoa = 0 ORDER BY tg_nhan_phong asc";
         List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             var ps = connection.prepareStatement(query);
             ps.setString(1, bookingId);
 
@@ -120,6 +115,7 @@ public class ChiTietDatPhongDAO {
 
         List<ThongTinSuDungPhong> thongTinSuDungPhongList = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             var ps = connection.prepareStatement(query);
             ps.setString(1, maDonDatPhong);
 
@@ -152,6 +148,7 @@ public class ChiTietDatPhongDAO {
                 "left join LoaiPhong lp on lp.ma_loai_phong = p.ma_loai_phong\n" +
                 "where ctdp.ma_chi_tiet_dat_phong = ?";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             var ps = connection.prepareStatement(query);
             ps.setString(1, maChiTietDatPhong);
 
@@ -178,6 +175,7 @@ public class ChiTietDatPhongDAO {
     public String findFormIDByDetail(String maChiTietDatPhong){
         String sql = "select ma_don_dat_phong from ChiTietDatPhong where ma_chi_tiet_dat_phong = ?";
         try {
+            Connection connection = DatabaseUtil.getConnect();
             var ps = connection.prepareStatement(sql);
             ps.setString(1, maChiTietDatPhong);
 
@@ -194,7 +192,9 @@ public class ChiTietDatPhongDAO {
 
     public ChiTietDatPhong timChiTietDatPhongMoiNhat() {
         String sql = "SELECT TOP 1 * FROM ChiTietDatPhong ORDER BY ma_chi_tiet_dat_phong DESC";
-        try (var ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            var ps = connection.prepareStatement(sql);
             var rs = ps.executeQuery();
             if (rs.next()) {
                 return mapResultSetToChiTietDatPhong(rs);
@@ -210,7 +210,9 @@ public class ChiTietDatPhongDAO {
                 "ma_chi_tiet_dat_phong, tg_nhan_phong, tg_tra_phong, kieu_ket_thuc, " +
                 "ma_don_dat_phong, ma_phong, ma_phien_dang_nhap) " +
                 "VALUES (?,?,?,?,?,?,?)";
-        try (var ps = connection.prepareStatement(sql)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            var ps = connection.prepareStatement(sql);
             ps.setString(1, ct.getMaChiTietDatPhong());
             ps.setTimestamp(2, ct.getTgNhanPhong());
             ps.setTimestamp(3, ct.getTgTraPhong());
@@ -227,7 +229,9 @@ public class ChiTietDatPhongDAO {
     //Cập nhập tg_nhan_phong cho ChiTietDatPhong
     public boolean capNhatTgNhanPhong(String maChiTiet, Timestamp tgNhanPhong, String maPhienDangNhap, Timestamp thoiGianCapNhat) {
         String sql = "UPDATE ChiTietDatPhong SET tg_nhan_phong = ?, ma_phien_dang_nhap = ?, thoi_gian_tao = ? WHERE ma_chi_tiet_dat_phong = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setTimestamp(1, tgNhanPhong);
             ps.setString(2, maPhienDangNhap);
             ps.setTimestamp(3, thoiGianCapNhat);
@@ -242,7 +246,9 @@ public class ChiTietDatPhongDAO {
     // Cập nhật ma_phong cho một ChiTietDatPhong (dùng cho đổi phòng trước checkin)
     public boolean capNhatMaPhongChoChiTiet(String maChiTiet, String maPhongMoi, Timestamp thoiGianCapNhat) {
         String sql = "UPDATE ChiTietDatPhong SET ma_phong = ?, thoi_gian_tao = ? WHERE ma_chi_tiet_dat_phong = ? AND ISNULL(da_xoa,0)=0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maPhongMoi);
             ps.setTimestamp(2, thoiGianCapNhat);
             ps.setString(3, maChiTiet);
@@ -255,7 +261,9 @@ public class ChiTietDatPhongDAO {
     // Kết thúc (end) một ChiTietDatPhong: gán tg_tra_phong và kieu_ket_thuc
     public boolean ketThucChiTietDatPhong(String maChiTiet, Timestamp tgTraPhongMoi, String kieuKetThuc) {
         String sql = "UPDATE ChiTietDatPhong SET tg_tra_phong = ?, kieu_ket_thuc = ? WHERE ma_chi_tiet_dat_phong = ? AND ISNULL(da_xoa,0)=0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setTimestamp(1, tgTraPhongMoi);
             ps.setString(2, kieuKetThuc);
             ps.setString(3, maChiTiet);
@@ -271,7 +279,9 @@ public class ChiTietDatPhongDAO {
         String sql = "SELECT TOP 1 * FROM ChiTietDatPhong " +
                 "WHERE ma_phong = ? AND tg_nhan_phong > ? AND ISNULL(da_xoa,0)=0 " +
                 "ORDER BY tg_nhan_phong ASC";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maPhong);
             ps.setTimestamp(2, sauThoiGian);
             try (ResultSet rs = ps.executeQuery()) {
@@ -287,7 +297,9 @@ public class ChiTietDatPhongDAO {
 
     public void capNhatCTDPTheoMaDonDatPhong(String maDonDatPhong, String kieuKetThuc){
         String sql = "UPDATE ChiTietDatPhong SET kieu_ket_thuc = ? WHERE ma_don_dat_phong = ? and kieu_ket_thuc is null";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, kieuKetThuc);
             ps.setString(2, maDonDatPhong);
 
@@ -301,7 +313,9 @@ public class ChiTietDatPhongDAO {
     public boolean updateDonTraPhong(String maDonDatPhong, Timestamp newTraPhong) {
         if (maDonDatPhong == null || newTraPhong == null) return false;
         String sql = "UPDATE DonDatPhong SET tg_tra_phong = ? WHERE ma_don_dat_phong = ? AND ISNULL(da_xoa,0)=0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setTimestamp(1, newTraPhong);
             ps.setString(2, maDonDatPhong);
             return ps.executeUpdate() > 0;
@@ -314,7 +328,9 @@ public class ChiTietDatPhongDAO {
     public String getLoaiDonDatPhong(String maDonDatPhong) {
         if (maDonDatPhong == null) return null;
         String sql = "SELECT loai FROM DonDatPhong WHERE ma_don_dat_phong = ? AND ISNULL(da_xoa,0)=0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maDonDatPhong);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -332,7 +348,9 @@ public class ChiTietDatPhongDAO {
         if (maDonDatPhong == null || newTraPhong == null) return 0;
         String sql = "UPDATE ChiTietDatPhong SET tg_tra_phong = ? " +
                 "WHERE ma_don_dat_phong = ? AND ISNULL(kieu_ket_thuc, '') = '' AND ISNULL(da_xoa,0)=0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setTimestamp(1, newTraPhong);
             ps.setString(2, maDonDatPhong);
             return ps.executeUpdate();
@@ -347,7 +365,9 @@ public class ChiTietDatPhongDAO {
                 "FROM ChiTietDatPhong ctdp " +
                 "JOIN Phong p ON ctdp.ma_phong = p.ma_phong " +
                 "WHERE p.ma_loai_phong = ? AND ISNULL(ctdp.da_xoa,0) = 0 AND ctdp.tg_nhan_phong > GETDATE()";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maLoaiPhong);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -368,7 +388,9 @@ public class ChiTietDatPhongDAO {
                         "       ctdp.tg_nhan_phong > GETDATE() " +            // future bookings
                         "    OR (ctdp.tg_nhan_phong <= GETDATE() AND (ctdp.tg_tra_phong IS NULL OR ctdp.tg_tra_phong >= GETDATE())) " + // current use
                         "  )";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maLoaiPhong);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -382,7 +404,9 @@ public class ChiTietDatPhongDAO {
         if (maDonDatPhong == null) return false;
         String sql = "UPDATE DonDatPhong SET tg_nhan_phong = ?, ma_phien_dang_nhap = ?, thoi_gian_tao = ? " +
                 "WHERE ma_don_dat_phong = ? AND ISNULL(da_xoa, 0) = 0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setTimestamp(1, tgNhanPhong);
             ps.setString(2, maPhienDangNhap);
             ps.setTimestamp(3, thoiGianCapNhat);
@@ -398,7 +422,9 @@ public class ChiTietDatPhongDAO {
                 "WHERE ma_don_dat_phong = ? AND ISNULL(kieu_ket_thuc, '') = '' AND ISNULL(da_xoa,0) = 0 " +
                 "ORDER BY tg_nhan_phong ASC";
         List<ChiTietDatPhong> result = new ArrayList<>();
-        try (var ps = connection.prepareStatement(query)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            var ps = connection.prepareStatement(query);
             ps.setString(1, bookingId);
             try (var rs = ps.executeQuery()) {
                 while (rs.next()) {

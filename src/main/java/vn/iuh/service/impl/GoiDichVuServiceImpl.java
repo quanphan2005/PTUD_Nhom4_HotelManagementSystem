@@ -9,8 +9,10 @@ import vn.iuh.dto.repository.ThongTinDichVu;
 import vn.iuh.dto.response.RoomUsageServiceResponse;
 import vn.iuh.entity.PhongDungDichVu;
 import vn.iuh.service.GoiDichVuService;
+import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 
+import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +61,7 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
         }
 
         try {
-            donGoiDichVuDao.khoiTaoGiaoTac();
+            DatabaseUtil.khoiTaoGiaoTac();
             String maPhongDungDichVuMoiNhat =
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
@@ -84,11 +86,11 @@ public class GoiDichVuServiceImpl implements GoiDichVuService {
             // 3. Thêm mới phòng dùng dịch vụ
             donGoiDichVuDao.themPhongDungDichVu(danhSachPhongDungDichVu);
 
-            donGoiDichVuDao.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
             return true;
         } catch (Exception e) {
             System.out.println("Lỗi gọi dịch vụ: " + e.getMessage());
-            donGoiDichVuDao.hoanTacGiaoTac();
+            DatabaseUtil.hoanTacGiaoTac();
             return false;
         }
     }

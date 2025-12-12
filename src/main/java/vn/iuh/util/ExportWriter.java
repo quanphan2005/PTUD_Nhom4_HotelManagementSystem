@@ -1,11 +1,17 @@
 package vn.iuh.util;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.printing.PDFPageable;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import java.awt.print.PrinterException;
 import javax.swing.table.TableModel;
 import java.awt.*;
+import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -56,6 +62,24 @@ public class ExportWriter {
         File file = new File(filePath);
         if (file.exists()) {
             Desktop.getDesktop().open(file);
+        }
+    }
+
+    public static void printPdf(String pdfPath) {
+        try (PDDocument document = PDDocument.load(new File(pdfPath))) {
+
+            PrinterJob printerJob = PrinterJob.getPrinterJob();
+            printerJob.setPageable(new PDFPageable(document));
+
+            // Hiển thị giao diện máy in (Print Dialog)
+            if (printerJob.printDialog()) {
+                printerJob.print();  // người dùng nhấn Print
+            } else {
+                System.out.println("Hủy in!");
+            }
+
+        } catch (IOException | PrinterException e) {
+            e.printStackTrace();
         }
     }
 

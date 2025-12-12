@@ -7,20 +7,11 @@ import vn.iuh.util.DatabaseUtil;
 import java.sql.*;
 
 public class PhienDangNhapDAO {
-    private final Connection connection;
-
-    public PhienDangNhapDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public PhienDangNhapDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public PhienDangNhap timPhienDangNhap(String id) {
         String query = "SELECT * FROM PhienDangNhap WHERE ma_phien_dang_nhap = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
@@ -41,6 +32,7 @@ public class PhienDangNhapDAO {
         String query = "select top 1 * from PhienDangNhap where getdate() > tg_ket_thuc and da_xoa = 0 order by ma_phien_dang_nhap desc";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             ResultSet rs = ps.executeQuery();
@@ -62,6 +54,7 @@ public class PhienDangNhapDAO {
                 "VALUES (?, ?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, shift.getMaPhienDangNhap());
             ps.setInt(2, shift.getSoQuay());
@@ -82,6 +75,7 @@ public class PhienDangNhapDAO {
         String query = "SELECT TOP 1 * FROM PhienDangNhap WHERE da_xoa = 0 ORDER BY ma_phien_dang_nhap DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -97,7 +91,8 @@ public class PhienDangNhapDAO {
 
     public boolean capNhatThoiGianKetThuc(String id, Timestamp tgkt){
         String query = "UPDATE PhienDangNhap SET tg_ket_thuc = ? WHERE ma_phien_dang_nhap = ? AND da_xoa = 0";
-        try{
+        try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setTimestamp(1, tgkt);
             ps.setString(2, id);

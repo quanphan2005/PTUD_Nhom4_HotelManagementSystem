@@ -130,7 +130,7 @@ public class RoomProductivityPanel extends RoleChecking {
         pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
 
-        add(pnlTop);
+        add(pnlTop, BorderLayout.NORTH);
     }
 
     private void createFilterPanel2(){

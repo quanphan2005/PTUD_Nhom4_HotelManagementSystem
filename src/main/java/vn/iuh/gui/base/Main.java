@@ -6,6 +6,7 @@
 package vn.iuh.gui.base;
 
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import org.quartz.*;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.dao.NhanVienDAO;
 import vn.iuh.dao.TaiKhoanDAO;
@@ -19,8 +20,12 @@ import vn.iuh.gui.panel.booking.BookingManagementPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 import vn.iuh.gui.panel.statistic.RoomProductivityPanel;
+import vn.iuh.schedule.AutomaticallyBackupDif;
+import vn.iuh.schedule.AutomaticallyBackupFull;
 import vn.iuh.service.WarningReservationService;
 import vn.iuh.service.impl.WarningReservationImpl;
+import vn.iuh.util.BackupDatabase;
+import vn.iuh.util.SchedulerUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -61,6 +66,8 @@ public class Main extends JFrame {
     private RoomProductivityPanel pnlRoomProductivity;
     private SystemConfigPanel pnlThietLapHeThong;
     private WarningReservationService warningReservationService;
+
+    private QuanLyNhanVienPanel pnlQuanLyNhanVien;
 
     public void init() {
         this.taiKhoanDAO = new TaiKhoanDAO();
@@ -106,6 +113,7 @@ public class Main extends JFrame {
 
         this.pMain.add(pnlRoot, BorderLayout.CENTER);
         this.add(pMain);
+        createAutomaticallyBackupCronjob();
     }
 
     private JPanel createCenterPanel(){
@@ -218,6 +226,10 @@ public class Main extends JFrame {
             pnlRoomProductivity.checkRoleAndLoadData();
         }
 
+        if (pnlQuanLyNhanVien != null) {
+            pnlQuanLyNhanVien.checkRoleAndLoadData();
+        }
+
     }
 
     private String convertMaChucVuToTen(String maChucVu) {
@@ -311,7 +323,7 @@ public class Main extends JFrame {
 //        PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
         pnlStatistic = new RevenueStatisticPanel();
         QuanLyHoaDonPanel pnlQuanLyHoaDon = new QuanLyHoaDonPanel();
-        QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
+        pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
         pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
         pnlQuanLyPhuPhi = new QuanLyPhuPhiPanel();
         QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
@@ -373,5 +385,8 @@ public class Main extends JFrame {
         }
     }
 
-
+    private void createAutomaticallyBackupCronjob(){
+        BackupDatabase.scheduleFullBackup();
+        BackupDatabase.scheduleDiffBackup();
+    }
 }

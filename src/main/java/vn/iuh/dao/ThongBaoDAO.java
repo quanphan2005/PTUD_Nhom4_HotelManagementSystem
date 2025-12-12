@@ -7,21 +7,13 @@ import vn.iuh.util.DatabaseUtil;
 import java.sql.*;
 
 public class ThongBaoDAO {
-    private final Connection connection;
-
-    public ThongBaoDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public ThongBaoDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public ThongBao timThongBao(String id) {
         String query = "SELECT * FROM ThongBao WHERE ma_thong_bao = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
 
             ResultSet rs = ps.executeQuery();
@@ -42,7 +34,9 @@ public class ThongBaoDAO {
                 "VALUES (?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, thongBao.getMaThongBao());
             ps.setString(2, thongBao.getNoiDung());
             ps.setString(3, thongBao.getMaPhienDangNhap());
@@ -61,7 +55,9 @@ public class ThongBaoDAO {
         String query = "SELECT TOP 1 * FROM ThongBao WHERE da_xoa = 0 ORDER BY ma_thong_bao DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -85,7 +81,9 @@ public class ThongBaoDAO {
         String query = "UPDATE ThongBao SET da_xoa = 1 WHERE ma_thong_bao = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {

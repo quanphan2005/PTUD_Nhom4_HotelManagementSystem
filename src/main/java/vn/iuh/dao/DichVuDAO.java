@@ -10,21 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DichVuDAO {
-    private final Connection connection;
-
-    public DichVuDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public DichVuDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public DichVu timDichVu(String id) {
         String query = "SELECT * FROM DichVu WHERE ma_dich_vu = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
 
             ResultSet rs = ps.executeQuery();
@@ -46,7 +38,9 @@ public class DichVuDAO {
         List<DichVu> dichVus = new java.util.ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
 
             ResultSet rs = ps.executeQuery();
             while (rs.next())
@@ -67,7 +61,9 @@ public class DichVuDAO {
                 "VALUES (?, ?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, dichVu.getMaDichVu());
             ps.setString(2, dichVu.getTenDichVu());
             ps.setInt(3, dichVu.getTonKho());
@@ -93,7 +89,9 @@ public class DichVuDAO {
                 "WHERE ma_dich_vu = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, dichVu.getTenDichVu());
             ps.setInt(2, dichVu.getTonKho());
             ps.setBoolean(3, dichVu.getCoTheTang());
@@ -123,7 +121,9 @@ public class DichVuDAO {
         String query = "UPDATE DichVu SET da_xoa = 1 WHERE ma_dich_vu = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
@@ -141,7 +141,9 @@ public class DichVuDAO {
         String query = "SELECT TOP 1 * FROM DichVu ORDER BY ma_dich_vu DESC WHERE da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -172,6 +174,7 @@ public class DichVuDAO {
         queryBuilder.append(")");
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(queryBuilder.toString());
             for (int i = 0; i < serviceIds.size(); i++) {
                 ps.setString(i + 1, serviceIds.get(i));
