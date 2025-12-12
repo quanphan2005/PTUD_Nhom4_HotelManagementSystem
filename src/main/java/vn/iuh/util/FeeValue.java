@@ -47,7 +47,7 @@ public class FeeValue {
         return allFee.get(fee);
     }
 
-    public  void updateFee(Fee fee, double newGia) {
+    public void updateFee(Fee fee, double newGia) {
         ThongTinPhuPhi thongTin = allFee.get(fee);
         if (thongTin != null) {
             GiaPhuPhi newgiaPP = giaPhuPhiDAO.themGiaPhuPhi(createGiaPhuPhi(thongTin, newGia));

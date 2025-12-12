@@ -1,19 +1,30 @@
 package vn.iuh.gui.panel;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatIntelliJLaf;
+import vn.iuh.constraint.Fee;
+import vn.iuh.dto.repository.ThongTinPhuPhi;
+import vn.iuh.dto.repository.WarningReservation;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.dialog.PhuPhiDialog;
+import vn.iuh.service.WarningReservationService;
+import vn.iuh.service.impl.WarningReservationImpl;
 import vn.iuh.util.BackupDatabase;
+import vn.iuh.util.FeeValue;
+import vn.iuh.util.RefreshManager;
+import vn.iuh.util.RestoreDataBase;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
+import java.io.File;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,6 +42,10 @@ public class SystemConfigPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTable fileTable;
     private JLabel fileCountLabel;
+    private final java.util.List<File> selectedFiles = new ArrayList<>();
+    private JButton restoreBtn;
+    private WarningReservationService warningReservationService;
+
 
 
     private JPanel createTopPanel() {
@@ -48,6 +63,9 @@ public class SystemConfigPanel extends JPanel {
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
 
         return pnlTop;
+    }
+    private void init(){
+        this.warningReservationService = new WarningReservationImpl();
     }
 
 
@@ -90,10 +108,11 @@ public class SystemConfigPanel extends JPanel {
 
         add(scrollPane, BorderLayout.CENTER);
         add(pnlNorth, BorderLayout.NORTH);
+        init();
     }
 
     private JPanel createVATPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 5));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder(
@@ -107,7 +126,7 @@ public class SystemConfigPanel extends JPanel {
                 new EmptyBorder(10, 15, 15, 15)
         ));
 
-        JPanel contentPanel = new JPanel(new BorderLayout(10, 0));
+        JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
 
         // Label
@@ -116,10 +135,12 @@ public class SystemConfigPanel extends JPanel {
         vatLabel.setPreferredSize(new Dimension(120, 35));
 
         // Text field
-        vatRateField = new JTextField("10");
+        ThongTinPhuPhi fee = FeeValue.getInstance().get(Fee.THUE);
+        vatRateField = new JTextField(fee.getGiaHienTai().toString());
         vatRateField.setEditable(false);
+        vatRateField.setFocusable(false);
         vatRateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        vatRateField.setPreferredSize(new Dimension(0, 35));
+        vatRateField.setPreferredSize(new Dimension(100, 35));
         vatRateField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
@@ -129,23 +150,48 @@ public class SystemConfigPanel extends JPanel {
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         buttonsPanel.setOpaque(false);
 
-        ImageIcon editIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/pen.png")));
-        JButton editBtn = createIconButton(editIcon);
-        editBtn.setToolTipText("Chỉnh sửa thuế GTGT");
+//        ImageIcon editIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/pen.png")));
+//        JButton editBtn = createIconButton(editIcon);
+//        editBtn.setToolTipText("Chỉnh sửa thuế GTGT");
+//
+//        editBtn.addActionListener((e) ->{
+//            vatRateField.setEditable(true);
+//            vatRateField.setFocusable(true);
+//        });
 
         ImageIcon historyIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/clock.png")));
         JButton historyBtn = createIconButton(historyIcon);
+        historyBtn.addActionListener((e) -> {
+            Window owner = SwingUtilities.getWindowAncestor(SystemConfigPanel.this);
+            PhuPhiDialog dialog = new PhuPhiDialog(owner, fee);
+            dialog.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    ThongTinPhuPhi fee = FeeValue.getInstance().get(Fee.THUE);
+                    vatRateField.setText(fee.getGiaHienTai().toString());
+                }
+            });
+            dialog.setVisible(true);
+        });
+
         historyBtn.setToolTipText("Xem lịch sử thay đổi");
 
-        buttonsPanel.add(editBtn);
+//        buttonsPanel.add(editBtn);
         buttonsPanel.add(historyBtn);
 
-        contentPanel.add(vatLabel, BorderLayout.WEST);
-        contentPanel.add(vatRateField, BorderLayout.CENTER);
-        contentPanel.add(buttonsPanel, BorderLayout.EAST);
+        contentPanel.add(vatLabel);
+        contentPanel.add(vatRateField);
+        contentPanel.add(buttonsPanel);
 
-        panel.add(contentPanel, BorderLayout.CENTER);
+        panel.add(contentPanel);
         return panel;
+    }
+    private double validateInputVAT(String input){
+        try {
+            return Double.parseDouble(input);
+        }catch (Exception e){
+            return 0;
+        }
     }
 
     private JPanel createAutoBackupPanel() {
@@ -241,10 +287,10 @@ public class SystemConfigPanel extends JPanel {
         if ("Ngày hôm nay".equalsIgnoreCase(backupType)) {
             fileName += "-DIF";
         } else if ("Toàn bộ".equalsIgnoreCase(backupType)) {
-            fileName += "T-FULL";
+            fileName += "-FULL";
         }
 
-        return fileName;
+        return fileName+".bak";
     }
 
     private JPanel createManualBackupPanel() {
@@ -436,7 +482,7 @@ public class SystemConfigPanel extends JPanel {
 
         System.out.println(fileName);
         // Chỉ chấp nhận chữ, số, gạch nối, gạch dưới
-        String regex = "^[A-Za-z0-9-_]+$";
+        String regex = "^[A-Za-z0-9-_]+\\.bak$";
 
         return fileName.matches(regex);
     }
@@ -474,9 +520,13 @@ public class SystemConfigPanel extends JPanel {
 
 
         ImageIcon folderIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/folder.png")));
-        JButton browseDirBtn = createFolderIconButton(folderIcon,selectDirField);
+        JButton browseDirBtn = createChooseFileIconButton(folderIcon,selectDirField);
         ImageIcon rfIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/refresh.png")));
         JButton refreshBtn = createIconButton(rfIcon);
+        refreshBtn.addActionListener((e) ->{
+            selectedFiles.clear();
+            tableModel.setRowCount(0);
+        });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         buttonPanel.setOpaque(false);
@@ -488,7 +538,7 @@ public class SystemConfigPanel extends JPanel {
         topSection.add(buttonPanel, BorderLayout.EAST);
 
         // Table
-        String[] columns = {"Tên dữ liệu", "Ngày tạo", "Loại file", "Kích thước", "Tệp dữ liệu"};
+        String[] columns = {"Tên dữ liệu", "Ngày tạo", "Định dạng", "Kích thước", "Kiểu sao lưu"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -511,10 +561,31 @@ public class SystemConfigPanel extends JPanel {
 
         // Set column widths
         fileTable.getColumnModel().getColumn(0).setPreferredWidth(200);
-        fileTable.getColumnModel().getColumn(1).setPreferredWidth(150);
+        fileTable.getColumnModel().getColumn(1).setPreferredWidth(200);
         fileTable.getColumnModel().getColumn(2).setPreferredWidth(80);
         fileTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-        fileTable.getColumnModel().getColumn(4).setPreferredWidth(300);
+        fileTable.getColumnModel().getColumn(4).setPreferredWidth(250);
+        fileTable.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int selectedRow = fileTable.getSelectedRow();
+
+                // Nếu không có row nào được chọn → bỏ qua
+                if (selectedRow == -1) return;
+
+                // Nếu nhấn Backspace hoặc Delete
+                if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyCode() == KeyEvent.VK_DELETE) {
+
+                    // Xóa file khỏi global list (nếu lưu theo index)
+                    if (selectedRow < selectedFiles.size()) {
+                        selectedFiles.remove(selectedRow);
+                    }
+
+                    // Xóa row khỏi table
+                    tableModel.removeRow(selectedRow);
+                }
+            }
+        });
 
         JScrollPane scrollPane = new JScrollPane(fileTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
@@ -525,12 +596,12 @@ public class SystemConfigPanel extends JPanel {
         bottomSection.setOpaque(false);
         bottomSection.setBorder(new EmptyBorder(10, 0, 0, 0));
 
-        fileCountLabel = new JLabel("Số lượng file : 2");
+        fileCountLabel = new JLabel("Số lượng file : " +  this.selectedFiles.size());
         fileCountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         fileCountLabel.setForeground(new Color(100, 100, 100));
 
         // Restore button
-        JButton restoreBtn = new JButton("Khôi phục");
+        restoreBtn = new JButton("Khôi phục");
         restoreBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         restoreBtn.setPreferredSize(new Dimension(120, 38));
         restoreBtn.setBackground(new Color(66, 139, 202));
@@ -549,6 +620,10 @@ public class SystemConfigPanel extends JPanel {
             }
         });
 
+        restoreBtn.addActionListener((e) -> {
+            handleRestoreBtn();
+        });
+
         bottomSection.add(fileCountLabel, BorderLayout.WEST);
         bottomSection.add(restoreBtn, BorderLayout.EAST);
 
@@ -557,6 +632,111 @@ public class SystemConfigPanel extends JPanel {
         panel.add(bottomSection, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    private JButton createChooseFileIconButton(ImageIcon icon, JTextField txt) {
+        JButton btn = new JButton(icon);
+        btn.setPreferredSize(CustomUI.BUTTON_SIZE);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBackground(CustomUI.mine);
+        btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(new Color(230, 230, 230));
+            }
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(new Color(240, 240, 240));
+            }
+        });
+
+        btn.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setCurrentDirectory(new File("D:/ba"));
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+            int result = chooser.showOpenDialog(this);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selected = chooser.getSelectedFile();
+                String fileName = selected.getName();
+                if(selectedFiles.isEmpty() && !fileName.contains("FULL")){
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Vui lòng chọn 1 file backup toàn bộ (FULL) trước",
+                            "Cảnh báo",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                    return;
+                }
+
+                if(selectedFiles.size() == 1 && !fileName.contains("DIF")){
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Vui lòng chọn 1 file backup theo ngày (DIF)",
+                            "Cảnh báo",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                    return;
+                }
+
+                // Giới hạn tối đa 2 file
+                if (selectedFiles.size() >= 2) {
+                    JOptionPane.showMessageDialog(this,
+                            "Bạn chỉ có thể chọn tối đa 2 file!",
+                            "Giới hạn", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                //Kiểm tra trùng file
+                if (selectedFiles.stream().anyMatch(f -> f.getAbsolutePath().equals(selected.getAbsolutePath()))) {
+                    JOptionPane.showMessageDialog(this,
+                            "File này đã được chọn trước đó!",
+                            "Trùng file", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Thêm vào danh sách global
+                selectedFiles.add(selected);
+
+                // Update lên JTextField nếu cần
+                txt.setText(selected.getAbsolutePath());
+
+                // Đẩy lên table
+                tableModel.addRow(getFileInfo(selected));
+            }
+        });
+
+        return btn;
+    }
+
+    private Object[] getFileInfo(File file) {
+
+        // Tên dữ liệu
+        String fileName = file.getName();
+
+        // Ngày tạo
+        String createdDate = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+                .format(new java.util.Date(file.lastModified()));
+
+        // Loại file
+        String fileType = "Không xác định";
+        if (fileName.contains(".")) {
+            fileType = fileName.substring(fileName.lastIndexOf(".") + 1);
+        }
+
+        // Kích thước
+        String fileSize = file.length() / 1024 + " KB";
+
+        //Kiểu file
+        String fileFormat = "Toàn bộ";
+        if(fileName.contains("DIF")){
+            fileFormat = "Theo ngày";
+        }
+
+        // File
+        return new Object[]{file, createdDate, fileType, fileSize, fileFormat};
     }
 
     private JButton createIconButton(ImageIcon icon) {
@@ -608,19 +788,6 @@ public class SystemConfigPanel extends JPanel {
         return btn;
     }
 
-    // Getter methods for accessing components from outside
-    public JTextField getVATRateField() { return vatRateField; }
-    public JTextField getBackupDirField() { return backupDirField; }
-    public JTextField getBackupNameField() { return backupNameField; }
-    public JTextField getRestoreDirField() { return restoreDirField; }
-    public JComboBox<String> getBackupTypeCombo() { return backupTypeCombo; }
-    public JRadioButton getAutoBackupRadio() { return autoBackupRadio; }
-    public JRadioButton getWarningBackupRadio() { return warningBackupRadio; }
-    public JRadioButton getNoBackupRadio() { return noBackupRadio; }
-    public DefaultTableModel getTableModel() { return tableModel; }
-    public JTable getFileTable() { return fileTable; }
-    public JLabel getFileCountLabel() { return fileCountLabel; }
-
     public static void main(String[] args) {
         FlatIntelliJLaf.setup();
 
@@ -630,6 +797,99 @@ public class SystemConfigPanel extends JPanel {
         f.setLocationRelativeTo(null);
         f.setContentPane(new SystemConfigPanel());
         f.setVisible(true);
+    }
+
+    private void handleRestoreBtn() {
+        // 1. Kiểm tra số lượng file
+        if (selectedFiles.size() != 2) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Cần chọn đúng 2 file (1 FULL + 1 DIFF)!",
+                    "Thiếu file",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String s0FileName = selectedFiles.getFirst().getName();
+        String s1FileName = selectedFiles.get(1).getName();
+        if(!s0FileName.contains("FULL")|| !s1FileName.contains("DIF")){
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Vui lòng chọn "
+            );
+
+        }
+
+        File fullFile = selectedFiles.get(0);
+        File diffFile = selectedFiles.get(1);
+
+        // 2. Kiểm tra file tồn tại
+        if (!fullFile.exists() || !diffFile.exists()) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Một trong hai file không tồn tại!",
+                    "Lỗi file",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        // 3. Xác nhận restore
+        int choice = JOptionPane.showConfirmDialog(
+                null,
+                "Bạn có chắc chắn muốn khôi phục database?\n"
+                        + "Dữ liệu hiện tại sẽ bị ghi đè hoàn toàn!",
+                "Xác nhận khôi phục",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (choice != JOptionPane.YES_OPTION) return;
+
+        // 4. Disable UI trong lúc restore
+        restoreBtn.setEnabled(false);
+
+        // 5. Chạy restore không block UI
+        new Thread(() -> {
+            JDialog loadingDialog = new JDialog();
+            loadingDialog.add(new JLabel("Đang xử lý khôi phục dữ liệu"));
+            loadingDialog.setSize(500, 100);
+            loadingDialog.setLocationRelativeTo(null);
+
+            SwingUtilities.invokeLater(() -> loadingDialog.setVisible(true));
+            try {
+                RestoreDataBase.restoreFullAndDiff(fullFile.getAbsolutePath(), diffFile.getAbsolutePath());
+
+                warningReservationService.excute();
+                tableModel.setRowCount(0);
+                this.selectedFiles.clear();
+                RefreshManager.refreshAll();
+
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(
+                                null,
+                                "Khôi phục dữ liệu thành công!",
+                                "Thành công",
+                                JOptionPane.INFORMATION_MESSAGE
+                        )
+                );
+
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(
+                                null,
+                                "Khôi phục thất bại: " + ex.getMessage(),
+                                "Lỗi",
+                                JOptionPane.ERROR_MESSAGE
+                        )
+                );
+            } finally {
+                SwingUtilities.invokeLater(() -> restoreBtn.setEnabled(true));
+                loadingDialog.dispose();
+            }
+
+        }).start();
     }
 
 

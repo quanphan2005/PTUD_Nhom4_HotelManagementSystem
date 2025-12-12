@@ -25,15 +25,24 @@ public class DatabaseUtil {
         * Get connection to database (singleton pattern)
         * @return Connection object
     */
-    public static Connection getConnect() {
-        try {
-            if (connection == null || connection.isClosed())
-                connection = createConnection();
-        } catch (SQLException e) {
-            System.out.println("Failed to get connection to database");
-            throw new RuntimeException(e);
+    public static synchronized Connection getConnect() {
+        if (connection == null || isConnectionDead(connection)) {
+            connection = createConnection();
         }
         return connection;
+    }
+
+    private static boolean isConnectionDead(Connection conn) {
+        if (conn == null) {
+            return true;
+        }
+        try {
+            conn.prepareStatement("SELECT 1").execute();
+            return false;
+        } catch (SQLException e) {
+            System.err.println("Connection is dead: " + e.getMessage());
+            return true;
+        }
     }
 
     /*
@@ -79,24 +88,18 @@ public class DatabaseUtil {
     }
 
     private static Connection createConnection() {
-        while (true){
+        while (true) {
             try {
                 Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-                connection = DriverManager.getConnection(url, username, password);
-                if (connection != null) {
-                    System.out.println("Kết nối thành công!");
-                }
-                break;
-            } catch (ClassNotFoundException e) {
-                System.err.println("SQLServerDriver không tìm thấy: " + e.getMessage());
-                try { Thread.sleep(1000); } catch (Exception ignored) {}
-            } catch (SQLException e) {
-                System.err.println("Lỗi kết nối: " + e.getMessage());
+                Connection conn = DriverManager.getConnection(url, username, password);
+                System.out.println("Kết nối thành công!");
+                return conn;
+
+            } catch (Exception e) {
+                System.err.println("Lỗi tạo kết nối: " + e.getMessage());
                 try { Thread.sleep(1000); } catch (Exception ignored) {}
             }
         }
-
-        return connection;
     }
 
     public static void khoiTaoGiaoTac() {
