@@ -36,9 +36,6 @@ import java.util.stream.Collectors;
 
 
 public class RevenueStatisticPanel extends RoleChecking {
-    private JPanel pnlTop;
-    private JLabel lblTop;
-    private JPanel pnlFilter;
     private JPanel pnlMain;
     private JLabel lblEmployee;
     private JLabel lblDisplayType;
@@ -64,7 +61,6 @@ public class RevenueStatisticPanel extends RoleChecking {
     private JLabel lblTaxValue;
     private List<InvoiceStatistic> danhSachKetQua;
     private JComboBox<String> cmbOption;
-    private JCheckBox btnOption;
     private JLabel lblOption;
     private JPanel pnlOption;
     private JPanel chartPanel;
@@ -121,7 +117,7 @@ public class RevenueStatisticPanel extends RoleChecking {
         pnlTop.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pnlTop.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
 
-        add(pnlTop);
+        add(pnlTop, BorderLayout.NORTH);
     }
 
     private void createFilterPanel(){
