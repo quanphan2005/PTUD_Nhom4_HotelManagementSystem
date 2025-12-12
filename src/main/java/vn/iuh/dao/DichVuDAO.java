@@ -215,6 +215,7 @@ public class DichVuDAO {
                         "FROM DichVu d " +
                         "WHERE d.da_xoa = 0 " +
                         "ORDER BY d.ma_dich_vu ASC";
+        Connection connection = DatabaseUtil.getConnect();
 
         try (PreparedStatement ps = connection.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -244,6 +245,7 @@ public class DichVuDAO {
     public boolean existsByTenDichVu(String tenDichVu) {
         if (tenDichVu == null) return false;
         String sql = "SELECT 1 FROM DichVu WHERE LOWER(ten_dich_vu) = LOWER(?) AND da_xoa = 0";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, tenDichVu.trim());
             try (ResultSet rs = ps.executeQuery()) {
@@ -257,6 +259,7 @@ public class DichVuDAO {
     // Tìm mã dịch vụ mới nhất để sinh ID
     public String timMaDichVuMoiNhatRaw() {
         String sql = "SELECT TOP 1 ma_dich_vu FROM DichVu WHERE ma_dich_vu IS NOT NULL ORDER BY ma_dich_vu DESC";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
@@ -272,6 +275,7 @@ public class DichVuDAO {
     public boolean insertNewDichVu(String maDichVu, String tenDichVu, int tonKho, boolean coTheTang, String maLoaiDichVu) {
         String sql = "INSERT INTO DichVu (ma_dich_vu, ten_dich_vu, ton_kho, co_the_tang, ma_loai_dich_vu, thoi_gian_tao, da_xoa) " +
                 "VALUES (?, ?, ?, ?, ?, GETDATE(), 0)";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maDichVu);
             ps.setString(2, tenDichVu);
@@ -289,6 +293,7 @@ public class DichVuDAO {
     public boolean existsByTenDichVuExceptId(String tenDichVu, String excludeId) {
         if (tenDichVu == null) return false;
         String sql = "SELECT 1 FROM DichVu WHERE LOWER(ten_dich_vu) = LOWER(?) AND ma_dich_vu <> ? AND da_xoa = 0";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, tenDichVu.trim());
             ps.setString(2, excludeId);
@@ -304,6 +309,7 @@ public class DichVuDAO {
     public boolean capNhatDichVu(String maDichVu, String tenDichVu, int tonKho, boolean coTheTang, String maLoaiDichVu) {
         String sql = "UPDATE DichVu SET ten_dich_vu = ?, ton_kho = ?, co_the_tang = ?, ma_loai_dich_vu = ?, thoi_gian_tao = GETDATE() " +
                 "WHERE ma_dich_vu = ? AND ISNULL(da_xoa,0) = 0";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, tenDichVu);
             ps.setInt(2, tonKho);
@@ -333,6 +339,7 @@ public class DichVuDAO {
         FROM DichVu d
         WHERE d.ma_dich_vu = ? AND ISNULL(d.da_xoa,0)=0
         """;
+        Connection connection = DatabaseUtil.getConnect();
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maDichVu);
@@ -362,6 +369,7 @@ public class DichVuDAO {
 
     public boolean markAsDeleted(String maDichVu) {
         String sql = "UPDATE DichVu SET da_xoa = 1 WHERE ma_dich_vu = ?";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maDichVu);
             return ps.executeUpdate() > 0;

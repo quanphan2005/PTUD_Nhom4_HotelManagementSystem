@@ -6,21 +6,13 @@ import java.sql.*;
 import java.util.*;
 
 public class GiaDichVuDAO {
-    private final Connection connection;
-
-    public GiaDichVuDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public GiaDichVuDAO(Connection connection) {
-        this.connection = connection;
-    }
 
     // Lấy giá dịch vụ mới nhất để sinh ID
     public Double timGiaMoiNhatTheoMaDichVu(String maDichVu) {
         String sql = "SELECT TOP 1 gia_moi FROM GiaDichVu " +
                 "WHERE ma_dich_vu = ? AND da_xoa = 0 " +
                 "ORDER BY thoi_gian_tao DESC, ma_gia_dich_vu DESC";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maDichVu);
             try (ResultSet rs = ps.executeQuery()) {
@@ -36,21 +28,6 @@ public class GiaDichVuDAO {
         return null;
     }
 
-    /**
-     * Lấy giá mới nhất cho một danh sách mã dịch vụ.
-     * Trả về Map maDichVu -> gia (Double, có thể null nếu không có giá).
-     */
-    public Map<String, Double> timGiaMoiNhatChoDanhSach(List<String> maDichVus) {
-        Map<String, Double> out = new HashMap<>();
-        if (maDichVus == null || maDichVus.isEmpty()) return out;
-
-        // Cách đơn giản: dùng vòng for gọi timGiaMoiNhatTheoMaDichVu — OK nếu số lượng vừa phải.
-        // Nếu cần hiệu năng cho hàng ngàn id, thì sẽ viết 1 query phức tạp với subquery.
-        for (String id : maDichVus) {
-            out.put(id, timGiaMoiNhatTheoMaDichVu(id));
-        }
-        return out;
-    }
 
     // Lấy lịch sử giá theo mã dịch vụ
     public List<ServicePriceHistoryResponse> layLichSuGiaTheoMaDichVu(String maDichVu) {
@@ -71,6 +48,7 @@ public class GiaDichVuDAO {
               AND g.da_xoa = 0
             ORDER BY g.thoi_gian_tao DESC
         """;
+        Connection connection = DatabaseUtil.getConnect();
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maDichVu);
@@ -97,6 +75,7 @@ public class GiaDichVuDAO {
     // Lấy mã gia_dich_vu mới nhất
     public String timMaGiaDichVuMoiNhatRaw() {
         String sql = "SELECT TOP 1 ma_gia_dich_vu FROM GiaDichVu WHERE ma_gia_dich_vu IS NOT NULL ORDER BY ma_gia_dich_vu DESC";
+        Connection connection = DatabaseUtil.getConnect();
         try (PreparedStatement ps = connection.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getString("ma_gia_dich_vu");
@@ -110,6 +89,8 @@ public class GiaDichVuDAO {
     public boolean insertGiaDichVu(String maGia, Double giaCu, double giaMoi, String maPhienDangNhap, String maDichVu) {
         String sql = "INSERT INTO GiaDichVu (ma_gia_dich_vu, gia_cu, gia_moi, ma_phien_dang_nhap, ma_dich_vu, thoi_gian_tao, da_xoa) " +
                 "VALUES (?, ?, ?, ?, ?, GETDATE(), 0)";
+        Connection connection = DatabaseUtil.getConnect();
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maGia);
             if (giaCu == null) ps.setNull(2, Types.DOUBLE);
@@ -127,6 +108,8 @@ public class GiaDichVuDAO {
     // Xóa giá dịch vụ
     public boolean deleteServicePrice(String maDichVu) {
         String sql = "UPDATE GiaDichVu SET da_xoa = 1 WHERE ma_dich_vu = ?";
+        Connection connection = DatabaseUtil.getConnect();
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maDichVu);
             ps.executeUpdate();

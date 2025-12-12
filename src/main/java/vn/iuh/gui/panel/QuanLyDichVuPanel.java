@@ -352,8 +352,10 @@ public class QuanLyDichVuPanel extends JPanel {
             String sel = (String) searchTypeComboBox.getSelectedItem();
             CardLayout card = (CardLayout) inputPanel.getLayout();
             if ("Loại dịch vụ".equals(sel)) {
+                // reload latest categories from DB each time user chọn chế độ Loại
+                rebuildCategorySearchCombo();
                 card.show(inputPanel, "CATEGORY");
-                // reset combo selection to "Chọn loại" to show all or keep last selection
+                // reset combo selection to "Chọn loại" to show all
                 if (categorySearchComboBox.getItemCount() > 0) {
                     categorySearchComboBox.setSelectedIndex(0);
                 }
@@ -363,6 +365,7 @@ public class QuanLyDichVuPanel extends JPanel {
                 applyFilters();
             }
         });
+
 
         // when user types in textfield -> realtime filter (already wired by configureSearchTextField)
         // when user selects a category -> filter by that category
@@ -378,12 +381,38 @@ public class QuanLyDichVuPanel extends JPanel {
         add(container);
     }
 
-    private void rebuildCategorySearchCombo() {
-        // first item is a neutral "Tất cả / Chọn loại" to show all
-        DefaultComboBoxModel<String> m = new DefaultComboBoxModel<>();
-        m.addElement("Chọn loại");
-        for (LoaiDichVu l : categories) m.addElement(l.getTen());
-        categorySearchComboBox.setModel(m);
+    // thay thế phương thức cũ bằng phương thức này và đổi thành public
+    public void rebuildCategorySearchCombo() {
+        SwingUtilities.invokeLater(() -> {
+            DefaultComboBoxModel<String> m = new DefaultComboBoxModel<>();
+            m.addElement("Chọn loại");
+
+            try {
+                // lấy map ma -> ten từ DB (service gọi DAO)
+                Map<String, String> maThanhTen = serviceService.layMapMaThanhTenLoaiDichVu();
+                // clear cũ và build lại danh sách nội bộ categories để map name->id khi cần
+                categories.clear();
+                if (maThanhTen != null && !maThanhTen.isEmpty()) {
+                    for (Map.Entry<String, String> en : maThanhTen.entrySet()) {
+                        String ma = en.getKey();
+                        String ten = en.getValue() != null ? en.getValue() : ma;
+                        m.addElement(ten);
+                        categories.add(new LoaiDichVu(ma, ten));
+                    }
+                } else {
+                    // fallback: nếu DB trả về rỗng thì giữ categories cũ (nếu có) hoặc demo fallback
+                    for (LoaiDichVu l : categories) m.addElement(l.getTen());
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                // nếu lỗi DB thì vẫn giữ dữ liệu cũ (hoặc demo)
+                for (LoaiDichVu l : categories) m.addElement(l.getTen());
+            }
+
+            categorySearchComboBox.setModel(m);
+            // mặc định chọn "Chọn loại"
+            if (categorySearchComboBox.getItemCount() > 0) categorySearchComboBox.setSelectedIndex(0);
+        });
     }
 
     private void createServiceTablePanel() {
@@ -704,5 +733,14 @@ public class QuanLyDichVuPanel extends JPanel {
             }
         }
         populateServiceList(filtered);
+    }
+
+    public void reloadAllData() {
+        // đảm bảo chạy trên EDT
+        SwingUtilities.invokeLater(() -> {
+            initSampleData();              // gọi lại dữ liệu từ service/DAO
+            rebuildCategorySearchCombo();  // cập nhật combobox loại trong panel dịch vụ
+            populateServiceList(services); // fill lại bảng
+        });
     }
 }

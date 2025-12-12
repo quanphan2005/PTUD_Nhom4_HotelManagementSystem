@@ -318,7 +318,7 @@ public class Main extends JFrame {
         QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
         QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         QuanLyDichVuPanel pnlQuanLyDichVu = new QuanLyDichVuPanel();
-        QuanLyLoaiDichVuPanel pnlQuanLyLoaiDichVu = new QuanLyLoaiDichVuPanel();
+        QuanLyLoaiDichVuPanel pnlQuanLyLoaiDichVu = new QuanLyLoaiDichVuPanel(pnlQuanLyDichVu);
         pnlThietLapHeThong =  new SystemConfigPanel();
         pnlRoomProductivity = new RoomProductivityPanel();
         pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");

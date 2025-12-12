@@ -20,7 +20,8 @@ public enum EntityIDSymbol {
     EMPLOYEE_PREFIX("NV", 8),
     FEE_LIST_PRICE("GP", 8),
     LOAI_PHONG_PREFIX("LP", 8),
-    ROOM_PRICE("GP", 8)
+    ROOM_PRICE("GP", 8),
+    SERVICE_CATEGORY("LDV", 8)
     ;
 //................... Other here
 

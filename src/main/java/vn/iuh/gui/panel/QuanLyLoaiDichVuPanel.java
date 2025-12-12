@@ -2,7 +2,16 @@ package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.ui.FlatLineBorder;
+import vn.iuh.dto.response.ServiceCategoryResponse;
+import vn.iuh.dto.response.ServiceResponse;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.base.Main;
+import vn.iuh.gui.dialog.ChiTietLoaiDichVuDialog;
+import vn.iuh.gui.dialog.SuaLoaiDichVuDialog;
+import vn.iuh.gui.dialog.ThemLoaiDichVuDialog;
+import vn.iuh.service.ServiceCategoryService;
+import vn.iuh.service.impl.ServiceCategoryServiceImpl;
+import vn.iuh.service.impl.ServiceImpl;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -52,7 +61,12 @@ public class QuanLyLoaiDichVuPanel extends JPanel {
     // map demo: maLoai -> so luong dich vu (bạn gán số thật khi nối DB)
     private final Map<String, Integer> serviceCountMap = new HashMap<>();
 
-    public QuanLyLoaiDichVuPanel() {
+    private final ServiceCategoryService categoryService = new ServiceCategoryServiceImpl();
+    private QuanLyDichVuPanel servicePanel;
+
+
+    public QuanLyLoaiDichVuPanel(QuanLyDichVuPanel servicePanel) {
+        this.servicePanel = servicePanel;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(CustomUI.white);
         initSampleData();
@@ -89,15 +103,40 @@ public class QuanLyLoaiDichVuPanel extends JPanel {
 
     private void initSampleData() {
         categories.clear();
-        categories.add(new LoaiDichVu("LDV00000001", "Chăm sóc cá nhân"));
-        categories.add(new LoaiDichVu("LDV00000002", "Ăn uống"));
-        categories.add(new LoaiDichVu("LDV00000003", "Giặt ủi"));
-        categories.add(new LoaiDichVu("LDV00000004", "Vận chuyển và du lịch"));
-
-        // demo counts (mặc định)
         serviceCountMap.clear();
-        for (LoaiDichVu l : categories) serviceCountMap.put(l.getMa(), 0);
+
+        try {
+            // gọi service để lấy danh sách loại + số lượng dịch vụ
+            List<ServiceCategoryResponse> items = categoryService.getAllServiceCategoriesWithCount();
+
+            if (items == null || items.isEmpty()) {
+                // fallback demo cũ nếu DB trống
+                categories.add(new LoaiDichVu("LDV00000001", "Chăm sóc cá nhân"));
+                categories.add(new LoaiDichVu("LDV00000002", "Ăn uống"));
+                categories.add(new LoaiDichVu("LDV00000003", "Giặt ủi"));
+                categories.add(new LoaiDichVu("LDV00000004", "Vận chuyển và du lịch"));
+                for (LoaiDichVu l : categories) serviceCountMap.put(l.getMa(), 0);
+                return;
+            }
+
+            // chuyển về model UI
+            for (ServiceCategoryResponse it : items) {
+                LoaiDichVu l = new LoaiDichVu(it.getMaLoai(), it.getTenLoai());
+                categories.add(l);
+                serviceCountMap.put(it.getMaLoai(), it.getSoLuong());
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // fallback demo như trên
+            categories.add(new LoaiDichVu("LDV00000001", "Chăm sóc cá nhân"));
+            categories.add(new LoaiDichVu("LDV00000002", "Ăn uống"));
+            categories.add(new LoaiDichVu("LDV00000003", "Giặt ủi"));
+            categories.add(new LoaiDichVu("LDV00000004", "Vận chuyển và du lịch"));
+            for (LoaiDichVu l : categories) serviceCountMap.put(l.getMa(), 0);
+        }
     }
+
 
     private void initButtons() {
         // search button
@@ -294,11 +333,18 @@ public class QuanLyLoaiDichVuPanel extends JPanel {
                         Object obj = tableModel.getValueAt(modelRow, 3);
                         if (obj instanceof LoaiDichVu) {
                             LoaiDichVu l = (LoaiDichVu) obj;
-                            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            JOptionPane.showMessageDialog(QuanLyLoaiDichVuPanel.this,
-                                    "Mã: " + l.getMa() + "\nTên: " + l.getTen() + "\nTạo: " + df.format(l.getThoiGianTao()),
-                                    "Chi tiết loại dịch vụ", JOptionPane.INFORMATION_MESSAGE);
+                            int cnt = serviceCountMap.getOrDefault(l.getMa(), 0);
+                            // truyền một instance ServiceService (nếu bạn có sẵn, dùng instance đó)
+                            ChiTietLoaiDichVuDialog dlg = new ChiTietLoaiDichVuDialog(
+                                    SwingUtilities.getWindowAncestor(QuanLyLoaiDichVuPanel.this),
+                                    l.getMa(),
+                                    l.getTen(),
+                                    cnt,
+                                    new ServiceImpl() // hoặc truyền service từ panel nếu có
+                            );
+                            dlg.setVisible(true);
                         }
+
                     }
                 }
             }
@@ -346,43 +392,202 @@ public class QuanLyLoaiDichVuPanel extends JPanel {
     }
 
     private void onAdd() {
-        JTextField tfMa = new JTextField("LDV" + String.format("%08d", categories.size() + 1));
-        JTextField tfTen = new JTextField();
-        Object[] inputs = {"Mã loại:", tfMa, "Tên loại:", tfTen};
-        int ans = JOptionPane.showConfirmDialog(this, inputs, "Thêm loại dịch vụ", JOptionPane.OK_CANCEL_OPTION);
-        if (ans != JOptionPane.OK_OPTION) return;
-        String ma = tfMa.getText().trim();
-        String ten = tfTen.getText().trim();
-        if (ten.isEmpty()) ten = "(chưa đặt tên)";
-        LoaiDichVu l = new LoaiDichVu(ma, ten);
-        categories.add(l);
-        // khi thêm, set count mặc định 0 — bạn sẽ cập nhật từ DB sau
-        serviceCountMap.put(ma, 0);
-        rebuildCategoryCombo();
-        populateTable(categories);
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        ThemLoaiDichVuDialog dlg = new ThemLoaiDichVuDialog(owner, categoryService, () -> {
+            // reload UI panel loại
+            initSampleData();
+            rebuildCategoryCombo();
+            populateTable(categories);
+
+            // nếu có tham chiếu tới panel dịch vụ, refresh combobox của nó
+            if (servicePanel != null) {
+                servicePanel.rebuildCategorySearchCombo();
+            }
+        });
+        dlg.setVisible(true);
     }
+
 
     private void onEdit() {
         LoaiDichVu sel = getSelected();
-        if (sel == null) { JOptionPane.showMessageDialog(this, "Vui lòng chọn 1 loại để sửa", "Thông báo", JOptionPane.INFORMATION_MESSAGE); return; }
-        JTextField tfTen = new JTextField(sel.getTen());
-        Object[] inputs = {"Mã (không đổi):", new JLabel(sel.getMa()), "Tên loại:", tfTen};
-        int ans = JOptionPane.showConfirmDialog(this, inputs, "Sửa loại dịch vụ", JOptionPane.OK_CANCEL_OPTION);
-        if (ans != JOptionPane.OK_OPTION) return;
-        sel.setTen(tfTen.getText().trim());
-        rebuildCategoryCombo();
-        populateTable(categories);
+        if (sel == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn 1 loại để sửa", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Disable UI controls while checking and set wait cursor
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        addButton.setEnabled(false);
+        editButton.setEnabled(false);
+        deleteButton.setEnabled(false);
+
+        // run DB checks in background
+        SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
+            private Exception error = null;
+
+            @Override
+            protected Boolean doInBackground() {
+                try {
+                    ServiceImpl svc = new ServiceImpl();
+                    // lấy tất cả dịch vụ cùng giá (DAO trả ServiceResponse có maLoai)
+                    List<ServiceResponse> all = svc.layTatCaDichVuCungGia();
+                    if (all == null || all.isEmpty()) return true; // không có dịch vụ => ok
+
+                    // kiểm tra từng dịch vụ thuộc loại sel
+                    for (ServiceResponse sr : all) {
+                        if (sr == null) continue;
+                        String maLoaiDv = sr.getMaLoaiDichVu();
+                        String maDv = sr.getMaDichVu();
+                        if (maLoaiDv != null && maLoaiDv.equals(sel.getMa())) {
+                            // nếu có đang dùng => không cho sửa
+                            boolean inUse = svc.isServiceCurrentlyUsed(maDv);
+                            if (inUse) return false;
+                        }
+                    }
+                    return true; // tất cả dịch vụ thuộc loại đều không dùng
+                } catch (Exception ex) {
+                    error = ex;
+                    return null;
+                }
+            }
+
+            @Override
+            protected void done() {
+                // restore UI state
+                setCursor(Cursor.getDefaultCursor());
+                addButton.setEnabled(true);
+                editButton.setEnabled(true);
+                deleteButton.setEnabled(true);
+
+                if (error != null) {
+                    error.printStackTrace();
+                    JOptionPane.showMessageDialog(QuanLyLoaiDichVuPanel.this,
+                            "Lỗi khi kiểm tra trạng thái dịch vụ: " + error.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                Boolean ok;
+                try {
+                    ok = get();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(QuanLyLoaiDichVuPanel.this,
+                            "Lỗi nội bộ: " + ex.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (ok == null) {
+                    JOptionPane.showMessageDialog(QuanLyLoaiDichVuPanel.this,
+                            "Không thể kiểm tra trạng thái dịch vụ (kết quả rỗng).",
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (!ok) {
+                    // Có ít nhất 1 dịch vụ đang dùng -> không cho sửa
+                    JOptionPane.showMessageDialog(QuanLyLoaiDichVuPanel.this,
+                            "Không thể sửa loại này vì có ít nhất một dịch vụ thuộc loại đang được sử dụng.",
+                            "Không thể sửa",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Nếu tới đây: tất cả dịch vụ thuộc loại đều không được sử dụng -> mở dialog sửa loại
+                Window owner = SwingUtilities.getWindowAncestor(QuanLyLoaiDichVuPanel.this);
+                SuaLoaiDichVuDialog dlg = new SuaLoaiDichVuDialog(
+                        owner,
+                        sel.getMa(),
+                        sel.getTen(),
+                        categoryService,
+                        () -> {
+                            // callback onSaved: reload panel loại + panel dịch vụ (nếu tham chiếu có)
+                            // reload panel loại
+                            initSampleData();
+                            rebuildCategoryCombo();
+                            populateTable(categories);
+
+                            // reload panel dịch vụ nếu tham chiếu
+                            if (servicePanel != null) {
+                                servicePanel.reloadAllData();
+                            }
+                        },
+                        Main.getCurrentLoginSession()
+                );
+                dlg.setVisible(true);
+            }
+        };
+
+        worker.execute();
     }
 
     private void onDelete() {
         LoaiDichVu sel = getSelected();
-        if (sel == null) { JOptionPane.showMessageDialog(this, "Vui lòng chọn 1 loại để xóa", "Thông báo", JOptionPane.INFORMATION_MESSAGE); return; }
+        if (sel == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn 1 loại để xóa", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
         int ans = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa loại " + sel.getTen() + " không?", "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (ans != JOptionPane.YES_OPTION) return;
-        categories.remove(sel);
-        serviceCountMap.remove(sel.getMa());
-        rebuildCategoryCombo();
-        populateTable(categories);
+
+        // disable UI while checking/deleting (nếu bạn muốn UX tốt hơn, có thể dùng SwingWorker)
+        try {
+            // 1) Lấy danh sách dịch vụ thuộc loại này qua ServiceImpl (hoặc gọi service phù hợp)
+            ServiceImpl service = new ServiceImpl();
+            List<ServiceResponse> all = service.layTatCaDichVuCungGia();
+            List<ServiceResponse> inCategory = new ArrayList<>();
+            if (all != null) {
+                for (ServiceResponse sr : all) {
+                    if (sel.getMa().equals(sr.getMaLoaiDichVu())) inCategory.add(sr);
+                }
+            }
+
+            // 2) kiểm tra từng dịch vụ xem có đang dùng không
+            for (ServiceResponse dv : inCategory) {
+                if (service.isServiceCurrentlyUsed(dv.getMaDichVu())) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không thể xóa loại dịch vụ vì dịch vụ \"" + dv.getTenDichVu() + "\" đang được sử dụng.",
+                            "Không thể xóa",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+
+            // 3) Nếu tất cả OK -> gọi delete service category V2
+            boolean ok = false;
+            try {
+                ok = categoryService.deleteServiceCategoryV2(sel.getMa());
+            } catch (IllegalStateException ise) {
+                JOptionPane.showMessageDialog(this, ise.getMessage(), "Không thể xóa", JOptionPane.WARNING_MESSAGE);
+                return;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi xóa loại dịch vụ: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (ok) {
+                JOptionPane.showMessageDialog(this, "Xóa loại dịch vụ thành công", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                // reload UI panel loại
+                initSampleData();
+                rebuildCategoryCombo();
+                populateTable(categories);
+
+                // reload service panel (nếu có tham chiếu)
+                if (servicePanel != null) servicePanel.reloadAllData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi khi kiểm tra/xóa loại dịch vụ: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private LoaiDichVu getSelected() {

@@ -18,7 +18,11 @@ public enum ActionType {
     EDIT_ROOM_CATEGORY("SỬA LOẠI PHÒNG"),
     CREATE_SERVICE("THÊM DỊCH VỤ"),
     UPDATE_SERVICE("SỬA THÔNG TIN DỊCH VỤ"),
-    DELETE_SERVICE("XÓA DỊCH VỤ");
+    DELETE_SERVICE("XÓA DỊCH VỤ"),
+    CREATE_SERVICE_CATEGORY("THÊM LOẠI DỊCH VỤ"),
+    UPDATE_SERVICE_CATEGORY("SỬA THÔNG TIN LOẠI DỊCH VỤ"),
+    DELETE_SERVICE_CATEGORY("XÓA LOẠI DỊCH VỤ");
+
 
 
     public String actionName;

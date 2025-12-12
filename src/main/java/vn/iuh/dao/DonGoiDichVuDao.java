@@ -437,7 +437,8 @@ public class DonGoiDichVuDao {
                         "WHERE pddv.ma_dich_vu = ? " +
                         "  AND ISNULL(pddv.da_xoa, 0) = 0 " +
                         "  AND ISNULL(ctdp.da_xoa, 0) = 0 " +
-                        "  AND ISNULL(ctdp.kieu_ket_thuc, '') = ''"; // còn đang dùng / chưa kết thúc
+                        "  AND ISNULL(ctdp.kieu_ket_thuc, '') = ''";
+        Connection connection = DatabaseUtil.getConnect();// còn đang dùng / chưa kết thúc
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maDichVu);
