@@ -5,7 +5,9 @@ import vn.iuh.exception.TableEntityMismatch;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LoaiDichVuDAO {
     private final Connection connection;
@@ -133,6 +135,24 @@ public class LoaiDichVuDAO {
         } catch (SQLException e) {
             throw new TableEntityMismatch("Không thể chuyển kết quả thành LoaiDichVu: " + e.getMessage());
         }
+    }
+
+    // Map mã loại dịch vụ thành tên loại dịch vụ để hiển thị lên table
+    public Map<String, String> layMapMaThanhTenLoaiDichVu() {
+        String sql = "SELECT ma_loai_dich_vu, ten_loai_dich_vu FROM LoaiDichVu WHERE da_xoa = 0 ORDER BY ma_loai_dich_vu ASC";
+        Map<String, String> map = new LinkedHashMap<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                String ma = rs.getString("ma_loai_dich_vu");
+                String ten = rs.getString("ten_loai_dich_vu");
+                map.put(ma, ten);
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException("Lỗi khi lấy danh sách loại dịch vụ: " + ex.getMessage(), ex);
+        }
+        return map;
     }
 }
 

@@ -426,4 +426,27 @@ public class DonGoiDichVuDao {
 
         return danhSachPhongDungDichVu;
     }
+
+    // Kiểm tra dịch vụ có đang được sử dụng không
+    public boolean isServiceCurrentlyUsed(String maDichVu) {
+        if (maDichVu == null || maDichVu.isBlank()) return false;
+        String sql =
+                "SELECT TOP 1 ctdp.ma_chi_tiet_dat_phong " +
+                        "FROM PhongDungDichVu pddv " +
+                        "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                        "WHERE pddv.ma_dich_vu = ? " +
+                        "  AND ISNULL(pddv.da_xoa, 0) = 0 " +
+                        "  AND ISNULL(ctdp.da_xoa, 0) = 0 " +
+                        "  AND ISNULL(ctdp.kieu_ket_thuc, '') = ''"; // còn đang dùng / chưa kết thúc
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maDichVu);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi khi kiểm tra sử dụng dịch vụ: " + e.getMessage(), e);
+        }
+    }
+
 }
