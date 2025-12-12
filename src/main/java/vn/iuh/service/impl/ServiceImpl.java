@@ -103,8 +103,7 @@ public class ServiceImpl implements ServiceService {
 
             // 5) ghi lịch sử thao tác
             LichSuThaoTac lichSuThaoTac = lichSuDao.timLichSuThaoTacMoiNhat();
-            String lastMaLichSu = lichSuThaoTac.getMaLichSuThaoTac();
-            String maLichSu = EntityUtil.increaseEntityID(lastMaLichSu, "LT", 8);
+            String lastMaLichSu = (lichSuThaoTac == null) ? null : trimToNull(lichSuThaoTac.getMaLichSuThaoTac());            String maLichSu = EntityUtil.increaseEntityID(lastMaLichSu, "LT", 8);
             String moTa = "Thêm dịch vụ mới: " + maMoi + " - " + tenDichVu + " (giá: " + giaMoi + ")";
             LichSuThaoTac lsmoi = new LichSuThaoTac();
             lsmoi.setMaLichSuThaoTac(maLichSu);
@@ -329,4 +328,10 @@ public class ServiceImpl implements ServiceService {
         }
     }
 
+    // Xóa khoảng trắng
+    private String trimToNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
+    }
 }
