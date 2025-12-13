@@ -1,12 +1,19 @@
 package vn.iuh.dao;
 
+import vn.iuh.constraint.ActionType;
+import vn.iuh.dto.repository.ChangeRoomRecord;
 import vn.iuh.dto.repository.ThongTinSuDungPhong;
 import vn.iuh.entity.ChiTietDatPhong;
+import vn.iuh.entity.Phong;
 import vn.iuh.util.DatabaseUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChiTietDatPhongDAO {
     public ChiTietDatPhong timChiTietDatPhong(String maChiTietDatPhong) {
@@ -471,4 +478,108 @@ public class ChiTietDatPhongDAO {
             throw new RuntimeException("Lỗi khi xóa ChiTietDatPhong cho khách " + maKhachHang + ": " + ex.getMessage(), ex);
         }
     }
+
+    // Lấy lịch sử đổi phòng thoe đơn đặt phòng
+    public List<ChangeRoomRecord> layLichSuDoiPhongTheoDon(String maDonDatPhong) {
+        List<ChangeRoomRecord> results = new ArrayList<>();
+        PhongDAO phongDAO = new PhongDAO(); // để resolve tên -> ma_phong nếu cần
+        try (Connection conn = DatabaseUtil.getConnect()) {
+            // 1) Lấy từ LichSuThaoTac
+            String sql = "SELECT ma_lich_su_thao_tac, ten_thao_tac, mo_ta, thoi_gian_tao FROM LichSuThaoTac " +
+                    "WHERE ten_thao_tac IN (?, ?) AND mo_ta LIKE ? ORDER BY thoi_gian_tao ASC";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, ActionType.CHANGE_ROOM_BEFORE_CHECKIN.getActionName());
+                ps.setString(2, ActionType.CHANGE_ROOM_AFTER_CHECKIN.getActionName());
+                ps.setString(3, "Đổi phòng cho đơn " + maDonDatPhong + ":%");
+                try (ResultSet rs = ps.executeQuery()) {
+                    // regex mới: bắt 2 phần có thể chứa khoảng trắng (lazy)
+                    Pattern p = Pattern.compile("Đổi phòng cho đơn\\s+" + Pattern.quote(maDonDatPhong) + "\\s*:\\s*(.+?)\\s*->\\s*(.+?)($|\\s)", Pattern.CASE_INSENSITIVE);
+                    while (rs.next()) {
+                        String moTa = rs.getString("mo_ta");
+                        Timestamp t = rs.getTimestamp("thoi_gian_tao");
+                        String tenThaoTac = rs.getString("ten_thao_tac");
+                        if (moTa == null) continue;
+                        Matcher m = p.matcher(moTa.trim());
+                        if (m.find()) {
+                            String rawOld = m.group(1).trim();
+                            String rawNew = m.group(2).trim();
+
+                            // Try to resolve to ma_phong if raw is a display name
+                            String resolvedOld = resolveToRoomId(phongDAO, rawOld);
+                            String resolvedNew = resolveToRoomId(phongDAO, rawNew);
+
+                            // If resolution failed, keep raw (so we still show something)
+                            String oldRoom = resolvedOld != null ? resolvedOld : rawOld;
+                            String newRoom = resolvedNew != null ? resolvedNew : rawNew;
+
+                            results.add(new ChangeRoomRecord(null, null, oldRoom, newRoom, t, tenThaoTac));
+                        }
+                    }
+                }
+            }
+
+            // 2) Fallback: dò cặp ChiTietDatPhong (sử dụng phương thức findByBookingId đã có trong DAO)
+            List<ChiTietDatPhong> details = this.findByBookingId(maDonDatPhong);
+            if (details != null && details.size() > 1) {
+                Collections.sort(details, Comparator.comparing(ChiTietDatPhong::getTgNhanPhong, Comparator.nullsFirst(Comparator.naturalOrder())));
+                for (int i = 0; i < details.size() - 1; ++i) {
+                    ChiTietDatPhong prev = details.get(i);
+                    ChiTietDatPhong next = details.get(i + 1);
+                    if (prev.getTgTraPhong() == null || next.getTgNhanPhong() == null) continue;
+                    long diff = Math.abs(prev.getTgTraPhong().getTime() - next.getTgNhanPhong().getTime());
+                    // nếu tg_tra == tg_nhan (hoặc lệch <= 2s) và phòng khác -> coi là đổi phòng
+                    if (diff <= 2000L && prev.getMaPhong() != null && next.getMaPhong() != null
+                            && !prev.getMaPhong().equalsIgnoreCase(next.getMaPhong())) {
+
+                        // tránh trùng với record từ LichSuThaoTac
+                        boolean exists = false;
+                        for (ChangeRoomRecord r : results) {
+                            if (r.getOldRoom() != null && r.getNewRoom() != null &&
+                                    r.getOldRoom().equalsIgnoreCase(prev.getMaPhong()) &&
+                                    r.getNewRoom().equalsIgnoreCase(next.getMaPhong()) &&
+                                    Math.abs(r.getTime().getTime() - prev.getTgTraPhong().getTime()) <= 2000L) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            results.add(new ChangeRoomRecord(prev.getMaChiTietDatPhong(), next.getMaChiTietDatPhong(),
+                                    prev.getMaPhong(), next.getMaPhong(),
+                                    prev.getTgTraPhong(), ActionType.CHANGE_ROOM_AFTER_CHECKIN.getActionName()));
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // log nếu cần
+        }
+
+        // sắp xếp theo thời gian (tăng dần)
+        results.sort(Comparator.comparing(ChangeRoomRecord::getTime, Comparator.nullsFirst(Comparator.naturalOrder())));
+        return results;
+    }
+
+    private String resolveToRoomId(PhongDAO phongDAO, String raw) {
+        if (raw == null || raw.isEmpty()) return null;
+        try {
+            // nếu raw chính xác là mã phòng
+            Phong p = phongDAO.timPhong(raw);
+            if (p != null && p.getMaPhong() != null) return p.getMaPhong();
+
+            // thử tìm theo tên (có thể raw = "Phòng T007" hoặc "T007")
+            Phong byName = phongDAO.timPhongTheoTen(raw);
+            if (byName != null && byName.getMaPhong() != null) return byName.getMaPhong();
+
+            // try trimming common prefix "Phòng " (VN)
+            String trimmed = raw.replaceAll("(?i)ph[oòóỏõọ]ng\\s+", "").trim();
+            if (!trimmed.equals(raw)) {
+                Phong p2 = phongDAO.timPhongTheoTen(trimmed);
+                if (p2 != null && p2.getMaPhong() != null) return p2.getMaPhong();
+            }
+        } catch (Throwable ignore) { }
+        return null;
+    }
+
 }

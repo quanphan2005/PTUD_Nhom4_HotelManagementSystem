@@ -298,4 +298,29 @@ public class NhanVienDAO {
         }
         return null;
     }
+
+    // Tìm tên nhân viên bằng phiên đăng nhập
+    public String findTenNhanVienByPhienDangNhap(String maPhien) {
+        if (maPhien == null || maPhien.isEmpty()) return "";
+
+        String sql = "SELECT nv.ten_nhan_vien " +
+                "FROM PhienDangNhap p " +
+                "LEFT JOIN TaiKhoan t ON p.ma_tai_khoan = t.ma_tai_khoan " +
+                "LEFT JOIN NhanVien nv ON t.ma_nhan_vien = nv.ma_nhan_vien " +
+                "WHERE p.ma_phien_dang_nhap = ?";
+
+        try (Connection conn = DatabaseUtil.getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, maPhien);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String name = rs.getString("ten_nhan_vien");
+                    return name == null ? "" : name;
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "";
+    }
 }

@@ -2,6 +2,7 @@ package vn.iuh.service.impl;
 
 import vn.iuh.constraint.*;
 import vn.iuh.dao.*;
+import vn.iuh.dto.repository.ChangeRoomRecord;
 import vn.iuh.dto.response.BookingResponse;
 import vn.iuh.entity.*;
 import vn.iuh.gui.base.Main;
@@ -361,5 +362,9 @@ public class DoiPhongServiceImpl implements DoiPhongService {
             System.out.println("Lỗi khi lấy loại phòng: " + ex.getMessage());
         }
         return roomType;
+    }
+
+    public List<ChangeRoomRecord> layLichSuDoiPhongTheoDon(String maDonDatPhong) {
+        return chiTietDatPhongDAO.layLichSuDoiPhongTheoDon(maDonDatPhong);
     }
 }
