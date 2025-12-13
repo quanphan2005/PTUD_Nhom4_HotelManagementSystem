@@ -436,4 +436,39 @@ public class ChiTietDatPhongDAO {
         }
         return result;
     }
+
+    public int markBookingsAsDeletedByCustomer(String maKhachHang) {
+        if (maKhachHang == null) return 0;
+        String sql = "UPDATE DonDatPhong SET da_xoa = 1 WHERE ma_khach_hang = ? AND ISNULL(da_xoa,0)=0";
+        Connection connection = DatabaseUtil.getConnect();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maKhachHang);
+            return ps.executeUpdate();
+        } catch (SQLException ex) {
+            throw new RuntimeException("Lỗi khi xóa DonDatPhong cho " + maKhachHang + ": " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Đánh dấu xóa tất cả ChiTietDatPhong có liên quan tới DonDatPhong của khách.
+     * (dùng trước hoặc sau markBookingsAsDeletedByCustomer tùy luồng)
+     */
+    public int markBookingDetailsAsDeletedByCustomer(String maKhachHang) {
+        if (maKhachHang == null) return 0;
+        // cập nhật ChiTietDatPhong dựa trên DonDatPhong của khách
+        String sql = """
+            UPDATE ChiTietDatPhong
+            SET da_xoa = 1
+            WHERE ma_don_dat_phong IN (
+                SELECT ma_don_dat_phong FROM DonDatPhong WHERE ma_khach_hang = ? AND ISNULL(da_xoa,0)=0
+            )
+        """;
+        Connection connection = DatabaseUtil.getConnect();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maKhachHang);
+            return ps.executeUpdate();
+        } catch (SQLException ex) {
+            throw new RuntimeException("Lỗi khi xóa ChiTietDatPhong cho khách " + maKhachHang + ": " + ex.getMessage(), ex);
+        }
+    }
 }
