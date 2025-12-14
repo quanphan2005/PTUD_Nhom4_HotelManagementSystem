@@ -135,7 +135,7 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void createTopPanel() {
-        JPanel pnlTop = new JPanel();
+        JPanel pnlTop = new JPanel(new BorderLayout());
         JLabel lblTop = new JLabel("QUẢN LÝ ĐƠN ĐẶT PHÒNG", SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.bigFont);
@@ -550,7 +550,6 @@ public class ReservationManagementPanel extends JPanel {
 
             // Create detail panel
             ReservationInfoDetailPanel detailPanel = new ReservationInfoDetailPanel(detailInfo, this);
-
             // Navigate to detail panel using CardLayout
             if (parentContainer != null) {
                 // Check if detail panel already exists, if so remove it

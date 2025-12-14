@@ -80,7 +80,7 @@ public class PreReservationSearchPanel extends JPanel {
 
     private void createTopPanel() {
         JPanel pnlTop = new JPanel(new BorderLayout());
-        JLabel lblTop = new JLabel("Quản lý đơn đặt phòng trước", SwingConstants.CENTER);
+        JLabel lblTop = new JLabel("ĐƠN ĐẶT TRƯỚC TẠI PHÒNG " + roomName.toUpperCase(), SwingConstants.CENTER);
         lblTop.setForeground(CustomUI.white);
         lblTop.setFont(CustomUI.bigFont);
 

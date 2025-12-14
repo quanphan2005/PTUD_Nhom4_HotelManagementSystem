@@ -611,7 +611,7 @@ public class RoomItem extends JPanel {
                 panel.setBackground(CustomUI.lightBlue);
             } else
                 if (RoomStatus.ROOM_USING_STATUS.getStatus().equalsIgnoreCase(bookingResponse.getRoomStatus())) {
-                    panel.setBackground(CustomUI.orange);
+                    panel.setBackground(CustomUI.lightOrange);
                 } else
                     if (RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus()
                                                             .equalsIgnoreCase(bookingResponse.getRoomStatus())) {

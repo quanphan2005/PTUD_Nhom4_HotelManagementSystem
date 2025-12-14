@@ -172,7 +172,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         titlePanel.setOpaque(false);
 
         // Title for multi-room booking
-        JLabel titleLabel = new JLabel("Đặt nhiều phòng (" + selectedRooms.size() + " phòng)", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("ĐẶT NHIỀU PHÒNG (" + selectedRooms.size() + " PHÒNG)", SwingConstants.CENTER);
         titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
@@ -223,11 +223,14 @@ public class MultiRoomBookingFormPanel extends JPanel {
         JPanel footerPanel = new JPanel(new BorderLayout());
         footerPanel.setPreferredSize(new Dimension(0, 50));
         footerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
-        footerPanel.setBackground(CustomUI.darkBlue);
+        footerPanel.setBackground(CustomUI.white);
+
+        // gray line border on top
+        footerPanel.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, CustomUI.gray));
 
         // Button panel with horizontal layout
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
-        buttonPanel.setBackground(CustomUI.darkBlue);
+        buttonPanel.setBackground(CustomUI.white);
         buttonPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         buttonPanel.setOpaque(true);
 
@@ -240,7 +243,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         btnGoiDichVu.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         btnDatPhong.setFont(CustomUI.bigFont);
-        btnDatPhong.setBackground(CustomUI.darkGreen.brighter());
+        btnDatPhong.setBackground(CustomUI.darkGreen);
         btnDatPhong.setForeground(CustomUI.white);
         btnDatPhong.setPreferredSize(new Dimension(300, 40));
         btnDatPhong.setFocusPainted(false);
@@ -250,7 +253,7 @@ public class MultiRoomBookingFormPanel extends JPanel {
         btnGoiDichVu.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnGoiDichVu.setBackground(CustomUI.blue.brighter());
+                btnGoiDichVu.setBackground(CustomUI.blue.darker());
             }
 
             @Override
@@ -262,12 +265,12 @@ public class MultiRoomBookingFormPanel extends JPanel {
         btnDatPhong.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnDatPhong.setBackground(CustomUI.darkGreen);
+                btnDatPhong.setBackground(CustomUI.darkGreen.darker());
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                btnDatPhong.setBackground(CustomUI.darkGreen.brighter());
+                btnDatPhong.setBackground(CustomUI.darkGreen);
             }
         });
 

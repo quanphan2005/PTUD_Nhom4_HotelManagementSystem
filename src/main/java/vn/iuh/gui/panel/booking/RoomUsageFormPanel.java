@@ -1008,7 +1008,7 @@ public class RoomUsageFormPanel extends JPanel {
     // Setup event handlers for buttons
     private void setupEventHandlers() {
         btnCancel.addActionListener(e -> handleCancel());
-        btnClose.addActionListener(e -> Main.showCard(PanelName.BOOKING_MANAGEMENT.getName()));
+        btnClose.addActionListener(e -> handleClose());
         btnCreateReservationForm.addActionListener(e -> handleCreateReservationForm());
         reservationButton.addActionListener(e -> handleShowReservationManagement());
         btnEntering.addActionListener(e -> handleEntering());
@@ -1031,6 +1031,11 @@ public class RoomUsageFormPanel extends JPanel {
         }
 
         RefreshManager.refreshAfterCheckIn();
+    }
+
+    private void handleClose() {
+        RefreshManager.refreshAll();
+        Main.showCard(PanelName.BOOKING_MANAGEMENT.getName());
     }
 
     private void handleLeaving() {

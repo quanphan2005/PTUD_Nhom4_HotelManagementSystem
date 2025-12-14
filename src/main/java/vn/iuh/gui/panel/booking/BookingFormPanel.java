@@ -187,12 +187,12 @@ public class BookingFormPanel extends JPanel {
         titlePanel.setOpaque(false);
 
         // Title with room name
-        JLabel titleLabel = new JLabel("ĐẶT PHÒNG " + selectedRoom.getRoomName(), SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("ĐẶT PHÒNG " + selectedRoom.getRoomName().toUpperCase(), SwingConstants.CENTER);
         titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 150, 0, 150));
 
-        titlePanel.add(titleLabel);
+        titlePanel.add(titleLabel, BorderLayout.CENTER);
 
         closeButton = new JButton("x");
         closeButton.setFont(CustomUI.bigFont);
@@ -259,7 +259,7 @@ public class BookingFormPanel extends JPanel {
         btnGoiDichVu.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         btnDatPhong.setFont(CustomUI.bigFont);
-        btnDatPhong.setBackground(CustomUI.darkGreen.brighter());
+        btnDatPhong.setBackground(CustomUI.darkGreen);
         btnDatPhong.setForeground(CustomUI.white);
         btnDatPhong.setPreferredSize(new Dimension(300, 40));
         btnDatPhong.setFocusPainted(false);
@@ -269,7 +269,7 @@ public class BookingFormPanel extends JPanel {
         btnGoiDichVu.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnGoiDichVu.setBackground(CustomUI.blue.brighter());
+                btnGoiDichVu.setBackground(CustomUI.blue.darker());
             }
 
             @Override
@@ -281,12 +281,12 @@ public class BookingFormPanel extends JPanel {
         btnDatPhong.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnDatPhong.setBackground(CustomUI.darkGreen);
+                btnDatPhong.setBackground(CustomUI.darkGreen.darker());
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                btnDatPhong.setBackground(CustomUI.darkGreen.brighter());
+                btnDatPhong.setBackground(CustomUI.darkGreen);
             }
         });
 
@@ -1175,6 +1175,7 @@ public class BookingFormPanel extends JPanel {
     }
 
     private void handleCloseReservation() {
+        RefreshManager.refreshAll();
         Main.showCard(parentName);
     }
 }

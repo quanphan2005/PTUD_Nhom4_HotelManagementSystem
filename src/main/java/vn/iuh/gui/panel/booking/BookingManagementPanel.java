@@ -275,7 +275,7 @@ public class BookingManagementPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 1;
         panel.add(btnChecking, gbc);
 
-        JButton btnUsing = createStatusButton(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")", CustomUI.orange, RoomStatus.ROOM_USING_STATUS.getStatus());
+        JButton btnUsing = createStatusButton(RoomStatus.ROOM_USING_STATUS.getStatus() + " (" + usingCount + ")", CustomUI.lightOrange, RoomStatus.ROOM_USING_STATUS.getStatus());
         gbc.gridx = 1; gbc.gridy = 1;
         panel.add(btnUsing, gbc);
 
@@ -582,20 +582,13 @@ public class BookingManagementPanel extends JPanel {
     }
 
     private void handleCheckinDateChange() {
-        try {
-            spnCheckInDate.commitEdit();
-            spnCheckOutDate.commitEdit();
-        } catch (java.text.ParseException e) {
-            System.out.println("Error parsing date from spinner: " + e.getMessage());
-        }
-
         Date now = new Date();
         Date checkInDate = (Date) spnCheckInDate.getValue();
         System.out.println("Check-in date changed to: " + checkInDate);
         Date currentCheckOutDate = (Date) spnCheckOutDate.getValue();
 
         // Handle past check-in date
-        if (checkInDate.before(Date.from(now.toInstant().minus(1, ChronoUnit.MINUTES)))) {
+        if (checkInDate.before(Date.from(now.toInstant().minus(10, ChronoUnit.MINUTES)))) {
             JOptionPane.showMessageDialog(this,
                                           "Ngày check-in không được trước ngày hiện tại!",
                                           "Lỗi ngày tháng",
@@ -610,7 +603,7 @@ public class BookingManagementPanel extends JPanel {
         }
 
         // Auto increase check-out date if it's not after check-in or less than 1 hour after check-in
-        if (!currentCheckOutDate.after(checkInDate) ||
+        if (currentCheckOutDate.before(Date.from(checkInDate.toInstant().minus(1, ChronoUnit.MINUTES))) ||
             (currentCheckOutDate.getTime() - checkInDate.getTime()) < (60 * 60 * 1000)) {
             // Set checkout to be 1 day after checkin
             Date newCheckOutDate = Date.from(checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
@@ -631,13 +624,6 @@ public class BookingManagementPanel extends JPanel {
     }
 
     private void handleCheckoutDateChange() {
-        try {
-            spnCheckInDate.commitEdit();
-            spnCheckOutDate.commitEdit();
-        } catch (java.text.ParseException e) {
-            System.out.println("Error parsing date from spinner: " + e.getMessage());
-        }
-
         Date checkInDate = (Date) spnCheckInDate.getValue();
         Date checkOutDate = (Date) spnCheckOutDate.getValue();
 
@@ -657,7 +643,10 @@ public class BookingManagementPanel extends JPanel {
                 spnCheckInDate.setValue(now);
                 roomFilter.checkInDate = now;
             }
-            Date newCheckOutDate = Date.from(roomFilter.checkInDate.toInstant().plus(1, ChronoUnit.DAYS));
+
+            Date newCheckOutDate = roomFilter.checkInDate != null ?
+                    Date.from(roomFilter.checkInDate.toInstant().plus(1, ChronoUnit.DAYS)) :
+                    Date.from(now.toInstant().plus(1, ChronoUnit.DAYS));;
             spnCheckOutDate.setValue(newCheckOutDate);
             roomFilter.checkOutDate = newCheckOutDate;
             search();
@@ -724,7 +713,6 @@ public class BookingManagementPanel extends JPanel {
                     new Timestamp(roomFilter.checkInDate.getTime()),
                     new Timestamp(roomFilter.checkOutDate.getTime())
             );
-            System.out.println("Non-empty rooms in range: " + nonEmptyRoomIds.size());
 
             // Loop through all empty rooms (sorted) and apply filters
             for (String roomId : emptyRoomMap.keySet().stream().sorted().toList()) {

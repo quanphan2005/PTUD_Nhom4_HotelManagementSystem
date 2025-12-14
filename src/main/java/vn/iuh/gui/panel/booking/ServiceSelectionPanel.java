@@ -309,7 +309,7 @@ public class ServiceSelectionPanel extends JPanel {
         lblTotalCost.setFont(CustomUI.normalFont);
         lblTotalCost.setBorder(BorderFactory.createLineBorder(CustomUI.black, 1));
         lblTotalCost.setOpaque(true);
-        lblTotalCost.setBackground(CustomUI.yellow);
+        lblTotalCost.setBackground(CustomUI.lightOrange);
         lblTotalCost.setForeground(CustomUI.black);
         lblTotalCost.setPreferredSize(new Dimension(280, 40)); // Fixed wider size
         lblTotalCost.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
@@ -325,7 +325,7 @@ public class ServiceSelectionPanel extends JPanel {
         headerPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         headerPanel.setBackground(CustomUI.blue);
 
-        JLabel titleLabel = new JLabel("Gọi dịch vụ (" + totalRoom + " Phòng)", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("GỌI DỊCH VỤ (" + totalRoom + " PHÒNG)", SwingConstants.CENTER);
         titleLabel.setFont(CustomUI.bigFont);
         titleLabel.setForeground(CustomUI.white);
 

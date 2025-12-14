@@ -269,7 +269,9 @@ public class ReservationInfoDetailPanel extends JPanel {
         // Create table base on reservation status
         String[] columnNames;
         if (Objects.equals(reservationInfo.getStatus(), ReservationStatus.COMPLETED.getStatus())
-            || Objects.equals(reservationInfo.getStatus(), ReservationStatus.CANCELLED.getStatus())) {
+            || Objects.equals(reservationInfo.getStatus(), ReservationStatus.CANCELLED.getStatus())
+            || Objects.equals(reservationInfo.getStatus(), ReservationStatus.CHECKOUT_LATE.getStatus())
+        ) {
             columnNames = new String[]{"Mã chi tiết", "Phòng", "Checkin", "Checkout", "Trạng thái"};
         } else {
             columnNames = new String[]{"Mã chi tiết", "Phòng", "Checkin", "Checkout", "Trạng thái", "Thao tác"};
@@ -286,7 +288,9 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         // Set dynamic column widths
         if (Objects.equals(reservationInfo.getStatus(), ReservationStatus.COMPLETED.getStatus())
-            || Objects.equals(reservationInfo.getStatus(), ReservationStatus.CANCELLED.getStatus())) {
+            || Objects.equals(reservationInfo.getStatus(), ReservationStatus.CANCELLED.getStatus())
+            || Objects.equals(reservationInfo.getStatus(), ReservationStatus.CHECKOUT_LATE.getStatus())
+        ) {
             tblRoomDetails.addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent e) {
@@ -733,7 +737,6 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     public void attachButtons(JPanel panel, String status, ReservationDetailResponse detail) {
-        System.out.println("Visualizing buttons for status: " + status);
         panel.removeAll();
 
         if (status == null) {

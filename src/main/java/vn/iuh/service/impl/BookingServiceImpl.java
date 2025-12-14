@@ -159,7 +159,8 @@ public class BookingServiceImpl implements BookingService {
             }
 
             // 2.5. Create RoomUsageServiceEntity & insert to DB
-            List<String> serviceIds = bookingCreationEvent.getDanhSachDichVu().stream().map(DonGoiDichVu::getMaDichVu).toList();
+            List<String> serviceIds =
+                    bookingCreationEvent.getDanhSachDichVu().stream().map(DonGoiDichVu::getMaDichVu).toList();
             List<DichVu> danhSachDichVu = dichVuDAO.timDanhSachDichVuBangDanhSachMa(serviceIds);
 
             Map<String, String> serviceIdToNameMap = new HashMap<>();
@@ -178,13 +179,13 @@ public class BookingServiceImpl implements BookingService {
                     phongDungDichVuMoiNhat == null ? null : phongDungDichVuMoiNhat.getMaPhongDungDichVu();
 
             for (DonGoiDichVu dichVu : bookingCreationEvent.getDanhSachDichVu()) {
-                    phongDungDichVuMoiNhat =
-                            createRoomUsageServiceEntity(bookingCreationEvent,
-                                                         maPhongDungDichVuMoiNhat,
-                                                         RoomIdToReservationDetailId.get(dichVu.getMaPhong()),
-                                                         dichVu);
-                    maPhongDungDichVuMoiNhat = phongDungDichVuMoiNhat.getMaPhongDungDichVu();
-                    danhSachPhongDungDichVu.add(phongDungDichVuMoiNhat);
+                phongDungDichVuMoiNhat =
+                        createRoomUsageServiceEntity(bookingCreationEvent,
+                                                     maPhongDungDichVuMoiNhat,
+                                                     RoomIdToReservationDetailId.get(dichVu.getMaPhong()),
+                                                     dichVu);
+                maPhongDungDichVuMoiNhat = phongDungDichVuMoiNhat.getMaPhongDungDichVu();
+                danhSachPhongDungDichVu.add(phongDungDichVuMoiNhat);
             }
 
             // 2.6. Create Deposite Invoice if and invoice details if there is advance payment
@@ -247,10 +248,13 @@ public class BookingServiceImpl implements BookingService {
 
                     BigDecimal tongTien = BigDecimal.ZERO;
                     if (!isLessThanHalfDay) {
-                        tongTien = dailyPriceMap.get(chiTietDatPhong.getMaPhong()).multiply(BigDecimal.valueOf(soNgaySuDung))
-                                                .add(hourlyPriceMap.get(chiTietDatPhong.getMaPhong()).multiply(BigDecimal.valueOf(soGioSuDung)));
+                        tongTien = dailyPriceMap.get(chiTietDatPhong.getMaPhong())
+                                                .multiply(BigDecimal.valueOf(soNgaySuDung))
+                                                .add(hourlyPriceMap.get(chiTietDatPhong.getMaPhong())
+                                                                   .multiply(BigDecimal.valueOf(soGioSuDung)));
                     } else {
-                        tongTien = hourlyPriceMap.get(chiTietDatPhong.getMaPhong()).multiply(BigDecimal.valueOf(thoiGianDung));
+                        tongTien = hourlyPriceMap.get(chiTietDatPhong.getMaPhong())
+                                                 .multiply(BigDecimal.valueOf(thoiGianDung));
                     }
 
                     ChiTietHoaDon chiTietHoaDon = createInvoiceDetailEntity(
@@ -265,15 +269,16 @@ public class BookingServiceImpl implements BookingService {
                     );
 
                     maChiTietHoaDonMoiNhat = EntityUtil.increaseEntityID(maChiTietHoaDonMoiNhat,
-                                                                           EntityIDSymbol.INVOICE_DETAIL_PREFIX.getPrefix(),
-                                                                           EntityIDSymbol.INVOICE_DETAIL_PREFIX.getLength());
+                                                                         EntityIDSymbol.INVOICE_DETAIL_PREFIX.getPrefix(),
+                                                                         EntityIDSymbol.INVOICE_DETAIL_PREFIX.getLength());
 
                     chiTietHoaDon.setTongTien(tongTien);
                     chiTietHoaDon.setTenPhong(RoomIdToRoomName.get(chiTietDatPhong.getMaPhong()));
                     danhSachChiTietHoaDon.add(chiTietHoaDon);
 
                     danhSachPhongDungDichVu.forEach(phongDungDichVu -> {
-                        if (Objects.equals(phongDungDichVu.getMaChiTietDatPhong(), chiTietDatPhong.getMaChiTietDatPhong())) {
+                        if (Objects.equals(phongDungDichVu.getMaChiTietDatPhong(),
+                                           chiTietDatPhong.getMaChiTietDatPhong())) {
                             phongDungDichVu.setTenDichVu(serviceIdToNameMap.get(phongDungDichVu.getMaDichVu()));
                             phongDungDichVu.setTenPhong(RoomIdToRoomName.get(chiTietDatPhong.getMaPhong()));
                         }
@@ -300,12 +305,14 @@ public class BookingServiceImpl implements BookingService {
                 if (bookingCreationEvent.isDaDatTruoc()) {
                     congViecs.add(new CongViec(newId, RoomStatus.ROOM_BOOKED_STATUS.getStatus(),
                                                bookingCreationEvent.getTgNhanPhong(), new Timestamp(
-                                    bookingCreationEvent.getTgNhanPhong().getTime() + (long) WorkTimeCost.CHECKIN_LATE_MAX.getMinutes() * 60 * 1000),
+                            bookingCreationEvent.getTgNhanPhong().getTime() +
+                            (long) WorkTimeCost.CHECKIN_LATE_MAX.getMinutes() * 60 * 1000),
                                                roomId, null));
                 } else {
                     congViecs.add(new CongViec(newId, RoomStatus.ROOM_CHECKING_STATUS.getStatus(),
                                                bookingCreationEvent.getTgNhanPhong(), new Timestamp(
-                                    bookingCreationEvent.getTgNhanPhong().getTime() + (long) WorkTimeCost.CHECKING_WAITING_TIME.getMinutes() * 60 * 1000),
+                            bookingCreationEvent.getTgNhanPhong().getTime() +
+                            (long) WorkTimeCost.CHECKING_WAITING_TIME.getMinutes() * 60 * 1000),
                                                roomId, null));
                 }
                 jobId = newId;
@@ -632,8 +639,9 @@ public class BookingServiceImpl implements BookingService {
                 lichSuDiVaoDAO.timLichSuDiVaoBangMaChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
         for (LichSuDiVao ls : lichSuDiVao) {
             if (ls.getLaLanDauTien()) {
-                System.out.println("Không thể hủy đặt phòng cho mã đặt phòng: " + maDatPhong + " và mã phòng: " + maPhong +
-                                   " vì đã thực hiện check-in.");
+                System.out.println(
+                        "Không thể hủy đặt phòng cho mã đặt phòng: " + maDatPhong + " và mã phòng: " + maPhong +
+                        " vì đã thực hiện check-in.");
                 return false;
             }
         }
@@ -772,7 +780,7 @@ public class BookingServiceImpl implements BookingService {
         }
         // Checkin time is within 30 minutes
         if (statusRepository.getCheckinDate().getTime() <= new Date().getTime()
-                   && statusRepository.getCheckinDate().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
+            && statusRepository.getCheckinDate().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
             return ReservationStatus.CHECKING.getStatus();
         }
         // Already checked-in
@@ -813,15 +821,19 @@ public class BookingServiceImpl implements BookingService {
 
         // 3. Find all ReservationDetail IDs by ReservationForm ID
         Set<String> danhSachMaChiTietDatPhong = new HashSet<>();
-        List<ReservationDetailRepository> danhSachChiTietDatPhong = datPhongDAO.getReservationDetailByReservationId(maDonDatPhong);
+        List<ReservationDetailRepository> danhSachChiTietDatPhong =
+                datPhongDAO.getReservationDetailByReservationId(maDonDatPhong);
         for (ReservationDetailRepository chiTietDatPhong : danhSachChiTietDatPhong) {
             danhSachMaChiTietDatPhong.add(chiTietDatPhong.getReservationDetailId());
         }
 
         // 4. Find all related info by ReservationDetail IDs (usage services, check-in history, check-out history)
-        List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong = lichSuDiVaoDAO.timTatCaLichSuDiVaoBangMaDatPhong(donDatPhong.getMaDonDatPhong());
-        List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong = lichSuRaNgoaiDAO.timTatCaLichSuRaNgoaiBangMaDatPhong(donDatPhong.getMaDonDatPhong());
-        List<RoomUsageServiceInfo> phongDungDichVuTheoChiTietDatPhong = donGoiDichVuDao.timTatCaDonGoiDichVuBangMaDatPhong(donDatPhong.getMaDonDatPhong());
+        List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong =
+                lichSuDiVaoDAO.timTatCaLichSuDiVaoBangMaDatPhong(donDatPhong.getMaDonDatPhong());
+        List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong =
+                lichSuRaNgoaiDAO.timTatCaLichSuRaNgoaiBangMaDatPhong(donDatPhong.getMaDonDatPhong());
+        List<RoomUsageServiceInfo> phongDungDichVuTheoChiTietDatPhong =
+                donGoiDichVuDao.timTatCaDonGoiDichVuBangMaDatPhong(donDatPhong.getMaDonDatPhong());
 
         return createReservationInfoDetailResponse(customerInfo,
                                                    donDatPhong,
@@ -969,8 +981,7 @@ public class BookingServiceImpl implements BookingService {
                                                                               List<LichSuDiVao> lichSuDiVaoTheoChiTietDatPhong,
                                                                               List<LichSuRaNgoai> lichSuDiRaTheoChiTietDatPhong,
                                                                               List<RoomUsageServiceInfo> phongDungDichVuTheoChiTietDatPhong
-                                                                              )
-    {
+    ) {
 
         // 1. Create base response
         List<ReservationDetailResponse> reservationDetailResponses = new ArrayList<>();
@@ -1104,47 +1115,54 @@ public class BookingServiceImpl implements BookingService {
         String status = null;
         if (donDatPhong.isDaXoa())
             status = ReservationStatus.CANCELLED.getStatus();
-        else if (lichSuDiVaoTheoChiTietDatPhong.size() == 0)
-            status = ReservationStatus.CHECKED_IN.getStatus();
-        else {
-            boolean allCheckedOut = true;
-            for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
-                // Skip if this room is one of the endType rooms
-                if (reservationDetailRepository.getEndType() != null) {
-                    continue;
-                }
+        else
+            if (lichSuDiVaoTheoChiTietDatPhong.size() == 0)
+                status = ReservationStatus.CHECKED_IN.getStatus();
+            else {
+                boolean allCheckedOut = true;
+                for (ReservationDetailRepository reservationDetailRepository : danhSachChiTietDatPhong) {
+                    // Skip if this room is one of the endType rooms
+                    if (reservationDetailRepository.getEndType() != null) {
+                        continue;
+                    }
 
-                boolean hasCheckedOut = false;
-                for (LichSuRaNgoai lsrn : lichSuDiRaTheoChiTietDatPhong) {
-                    if (Objects.equals(lsrn.getMaChiTietDatPhong(), reservationDetailRepository.getReservationDetailId())
-                        && lsrn.isLaLanCuoiCung()) {
-                        hasCheckedOut = true;
+                    boolean hasCheckedOut = false;
+                    for (LichSuRaNgoai lsrn : lichSuDiRaTheoChiTietDatPhong) {
+                        if (Objects.equals(lsrn.getMaChiTietDatPhong(),
+                                           reservationDetailRepository.getReservationDetailId())
+                            && lsrn.isLaLanCuoiCung()) {
+                            hasCheckedOut = true;
+                            break;
+                        }
+                    }
+                    if (!hasCheckedOut) {
+                        allCheckedOut = false;
                         break;
                     }
                 }
-                if (!hasCheckedOut) {
-                    allCheckedOut = false;
-                    break;
-                }
+                if (allCheckedOut)
+                    status = ReservationStatus.COMPLETED.getStatus();
+                else
+                    if (donDatPhong.getTgNhanPhong().getTime() <= new Date().getTime()
+                        && donDatPhong.getTgNhanPhong().getTime() >= new Date().getTime() - 30 * 60 * 1000)
+                        status = ReservationStatus.CHECKING.getStatus();
+                    else
+                        if (donDatPhong.getTgTraPhong().getTime() <= new Date().getTime()) {
+                            status = ReservationStatus.CHECKOUT_LATE.getStatus();
+                        } else {
+                            status = ReservationStatus.USING.getStatus();
+                        }
             }
-            if (allCheckedOut)
-                status = ReservationStatus.COMPLETED.getStatus();
-            else if (donDatPhong.getTgNhanPhong().getTime() <= new Date().getTime()
-                             && donDatPhong.getTgNhanPhong().getTime() >= new Date().getTime() - 30 * 60 * 1000)
-                status = ReservationStatus.CHECKING.getStatus();
-            else
-                status = ReservationStatus.USING.getStatus();
-        }
 
         return new ReservationInfoDetailResponse(
-            thongTinKhachHang.getCCCD(),
-            thongTinKhachHang.getTenKhachHang(),
-            donDatPhong.getMaDonDatPhong(),
-            status,
-            donDatPhong.isDaDatTruoc(),
-            reservationDetailResponses,
-            roomUsageServiceResponses,
-            movingHistoryResponses
+                thongTinKhachHang.getCCCD(),
+                thongTinKhachHang.getTenKhachHang(),
+                donDatPhong.getMaDonDatPhong(),
+                status,
+                donDatPhong.isDaDatTruoc(),
+                reservationDetailResponses,
+                roomUsageServiceResponses,
+                movingHistoryResponses
         );
     }
 
@@ -1163,7 +1181,7 @@ public class BookingServiceImpl implements BookingService {
 
             // Checkin time is within 30 minutes
             if (reservationDetailRepository.getTimeIn().getTime() <= new Date().getTime()
-                       && reservationDetailRepository.getTimeIn().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
+                && reservationDetailRepository.getTimeIn().getTime() >= new Date().getTime() - 30 * 60 * 1000) {
                 return ReservationStatus.CHECKING.getStatus();
             }
 
@@ -1184,7 +1202,7 @@ public class BookingServiceImpl implements BookingService {
         // End type indicates how the room reservation ended
         // Transferred or checked out with issues
         if (reservationDetailRepository.getEndType().equals(RoomEndType.DOI_PHONG.getStatus())
-        || reservationDetailRepository.getEndType().equals(RoomEndType.TRA_PHONG_LOI.getStatus())) {
+            || reservationDetailRepository.getEndType().equals(RoomEndType.TRA_PHONG_LOI.getStatus())) {
             return ReservationStatus.TRANSFERRED.getStatus();
         }
         // Completed normally
@@ -1192,9 +1210,10 @@ public class BookingServiceImpl implements BookingService {
             return ReservationStatus.COMPLETED.getStatus();
         }
         // No check-in after specified time
-        else if (reservationDetailRepository.getEndType().equals(RoomEndType.KHONG_NHAN_PHONG.getStatus())) {
-            return ReservationStatus.NO_CHECKIN.getStatus();
-        }
+        else
+            if (reservationDetailRepository.getEndType().equals(RoomEndType.KHONG_NHAN_PHONG.getStatus())) {
+                return ReservationStatus.NO_CHECKIN.getStatus();
+            }
         // Cancelled
         if (reservationDetailRepository.getEndType().equals(RoomEndType.HUY_PHONG.getStatus())) {
             return ReservationStatus.CANCELLED.getStatus();
@@ -1203,7 +1222,9 @@ public class BookingServiceImpl implements BookingService {
         return "UNKNOWN";
     }
 
-    private ChiTietHoaDon createInvoiceDetailEntity(String maChiTietHoaDon, String maHoaDon, String maPhong, String maChiTietDatPhong, BigDecimal donGiaPhongHienTai, double thoiGianDung) {
+    private ChiTietHoaDon createInvoiceDetailEntity(String maChiTietHoaDon, String maHoaDon, String maPhong,
+                                                    String maChiTietDatPhong, BigDecimal donGiaPhongHienTai,
+                                                    double thoiGianDung) {
         return new ChiTietHoaDon(
                 maChiTietHoaDon,
                 maHoaDon,
@@ -1215,7 +1236,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
 
-    private BigDecimal calculatePriceWithTaxPrice(BigDecimal price){
+    private BigDecimal calculatePriceWithTaxPrice(BigDecimal price) {
         ThongTinPhuPhi thue = vn.iuh.util.FeeValue.getInstance().get(Fee.THUE);
         return price.multiply(thue.getGiaHienTai()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
