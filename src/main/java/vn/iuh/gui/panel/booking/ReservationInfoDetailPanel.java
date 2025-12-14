@@ -9,6 +9,7 @@ import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.Main;
 import vn.iuh.gui.dialog.BookThemGioDialog;
 import vn.iuh.gui.dialog.DepositInvoiceDialog;
+import vn.iuh.gui.dialog.LichSuDoiPhongDialog;
 import vn.iuh.gui.panel.DoiPhongDiaLog;
 import vn.iuh.gui.dialog.InvoiceDialog2;
 import vn.iuh.gui.panel.DoiPhongDiaLog;
@@ -71,6 +72,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private DecimalFormat priceFormatter = PriceFormat.getPriceFormatter();
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    private boolean isDialog;
 
     public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo, ReservationManagementPanel parentPanel) {
         this.reservationInfo = reservationInfo;
@@ -85,12 +87,13 @@ public class ReservationInfoDetailPanel extends JPanel {
         loadData();
     }
 
-    public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo) {
+    public ReservationInfoDetailPanel(ReservationInfoDetailResponse reservationInfo, boolean isDialog) {
         this.reservationInfo = reservationInfo;
 
         this.bookingService = new BookingServiceImpl();
         this.checkinService = new CheckinServiceImpl();
         this.checkOutService = new CheckOutServiceImpl();
+        this.isDialog = isDialog;
 
         setLayout(new BorderLayout());
         init();
@@ -899,10 +902,12 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     private void handleCheckoutAndPrintReceipt(ReservationInfoDetailResponse detail) {
-        int result = JOptionPane.showConfirmDialog(null,
-                "Xác nhận trả đơn đặt phòng " + detail.getMaDonDatPhong() + "?",
-                "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
-
+        int result = 0;
+        if(!this.isDialog){
+            result = JOptionPane.showConfirmDialog(null,
+                    "Xác nhận trả đơn đặt phòng " + detail.getMaDonDatPhong() + "?",
+                    "Trả phòng", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+        }
         if (result == JOptionPane.YES_OPTION) {
             InvoiceResponse invoiceResponse = checkOutService.checkOutReservation(detail.getMaDonDatPhong());
             if (invoiceResponse != null) {
@@ -921,9 +926,46 @@ public class ReservationInfoDetailPanel extends JPanel {
     }
 
     private void handleCheckTranferRoomHistory(ReservationInfoDetailResponse detail) {
-        JOptionPane.showMessageDialog(this,
-                                      "Chức năng xem lịch sử đổi phòng đang được phát triển",
-                                      "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        if (detail == null) return;
+
+        try {
+            String maDon = detail.getMaDonDatPhong();
+            if (maDon == null || maDon.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Không xác định được mã đơn để xem lịch sử đổi phòng.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Lấy owner window (an toàn với cả frame/dialog)
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            Frame frameOwner = owner instanceof Frame ? (Frame) owner : null;
+
+            // Mở dialog (modal). LichSuDoiPhongDialog.showDialog sẽ block cho đến khi đóng.
+            LichSuDoiPhongDialog.showDialog(frameOwner, maDon);
+
+            // Sau khi đóng dialog, refresh dữ liệu hiển thị (nếu cần)
+            try {
+                if (reservationInfo != null && reservationInfo.getMaDonDatPhong() != null) {
+                    ReservationInfoDetailResponse updated = bookingService.getReservationDetailInfo(reservationInfo.getMaDonDatPhong());
+                    if (updated != null) {
+                        reservationInfo = updated;
+                    }
+                }
+            } catch (Exception ex) {
+                // nếu load lại thất bại thì bỏ qua (không phá flow)
+                ex.printStackTrace();
+            }
+            // reload UI
+            loadData();
+            refreshPanel();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi mở lịch sử đổi phòng: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // Action handlers for reservation details
@@ -1255,5 +1297,8 @@ public class ReservationInfoDetailPanel extends JPanel {
         setLayout(new BorderLayout());
         init();
         loadData();
+    }
+    public ReservationInfoDetailResponse getReservationInfo() {
+        return reservationInfo;
     }
 }

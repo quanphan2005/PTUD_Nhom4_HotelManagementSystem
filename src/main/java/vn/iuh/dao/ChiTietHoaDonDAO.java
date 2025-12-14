@@ -9,15 +9,11 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ChiTietHoaDonDAO {
-    private final Connection connection;
-
-    public ChiTietHoaDonDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
     public boolean insert(ChiTietHoaDon chiTietHoaDon) {
         String sql = "INSERT INTO ChiTietHoaDon (ma_chi_tiet_hoa_don, thoi_gian_su_dung, ma_hoa_don, ma_chi_tiet_dat_phong, ma_phong, don_gia_phong) VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, chiTietHoaDon.getMaChiTietHoaDon());
             ps.setDouble(2, chiTietHoaDon.getThoiGianSuDung());
             ps.setString(3, chiTietHoaDon.getMaHoaDon());
@@ -35,8 +31,10 @@ public class ChiTietHoaDonDAO {
 
     public boolean themDanhSachChiTietHoaDon(List<ChiTietHoaDon> danhSachChiTietHoaDon){
         String sql = "INSERT INTO ChiTietHoaDon (ma_chi_tiet_hoa_don, thoi_gian_su_dung, ma_hoa_don, ma_chi_tiet_dat_phong, ma_phong, don_gia_phong, tong_tien) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
 
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             // Tắt auto-commit để thực hiện batch an toàn
             connection.setAutoCommit(false);
 
@@ -78,7 +76,9 @@ public class ChiTietHoaDonDAO {
 
     public ChiTietHoaDon getById(String maChiTietHoaDon) {
         String sql = "SELECT * FROM ChiTietHoaDon WHERE ma_chi_tiet_hoa_don = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maChiTietHoaDon);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -95,7 +95,9 @@ public class ChiTietHoaDonDAO {
                         "FROM ChiTietHoaDon " +
                         "Where da_xoa = 0 " +
                         "ORDER BY ma_chi_tiet_hoa_don DESC";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return mapResultSet(rs);
@@ -112,6 +114,7 @@ public class ChiTietHoaDonDAO {
         List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maHoaDon);
 
@@ -132,7 +135,9 @@ public class ChiTietHoaDonDAO {
     public List<ChiTietHoaDon> getInvoiceDetaiByInvoiceId(String maHoaDon){
         String query = "select * from ChiTietHoaDon where ma_hoa_don = ?";
         List<ChiTietHoaDon> danhSachChiTietHoaDon = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1,maHoaDon);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {

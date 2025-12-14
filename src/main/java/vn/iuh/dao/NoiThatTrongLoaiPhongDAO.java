@@ -19,16 +19,6 @@ import java.util.List;
  * Lưu ý: id prefix cho mapping là "NP" giống dữ liệu mẫu (NP00000001...)
  */
 public class NoiThatTrongLoaiPhongDAO {
-    private final Connection connection;
-
-    public NoiThatTrongLoaiPhongDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public NoiThatTrongLoaiPhongDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     /**
      * Lấy danh sách NoiThat được gán cho 1 LoaiPhong (chỉ lấy mapping da_xoa = 0 và noi_that.da_xoa = 0)
      */
@@ -39,6 +29,7 @@ public class NoiThatTrongLoaiPhongDAO {
                 "WHERE ntlp.ma_loai_phong = ? AND ntlp.da_xoa = 0 AND nt.da_xoa = 0";
         List<NoiThat> list = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maLoaiPhong);
             ResultSet rs = ps.executeQuery();
@@ -65,7 +56,8 @@ public class NoiThatTrongLoaiPhongDAO {
     public boolean replaceMappings(String maLoaiPhong, List<NoiThat> items) {
         if (maLoaiPhong == null) return false;
         try {
-            connection.setAutoCommit(false);
+            Connection connection = DatabaseUtil.getConnect();
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // Soft-delete existing mappings
             String softDeleteSql = "UPDATE NoiThatTrongLoaiPhong SET da_xoa = 1 WHERE ma_loai_phong = ?";
@@ -93,18 +85,12 @@ public class NoiThatTrongLoaiPhongDAO {
                 psIns.executeBatch();
             }
 
-            connection.commit();
-            connection.setAutoCommit(true);
+            DatabaseUtil.thucHienGiaoTac();
             return true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                // ignore
-            }
-            throw new RuntimeException(e);
+            DatabaseUtil.hoanTacGiaoTac();
         }
+        return false;
     }
 
     /**
@@ -112,7 +98,9 @@ public class NoiThatTrongLoaiPhongDAO {
      */
     private String findLatestMappingId() {
         String query = "SELECT TOP 1 ma_noi_that_trong_loai_phong FROM NoiThatTrongLoaiPhong ORDER BY ma_noi_that_trong_loai_phong DESC";
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return rs.getString("ma_noi_that_trong_loai_phong");
@@ -126,7 +114,8 @@ public class NoiThatTrongLoaiPhongDAO {
     public boolean replaceMappingsWithQuantities(String maLoaiPhong, List<NoiThatAssignment> items) {
         if (maLoaiPhong == null) return false;
         try {
-            connection.setAutoCommit(false);
+            Connection connection = DatabaseUtil.getConnect();
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // Soft-delete existing mappings
             String softDeleteSql = "UPDATE NoiThatTrongLoaiPhong SET da_xoa = 1 WHERE ma_loai_phong = ?";
@@ -153,24 +142,20 @@ public class NoiThatTrongLoaiPhongDAO {
                 psIns.executeBatch();
             }
 
-            connection.commit();
-            connection.setAutoCommit(true);
+            DatabaseUtil.thucHienGiaoTac();
             return true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                // ignore
-            }
-            throw new RuntimeException(e);
+            DatabaseUtil.hoanTacGiaoTac();
         }
+        return false;
     }
 
     public int softDeleteByLoaiPhong(String maLoaiPhong) {
         if (maLoaiPhong == null) return 0;
         String sql = "UPDATE NoiThatTrongLoaiPhong SET da_xoa = 1 WHERE ma_loai_phong = ? AND ISNULL(da_xoa,0) = 0";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maLoaiPhong);
             return ps.executeUpdate();
         } catch (SQLException e) {

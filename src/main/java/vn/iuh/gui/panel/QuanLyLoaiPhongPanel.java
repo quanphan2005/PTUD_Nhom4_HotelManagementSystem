@@ -1,3 +1,4 @@
+// <-- copy toàn bộ file này và thay file cũ -->
 package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
@@ -13,6 +14,7 @@ import vn.iuh.service.impl.NoiThatServiceImpl;
 import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.entity.NoiThat;
+import vn.iuh.util.DatabaseUtil;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -27,10 +29,12 @@ import java.awt.event.*;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.function.Supplier;
 
 /*
  Panel quản lý loại phòng (tối giản: thay RoundedButton bằng JButton thuần, vẫn giữ bo góc bằng FlatLaf)
@@ -39,6 +43,7 @@ import java.util.ArrayList;
   - Loại bỏ nút 3 người.
   - Sửa filter để "Thường" / "VIP" hoạt động.
   - Di chuyển nút "Thường" sang hàng cùng với "VIP" (bên cạnh VIP).
+  - Sửa logic lazy init / reload để đảm bảo reload hoạt động sau khi Thêm/Sửa.
 */
 public class QuanLyLoaiPhongPanel extends JPanel {
 
@@ -78,7 +83,9 @@ public class QuanLyLoaiPhongPanel extends JPanel {
     // services
     private LoaiPhongService loaiPhongService;
     private NoiThatService noiThatService;
-    private volatile boolean lazyInitialized = false;
+    // NEW: flags for lazy init
+    private volatile boolean initStarted = false;
+    private volatile boolean servicesReady = false;
 
     private JComboBox<String> searchTypeComboBox;
     private JTextField categoryCodeField;
@@ -141,24 +148,75 @@ public class QuanLyLoaiPhongPanel extends JPanel {
 
         // Thêm action cho Thêm
         addButton.addActionListener(e -> {
-            Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
-            try {
-                ThemLoaiPhongDialog dlg = new ThemLoaiPhongDialog(owner, loaiPhongService, noiThatService);
-                dlg.setVisible(true);
-            } catch (Throwable ex) {
-                try { ThemLoaiPhongDialog dlg = new ThemLoaiPhongDialog(owner, loaiPhongService, noiThatService); dlg.setVisible(true); }
-                catch (Throwable ignore) {}
-            } finally { reloadListFromService(); }
+            // ensure init started and then wait for servicesReady (up to timeout)
+            ensureLazyInit();
+
+            new SwingWorker<Void, Void>() {
+                @Override protected Void doInBackground() throws Exception {
+                    int waited = 0;
+                    while (!servicesReady && waited < 5000) {
+                        Thread.sleep(100);
+                        waited += 100;
+                    }
+                    return null;
+                }
+                @Override protected void done() {
+                    Frame owner = (Frame) SwingUtilities.getWindowAncestor(QuanLyLoaiPhongPanel.this);
+                    try {
+                        ThemLoaiPhongDialog dlg = new ThemLoaiPhongDialog(owner, loaiPhongService, noiThatService);
+                        dlg.setLocationRelativeTo(owner);
+                        dlg.setVisible(true);
+                    } catch (Throwable ex) {
+                        ex.printStackTrace();
+                        try {
+                            // fallback: thử lại 1 lần nữa
+                            Frame owner2 = (Frame) SwingUtilities.getWindowAncestor(QuanLyLoaiPhongPanel.this);
+                            ThemLoaiPhongDialog dlg = new ThemLoaiPhongDialog(owner2, loaiPhongService, noiThatService);
+                            dlg.setLocationRelativeTo(owner2);
+                            dlg.setVisible(true);
+                        } catch (Throwable ignore) { ignore.printStackTrace(); }
+                    } finally {
+                        // luôn reload sau khi dialog đóng
+                        // Nếu services chưa sẵn sàng thì reloadListFromService() sẽ làm gì? nó trả về empty,
+                        // nhưng vì ta chờ servicesReady ở trên, normal case servicesReady==true.
+                        reloadListFromService();
+                    }
+                }
+            }.execute();
         });
 
-        // Sửa: nếu không chọn hàng -> thông báo; nếu có -> mở form sửa
         editButton.addActionListener(e -> {
-            CategoryData sel = getSelectedCategoryData();
+            final CategoryData sel = getSelectedCategoryData();
             if (sel == null) {
                 JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Vui lòng chọn 1 loại phòng để sửa", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-            SwingUtilities.invokeLater(() -> openCategoryDetail(sel));
+
+            // ensure services ready
+            ensureLazyInit();
+
+            new SwingWorker<Void, Void>() {
+                @Override protected Void doInBackground() throws Exception {
+                    int waited = 0;
+                    while (!servicesReady && waited < 5000) { Thread.sleep(100); waited += 100; }
+                    return null;
+                }
+                @Override protected void done() {
+                    // mở form sửa trên EDT
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            openCategoryDetail(sel);
+                        } catch (Throwable ex) {
+                            ex.printStackTrace();
+                            // fallback: try again
+                            try { openCategoryDetail(sel); } catch (Throwable ignore) { ignore.printStackTrace(); }
+                        } finally {
+                            // reload sau khi dialog đóng
+                            reloadListFromService();
+                        }
+                    });
+                }
+            }.execute();
         });
 
         // Xóa: nếu không chọn hàng -> thông báo; nếu có -> thực hiện xóa như trước
@@ -541,7 +599,18 @@ public class QuanLyLoaiPhongPanel extends JPanel {
                     if (row >= 0) {
                         CategoryData d = getCategoryDataAtViewRow(row);
                         if (d != null) {
-                            SwingUtilities.invokeLater(() -> openCategoryDetail(d));
+                            // ensure services ready before opening detail
+                            ensureLazyInit();
+                            new SwingWorker<Void, Void>() {
+                                @Override protected Void doInBackground() throws Exception {
+                                    int waited = 0;
+                                    while (!servicesReady && waited < 5000) { Thread.sleep(100); waited += 100; }
+                                    return null;
+                                }
+                                @Override protected void done() {
+                                    SwingUtilities.invokeLater(() -> openCategoryDetail(d));
+                                }
+                            }.execute();
                         }
                     }
                 } else {
@@ -571,12 +640,46 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         scrollPane.setPreferredSize(new Dimension(0, 500));
         add(scrollPane);
 
-        // load data
+        // load data (this will return empty until servicesReady; ensureLazyInit() will call reload when ready)
         reloadListFromService();
     }
 
     private void openCategoryDetail(CategoryData d) {
         Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
+
+        // If services not ready yet, wait in background (avoid blocking EDT)
+        if (!servicesReady) {
+            ensureLazyInit();
+            new SwingWorker<OpenPayload, Void>() {
+                @Override protected OpenPayload doInBackground() throws Exception {
+                    int waited = 0;
+                    while (!servicesReady && waited < 5000) { Thread.sleep(100); waited += 100; }
+                    LoaiPhong lp = null;
+                    try { if (loaiPhongService != null) lp = loaiPhongService.getRoomCategoryByIDV2(d.code); } catch (Exception ignored) { lp = null; }
+                    if (lp == null) {
+                        lp = new LoaiPhong(); lp.setMaLoaiPhong(d.code); lp.setTenLoaiPhong(d.name);
+                    }
+                    List<NoiThat> furniture = new ArrayList<>();
+                    try { if (noiThatService != null) furniture = noiThatService.getNoiThatByLoaiPhong(d.code); } catch (Exception ignored) {}
+                    return new OpenPayload(lp, furniture);
+                }
+                @Override protected void done() {
+                    try {
+                        OpenPayload p = get();
+                        try {
+                            SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, p.lp, p.furniture);
+                            dlg.setLocationRelativeTo(owner);
+                            dlg.setVisible(true);
+                        } catch (Throwable ex) {
+                            try { SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, p.lp, p.furniture); dlg.setVisible(true); } catch (Throwable ignore) {}
+                        } finally { reloadListFromService(); }
+                    } catch (Exception ex) { ex.printStackTrace(); reloadListFromService(); }
+                }
+            }.execute();
+            return;
+        }
+
+        // services ready => proceed normally
         LoaiPhong lp = null;
         try {
             if (loaiPhongService != null) lp = loaiPhongService.getRoomCategoryByIDV2(d.code);
@@ -589,79 +692,95 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         try { if (noiThatService != null) furniture = noiThatService.getNoiThatByLoaiPhong(d.code); } catch (Exception ignored) { }
         try {
             SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture);
+            dlg.setLocationRelativeTo(owner);
             dlg.setVisible(true);
         } catch (Throwable ex) {
             try { SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, lp, furniture); dlg.setVisible(true); } catch (Throwable ignore) {}
         } finally { reloadListFromService(); }
     }
 
-    // reload uses existing SwingWorker implementation but now populates table model
-    // reload uses existing SwingWorker implementation but now populates table model and fetches prices from DB
-    private void reloadListFromService() {
-        // show temporary placeholder while loading
+    // small holder used by background open
+    private static class OpenPayload {
+        final LoaiPhong lp;
+        final List<NoiThat> furniture;
+        OpenPayload(LoaiPhong lp, List<NoiThat> furniture) { this.lp = lp; this.furniture = furniture; }
+    }
+
+    // Thay thế method reloadListFromService() bằng phiên bản dựa trên Supplier
+    public void reloadListFromService() {
+        // xóa table hiện tại (placeholder)
         if (categoryTableModel != null) categoryTableModel.setRowCount(0);
 
-        SwingWorker<List<CategoryData>, Void> wk = new SwingWorker<>() {
-            private Exception error = null;
-            @Override protected List<CategoryData> doInBackground() {
-                List<CategoryData> dataset = new ArrayList<>();
-                if (loaiPhongService == null) {
-                    return dataset; // empty
-                }
+        // supplier sẽ tạo service mới mỗi lần (tránh dùng service cũ có connection đã đóng)
+        Supplier<List<CategoryData>> loader = () -> {
+            List<CategoryData> dataset = new ArrayList<>();
+            LoaiPhongService svc = null;
+            try {
+                // tạo service tạm, dùng xong để GC (DAO bên trong sẽ tạo connection mới)
+                svc = new LoaiPhongServiceImpl();
+
+                List<RoomCategoryResponse> list = null;
                 try {
-                    List<RoomCategoryResponse> list = loaiPhongService.getAllRoomCategories();
-                    if (list == null) return dataset;
+                    list = svc.getAllRoomCategories();
+                } catch (Exception e) {
+                    // nếu lỗi, trả về rỗng — SwingWorker sẽ in stacktrace
+                    e.printStackTrace();
+                    return dataset;
+                }
+                if (list == null) return dataset;
 
-                    for (RoomCategoryResponse r : list) {
-                        String code = r.getMaLoaiPhong();
-                        String name = r.getTenLoaiPhong();
-                        int people = r.getSoLuongKhach();
-                        String type = r.getPhanLoai();
+                for (RoomCategoryResponse r : list) {
+                    String code = r.getMaLoaiPhong();
+                    String name = r.getTenLoaiPhong();
+                    int people = r.getSoLuongKhach();
+                    String type = r.getPhanLoai();
 
-                        // lấy giá từ service (layGiaTheoLoaiPhong) nếu có
-                        String giaNgayStr = "-";
-                        String giaGioStr = "-";
+                    // lấy giá — gọi trên cùng service tạm để các DAO share cùng connection (ít gọi nhiều connection)
+                    String giaNgayStr = "-";
+                    String giaGioStr  = "-";
+                    try {
+                        BigDecimal giaNgay = null;
+                        BigDecimal giaGio  = null;
                         try {
-                            BigDecimal giaNgay = null;
-                            BigDecimal giaGio = null;
-
-                            // nếu loaiPhongService khai báo phương thức layGiaTheoLoaiPhong, gọi trực tiếp
-                            try {
-                                if (loaiPhongService instanceof LoaiPhongServiceImpl) {
-                                    giaNgay = ((LoaiPhongServiceImpl) loaiPhongService).layGiaTheoLoaiPhong(code, true);
-                                    giaGio  = ((LoaiPhongServiceImpl) loaiPhongService).layGiaTheoLoaiPhong(code, false);
-                                } else {
-                                    // cố gắng gọi qua reflection như fallback (hiếm gặp)
-                                    try {
-                                        java.lang.reflect.Method m = loaiPhongService.getClass().getMethod("layGiaTheoLoaiPhong", String.class, boolean.class);
-                                        Object o1 = m.invoke(loaiPhongService, code, true);
-                                        Object o2 = m.invoke(loaiPhongService, code, false);
-                                        if (o1 instanceof BigDecimal) giaNgay = (BigDecimal) o1;
-                                        if (o2 instanceof BigDecimal) giaGio  = (BigDecimal) o2;
-                                    } catch (NoSuchMethodException ignored) { }
-                                }
-                            } catch (Throwable ex) {
-                                // nếu có lỗi khi gọi service, ta catch và tiếp tục — sẽ hiển thị "-"
-                                ex.printStackTrace();
-                            }
-
-                            if (giaNgay != null) giaNgayStr = formatPrice(giaNgay);
-                            if (giaGio  != null) giaGioStr  = formatPrice(giaGio);
+                            giaNgay = svc.layGiaTheoLoaiPhong(code, true);
+                            giaGio  = svc.layGiaTheoLoaiPhong(code, false);
                         } catch (Exception ex) {
-                            // keep "-" on error
+                            // có thể ném do giá ko tìm thấy hoặc lỗi kết nối -> tiếp tục với "-"
                             ex.printStackTrace();
                         }
+                        if (giaNgay != null) giaNgayStr = formatPrice(giaNgay);
+                        if (giaGio  != null) giaGioStr  = formatPrice(giaGio);
+                    } catch (Throwable ignore) {}
 
-                        dataset.add(new CategoryData(code, name, people, type, giaNgayStr, giaGioStr));
-                    }
-                    return dataset;
-                } catch (Exception ex) { error = ex; return new ArrayList<>(); }
+                    dataset.add(new CategoryData(code, name, people, type, giaNgayStr, giaGioStr));
+                }
+                return dataset;
+            } finally {
+                // svc không có close(); nếu bạn có method close ở service/dao có thể gọi ở đây.
+                // Để tránh giữ reference lâu, ta không lưu svc vào trường lớp.
+            }
+        };
+
+        // gọi reload async (giống reloadRoomsAsync)
+        reloadCategoriesAsync(loader);
+    }
+
+    // helper tương tự reloadRoomsAsync ở panel phòng
+    private void reloadCategoriesAsync(Supplier<List<CategoryData>> loader) {
+        SwingWorker<List<CategoryData>, Void> wk = new SwingWorker<>() {
+            @Override protected List<CategoryData> doInBackground() {
+                try {
+                    return loader.get();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return new ArrayList<>();
+                }
             }
             @Override protected void done() {
                 try {
                     List<CategoryData> dataset = get();
                     fullDataset = dataset == null ? new ArrayList<>() : dataset;
-                    applyFilters();
+                    applyFilters(); // cập nhật table trên EDT
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -669,6 +788,7 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         };
         wk.execute();
     }
+
 
     /**
      * Thử lấy giá từ RoomCategoryResponse qua reflection với một số tên getter phổ biến.
@@ -786,13 +906,9 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         }
     }
 
-    /**
-     * Khởi tạo lười: tạo service trong background (không chặn EDT) rồi tải dữ liệu.
-     * Gọi an toàn nhiều lần — thực hiện duy nhất 1 lần.
-     */
     private synchronized void ensureLazyInit() {
-        if (lazyInitialized) return;
-        lazyInitialized = true;
+        if (initStarted) return;
+        initStarted = true;
 
         // tạo services trong background để không block UI thread
         new SwingWorker<Void, Void>() {
@@ -820,7 +936,8 @@ public class QuanLyLoaiPhongPanel extends JPanel {
 
             @Override
             protected void done() {
-                // sau khi tạo xong service, load dữ liệu (cũng trong SwingWorker riêng nếu cần)
+                // sau khi tạo xong service, set servicesReady = true rồi load dữ liệu
+                servicesReady = true;
                 // reloadListFromService đã dùng SwingWorker để load data -> an toàn gọi trực tiếp
                 reloadListFromService();
 

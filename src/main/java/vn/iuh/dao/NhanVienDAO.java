@@ -17,20 +17,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NhanVienDAO {
-    private final Connection connection;
-
-    public NhanVienDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public NhanVienDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public NhanVien timNhanVien(String id) {
         String query = "SELECT * FROM NhanVien WHERE ma_nhan_vien = ? AND da_xoa = 0";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
             ResultSet rs = ps.executeQuery();
@@ -50,7 +42,9 @@ public class NhanVienDAO {
         String query = "select * from NhanVien where ten_nhan_vien = ? and da_xoa = 0";
         List<NhanVien> nhanVienList = new ArrayList<>();
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, tenNhanVien);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -68,7 +62,10 @@ public class NhanVienDAO {
     public NhanVien timNhanVienBangSDT(String sdt){
         String query = "select * from NhanVien where so_dien_thoai = ? and da_xoa = 0";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, sdt);
 
             ResultSet rs = ps.executeQuery();
@@ -89,6 +86,7 @@ public class NhanVienDAO {
         List<NhanVien> dsNhanVienChuaCoTaiKhoan = new ArrayList<>();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -103,7 +101,10 @@ public class NhanVienDAO {
     public List<NhanVien> layDanhSachNhanVien(){
         String query = "SELECT * FROM NhanVien WHERE da_xoa = 0";
         List<NhanVien> danhSachNhanVien = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 danhSachNhanVien.add(chuyenKetQuaThanhNhanVien(rs));
@@ -122,6 +123,7 @@ public class NhanVienDAO {
                 "VALUES (?, ?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, nhanVien.getMaNhanVien());
             ps.setString(2, nhanVien.getTenNhanVien());
@@ -143,6 +145,7 @@ public class NhanVienDAO {
                 "WHERE ma_nhan_vien = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, nhanVien.getTenNhanVien());
             ps.setString(2, nhanVien.getCCCD());
@@ -171,7 +174,10 @@ public class NhanVienDAO {
 
         String query = "UPDATE NhanVien SET da_xoa = 1 WHERE ma_nhan_vien = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
@@ -188,7 +194,10 @@ public class NhanVienDAO {
     public NhanVien timNhanVienBangCCCD(String cccd) {
         String query = "SELECT * FROM NhanVien WHERE CCCD = ? AND da_xoa = 0";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, cccd);
 
             ResultSet rs = ps.executeQuery();
@@ -207,7 +216,10 @@ public class NhanVienDAO {
     public NhanVien timNhanVienMoiNhat() {
         String query = "SELECT TOP 1 * FROM NhanVien WHERE da_xoa = 0 ORDER BY ma_nhan_vien DESC";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -240,7 +252,10 @@ public class NhanVienDAO {
         String query = "select nv.ten_nhan_vien, nv.CCCD, nv.ngay_sinh, nv.so_dien_thoai, tk.ma_chuc_vu from NhanVien nv join TaiKhoan tk"
                 + " on nv.ma_nhan_vien = tk.ma_nhan_vien where tk.ma_nhan_vien = ?" ;
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, maNhanVien);
             var rs = ps.executeQuery();
 
@@ -267,7 +282,9 @@ public class NhanVienDAO {
                 "left join NhanVien nv on nv.ma_nhan_vien = tk.ma_nhan_vien\n" +
                 "where pdn.ma_phien_dang_nhap = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, maPhienDangNhap);
 
             ResultSet rs = ps.executeQuery();
@@ -280,5 +297,30 @@ public class NhanVienDAO {
             System.out.println(et.getMessage());
         }
         return null;
+    }
+
+    // Tìm tên nhân viên bằng phiên đăng nhập
+    public String findTenNhanVienByPhienDangNhap(String maPhien) {
+        if (maPhien == null || maPhien.isEmpty()) return "";
+
+        String sql = "SELECT nv.ten_nhan_vien " +
+                "FROM PhienDangNhap p " +
+                "LEFT JOIN TaiKhoan t ON p.ma_tai_khoan = t.ma_tai_khoan " +
+                "LEFT JOIN NhanVien nv ON t.ma_nhan_vien = nv.ma_nhan_vien " +
+                "WHERE p.ma_phien_dang_nhap = ?";
+
+        try (Connection conn = DatabaseUtil.getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, maPhien);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String name = rs.getString("ten_nhan_vien");
+                    return name == null ? "" : name;
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "";
     }
 }

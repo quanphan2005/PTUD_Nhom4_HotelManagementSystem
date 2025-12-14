@@ -13,45 +13,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class DonGoiDichVuDao {
-    private final Connection connection;
-
-    public DonGoiDichVuDao() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public DonGoiDichVuDao(Connection connection) {
-        this.connection = connection;
-    }
-
-    public void khoiTaoGiaoTac() {
-        DatabaseUtil.enableTransaction(connection);
-    }
-
-    public void thucHienGiaoTac() {
-        try {
-            if (connection != null && !connection.getAutoCommit()) {
-                connection.commit();
-                DatabaseUtil.disableTransaction(connection);
-            }
-        } catch (SQLException e) {
-            System.out.println("Lỗi commit transaction: " + e.getMessage());
-            DatabaseUtil.closeConnection(connection);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void hoanTacGiaoTac() {
-        try {
-            if (connection != null && !connection.getAutoCommit()) {
-                connection.rollback();
-                DatabaseUtil.disableTransaction(connection);
-            }
-        } catch (SQLException e) {
-            System.out.println("Lỗi rollback transaction: " + e.getMessage());
-            DatabaseUtil.closeConnection(connection);
-            throw new RuntimeException(e);
-        }
-    }
 
     public void themPhongDungDichVu(List<PhongDungDichVu> danhSachPhongDungDichVu) {
         String query = "INSERT INTO PhongDungDichVu" +
@@ -59,6 +20,7 @@ public class DonGoiDichVuDao {
                        " VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu) {
@@ -88,6 +50,7 @@ public class DonGoiDichVuDao {
 
         List<ThongTinDichVu> danhSachThongTinDichVu = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -107,6 +70,7 @@ public class DonGoiDichVuDao {
         String query = "SELECT TOP 1 * FROM PhongDungDichVu ORDER BY ma_phong_dung_dich_vu DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -131,6 +95,7 @@ public class DonGoiDichVuDao {
 
         List<PhongDungDichVu> roomUsageServiceInfos = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maDatPhong);
             var rs = ps.executeQuery();
@@ -155,6 +120,7 @@ public class DonGoiDichVuDao {
 
         List<RoomUsageServiceInfo> roomUsageServiceInfos = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maDatPhong);
             var rs = ps.executeQuery();
@@ -173,6 +139,7 @@ public class DonGoiDichVuDao {
         String query = "UPDATE DichVu SET ton_kho = ton_kho + ? WHERE ma_dich_vu = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setInt(1, soLuong);
             ps.setString(2, maDichVu);
@@ -194,6 +161,7 @@ public class DonGoiDichVuDao {
                         "WHERE ctdp.ma_don_dat_phong = ? " +
                         "ORDER BY pddv.so_luong desc";
         try{
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1,maDonDatPhong);
             var rs = ps.executeQuery();
@@ -241,6 +209,7 @@ public class DonGoiDichVuDao {
 
         List<RoomUsageServiceInfo> roomUsageServiceInfos = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maChiTietDatPhong);
 
@@ -279,6 +248,7 @@ public class DonGoiDichVuDao {
 
         List<RoomUsageServiceInfo> danhSachPhongDungDichVu = new ArrayList<>();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
                 ps.setString(i + 1, danhSachMaChiTietDatPhong.get(i));
@@ -328,6 +298,7 @@ public class DonGoiDichVuDao {
 
         String query = string.toString();
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             for (int i = 0; i < ids.size(); i++)
@@ -404,7 +375,9 @@ public class DonGoiDichVuDao {
 
         List<PhongDungDichVu> danhSachPhongDungDichVu = new ArrayList<>();
 
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
+        try{
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             for (int i = 0; i < maChiTietDatPhongList.size(); i++) {
                 ps.setString(i + 1, maChiTietDatPhongList.get(i));
             }
@@ -426,4 +399,28 @@ public class DonGoiDichVuDao {
 
         return danhSachPhongDungDichVu;
     }
+
+    // Kiểm tra dịch vụ có đang được sử dụng không
+    public boolean isServiceCurrentlyUsed(String maDichVu) {
+        if (maDichVu == null || maDichVu.isBlank()) return false;
+        String sql =
+                "SELECT TOP 1 ctdp.ma_chi_tiet_dat_phong " +
+                        "FROM PhongDungDichVu pddv " +
+                        "JOIN ChiTietDatPhong ctdp ON pddv.ma_chi_tiet_dat_phong = ctdp.ma_chi_tiet_dat_phong " +
+                        "WHERE pddv.ma_dich_vu = ? " +
+                        "  AND ISNULL(pddv.da_xoa, 0) = 0 " +
+                        "  AND ISNULL(ctdp.da_xoa, 0) = 0 " +
+                        "  AND ISNULL(ctdp.kieu_ket_thuc, '') = ''";
+        Connection connection = DatabaseUtil.getConnect();// còn đang dùng / chưa kết thúc
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, maDichVu);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi khi kiểm tra sử dụng dịch vụ: " + e.getMessage(), e);
+        }
+    }
+
 }

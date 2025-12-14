@@ -10,6 +10,7 @@ import vn.iuh.entity.*;
 import vn.iuh.gui.base.Main;
 import vn.iuh.service.BookingService;
 import vn.iuh.service.LoaiPhongService;
+import vn.iuh.util.DatabaseUtil;
 import vn.iuh.util.EntityUtil;
 import vn.iuh.util.TimeFormat;
 
@@ -111,7 +112,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         try {
-            datPhongDAO.khoiTaoGiaoTac();
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // 2.1. Create ReservationFormEntity & insert to DB
             DonDatPhong donDatPhongMoiNhat = datPhongDAO.timDonDatPhongMoiNhat();
@@ -338,7 +339,7 @@ public class BookingServiceImpl implements BookingService {
                     new Timestamp(System.currentTimeMillis())
             ));
 
-            datPhongDAO.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
             System.out.println("Đặt phòng: " + bookingCreationEvent.getDanhSachMaPhong().toString() +
                                " cho khách hàng: " + bookingCreationEvent.getTenKhachHang()
                                + " thành công!");
@@ -376,7 +377,7 @@ public class BookingServiceImpl implements BookingService {
             System.out.println("Lỗi khi đặt phòng: " + e.getMessage());
             System.out.println("Rollback transaction");
             e.printStackTrace();
-            datPhongDAO.hoanTacGiaoTac();
+            DatabaseUtil.hoanTacGiaoTac();
             return new EventResponse(ResponseType.ERROR, "Đặt phòng thất bại! Vui lòng thử lại sau.", null);
         }
     }
@@ -548,7 +549,7 @@ public class BookingServiceImpl implements BookingService {
         // 2. Find all RoomReservationDetail by ReservationForm id
         List<PhongDungDichVu> danhSachPhongDungDichVu = donGoiDichVuDao.timDonGoiDichVuBangMaDatPhong(maDatPhong);
         try {
-            datPhongDAO.khoiTaoGiaoTac();
+            DatabaseUtil.khoiTaoGiaoTac();
             for (PhongDungDichVu phongDungDichVu : danhSachPhongDungDichVu) {
                 // 3. Update Service Quantity
                 donGoiDichVuDao.capNhatSoLuongTonKhoDichVu(phongDungDichVu.getMaDichVu(), phongDungDichVu.getSoLuong());
@@ -604,7 +605,7 @@ public class BookingServiceImpl implements BookingService {
             // 8.3 Delete related Jobs
             congViecDAO.xoaDanhSachCongViec(danhSachMaCongViecCanXoa);
 
-            datPhongDAO.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
             System.out.println("Hủy đặt phòng thành công, mã: " + maDatPhong + "thành công!");
             return true;
 
@@ -612,7 +613,7 @@ public class BookingServiceImpl implements BookingService {
             System.out.println("Lỗi khi hủy đặt phòng, mã: " + maDatPhong + " " + e.getMessage());
             System.out.println("Rollback transaction");
             e.printStackTrace();
-            datPhongDAO.hoanTacGiaoTac();
+            DatabaseUtil.hoanTacGiaoTac();
             return false;
         }
     }
@@ -647,7 +648,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         try {
-            datPhongDAO.khoiTaoGiaoTac();
+            DatabaseUtil.khoiTaoGiaoTac();
 
             // 3. Delete specific reservavtionDetail
             datPhongDAO.huyChiTietDatPhong(chiTietDatPhong.getMaChiTietDatPhong());
@@ -700,7 +701,7 @@ public class BookingServiceImpl implements BookingService {
             // 7. Remove room`s job
             congViecDAO.xoaCongViecChoCheckIn(chiTietDatPhong.getMaChiTietDatPhong());
 
-            datPhongDAO.thucHienGiaoTac();
+            DatabaseUtil.thucHienGiaoTac();
             System.out.println("Hủy đặt phòng tại phòng " + maPhong + ", mã: " + maDatPhong + "thành công!");
             return true;
 
@@ -708,7 +709,7 @@ public class BookingServiceImpl implements BookingService {
             System.out.println("Lỗi khi hủy đặt phòng, mã: " + maDatPhong + " " + e.getMessage());
             System.out.println("Rollback transaction");
             e.printStackTrace();
-            datPhongDAO.hoanTacGiaoTac();
+            DatabaseUtil.hoanTacGiaoTac();
             return false;
         }
     }

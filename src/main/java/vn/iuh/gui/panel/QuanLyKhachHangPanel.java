@@ -3,6 +3,10 @@ package vn.iuh.gui.panel;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.ui.FlatLineBorder;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.dialog.SuaKhachHangDialog;
+import vn.iuh.gui.dialog.ThemKhachHangDialog;
+import vn.iuh.gui.dialog.ThongTinKhachHangDialog;
+import vn.iuh.service.impl.CustomerServiceImpl;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -11,6 +15,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -58,6 +64,7 @@ public class QuanLyKhachHangPanel extends JPanel {
     // In-memory dataset (sample data)
     private final List<CustomerData> fullDataset = new ArrayList<>();
 
+    private final CustomerServiceImpl customerService = new CustomerServiceImpl();
     public QuanLyKhachHangPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(CustomUI.white);
@@ -73,7 +80,7 @@ public class QuanLyKhachHangPanel extends JPanel {
         // Table added similar to QuanLyLoaiPhongPanel (direct scrollPane add)
         createListCustomerPanel();
         // load sample data into dataset and table
-        loadSampleData();
+        loadCustomersFromService();
         applyFilters(); // initial populate
     }
 
@@ -85,6 +92,86 @@ public class QuanLyKhachHangPanel extends JPanel {
         addButton    = createActionButton("Thêm khách hàng", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
         editButton   = createActionButton("Sửa khách hàng", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
         deleteButton = createActionButton("Xóa khách hàng", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
+
+        addButton.addActionListener(e -> {
+            ThemKhachHangDialog dlg = new ThemKhachHangDialog(SwingUtilities.getWindowAncestor(this),
+                    customerService,
+                    () -> {
+                        // callback: reload data và apply filter
+                        loadCustomersFromService();
+                        applyFilters();
+                    });
+            dlg.setVisible(true);
+        });
+
+        editButton.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một khách hàng để sửa.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String ma = (String) table.getValueAt(row, 0);
+            if (ma == null || ma.equals("-")) {
+                JOptionPane.showMessageDialog(this, "Mã khách hàng không hợp lệ.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            CustomerServiceImpl svc = new CustomerServiceImpl();
+            try {
+                if (svc.hasCurrentOrFutureBookings(ma)) {
+                    JOptionPane.showMessageDialog(this, "Không thể sửa: khách hàng đang có đơn đặt phòng hiện tại hoặc trong tương lai.", "Không cho phép", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi kiểm tra đơn đặt: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // mở dialog sửa, truyền callback reload
+            SuaKhachHangDialog dlg = new SuaKhachHangDialog(SwingUtilities.getWindowAncestor(this), svc, ma, () -> {
+                // callback khi sửa thành công -> reload
+                loadCustomersFromService();
+                applyFilters();
+            });
+            dlg.setVisible(true);
+        });
+
+        deleteButton.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần xóa.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String ma = (String) table.getValueAt(row, 0);
+            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa khách hàng " + ma + " và các đơn liên quan không?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) return;
+
+            CustomerServiceImpl svc = new CustomerServiceImpl();
+            try {
+                boolean ok = svc.deleteCustomerByIDV2(ma);
+                if (ok) {
+                    JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    // reload bảng từ service
+                    fullDataset.clear();
+                    var ds = svc.layTatCaKhachHang();
+                    if (ds != null) {
+                        for (var kh : ds) {
+                            fullDataset.add(new CustomerData(kh.getMaKhachHang(), kh.getTenKhachHang(), kh.getCCCD(), kh.getSoDienThoai()));
+                        }
+                    }
+                    applyFilters();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Xóa không thành công.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (IllegalStateException ise) {
+                JOptionPane.showMessageDialog(this, ise.getMessage(), "Không thể xóa", JOptionPane.WARNING_MESSAGE);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi xóa khách hàng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
     }
 
     private void configureSearchTextField(JTextField field, Dimension size, String placeholder) {
@@ -291,11 +378,20 @@ public class QuanLyKhachHangPanel extends JPanel {
                 table.repaint();
             }
         });
-        table.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
-                table.repaint();
+        table.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    int row = table.rowAtPoint(e.getPoint());
+                    if (row >= 0) {
+                        String ma = (String) table.getValueAt(row, 0); // cột mã khách hàng
+                        ThongTinKhachHangDialog dlg = new ThongTinKhachHangDialog(SwingUtilities.getWindowAncestor(table),
+                                new CustomerServiceImpl(), ma);
+                        dlg.setVisible(true);
+                    }
+                }
             }
         });
+
 
         // put table into scroll pane
         JScrollPane scrollPane = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -305,16 +401,25 @@ public class QuanLyKhachHangPanel extends JPanel {
         add(scrollPane);
     }
 
-    // Load sample data into fullDataset
-    private void loadSampleData() {
+    // trong QuanLyKhachHangPanel (thay loadSampleData cũ)
+    private void loadCustomersFromService() {
         fullDataset.clear();
-        fullDataset.add(new CustomerData("KH00000001", "Nguyễn Văn A", "079123456789", "0912345678"));
-        fullDataset.add(new CustomerData("KH00000002", "Trần Thị B",   "079987654321", "0987654321"));
-        fullDataset.add(new CustomerData("KH00000003", "Lê Văn C",     "079456789123", "0905123456"));
-        fullDataset.add(new CustomerData("KH00000004", "Phạm Thị D",   "079321654987", "0934567890"));
-        fullDataset.add(new CustomerData("KH00000005", "Huỳnh Văn E",  "079741258963", "0978123456"));
-        fullDataset.add(new CustomerData("KH00000006", "Phạm Thị D",   "079321654987", "0934567890"));
-        fullDataset.add(new CustomerData("KH00000007", "Nguyễn Thị F", "079555555555", "0966123456"));
+        try {
+            List<vn.iuh.entity.KhachHang> ds = customerService.layTatCaKhachHang();
+            if (ds != null) {
+                for (vn.iuh.entity.KhachHang k : ds) {
+                    fullDataset.add(new CustomerData(
+                            k.getMaKhachHang(),
+                            k.getTenKhachHang(),
+                            k.getCCCD(),
+                            k.getSoDienThoai()
+                    ));
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // fallback: giữ sample nếu cần hoặc để trống
+        }
     }
 
     // Apply filters based on searchTypeComboBox and searchTextField content

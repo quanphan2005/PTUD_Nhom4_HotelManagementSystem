@@ -24,20 +24,21 @@ public class CustomUI {
     public static final Color yellow = new Color(255, 223, 0);
     public static final Color be = new Color(241, 172, 135);
 
+    public static final Font italicSmallFont = new Font("Roboto", Font.ITALIC, 12);
     public static final Color lightOrange = new Color(255, 189, 84);
 
-    public static final Font italicSmallFont = new Font("Arial", Font.ITALIC, 12);
+    public static final Font supperSmallFont = new Font("Roboto", Font.BOLD, 12);
+    public static final Font verySmallFont = new Font("Roboto", Font.BOLD, 13);
+    public static final Font subMenuFont = new Font("Roboto", Font.BOLD, 14);
+    public static final Font smallFont = new Font("Roboto", Font.BOLD, 16);
+    public static final Font normalFont = new Font("Roboto", Font.BOLD, 20);
+    public static final Font bigFont = new Font("Roboto", Font.BOLD, 24);
+    public static final Font veryBigFont = new Font("Roboto", Font.BOLD, 30);
 
-    public static final Font supperSmallFont = new Font("Arial", Font.BOLD, 12);
-    public static final Font verySmallFont = new Font("Arial", Font.BOLD, 13);
-    public static final Font smallFont = new Font("Arial", Font.BOLD, 16);
-    public static final Font normalFont = new Font("Arial", Font.BOLD, 20);
-    public static final Font bigFont = new Font("Arial", Font.BOLD, 24);
-    public static final Font veryBigFont = new Font("Arial", Font.BOLD, 30);
 
     // Table font and color settings
-    public static final Font HEADER_FONT = new Font("Arial", Font.BOLD, 16);
-    public static final Font TABLE_FONT  = new Font("Arial", Font.PLAIN, 13);
+    public static final Font HEADER_FONT = new Font("Roboto", Font.BOLD, 16);
+    public static final Font TABLE_FONT  = new Font("Roboto", Font.PLAIN, 13);
 
     public static final Color TABLE_HEADER_BACKGROUND = new Color(30, 144, 255); // Professional blue
     public static final Color TABLE_HEADER_FOREGROUND = Color.WHITE;

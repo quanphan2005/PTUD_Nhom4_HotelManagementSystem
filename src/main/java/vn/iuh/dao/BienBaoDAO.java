@@ -10,20 +10,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class BienBaoDAO {
-    private final Connection connection;
-
-    public BienBaoDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public BienBaoDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public BienBan timBienBan(String id) {
         String query = "SELECT * FROM BienBan WHERE ma_bien_ban = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, id);
 
@@ -45,6 +36,7 @@ public class BienBaoDAO {
                 "VALUES (?, ?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, bienBan.getMaBienBan());
             ps.setString(2, bienBan.getLiDo());

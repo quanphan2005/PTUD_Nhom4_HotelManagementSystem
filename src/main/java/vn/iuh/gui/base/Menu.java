@@ -1,24 +1,38 @@
 package vn.iuh.gui.base;
 
 import net.miginfocom.swing.MigLayout;
+import vn.iuh.util.IconUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Objects;
 
 public class Menu extends JComponent {
     private MigLayout migLayout;
-    private String[][] menuItems = new String[][]{
+    private final String[][] menuItems = new String[][]{
             {"Đơn đặt phòng",  "Quản lý đơn đặt phòng"},
-            {"Phòng", "Quản lý đặt phòng","Quản lý phòng", "Quản lý loại phòng", "Tìm phòng", "Thống kê hiệu suất"},
+            {"Phòng",  "Quản lý đặt phòng","Tìm phòng","Quản lý phòng", "Quản lý loại phòng", "Thống kê hiệu suất"},
             {"Dịch vụ", "Tìm dịch vụ","Quản lý dịch vụ", "Quản lý loại dịch vụ"},
             {"Hóa đơn", "Tìm hóa đơn", "Thống kê doanh thu"},
             {"Nhân viên", "Quản lý nhân viên", "Quản lý tài khoản"},
             {"Khách hàng", "Tìm khách hàng", "Quản lý khách hàng"},
             {"Hệ thống", "Quản lý phụ phí", "Thiết lập hệ thống", "Trợ giúp"}
     };
-        public Menu(Main mainFrame) {
+
+    private final ImageIcon[] menuIcons = {
+            IconUtil.createMenuIcon("/icons/booking2.png"),
+            IconUtil.createMenuIcon("/icons/bed.png"),
+            IconUtil.createMenuIcon("/icons/call_service.png"),
+            IconUtil.createMenuIcon("/icons/bill.png"),
+            IconUtil.createMenuIcon("/icons/receptionist.png"),
+            IconUtil.createMenuIcon("/icons/man.png"),
+            IconUtil.createMenuIcon("/icons/content-management-system.png"),
+
+    };
+
+    public Menu(Main mainFrame) {
         init(mainFrame);
         setOpaque(false);
     }
@@ -35,6 +49,11 @@ public class Menu extends JComponent {
     private void addMenu(String menuName, int index, Main mainFrame){
         int length = menuItems[index].length;
         MenuItem item = new MenuItem(menuName, index, length > 1);
+
+        item.setIcon(menuIcons[index]);
+        item.setIconTextGap(10);
+        item.setFont(CustomUI.smallFont);
+
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {

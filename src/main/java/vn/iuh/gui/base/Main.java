@@ -5,7 +5,11 @@
 
 package vn.iuh.gui.base;
 
+import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.fonts.roboto.FlatRobotoFont;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import org.quartz.*;
 import vn.iuh.constraint.PanelName;
 import vn.iuh.dao.NhanVienDAO;
 import vn.iuh.dao.TaiKhoanDAO;
@@ -19,8 +23,12 @@ import vn.iuh.gui.panel.booking.BookingManagementPanel;
 import vn.iuh.gui.panel.booking.ReservationManagementPanel;
 import vn.iuh.gui.panel.statistic.RevenueStatisticPanel;
 import vn.iuh.gui.panel.statistic.RoomProductivityPanel;
+import vn.iuh.schedule.AutomaticallyBackupDif;
+import vn.iuh.schedule.AutomaticallyBackupFull;
 import vn.iuh.service.WarningReservationService;
 import vn.iuh.service.impl.WarningReservationImpl;
+import vn.iuh.util.BackupDatabase;
+import vn.iuh.util.SchedulerUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -62,7 +70,13 @@ public class Main extends JFrame {
     private SystemConfigPanel pnlThietLapHeThong;
     private WarningReservationService warningReservationService;
 
+    private QuanLyNhanVienPanel pnlQuanLyNhanVien;
+
     public void init() {
+        FlatRobotoFont.install();
+        UIManager.put("defaultFont", new Font(FlatRobotoFont.FAMILY, Font.PLAIN, 13)); // Set font mặc định toàn app
+        FlatLightLaf.setup();
+
         this.taiKhoanDAO = new TaiKhoanDAO();
         this.nhanVienDAO = new NhanVienDAO();
         this.warningReservationService = new WarningReservationImpl();
@@ -106,6 +120,7 @@ public class Main extends JFrame {
 
         this.pMain.add(pnlRoot, BorderLayout.CENTER);
         this.add(pMain);
+        createAutomaticallyBackupCronjob();
     }
 
     private JPanel createCenterPanel(){
@@ -218,6 +233,10 @@ public class Main extends JFrame {
             pnlRoomProductivity.checkRoleAndLoadData();
         }
 
+        if (pnlQuanLyNhanVien != null) {
+            pnlQuanLyNhanVien.checkRoleAndLoadData();
+        }
+
     }
 
     private String convertMaChucVuToTen(String maChucVu) {
@@ -311,20 +330,21 @@ public class Main extends JFrame {
 //        PreReservationManagementPanel preReservationManagementPanel = new PreReservationManagementPanel();
         pnlStatistic = new RevenueStatisticPanel();
         QuanLyHoaDonPanel pnlQuanLyHoaDon = new QuanLyHoaDonPanel();
-        QuanLyNhanVienPanel pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
+        pnlQuanLyNhanVien = new QuanLyNhanVienPanel();
         pnlQuanLyTaiKhoan = new QuanLyTaiKhoanPanel();
         pnlQuanLyPhuPhi = new QuanLyPhuPhiPanel();
         QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
         QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
         QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
+        QuanLyDichVuPanel pnlQuanLyDichVu = new QuanLyDichVuPanel();
+        QuanLyLoaiDichVuPanel pnlQuanLyLoaiDichVu = new QuanLyLoaiDichVuPanel(pnlQuanLyDichVu);
         pnlThietLapHeThong =  new SystemConfigPanel();
-//        QuanLyPhongPanel pnlQuanLyPhong = new QuanLyPhongPanel();
-//        QuanLyKhachHangPanel pnlQuanLyKhachHang = new QuanLyKhachHangPanel();
-//        QuanLyLoaiPhongPanel pnlQuanLyLoaiPhong = new QuanLyLoaiPhongPanel();
         pnlRoomProductivity = new RoomProductivityPanel();
         pnlCenter.add(pnlQuanLyPhong, "Quản lý phòng");
         pnlCenter.add(pnlQuanLyLoaiPhong, "Quản lý loại phòng");
         pnlCenter.add(pnlQuanLyKhachHang, "Quản lý khách hàng");
+        pnlCenter.add(pnlQuanLyDichVu, "Quản lý dịch vụ");
+        pnlCenter.add(pnlQuanLyLoaiDichVu, "Quản lý loại dịch vụ");
         pnlCenter.add(bookingManagementPanel, PanelName.BOOKING_MANAGEMENT.getName());
         pnlCenter.add(reservationManagementPanel, PanelName.RESERVATION_MANAGEMENT.getName());
 //        pnlCenter.add(preReservationManagementPanel, PanelName.PRE_RESERVATION_MANAGEMENT.getName());
@@ -372,5 +392,8 @@ public class Main extends JFrame {
         }
     }
 
-
+    private void createAutomaticallyBackupCronjob(){
+        BackupDatabase.scheduleFullBackup();
+        BackupDatabase.scheduleDiffBackup();
+    }
 }

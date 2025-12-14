@@ -14,20 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TaiKhoanDAO {
-    private final Connection connection;
-
-    public TaiKhoanDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public TaiKhoanDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public TaiKhoan timTaiKhoanMoiNhat() {
         String query = "SELECT TOP 1 * FROM TaiKhoan WHERE da_xoa = 0 ORDER BY ma_tai_khoan DESC";
-
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
 
             var rs = ps.executeQuery();
@@ -46,7 +36,9 @@ public class TaiKhoanDAO {
                 "VALUES (?, ?, ?, ?, ?)";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, taiKhoan.getMaTaiKhoan());
             ps.setString(2, taiKhoan.getTenDangNhap());
             ps.setString(3, taiKhoan.getMatKhau());
@@ -63,8 +55,10 @@ public class TaiKhoanDAO {
     }
     public boolean kiemTraMatKhau(String maNhanVien, String matKhau) {
         String sql = "SELECT mat_khau FROM TaiKhoan WHERE ma_nhan_vien = ?";
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, maNhanVien);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -82,7 +76,10 @@ public class TaiKhoanDAO {
     public boolean doiMatKhau(String maNhanVien, String matKhauMoi) {
 
         String sql = "UPDATE TaiKhoan SET mat_khau = ? WHERE ma_nhan_vien = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
+
             String hassPassword = SecurityConfig.hashPassword(matKhauMoi);
             ps.setString(1, hassPassword);
             ps.setString(2, maNhanVien);
@@ -100,7 +97,9 @@ public class TaiKhoanDAO {
         String query = "select * from TaiKhoan tk where tk.ma_nhan_vien = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, maNhanVien);
 
             var rs = ps.executeQuery();
@@ -119,7 +118,9 @@ public class TaiKhoanDAO {
                 "ma_nhan_vien = ? WHERE ma_tai_khoan = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, taiKhoan.getTenDangNhap());
             ps.setString(2, taiKhoan.getMatKhau());
             ps.setString(3, taiKhoan.getMaChucVu());
@@ -150,7 +151,9 @@ public class TaiKhoanDAO {
         String query = "UPDATE TaiKhoan SET da_xoa = 1 WHERE ma_tai_khoan = ?";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, id);
             int rowsAffected = ps.executeUpdate();
             if(rowsAffected > 0) {
@@ -169,7 +172,9 @@ public class TaiKhoanDAO {
         String query = "SELECT * FROM TaiKhoan WHERE ma_tai_khoan = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, accountID);
 
             var rs = ps.executeQuery();
@@ -188,7 +193,10 @@ public class TaiKhoanDAO {
     public String getChucVuBangMaNhanVien(String maNhanVien) {
         String query = "select ma_chuc_vu from TaiKhoan  where ma_nhan_vien = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(query)){
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, maNhanVien);
 
             var rs = ps.executeQuery();
@@ -205,7 +213,9 @@ public class TaiKhoanDAO {
         String query = "SELECT * FROM TaiKhoan WHERE ten_dang_nhap = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, userName);
 
             var rs = ps.executeQuery();
@@ -228,7 +238,9 @@ public class TaiKhoanDAO {
                 "ma_nhan_vien from TaiKhoan where da_xoa = 0";
 
         try {
-             PreparedStatement ps = connection.prepareStatement(sql);
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
+
              ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {

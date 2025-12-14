@@ -60,6 +60,15 @@ public class IconUtil {
         }
     }
 
+    public static ImageIcon createMenuIcon(String path) {
+        try {
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource(path)));
+            return new ImageIcon(icon.getImage().getScaledInstance(36, 36, Image.SCALE_SMOOTH));
+        } catch (Exception e) {
+            return createColoredIcon(new Color(255, 193, 7), "📋"); // Amber for extend
+        }
+    }
+
     public static ImageIcon createExtendCheckoutIcon() {
         try {
             ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource("/icons/checkout_late.png")));
@@ -86,6 +95,8 @@ public class IconUtil {
             return createColoredIcon(new Color(244, 67, 54), "❌"); // Red for cancel
         }
     }
+
+
 
     // TODO - fix duplicate method
     public static ImageIcon createProgressIcon() {

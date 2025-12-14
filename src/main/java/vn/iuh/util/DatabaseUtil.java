@@ -25,12 +25,24 @@ public class DatabaseUtil {
         * Get connection to database (singleton pattern)
         * @return Connection object
     */
-    public static Connection getConnect() {
-        if (connection == null)
+    public static synchronized Connection getConnect() {
+        if (connection == null || isConnectionDead(connection)) {
             connection = createConnection();
-
-
+        }
         return connection;
+    }
+
+    private static boolean isConnectionDead(Connection conn) {
+        if (conn == null) {
+            return true;
+        }
+        try {
+            conn.prepareStatement("SELECT 1").execute();
+            return false;
+        } catch (SQLException e) {
+            System.err.println("Connection is dead: " + e.getMessage());
+            return true;
+        }
     }
 
     /*
@@ -76,18 +88,47 @@ public class DatabaseUtil {
     }
 
     private static Connection createConnection() {
-        try {
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            connection = DriverManager.getConnection(url, username, password);
-            if (connection != null) {
+        while (true) {
+            try {
+                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                Connection conn = DriverManager.getConnection(url, username, password);
                 System.out.println("Kết nối thành công!");
-            }
-        } catch (ClassNotFoundException e) {
-            System.err.println("SQLServerDriver không tìm thấy: " + e.getMessage());
-        } catch (SQLException e) {
-            System.err.println("Lỗi kết nối: " + e.getMessage());
-        }
+                return conn;
 
-        return connection;
+            } catch (Exception e) {
+                System.err.println("Lỗi tạo kết nối: " + e.getMessage());
+                try { Thread.sleep(1000); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public static void khoiTaoGiaoTac() {
+        DatabaseUtil.enableTransaction(connection);
+    }
+
+    public static void thucHienGiaoTac() {
+        try {
+            if (connection != null && !connection.getAutoCommit()) {
+                connection.commit();
+                DatabaseUtil.disableTransaction(connection);
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi commit transaction: " + e.getMessage());
+            DatabaseUtil.closeConnection(connection);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void hoanTacGiaoTac() {
+        try {
+            if (connection != null && !connection.getAutoCommit()) {
+                connection.rollback();
+                DatabaseUtil.disableTransaction(connection);
+            }
+        } catch (SQLException e) {
+            System.out.println("Lỗi rollback transaction: " + e.getMessage());
+            DatabaseUtil.closeConnection(connection);
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -12,22 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LichSuDiVaoDAO {
-    private final Connection connection;
-
-    public LichSuDiVaoDAO() {
-        this.connection = DatabaseUtil.getConnect();
-    }
-
-    public LichSuDiVaoDAO(Connection connection) {
-        this.connection = connection;
-    }
-
     public boolean themLichSuDiVao(LichSuDiVao lichSuDiVao) {
         String query = "INSERT INTO LichSuDiVao" +
                        " (ma_lich_su_di_vao, la_lan_dau_tien, ma_chi_tiet_dat_phong)" +
                        " VALUES (?, ?, ?)";
         try {
-            var ps = connection.prepareStatement(query);
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, lichSuDiVao.getMaLichSuDiVao());
             ps.setBoolean(2, lichSuDiVao.getLaLanDauTien());
             ps.setString(3, lichSuDiVao.getMaChiTietDatPhong());
@@ -44,7 +35,9 @@ public class LichSuDiVaoDAO {
         String query = "SELECT * FROM LichSuDiVao WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, maChiTietDatPhong);
 
             List<LichSuDiVao> lichSuDiVaoList = new java.util.ArrayList<>();
@@ -62,7 +55,9 @@ public class LichSuDiVaoDAO {
         String query = "SELECT TOP 1 * FROM LichSuDiVao ORDER BY ma_lich_su_di_vao DESC";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
 
             var rs = ps.executeQuery();
             if (rs.next())
@@ -91,7 +86,9 @@ public class LichSuDiVaoDAO {
         String query = queryBuilder.toString();
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             for (int i = 0; i < danhSachMaChiTietDatPhong.size(); i++) {
                 ps.setString(i + 1, danhSachMaChiTietDatPhong.get(i));
             }
@@ -114,7 +111,9 @@ public class LichSuDiVaoDAO {
                        "WHERE ctdp.ma_don_dat_phong = ? AND lsdv.da_xoa = 0";
 
         try {
+            Connection connection = DatabaseUtil.getConnect();
             PreparedStatement ps = connection.prepareStatement(query);
+
             ps.setString(1, maDonDatPhong);
 
             List<LichSuDiVao> lichSuDiVaoList = new java.util.ArrayList<>();
@@ -142,8 +141,10 @@ public class LichSuDiVaoDAO {
     }
 
     public boolean daTonTai(String maChiTietDatPhong) {
-        String q = "SELECT COUNT(1) AS cnt FROM LichSuDiVao WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
-        try (PreparedStatement ps = connection.prepareStatement(q)) {
+        String query = "SELECT COUNT(1) AS cnt FROM LichSuDiVao WHERE ma_chi_tiet_dat_phong = ? AND da_xoa = 0";
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, maChiTietDatPhong);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt("cnt") > 0;
