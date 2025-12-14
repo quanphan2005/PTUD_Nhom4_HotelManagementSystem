@@ -588,8 +588,8 @@ public class ChiTietDatPhongDAO {
                 "WHERE ma_don_dat_phong = ? AND ISNULL(kieu_ket_thuc, '') = '' AND ISNULL(da_xoa,0) = 0 " +
                 "ORDER BY tg_nhan_phong ASC";
         List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
-        try (Connection connection = DatabaseUtil.getConnect();
-             PreparedStatement ps = connection.prepareStatement(query)) {
+        Connection connection = DatabaseUtil.getConnect();
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
 
             ps.setString(1, bookingId);
             try (ResultSet rs = ps.executeQuery()) {
