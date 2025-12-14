@@ -582,4 +582,25 @@ public class ChiTietDatPhongDAO {
         return null;
     }
 
+    // Hàm tìm chi tiết đặt phòng dùng riêng cho chức năng đổi phòng
+    public List<ChiTietDatPhong> findByBookingIdV2(String bookingId) {
+        String query = "SELECT * FROM ChiTietDatPhong " +
+                "WHERE ma_don_dat_phong = ? AND ISNULL(kieu_ket_thuc, '') = '' AND ISNULL(da_xoa,0) = 0 " +
+                "ORDER BY tg_nhan_phong ASC";
+        List<ChiTietDatPhong> chiTietDatPhongs = new ArrayList<>();
+        try (Connection connection = DatabaseUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(query)) {
+
+            ps.setString(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    chiTietDatPhongs.add(mapResultSetToChiTietDatPhong(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return chiTietDatPhongs;
+    }
+
 }

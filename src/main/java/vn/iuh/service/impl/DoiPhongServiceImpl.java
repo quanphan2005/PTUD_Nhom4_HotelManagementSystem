@@ -99,7 +99,7 @@ public class DoiPhongServiceImpl implements DoiPhongService {
             Timestamp now = new Timestamp(System.currentTimeMillis());
 
             // 3) Tìm ChiTietDatPhong thuộc mã đơn đặt phòng và mã phòng
-            List<ChiTietDatPhong> details = chiTietDao.findByBookingId(reservationId);
+            List<ChiTietDatPhong> details = chiTietDao.findByBookingIdV2(reservationId);
             ChiTietDatPhong target = null;
             if (details != null) {
                 for (ChiTietDatPhong c : details) {
