@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.ui.FlatLineBorder;
 import vn.iuh.gui.base.CustomUI;
+import vn.iuh.gui.dialog.ChiTietLoaiPhongDialog;
 import vn.iuh.gui.dialog.SuaLoaiPhongDialog;
 import vn.iuh.gui.dialog.ThemLoaiPhongDialog;
 import vn.iuh.service.LoaiPhongService;
@@ -39,7 +40,7 @@ public class QuanLyLoaiPhongPanel extends JPanel {
 
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(520, 45);
     private static final Dimension SEARCH_BUTTON_SIZE = new Dimension(90, 40);
-    // *** Thay đổi kích thước nút: thu nhỏ để vừa vặn hơn trong search panel
+
     private static final Dimension ACTION_BUTTON_SIZE = new Dimension(220, 46);
     private static final Dimension CATEGORY_BUTTON_SIZE = new Dimension(190, 52);
 
@@ -182,53 +183,150 @@ public class QuanLyLoaiPhongPanel extends JPanel {
             ensureLazyInit();
 
             new SwingWorker<Void, Void>() {
+                private Exception checkEx = null;
+                private boolean hasBooking = false;
+
                 @Override protected Void doInBackground() throws Exception {
                     int waited = 0;
                     while (!servicesReady && waited < 5000) { Thread.sleep(100); waited += 100; }
+                    try {
+                        // đảm bảo có một instance LoaiPhongServiceImpl để gọi method kiểm tra
+                        LoaiPhongServiceImpl svcImpl;
+                        if (loaiPhongService instanceof LoaiPhongServiceImpl) {
+                            svcImpl = (LoaiPhongServiceImpl) loaiPhongService;
+                        } else {
+                            svcImpl = new LoaiPhongServiceImpl();
+                        }
+                        hasBooking = svcImpl.hasCurrentOrFutureBookingsForLoaiPhong(sel.code);
+                    } catch (Exception ex) {
+                        checkEx = ex;
+                    }
                     return null;
                 }
+
                 @Override protected void done() {
-                    // mở form sửa trên EDT
-                    SwingUtilities.invokeLater(() -> {
-                        try {
-                            openCategoryDetail(sel);
-                        } catch (Throwable ex) {
-                            ex.printStackTrace();
-                            // fallback: try again
-                            try { openCategoryDetail(sel); } catch (Throwable ignore) { ignore.printStackTrace(); }
-                        } finally {
-                            // reload sau khi dialog đóng
-                            reloadListFromService();
+                    // chạy trên EDT
+                    if (checkEx != null) {
+                        checkEx.printStackTrace();
+                        JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this,
+                                "Lỗi khi kiểm tra trạng thái đặt phòng: " + checkEx.getMessage(),
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    if (hasBooking) {
+                        JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this,
+                                "Không thể sửa: loại phòng đang được sử dụng hoặc có đơn đặt trong tương lai.",
+                                "Không cho phép", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    // nếu không có booking -> mở dialog chỉnh sửa (giữ logic hiện tại)
+                    new SwingWorker<OpenPayload, Void>() {
+                        @Override protected OpenPayload doInBackground() throws Exception {
+                            int waited = 0;
+                            while (!servicesReady && waited < 5000) { Thread.sleep(100); waited += 100; }
+                            LoaiPhong lp = null;
+                            try { if (loaiPhongService != null) lp = loaiPhongService.getRoomCategoryByIDV2(sel.code); } catch (Exception ignored) { lp = null; }
+                            if (lp == null) { lp = new LoaiPhong(); lp.setMaLoaiPhong(sel.code); lp.setTenLoaiPhong(sel.name); }
+                            List<NoiThat> furniture = new ArrayList<>();
+                            try { if (noiThatService != null) furniture = noiThatService.getNoiThatByLoaiPhong(sel.code); } catch (Exception ignored) {}
+                            return new OpenPayload(lp, furniture);
                         }
-                    });
+                        @Override protected void done() {
+                            try {
+                                OpenPayload p = get();
+                                Frame owner = (Frame) SwingUtilities.getWindowAncestor(QuanLyLoaiPhongPanel.this);
+                                SuaLoaiPhongDialog dlg = new SuaLoaiPhongDialog(owner, loaiPhongService, noiThatService, p.lp, p.furniture);
+                                dlg.setLocationRelativeTo(owner);
+                                dlg.setVisible(true);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            } finally {
+                                reloadListFromService();
+                            }
+                        }
+                    }.execute();
                 }
             }.execute();
         });
 
-        // Xóa: nếu không chọn hàng -> thông báo; nếu có -> thực hiện xóa như trước
         deleteButton.addActionListener(e -> {
             CategoryData sel = getSelectedCategoryData();
             if (sel == null) {
                 JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Vui lòng chọn 1 loại phòng để xóa", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-            if (loaiPhongService == null) {
-                JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Không có service để xóa", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+
+            // ensure service ready
+            ensureLazyInit();
+
+            // hỏi xác nhận sơ bộ
             int confirm = JOptionPane.showConfirmDialog(QuanLyLoaiPhongPanel.this, "Bạn có chắc muốn xóa loại phòng " + sel.code + " ?", "Xác nhận", JOptionPane.YES_NO_OPTION);
             if (confirm != JOptionPane.YES_OPTION) return;
-            String maPhien = System.getProperty("user.name"); if (maPhien == null) maPhien = "UNKNOWN";
-            try {
-                boolean deleted = ((LoaiPhongServiceImpl) loaiPhongService).deleteRoomCategoryWithAudit(sel.code, maPhien);
-                if (deleted) JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Xóa loại phòng thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                else JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Không thể xóa loại phòng", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Lỗi khi xóa loại phòng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace();
-            } finally {
-                reloadListFromService();
-            }
+
+            new SwingWorker<Void, Void>() {
+                private Exception checkEx = null;
+                private boolean hasBooking = false;
+                private boolean deleted = false;
+                private Exception deleteEx = null;
+
+                @Override protected Void doInBackground() throws Exception {
+                    int waited = 0;
+                    while (!servicesReady && waited < 5000) { Thread.sleep(100); waited += 100; }
+
+                    try {
+                        vn.iuh.service.impl.LoaiPhongServiceImpl svcImpl;
+                        if (loaiPhongService instanceof vn.iuh.service.impl.LoaiPhongServiceImpl) {
+                            svcImpl = (vn.iuh.service.impl.LoaiPhongServiceImpl) loaiPhongService;
+                        } else {
+                            svcImpl = new vn.iuh.service.impl.LoaiPhongServiceImpl();
+                        }
+                        hasBooking = svcImpl.hasCurrentOrFutureBookingsForLoaiPhong(sel.code);
+                        if (!hasBooking) {
+                            String maPhien = System.getProperty("user.name"); if (maPhien == null) maPhien = "UNKNOWN";
+                            deleted = svcImpl.deleteRoomCategoryWithAudit(sel.code, maPhien);
+                        }
+                    } catch (Exception ex) {
+                        // phân biệt lỗi kiểm tra và lỗi xóa bằng deleteEx/checkEx
+                        if (hasBooking) {
+                            checkEx = ex;
+                        } else {
+                            deleteEx = ex;
+                        }
+                    }
+                    return null;
+                }
+
+                @Override protected void done() {
+                    if (checkEx != null) {
+                        checkEx.printStackTrace();
+                        JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this,
+                                "Lỗi khi kiểm tra booking: " + checkEx.getMessage(),
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    if (hasBooking) {
+                        JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this,
+                                "Không thể xóa: loại phòng đang được sử dụng hoặc có đơn đặt trong tương lai.",
+                                "Không cho phép", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    if (deleteEx != null) {
+                        deleteEx.printStackTrace();
+                        JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this,
+                                "Lỗi khi xóa loại phòng: " + deleteEx.getMessage(),
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        reloadListFromService();
+                        return;
+                    }
+                    if (deleted) {
+                        JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Xóa loại phòng thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(QuanLyLoaiPhongPanel.this, "Không thể xóa loại phòng", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                    reloadListFromService();
+                }
+            }.execute();
         });
 
         onePeopleButton   = createCategoryButton("1 người", "#1BA1E2", CATEGORY_BUTTON_SIZE);
@@ -580,14 +678,29 @@ public class QuanLyLoaiPhongPanel extends JPanel {
                                     return null;
                                 }
                                 @Override protected void done() {
-                                    SwingUtilities.invokeLater(() -> openCategoryDetail(d));
+                                    // open ChiTietLoaiPhongDialog (detail view) on EDT
+                                    SwingUtilities.invokeLater(() -> {
+                                        try {
+                                            Frame owner = (Frame) SwingUtilities.getWindowAncestor(QuanLyLoaiPhongPanel.this);
+                                            // loaiPhongService / noiThatService should be initialized by ensureLazyInit(); if null, instantiate fallbacks
+                                            LoaiPhongService svcLp = loaiPhongService;
+                                            NoiThatService svcNt = noiThatService;
+                                            if (svcLp == null) svcLp = new LoaiPhongServiceImpl();
+                                            if (svcNt == null) svcNt = new NoiThatServiceImpl();
+                                            ChiTietLoaiPhongDialog dlg = new ChiTietLoaiPhongDialog(owner, svcLp, svcNt, d.code);
+                                            dlg.setLocationRelativeTo(owner);
+                                            dlg.setVisible(true);
+                                        } catch (Throwable ex) {
+                                            ex.printStackTrace();
+                                        } finally {
+                                            // keep original behavior: reload list after closing detail
+                                            reloadListFromService();
+                                        }
+                                    });
                                 }
                             }.execute();
                         }
                     }
-                } else {
-                    // single click: repaint to show selection immediately and keep buttons enabled
-                    SwingUtilities.invokeLater(() -> categoryTable.repaint());
                 }
             }
         });

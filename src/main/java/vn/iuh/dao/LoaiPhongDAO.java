@@ -308,5 +308,30 @@ public class LoaiPhongDAO {
         }
     }
 
+    public Map<String, Double> layGiaLoaiPhongTheoIdV2(String loaiPhongId) {
+        String query = "select gia_gio_moi as gia_gio, gia_ngay_moi as gia_ngay from GiaPhong gp\n" +
+                "where\tgp.ma_loai_phong = ?\n" +
+                "order by thoi_gian_tao desc\n";
+        Map<String, Double> listPrice = new HashMap<>();
+
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, loaiPhongId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                listPrice.put("gia_ngay", rs.getDouble("gia_ngay"));
+                listPrice.put("gia_gio", rs.getDouble("gia_gio"));
+            }
+
+            return listPrice;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch te) {
+            System.out.println(te.getMessage());
+        }
+        return null;
+    }
+
 }
 

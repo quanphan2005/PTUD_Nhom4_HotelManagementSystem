@@ -19,12 +19,11 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Dialog sửa loại phòng.
- */
 public class SuaLoaiPhongDialog extends JDialog {
 
     private final LoaiPhongService loaiPhongService;
@@ -35,6 +34,9 @@ public class SuaLoaiPhongDialog extends JDialog {
     private final JTextField txtTen = new JTextField();
     private final JSpinner spnSoNguoi = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
     private final JComboBox<String> cboPhanLoai = new JComboBox<>(new String[] {"Thường", "VIP"});
+
+    private final JTextField txtGiaGio = new JTextField();
+    private final JTextField txtGiaNgay = new JTextField();
 
     private final DefaultListModel<NoiThat> availableModel = new DefaultListModel<>();
     private final JList<NoiThat> listAvailable = new JList<>(availableModel);
@@ -67,8 +69,8 @@ public class SuaLoaiPhongDialog extends JDialog {
         initComponents();
         pack();
         setLocationRelativeTo(owner);
-        setPreferredSize(new Dimension(900, 600));
-        setMinimumSize(new Dimension(800, 520));
+        setPreferredSize(new Dimension(900, 640)); // tăng chút chiều cao để chứa 2 field giá
+        setMinimumSize(new Dimension(800, 560));
         loadInitialData(currentFurniture);
     }
 
@@ -105,6 +107,20 @@ public class SuaLoaiPhongDialog extends JDialog {
         form.add(new JLabel("Phân loại:"), gc);
         gc.gridx = 1; gc.gridy = 3; gc.weightx = 1;
         form.add(cboPhanLoai, gc);
+
+        // --- NEW: Giá giờ ---
+        gc.gridx = 0; gc.gridy = 4; gc.weightx = 0;
+        form.add(new JLabel("Giá giờ (VND):"), gc);
+        gc.gridx = 1; gc.gridy = 4; gc.weightx = 1;
+        txtGiaGio.setToolTipText("Nhập số (ví dụ: 100000 hoặc 100,000)");
+        form.add(txtGiaGio, gc);
+
+        // --- NEW: Giá ngày ---
+        gc.gridx = 0; gc.gridy = 5; gc.weightx = 0;
+        form.add(new JLabel("Giá ngày (VND):"), gc);
+        gc.gridx = 1; gc.gridy = 5; gc.weightx = 1;
+        txtGiaNgay.setToolTipText("Nhập số (ví dụ: 300000 hoặc 300,000)");
+        form.add(txtGiaNgay, gc);
 
         main.add(form, BorderLayout.NORTH);
 
@@ -188,6 +204,21 @@ public class SuaLoaiPhongDialog extends JDialog {
             if ("VIP".equalsIgnoreCase(current.getPhanLoai())) cboPhanLoai.setSelectedItem("VIP");
             else cboPhanLoai.setSelectedItem("Thường");
         }
+
+        // --- attempt to load latest price (if service implementation exposes it) ---
+        try {
+            Map<String, Double> latest = null;
+            if (loaiPhongService instanceof LoaiPhongServiceImpl && current != null) {
+                latest = ((LoaiPhongServiceImpl) loaiPhongService).getLatestPriceMap(current.getMaLoaiPhong());
+            }
+            if (latest != null) {
+                double gGio = latest.getOrDefault("gia_gio", 0.0);
+                double gNgay = latest.getOrDefault("gia_ngay", 0.0);
+                NumberFormat nf = NumberFormat.getIntegerInstance();
+                txtGiaGio.setText(gGio > 0 ? nf.format(Math.round(gGio)) : "");
+                txtGiaNgay.setText(gNgay > 0 ? nf.format(Math.round(gNgay)) : "");
+            }
+        } catch (Exception ignored) {}
 
         // load all furniture and mark selected
         List<NoiThat> all = new ArrayList<>();
@@ -297,15 +328,46 @@ public class SuaLoaiPhongDialog extends JDialog {
             newAssignments.add(new NoiThatAssignment(ma, qty));
         }
 
-        // maPhienDangNhap: bạn nên thay cách lấy này bằng session thực tế
-        String maPhien = System.getProperty("user.name");
-        if (maPhien == null) maPhien = "UNKNOWN";
+        // PARSE giá: nếu user nhập cả 2 => truyền; nếu cả 2 rỗng => không thay đổi giá; nếu chỉ 1 => báo lỗi
+        String sGiaGio = txtGiaGio.getText().trim().replaceAll("[,\\s]", "");
+        String sGiaNgay = txtGiaNgay.getText().trim().replaceAll("[,\\s]", "");
+
+        boolean giaGioEmpty = sGiaGio.isEmpty();
+        boolean giaNgayEmpty = sGiaNgay.isEmpty();
+
+        Double giaGioVal = null;
+        Double giaNgayVal = null;
+
+        if (!giaGioEmpty || !giaNgayEmpty) {
+            // nếu chỉ nhập 1 trong 2 -> lỗi
+            if (giaGioEmpty || giaNgayEmpty) {
+                JOptionPane.showMessageDialog(this, "Nếu thay đổi giá, vui lòng nhập cả Giá giờ và Giá ngày.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            try {
+                giaGioVal = Double.parseDouble(sGiaGio);
+                giaNgayVal = Double.parseDouble(sGiaNgay);
+                if (giaGioVal < 0 || giaNgayVal < 0) {
+                    JOptionPane.showMessageDialog(this, "Giá phải là số không âm.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Giá nhập không hợp lệ. Vui lòng nhập số hợp lệ (ví dụ: 100000)", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
 
         try {
             if (loaiPhongService instanceof LoaiPhongServiceImpl) {
-                // nếu implement của bạn có method transaction + audit, gọi nó
+                // gọi trực tiếp impl đã có method update với giá
                 LoaiPhongServiceImpl impl = (LoaiPhongServiceImpl) loaiPhongService;
-                boolean ok = impl.updateRoomCategoryWithAudit(current, newAssignments);
+                boolean ok;
+                if (giaGioVal != null && giaNgayVal != null) {
+                    ok = impl.updateRoomCategoryWithAudit(current, newAssignments, giaGioVal, giaNgayVal);
+                } else {
+                    ok = impl.updateRoomCategoryWithAudit(current, newAssignments);
+                }
+
                 if (ok) {
                     JOptionPane.showMessageDialog(this, "Cập nhật thành công", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                     dispose();
@@ -340,7 +402,7 @@ public class SuaLoaiPhongDialog extends JDialog {
                     String newId = EntityUtil.increaseEntityID(latestId, "LT", 8);
 
                     wh.setMaLichSuThaoTac(newId);
-                    wh.setTenThaoTac(ActionType.EDIT_ROOM_CATEGORY.getActionName());
+                    wh.setTenThaoTac(ActionType.UPDATE_ROOM_CATEGORY.getActionName());
                     wh.setMoTa(String.format("Cập nhật loại phòng %s; nội thất count=%d", updated.getMaLoaiPhong(), newAssignments.size()));
                     wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
 

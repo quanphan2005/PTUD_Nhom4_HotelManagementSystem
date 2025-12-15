@@ -308,9 +308,8 @@ public class NhanVienDAO {
                 "LEFT JOIN TaiKhoan t ON p.ma_tai_khoan = t.ma_tai_khoan " +
                 "LEFT JOIN NhanVien nv ON t.ma_nhan_vien = nv.ma_nhan_vien " +
                 "WHERE p.ma_phien_dang_nhap = ?";
-
-        try (Connection conn = DatabaseUtil.getConnect();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        Connection conn = DatabaseUtil.getConnect();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, maPhien);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {

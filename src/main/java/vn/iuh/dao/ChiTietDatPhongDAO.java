@@ -456,10 +456,6 @@ public class ChiTietDatPhongDAO {
         }
     }
 
-    /**
-     * Đánh dấu xóa tất cả ChiTietDatPhong có liên quan tới DonDatPhong của khách.
-     * (dùng trước hoặc sau markBookingsAsDeletedByCustomer tùy luồng)
-     */
     public int markBookingDetailsAsDeletedByCustomer(String maKhachHang) {
         if (maKhachHang == null) return 0;
         // cập nhật ChiTietDatPhong dựa trên DonDatPhong của khách

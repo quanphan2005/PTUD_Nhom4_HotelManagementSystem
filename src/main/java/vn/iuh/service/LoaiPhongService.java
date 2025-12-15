@@ -1,6 +1,7 @@
 package vn.iuh.service;
 
 import vn.iuh.dto.repository.NoiThatAssignment;
+import vn.iuh.dto.response.RoomCategoryPriceHistory;
 import vn.iuh.dto.response.RoomCategoryResponse;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.gui.panel.statistic.FillterRoomStatistic;
@@ -25,5 +26,12 @@ public interface LoaiPhongService {
     LoaiPhong getRoomCategoryByIDV2(String id);
 
     LoaiPhong createRoomCategoryV2(LoaiPhong loaiPhong, double giaNgay, double giaGio, List<NoiThatAssignment> itemsWithQty);
+    Map<String, Double> getLatestPriceMap(String maLoaiPhong);
+    List<RoomCategoryPriceHistory> getPriceHistoryWithActor(String maLoaiPhong);
+    boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong,
+                                List<NoiThatAssignment> itemsWithQty,
+                                Double giaGioVal,
+                                Double giaNgayVal);
+    boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty);
 
 }
