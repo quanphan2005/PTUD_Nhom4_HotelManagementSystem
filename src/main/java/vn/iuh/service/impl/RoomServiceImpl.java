@@ -439,4 +439,92 @@ public class RoomServiceImpl implements RoomService {
         }
     }
 
+    @Override
+    public boolean scheduleMaintenance(String maPhong, int days) {
+        if (maPhong == null || maPhong.isBlank() || days <= 0) return false;
+        try {
+            // tạo id cho công việc mới
+            var last = congViecDAO.timCongViecMoiNhat();
+            String lastId = last != null ? last.getMaCongViec() : null;
+            String newId = EntityUtil.increaseEntityID(lastId, EntityIDSymbol.JOB_PREFIX.getPrefix(), EntityIDSymbol.JOB_PREFIX.getLength());
+
+            long nowMs = System.currentTimeMillis();
+            Timestamp now = new Timestamp(nowMs);
+            Timestamp end = new Timestamp(nowMs + days * 24L * 3600L * 1000L);
+
+            vn.iuh.entity.CongViec cv = new vn.iuh.entity.CongViec(newId,
+                    RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus(),
+                    now, end, maPhong, now);
+
+            // lưu công việc
+            congViecDAO.themCongViec(cv);
+
+            // ghi lịch sử thao tác (tuỳ project — giữ nhất quán)
+            try {
+                LichSuThaoTacDAO whDao = new LichSuThaoTacDAO();
+                var lastWh = whDao.timLichSuThaoTacMoiNhat();
+                String lastWhId = lastWh != null ? lastWh.getMaLichSuThaoTac() : null;
+                String newWhId = EntityUtil.increaseEntityID(lastWhId,
+                        EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                        EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
+
+                LichSuThaoTac wh = new LichSuThaoTac();
+                wh.setMaLichSuThaoTac(newWhId);
+                wh.setTenThaoTac(RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+                wh.setMoTa(String.format("Đặt phòng %s vào trạng thái BẢO TRÌ từ %s đến %s", maPhong, now, end));
+                wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
+                wh.setThoiGianTao(new Timestamp(System.currentTimeMillis()));
+                whDao.themLichSuThaoTac(wh);
+            } catch (Exception ex) {
+                // không block nếu ghi lịch sử lỗi
+                ex.printStackTrace();
+            }
+
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean endMaintenance(String maPhong) {
+        if (maPhong == null || maPhong.isBlank()) return false;
+        try {
+            // tìm công việc bảo trì gần nhất cho phòng
+            vn.iuh.entity.CongViec cv = congViecDAO.findLatestMaintenanceJobForRoom(maPhong);
+            if (cv == null) return false;
+
+            boolean removed = congViecDAO.removeJob(cv.getMaCongViec());
+
+            // ghi lịch sử thao tác (tuỳ project)
+            try {
+                if (removed) {
+                    LichSuThaoTacDAO whDao = new LichSuThaoTacDAO();
+                    var lastWh = whDao.timLichSuThaoTacMoiNhat();
+                    String lastWhId = lastWh != null ? lastWh.getMaLichSuThaoTac() : null;
+                    String newWhId = EntityUtil.increaseEntityID(lastWhId,
+                            EntityIDSymbol.WORKING_HISTORY_PREFIX.getPrefix(),
+                            EntityIDSymbol.WORKING_HISTORY_PREFIX.getLength());
+
+                    LichSuThaoTac wh = new LichSuThaoTac();
+                    wh.setMaLichSuThaoTac(newWhId);
+                    wh.setTenThaoTac("KẾT THÚC BẢO TRÌ");
+                    wh.setMoTa(String.format("Kết thúc bảo trì cho phòng %s (job %s)", maPhong, cv.getMaCongViec()));
+                    wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
+                    wh.setThoiGianTao(new Timestamp(System.currentTimeMillis()));
+                    whDao.themLichSuThaoTac(wh);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            return removed;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+
 }

@@ -405,4 +405,26 @@ public class CongViecDAO {
 
         return warningList;
     }
+
+    /**
+     * Tìm công việc bảo trì gần nhất của phòng (theo tg_bat_dau giảm dần)
+     */
+    public CongViec findLatestMaintenanceJobForRoom(String maPhong) {
+        String sql = "SELECT TOP 1 * FROM CongViec WHERE ma_phong = ? AND ISNULL(da_xoa,0)=0 AND ten_trang_thai = ? ORDER BY tg_bat_dau DESC";
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, maPhong);
+            ps.setString(2, RoomStatus.ROOM_MAINTENANCE_STATUS.getStatus());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return chuyenKetQuaThanhCongViec(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+        return null;
+    }
 }

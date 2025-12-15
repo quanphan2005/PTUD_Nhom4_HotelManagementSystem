@@ -5,6 +5,7 @@ import vn.iuh.dto.repository.RoomFurnitureItem;
 import vn.iuh.entity.CongViec;
 import vn.iuh.entity.LoaiPhong;
 import vn.iuh.entity.Phong;
+import vn.iuh.gui.panel.QuanLyPhongPanel;
 import vn.iuh.service.RoomService;
 
 import javax.swing.*;
@@ -38,6 +39,9 @@ public class SuaPhongDialog extends JDialog {
     private final JButton btnSave = new JButton("Lưu");
     private final JButton btnCancel = new JButton("Huỷ");
     private final JLabel lblInfo = new JLabel();
+
+    private final JButton btnStartMaintenance = new JButton("Đặt bảo trì");
+    private final JButton btnEndMaintenance = new JButton("Kết thúc bảo trì");
 
     public SuaPhongDialog(Window owner, Phong phong, RoomService roomService) {
         super(owner, "Sửa phòng - " + (phong != null ? phong.getMaPhong() : ""), ModalityType.APPLICATION_MODAL);
@@ -142,20 +146,114 @@ public class SuaPhongDialog extends JDialog {
         right.add(new JScrollPane(listFurniture), BorderLayout.CENTER);
         content.add(right, BorderLayout.EAST);
 
-        // Các nút ở phần botton
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // Các nút ở phần bottom
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
+        bottom.add(btnStartMaintenance);
+        bottom.add(btnEndMaintenance);
         bottom.add(btnSave);
         bottom.add(btnCancel);
         add(bottom, BorderLayout.SOUTH);
 
-        // Nút hủy
+        // Thiết lập trạng thái mặc định
+        btnStartMaintenance.setEnabled(true);
+        btnEndMaintenance.setEnabled(true);
+
+        // Action: Hủy
         btnCancel.addActionListener(e -> {
             saved = false;
             dispose();
         });
 
-        // Nút lưu
+        // Lưu
         btnSave.addActionListener(e -> onSave());
+
+        // Đặt bảo trì (3 ngày)
+        btnStartMaintenance.addActionListener(e -> {
+            int ans = JOptionPane.showConfirmDialog(SuaPhongDialog.this,
+                    "Bạn có chắc chắn muốn đặt trạng thái phòng thành BẢO TRÌ trong 3 ngày?",
+                    "Xác nhận đặt bảo trì", JOptionPane.YES_NO_OPTION);
+            if (ans != JOptionPane.YES_OPTION) return;
+
+            // disable controls trong khi thực hiện
+            setControlsEnabled(false);
+
+            SwingWorker<Boolean, Void> wk = new SwingWorker<>() {
+                @Override
+                protected Boolean doInBackground() {
+                    try {
+                        // gọi service để tạo công việc bảo trì 3 ngày
+                        return roomService.scheduleMaintenance(phong.getMaPhong(), 3);
+                    } catch (Throwable ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        boolean ok = get();
+                        if (ok) {
+                            JOptionPane.showMessageDialog(SuaPhongDialog.this, "Đặt phòng vào trạng thái BẢO TRÌ thành công.");
+                            // reload UI quản lý phòng và đóng dialog
+                            reloadRoomManagementPanel();
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(SuaPhongDialog.this, "Đặt bảo trì thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(SuaPhongDialog.this, "Đặt bảo trì thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    } finally {
+                        setControlsEnabled(true);
+                    }
+                }
+            };
+            wk.execute();
+        });
+
+        // Kết thúc bảo trì
+        btnEndMaintenance.addActionListener(e -> {
+            int ans = JOptionPane.showConfirmDialog(SuaPhongDialog.this,
+                    "Bạn có chắc chắn muốn kết thúc trạng thái BẢO TRÌ cho phòng này?",
+                    "Xác nhận kết thúc bảo trì", JOptionPane.YES_NO_OPTION);
+            if (ans != JOptionPane.YES_OPTION) return;
+
+            setControlsEnabled(false);
+
+            SwingWorker<Boolean, Void> wk = new SwingWorker<>() {
+                @Override
+                protected Boolean doInBackground() {
+                    try {
+                        return roomService.endMaintenance(phong.getMaPhong());
+                    } catch (Throwable ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        boolean ok = get();
+                        if (ok) {
+                            JOptionPane.showMessageDialog(SuaPhongDialog.this, "Kết thúc trạng thái BẢO TRÌ thành công.");
+                            // reload UI quản lý phòng và đóng dialog
+                            reloadRoomManagementPanel();
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(SuaPhongDialog.this, "Kết thúc bảo trì không thành công (không tìm thấy công việc bảo trì).", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(SuaPhongDialog.this, "Kết thúc bảo trì thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    } finally {
+                        setControlsEnabled(true);
+                    }
+                }
+            };
+            wk.execute();
+        });
+
+
     }
 
     // Hàm gọi khi lưu thông tin sau khi sửa
@@ -308,25 +406,9 @@ public class SuaPhongDialog extends JDialog {
                         furnitureModel.clear();
                     }
 
-                    // Sau khi load xong loại phòng và nội thất, kiểm tra trạng thái phòng để quyết định có cho phép sửa hay không
-                    boolean allowEdit = true;
-                    try {
-                        CongViec cv = roomService.getCurrentJobForRoom(phong.getMaPhong());
-                        if (cv != null && cv.getTenTrangThai() != null && !cv.getTenTrangThai().isBlank()) {
-                            if (!cv.getTenTrangThai().equalsIgnoreCase("Trống")) allowEdit = false;
-                        } else {
-                            if (!phong.isDangHoatDong()) allowEdit = false;
-                        }
-                    } catch (Exception ignored) {
-
-                    }
-
-                    if (!allowEdit) {
-                        setReadOnlyMode("Phòng hiện không ở trạng thái 'Trống' nên không thể sửa.");
-                    } else {
-                        setControlsEnabled(true);
-                        lblInfo.setVisible(false);
-                    }
+                    // KHÔNG kiểm tra trạng thái ở dialog nữa: luôn cho phép thao tác (QuanLyPhongPanel đã kiểm tra trước khi mở dialog)
+                    setControlsEnabled(true);
+                    lblInfo.setVisible(false);
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -392,6 +474,9 @@ public class SuaPhongDialog extends JDialog {
         taGhiChu.setEnabled(enabled);
         btnSave.setEnabled(enabled);
         // list nội thất chỉ đọc
+        // giữ cho các nút bảo trì tương tự
+        btnStartMaintenance.setEnabled(enabled);
+        btnEndMaintenance.setEnabled(enabled);
     }
 
     // Chuyển dialog sang chế độ read-only và hiển thị thông báo lý do
@@ -399,6 +484,40 @@ public class SuaPhongDialog extends JDialog {
         setControlsEnabled(false);
         lblInfo.setText(message);
         lblInfo.setVisible(true);
+    }
+
+    // Tìm instance của QuanLyPhongPanel trong cây component của cửa sổ
+    private QuanLyPhongPanel findRoomPanel(Component c) {
+        if (c == null) return null;
+        if (c instanceof QuanLyPhongPanel) return (QuanLyPhongPanel) c;
+        if (c instanceof Container) {
+            Component[] children = ((Container) c).getComponents();
+            for (Component ch : children) {
+                QuanLyPhongPanel found = findRoomPanel(ch);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    // Gọi phương thức reload
+    private void reloadRoomManagementPanel() {
+        try {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w == null) return;
+            QuanLyPhongPanel panel = findRoomPanel(w);
+            if (panel == null) return;
+
+            java.lang.reflect.Method m = panel.getClass().getDeclaredMethod("reloadRoomsAsync", java.util.function.Supplier.class);
+            m.setAccessible(true);
+            java.util.function.Supplier supplier = (java.util.function.Supplier) (() -> roomService.getAllQuanLyPhongPanel());
+            m.invoke(panel, supplier);
+
+            panel.revalidate();
+            panel.repaint();
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+        }
     }
 
     public boolean isSaved() {

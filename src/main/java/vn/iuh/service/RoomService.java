@@ -31,4 +31,8 @@ public interface RoomService {
     List<Phong> getAllQuanLyPhongPanel();
 
     boolean hasFutureBookings(Phong phong);
+
+    boolean scheduleMaintenance(String maPhong, int days);
+
+    boolean endMaintenance(String maPhong);
 }

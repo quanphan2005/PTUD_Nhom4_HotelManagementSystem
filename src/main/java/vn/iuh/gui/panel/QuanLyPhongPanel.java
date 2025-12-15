@@ -26,20 +26,16 @@ import java.util.*;
 import java.util.List;
 import java.util.function.Supplier;
 
-// Panel Quản lý phòng (Ảnh / Icon đã bị loại bỏ hoàn toàn để tối ưu thời gian khởi động)
 public class QuanLyPhongPanel extends JPanel {
 
-    // Các hằng số dùng chung cho kích thước, font và thông số hiển thị
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(520, 45);
     private static final Dimension SEARCH_BUTTON_SIZE = new Dimension(90, 40);
-    // === ĐÃ THAY ĐỔI: thu nhỏ nút hành động để đủ chỗ hiển thị =========
     private static final Dimension ACTION_BUTTON_SIZE = new Dimension(220, 46);
     // ==================================================================
     private static final Dimension CATEGORY_BUTTON_SIZE = new Dimension(190, 52);
 
     // Fonts tái sử dụng
     private static final Font FONT_LABEL      = new Font("Arial", Font.BOLD, 15);
-    // ==== GIẢM KÍCH CỠ FONT CHO NÚT ACTION để chữ vừa trong nút nhỏ ===
     private static final Font FONT_ACTION     = new Font("Arial", Font.BOLD, 18);
     // ==================================================================
     private static final Font FONT_CATEGORY   = new Font("Arial", Font.BOLD, 18);
@@ -160,41 +156,53 @@ public class QuanLyPhongPanel extends JPanel {
             }
         });
 
-        // Sửa phòng: lấy selection hiện tại, thực hiện kiểm tra tương tự như trước rồi mở SuaPhongDialog
+        // Sửa phòng: lấy selection hiện tại, kiểm tra rồi mở SuaPhongDialog
         editButton.addActionListener(e -> {
             Phong sel = getSelectedPhong();
             if (sel == null) {
                 JOptionPane.showMessageDialog(QuanLyPhongPanel.this, "Vui lòng chọn 1 phòng để sửa", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-            // Kiểm tra trạng thái trước khi cho sửa (dùng logic giống trong editor)
-            try {
-                boolean canEdit = true;
-                try {
-                    CongViec cv = roomService.getCurrentJobForRoom(sel.getMaPhong());
-                    if (cv != null && cv.getTenTrangThai() != null && !cv.getTenTrangThai().isBlank()) {
-                        canEdit = false;
-                    }
-                } catch (Exception ignore) {}
-                if (!hasCurrentJob(sel)) {
-                    JOptionPane.showMessageDialog(
-                            QuanLyPhongPanel.this,
-                            "Không thể sửa phòng vì phòng hiện không ở trạng thái 'CÒN TRỐNG'.",
-                            "Không thể sửa",
-                            JOptionPane.WARNING_MESSAGE
-                    );
-                    return;
-                }
-                if (hasFutureBookings(sel)) {
-                    JOptionPane.showMessageDialog(
-                            QuanLyPhongPanel.this,
-                            "Không thể sửa phòng vì phòng hiện có đơn đặt phòng trong tương lai!",
-                            "Không thể sửa",
-                            JOptionPane.WARNING_MESSAGE
-                    );
-                    return;
-                }
 
+            // Lấy trạng thái hiện tại của phòng (theo logic dùng trong populateRoomList)
+            String currentStatus = "CÒN TRỐNG";
+            try {
+                CongViec cv = roomService.getCurrentJobForRoom(sel.getMaPhong());
+                if (cv != null && cv.getTenTrangThai() != null && !cv.getTenTrangThai().isBlank()) {
+                    currentStatus = cv.getTenTrangThai();
+                } else if (!sel.isDangHoatDong()) {
+                    currentStatus = "BẢO TRÌ";
+                }
+            } catch (Exception ex) {
+                if (!sel.isDangHoatDong()) currentStatus = "BẢO TRÌ";
+            }
+
+            // Cho phép sửa nếu phòng đang "Trống" hoặc "Bảo trì"
+            boolean allowedToEdit = "CÒN TRỐNG".equalsIgnoreCase(currentStatus) || "BẢO TRÌ".equalsIgnoreCase(currentStatus);
+
+            if (!allowedToEdit) {
+                JOptionPane.showMessageDialog(
+                        QuanLyPhongPanel.this,
+                        "Không thể sửa phòng vì trạng thái hiện tại: " + currentStatus + ".\nChỉ cho phép sửa khi phòng ở trạng thái 'CÒN TRỐNG' hoặc 'BẢO TRÌ'.",
+                        "Không thể sửa",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            // Vẫn không cho sửa nếu có đơn đặt phòng trong tương lai
+            if (hasFutureBookings(sel)) {
+                JOptionPane.showMessageDialog(
+                        QuanLyPhongPanel.this,
+                        "Không thể sửa phòng vì phòng hiện có đơn đặt phòng trong tương lai!",
+                        "Không thể sửa",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            // Mở dialog sửa
+            try {
                 Window owner = SwingUtilities.getWindowAncestor(QuanLyPhongPanel.this);
                 SuaPhongDialog dialog = new SuaPhongDialog(owner, sel, roomService);
                 dialog.setVisible(true);
@@ -930,7 +938,5 @@ public class QuanLyPhongPanel extends JPanel {
         try { check = roomService.hasFutureBookings(p); } catch (Exception ignored) {}
         return check;
     }
-
-    // NOTE: Đã loại bỏ toàn bộ cache ảnh / hàm load ảnh để tối ưu thời gian khởi động
 
 }

@@ -1,4 +1,3 @@
-// <-- copy toàn bộ file này và thay file cũ -->
 package vn.iuh.gui.panel;
 
 import com.formdev.flatlaf.FlatClientProperties;
@@ -36,15 +35,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.function.Supplier;
 
-/*
- Panel quản lý loại phòng (tối giản: thay RoundedButton bằng JButton thuần, vẫn giữ bo góc bằng FlatLaf)
- Đã chỉnh sửa:
-  - Thêm RoundedButton đảm bảo bo góc luôn hiện ngay cả khi nhấn.
-  - Loại bỏ nút 3 người.
-  - Sửa filter để "Thường" / "VIP" hoạt động.
-  - Di chuyển nút "Thường" sang hàng cùng với "VIP" (bên cạnh VIP).
-  - Sửa logic lazy init / reload để đảm bảo reload hoạt động sau khi Thêm/Sửa.
-*/
 public class QuanLyLoaiPhongPanel extends JPanel {
 
     private static final Dimension SEARCH_TEXT_SIZE = new Dimension(520, 45);
@@ -133,10 +123,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         createListCategoryPanel();
     }
 
-    /**
-     * initButtons - tạo 3 nút action có cùng kích thước ACTION_BUTTON_SIZE.
-     * Sửa và Xóa luôn bật (enabled). Khi nhấn mà không có selection -> hiển thị thông báo.
-     */
     private void initButtons() {
         configureSearchTextField(searchTextField, SEARCH_TEXT_SIZE, CODE_PLACEHOLDER);
         configureSearchButton(searchButton, SEARCH_BUTTON_SIZE);
@@ -305,9 +291,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         btn.setBackground(Color.decode("#1D4ED8"));
     }
 
-    /**
-     * Tạo category button bằng RoundedButton để bo góc luôn luôn.
-     */
     private JButton createCategoryButton(String text, String hexColor, Dimension size) {
         RoundedButton button = new RoundedButton(text, 20);
         button.setPreferredSize(size);
@@ -365,16 +348,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         add(pnlTop);
     }
 
-    /**
-     * createSearchPanel - chỉnh layout:
-     * - row 1: search controls
-     * - row 2: Thêm + Sửa (chung 1 hàng, centered)
-     * - row 3: Xóa (hàng dưới, centered)
-     * Các nút có kích thước đồng nhất ACTION_BUTTON_SIZE.
-     *
-     * Lưu ý: giảm khoảng cách dọc giữa row2 và row3, đồng thời thêm một khoảng nhỏ dưới cùng
-     * để tránh nút Xóa đè mất viền dưới của search panel.
-     */
     private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
@@ -540,7 +513,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         add(searchAndCategoryPanel);
     }
 
-    // --- Thay thế createListCategoryPanel: tạo table và scrollpane (không có cột Ảnh, đã thêm 2 cột giá) ---
     private void createListCategoryPanel() {
         String[] cols = {"Mã loại", "Tên loại", "Phân loại", "Số người", "Giá ngày", "Giá giờ"};
         categoryTableModel = new DefaultTableModel(cols, 0) {
@@ -789,27 +761,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         wk.execute();
     }
 
-
-    /**
-     * Thử lấy giá từ RoomCategoryResponse qua reflection với một số tên getter phổ biến.
-     * Trả về chuỗi "-" nếu không tìm thấy giá hợp lệ.
-     */
-    private String extractPriceFromResponse(RoomCategoryResponse r, String... candidateGetters) {
-        if (r == null) return "-";
-        for (String mName : candidateGetters) {
-            try {
-                Method m = r.getClass().getMethod(mName);
-                Object val = m.invoke(r);
-                if (val != null) {
-                    return val.toString();
-                }
-            } catch (NoSuchMethodException ignored) {
-            } catch (Throwable ignored) {
-            }
-        }
-        return "-";
-    }
-
     // filter and update table
     private void applyFilters() {
         if (fullDataset == null) return;
@@ -962,11 +913,6 @@ public class QuanLyLoaiPhongPanel extends JPanel {
         }
     }
 
-    /**
-     * RoundedButton: JButton tùy chỉnh để vẽ nền bo góc và viền tùy trạng thái.
-     * - luôn vẽ bo góc bất kể trạng thái pressed/rollover.
-     * - dùng clientProperty("active") = Boolean.TRUE để vẽ viền dày khi được chọn.
-     */
     private static class RoundedButton extends JButton {
         private final int arc;
         public RoundedButton(String text, int arc) {
