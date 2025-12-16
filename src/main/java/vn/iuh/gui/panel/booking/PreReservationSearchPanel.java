@@ -115,7 +115,7 @@ public class PreReservationSearchPanel extends JPanel {
         JPanel filterPanel = new JPanel(new GridBagLayout());
         filterPanel.setBackground(Color.WHITE);
         filterPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
+            BorderFactory.createLineBorder(CustomUI.gray, 2),
             BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -143,11 +143,15 @@ public class PreReservationSearchPanel extends JPanel {
         filterPanel.add(btnReset, gbc);
 
         // Set fixed height for filter panel
-        filterPanel.setPreferredSize(new Dimension(0, 120));
-        filterPanel.setMinimumSize(new Dimension(0, 120));
-        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        filterPanel.setPreferredSize(new Dimension(0, 150));
+        filterPanel.setMinimumSize(new Dimension(0, 150));
+        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
 
-        add(filterPanel, BorderLayout.CENTER);
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
+        wrapper.add(filterPanel, BorderLayout.CENTER);
+
+        add(wrapper, BorderLayout.CENTER);
     }
 
     private void initializeFilterComponents() {
@@ -255,10 +259,15 @@ public class PreReservationSearchPanel extends JPanel {
 
         // Create scroll pane
         JScrollPane scrollPane = new JScrollPane(reservationTable);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        scrollPane.setBorder(BorderFactory.createLineBorder(CustomUI.gray, 2));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        add(scrollPane, BorderLayout.SOUTH);
+        // Add wrapper for padding top & buttom
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+        wrapper.add(scrollPane, BorderLayout.CENTER);
+
+        add(wrapper, BorderLayout.SOUTH);
 
         // Populate table with initial data
         populateTable();

@@ -145,7 +145,8 @@ public class DatPhongDAO {
                        "    SELECT TOP 1 cv.ten_trang_thai " +
                        "    FROM CongViec cv " +
                        "    WHERE cv.ma_phong = p.ma_phong AND (GETDATE() >= cv.tg_bat_dau) and da_xoa = 0" +
-                       ") AS cv";
+                       ") AS cv " +
+                       "WHERE p.da_xoa = 0 ";
         List<ThongTinPhong> thongTinPhongs = new ArrayList<>();
 
         try {

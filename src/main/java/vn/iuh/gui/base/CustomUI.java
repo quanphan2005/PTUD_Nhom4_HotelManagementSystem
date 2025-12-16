@@ -14,7 +14,8 @@ public class CustomUI {
     public static final Color darkGreen = new Color(40, 167, 69);
     public static final Color red = new Color(220, 35, 35);
     public static final Color darkRed = new Color(200, 35, 51);
-    public static final Color orange = new Color(255, 170, 71);
+    public static final Color lightOrange = new Color(255, 189, 84);
+    public static final Color orange = new Color(255, 165, 0);
     public static final Color bluePurple = new Color(135, 162, 255);
     public static final Color purple = new Color(166, 103, 239);
     public static final Color gray = new Color(200, 200, 200);
@@ -25,7 +26,6 @@ public class CustomUI {
     public static final Color be = new Color(241, 172, 135);
 
     public static final Font italicSmallFont = new Font("Roboto", Font.ITALIC, 12);
-    public static final Color lightOrange = new Color(255, 189, 84);
 
     public static final Font supperSmallFont = new Font("Roboto", Font.BOLD, 12);
     public static final Font verySmallFont = new Font("Roboto", Font.BOLD, 13);

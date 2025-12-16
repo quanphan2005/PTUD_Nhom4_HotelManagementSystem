@@ -42,11 +42,13 @@ public class DonGoiDichVuDao {
     }
 
     public List<ThongTinDichVu> timTatCaThongTinDichVu() {
-        String query = "SELECT dv.ma_dich_vu, dv.ten_dich_vu, dv.ton_kho, dv.co_the_tang, gdv.gia_moi, ldv.ten_loai_dich_vu" +
+        String query = "SELECT DISTINCT dv.ma_dich_vu, dv.ten_dich_vu, dv.ton_kho, dv.co_the_tang, gdv.gia_moi, ldv.ten_loai_dich_vu" +
                        " FROM DichVu dv" +
                        " JOIN LoaiDichVu ldv ON dv.ma_loai_dich_vu = ldv.ma_loai_dich_vu " +
                        " LEFT JOIN GiaDichVu gdv ON dv.ma_dich_vu = gdv.ma_dich_vu" +
-                       " WHERE dv.da_xoa = 0";
+                       " WHERE dv.da_xoa = 0 " +
+                       " AND gdv.thoi_gian_tao >= ALL (SELECT thoi_gian_tao FROM GiaDichVu gdv2 WHERE gdv2.ma_dich_vu = dv.ma_dich_vu) "
+                ;
 
         List<ThongTinDichVu> danhSachThongTinDichVu = new ArrayList<>();
         try {

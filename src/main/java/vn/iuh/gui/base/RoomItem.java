@@ -293,7 +293,7 @@ public class RoomItem extends JPanel {
         lblRoomName.setForeground(Color.WHITE);
         lblRoomName.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel lblRoomNumber = new JLabel(bookingResponse.getRoomName().substring(6));
+        JLabel lblRoomNumber = new JLabel(bookingResponse.getRoomName());
         lblRoomNumber.setFont(CustomUI.smallFont);
         lblRoomNumber.setForeground(Color.WHITE);
         lblRoomNumber.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -342,7 +342,7 @@ public class RoomItem extends JPanel {
         lblRoomName.setForeground(Color.WHITE);
         lblRoomName.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel lblRoomNumber = new JLabel(bookingResponse.getRoomName().substring(6));
+        JLabel lblRoomNumber = new JLabel(bookingResponse.getRoomName());
         lblRoomNumber.setFont(CustomUI.smallFont);
         lblRoomNumber.setForeground(Color.WHITE);
         lblRoomNumber.setAlignmentX(Component.CENTER_ALIGNMENT);

@@ -196,8 +196,8 @@ public class BookingFormPanel extends JPanel {
 
         closeButton = new JButton("x");
         closeButton.setFont(CustomUI.bigFont);
-        closeButton.setBackground(Color.RED);
-        closeButton.setForeground(Color.WHITE);
+        closeButton.setBackground(CustomUI.red);
+        closeButton.setForeground(CustomUI.white);
         closeButton.setPreferredSize(new Dimension(50, 20));
         closeButton.setFocusPainted(false);
         closeButton.addActionListener(e -> handleCloseReservation());
@@ -242,10 +242,10 @@ public class BookingFormPanel extends JPanel {
         footerPanel.setBackground(CustomUI.white);
 
         // gray line border on top
-        footerPanel.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, CustomUI.gray));
+        footerPanel.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, CustomUI.darkBlue));
 
         // Button panel with horizontal layout
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 3));
         buttonPanel.setBackground(CustomUI.white);
         buttonPanel.putClientProperty(FlatClientProperties.STYLE, " arc: 10");
         buttonPanel.setOpaque(true);
@@ -473,7 +473,7 @@ public class BookingFormPanel extends JPanel {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Color.WHITE);
 
-        ImageIcon roomIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/room.png")));
+        ImageIcon roomIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/bed.png")));
         roomIcon = new ImageIcon(roomIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
         // Create collapsible header

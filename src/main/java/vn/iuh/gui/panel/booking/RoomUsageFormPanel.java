@@ -86,7 +86,6 @@ public class RoomUsageFormPanel extends JPanel {
 
     // Action Buttons
     private JButton btnCancel;
-    private JButton btnCalculatePrice;
 
     JButton btnEntering;
     JButton btnLeaving;
@@ -194,11 +193,9 @@ public class RoomUsageFormPanel extends JPanel {
 
         // Buttons
         btnCancel = new JButton("Hủy");
-        btnCalculatePrice = new JButton("Tính giá");
 
         // Style buttons
         styleButton(btnCancel, CustomUI.red);
-        styleButton(btnCalculatePrice, CustomUI.lightBlue);
     }
 
     private void styleButton(JButton button, Color backgroundColor) {
@@ -523,7 +520,7 @@ public class RoomUsageFormPanel extends JPanel {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(CustomUI.white);
 
-        ImageIcon roomIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/room.png")));
+        ImageIcon roomIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/bed.png")));
         roomIcon = new ImageIcon(roomIcon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
 
         // Create collapsible header
@@ -621,7 +618,7 @@ public class RoomUsageFormPanel extends JPanel {
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
         button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
 
         // Icon label - now using ImageIcon instead of emoji string
         JLabel iconLabel = new JLabel(item.getIcon(), SwingConstants.CENTER);
@@ -636,24 +633,32 @@ public class RoomUsageFormPanel extends JPanel {
         button.add(iconLabel, BorderLayout.CENTER);
         button.add(textLabel, BorderLayout.SOUTH);
 
+        System.out.println("Adding hover effect for: " + item.getText());
+        System.out.println("isActive: " + item.isActive());
+
         // Add hover effects
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(item.getBackgroundColor().brighter());
-            }
+        if (item.isActive()) {
+            button.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    button.setBackground(item.getBackgroundColor().darker());
+                }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(item.getBackgroundColor());
-            }
-        });
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    button.setBackground(item.getBackgroundColor());
+                }
+            });
 
-        // Add click action
-        button.addActionListener(e -> {
-            if (item.getAction() != null)
-                item.getAction().run();
-        });
+            // Add click action
+            button.addActionListener(e -> {
+                if (item.getAction() != null)
+                    item.getAction().run();
+            });
+        } else {
+//            button.setEnabled(false);
+            button.setBackground(CustomUI.gray);
+        }
 
         return button;
     }
@@ -686,23 +691,23 @@ public class RoomUsageFormPanel extends JPanel {
         List<ActionItem> items = new ArrayList<>();
 
         ActionItem callServiceItem = new ActionItem("Gọi Dịch Vụ", IconUtil.createServiceIcon(), CustomUI.bluePurple,
-                                                    this::handleCallService);
+                                                    true, this::handleCallService);
         ActionItem checkOutItem =
-                new ActionItem("Trả Phòng", IconUtil.createCheckOutIcon(), CustomUI.bluePurple, this::handleCheckOut);
+                new ActionItem("Trả Phòng", IconUtil.createCheckOutIcon(), CustomUI.bluePurple, true, this::handleCheckOut);
         ActionItem transferRoomItem = new ActionItem("Chuyển Phòng", IconUtil.createTransferIcon(), CustomUI.bluePurple,
-                                                     this::handleTransferRoom);
+                                                     true, this::handleTransferRoom);
         ActionItem extendBookingItem = new ActionItem("Book Thêm Giờ", IconUtil.createExtendIcon(), CustomUI.bluePurple,
-                                                      this::handleExtendBooking);
+                                                      true, this::handleExtendBooking);
 
         ActionItem extendCheckoutBookingItem = new ActionItem("Gia Hạn Trễ", IconUtil.createExtendCheckoutIcon(), CustomUI.bluePurple,
-                                                      this::handleExtendCheckoutBooking);
+                                                      true, this::handleExtendCheckoutBooking);
 
 
         ActionItem checkInItem =
-                new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, this::handleCheckIn);
+                new ActionItem("Nhận Phòng", IconUtil.createCheckInIcon(), CustomUI.bluePurple, true, this::handleCheckIn);
 
         ActionItem completeItem = new ActionItem("Hoàn tất dọn dẹp", IconUtil.createCompleteIcon(), CustomUI.bluePurple,
-                                                     this::handleCompleteCleaning);
+                                                     true, this::handleCompleteCleaning);
 
         if (roomStatus.equals(RoomStatus.ROOM_BOOKED_STATUS.getStatus())) {
             items.add(callServiceItem);
@@ -719,9 +724,12 @@ public class RoomUsageFormPanel extends JPanel {
             } else
                 if (roomStatus.equals(RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus())) {
                     callServiceItem.setBackgroundColor(CustomUI.gray);
+                    callServiceItem.setActive(false);
                     callServiceItem.setAction(null);
                     transferRoomItem.setBackgroundColor(CustomUI.gray);
+                    transferRoomItem.setActive(false);
                     transferRoomItem.setAction(null);
+
 
                     items.add(callServiceItem);
                     items.add(checkOutItem);
@@ -730,10 +738,13 @@ public class RoomUsageFormPanel extends JPanel {
                 } else
                     if (roomStatus.equals(RoomStatus.ROOM_CLEANING_STATUS.getStatus())) {
                         callServiceItem.setBackgroundColor(CustomUI.gray);
+                        callServiceItem.setActive(false);
                         callServiceItem.setAction(null);
                         transferRoomItem.setBackgroundColor(CustomUI.gray);
+                        transferRoomItem.setActive(false);
                         transferRoomItem.setAction(null);
                         extendBookingItem.setBackgroundColor(CustomUI.gray);
+                        extendBookingItem.setActive(false);
                         extendBookingItem.setAction(null);
 
                         items.add(callServiceItem);

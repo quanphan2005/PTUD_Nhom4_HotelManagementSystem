@@ -160,7 +160,7 @@ public class ReservationManagementPanel extends JPanel {
         JPanel filterPanel = new JPanel(new GridBagLayout());
         filterPanel.setBackground(CustomUI.white);
         filterPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
+            BorderFactory.createLineBorder(CustomUI.gray, 2),
             BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
@@ -202,6 +202,7 @@ public class ReservationManagementPanel extends JPanel {
 
         // Create wrapper panel with spacing
         JPanel filterWrapper = new JPanel(new BorderLayout());
+        filterWrapper.setBackground(CustomUI.white);
         filterWrapper.add(filterPanel, BorderLayout.CENTER);
         filterWrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0)); // Add margins
 
@@ -250,6 +251,9 @@ public class ReservationManagementPanel extends JPanel {
     }
 
     private void createTablePanel() {
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBorder(BorderFactory.createLineBorder(CustomUI.gray, 2));
+
         // Create table model
         String[] columnNames = {"Số CCCD", "Khách hàng", "Mã đơn", "Loại đơn", "Checkin", "Checkout", "Trạng thái"};
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -319,7 +323,8 @@ public class ReservationManagementPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(reservationTable);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        add(scrollPane, BorderLayout.SOUTH);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        add(tablePanel, BorderLayout.SOUTH);
     }
 
     // Custom renderer for alternating row colors

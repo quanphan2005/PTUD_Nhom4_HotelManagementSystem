@@ -102,6 +102,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
     private void init() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
         createTopPanel();
         createCustomerInfoPanel();
         createRoomDetailsTable();
@@ -132,13 +133,13 @@ public class ReservationInfoDetailPanel extends JPanel {
         JPanel infoPanel = new JPanel(new GridBagLayout());
         infoPanel.setBackground(CustomUI.white);
         infoPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(CustomUI.lightBlue, 2),
+            BorderFactory.createLineBorder(CustomUI.gray, 2),
             BorderFactory.createEmptyBorder(5, 15, 5, 15)
         ));
 
         infoPanel.setMinimumSize(new Dimension(0, 150));
         infoPanel.setPreferredSize(new Dimension(0, 150));
-        infoPanel.setMaximumSize(new Dimension(0, 200));
+        infoPanel.setMaximumSize(new Dimension(0, 150));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10);
@@ -208,12 +209,9 @@ public class ReservationInfoDetailPanel extends JPanel {
             infoPanel.add(btnCheckoutAndPrintReceipt, gbc);
         }
 
-        // Button 3 - Row 2
-//        gbc.gridy = 2
-
+        // Add wrapper for padding top & buttom
         JPanel wrapper = new JPanel(new BorderLayout());
-
-        wrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        wrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
         wrapper.add(infoPanel, BorderLayout.CENTER);
 
         add(wrapper);
@@ -263,7 +261,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     private void createRoomDetailsTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(CustomUI.white);
-        tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        tablePanel.setBorder(BorderFactory.createLineBorder(CustomUI.gray, 2));
 
         // Create collapsible title panel
         JPanel titlePanel = createCollapsibleTitlePanel("Chi tiết phòng");
@@ -333,7 +331,12 @@ public class ReservationInfoDetailPanel extends JPanel {
         tablePanel.add(titlePanel, BorderLayout.NORTH);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
-        add(tablePanel);
+        // Add wrapper for padding top & buttom
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        wrapper.add(tablePanel, BorderLayout.CENTER);
+
+        add(wrapper);
     }
 
     // Action Buttons for reservation
@@ -362,7 +365,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         // Print Receipt button
         JButton btnPrintReceipt = new JButton("Xem hóa đơn thanh toán");
         btnPrintReceipt.setFont(CustomUI.smallFont);
-        btnPrintReceipt.setBackground(CustomUI.darkGreen);
+        btnPrintReceipt.setBackground(CustomUI.blue);
         btnPrintReceipt.setForeground(CustomUI.white);
         btnPrintReceipt.setPreferredSize(new Dimension(220, 35));
         btnPrintReceipt.setFocusPainted(false);
@@ -380,7 +383,7 @@ public class ReservationInfoDetailPanel extends JPanel {
         btnTransferRoomHistoryBtn.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         if (canCheckChangeRoomHistory(reservationInfo.getStatus())) {
-            btnTransferRoomHistoryBtn.setBackground(CustomUI.orange);
+            btnTransferRoomHistoryBtn.setBackground(CustomUI.blue);
             btnTransferRoomHistoryBtn.setForeground(CustomUI.white);
             btnTransferRoomHistoryBtn.addActionListener(e -> handleCheckTranferRoomHistory(reservationInfo));
         } else {
@@ -499,7 +502,7 @@ public class ReservationInfoDetailPanel extends JPanel {
     private void createServicesTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(CustomUI.white);
-        tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        tablePanel.setBorder(BorderFactory.createLineBorder(CustomUI.gray, 2));
 
         // Create collapsible title panel
         JPanel titlePanel = createCollapsibleTitlePanel("Đơn gọi dịch vụ");
@@ -537,13 +540,18 @@ public class ReservationInfoDetailPanel extends JPanel {
         tablePanel.add(titlePanel, BorderLayout.NORTH);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
-        add(tablePanel);
+        // Add wrapper for padding top & buttom
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        wrapper.add(tablePanel, BorderLayout.CENTER);
+
+        add(wrapper);
     }
 
     private void createMovingHistoryTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(CustomUI.white);
-        tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        tablePanel.setBorder(BorderFactory.createLineBorder(CustomUI.gray, 2));
 
         // Create collapsible title panel
         JPanel titlePanel = createCollapsibleTitlePanel("Lịch sử ra - vào");
@@ -580,7 +588,12 @@ public class ReservationInfoDetailPanel extends JPanel {
         tablePanel.add(titlePanel, BorderLayout.NORTH);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
-        add(tablePanel);
+        // Add wrapper for padding top & buttom
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        wrapper.add(tablePanel, BorderLayout.CENTER);
+
+        add(wrapper);
     }
 
     private JTable createStyledTable(DefaultTableModel model) {
@@ -807,7 +820,7 @@ public class ReservationInfoDetailPanel extends JPanel {
 
         public RoomActionButtonEditor() {
             super(new JCheckBox());
-            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 2));
             setClickCountToStart(1); // Make it respond to single click
         }
 

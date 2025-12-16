@@ -7,12 +7,22 @@ public class ActionItem {
     private String text;
     private ImageIcon icon;
     private Color backgroundColor;
+    private boolean isActive;
     private Runnable action;
 
-    ActionItem(String text, ImageIcon icon, Color backgroundColor, Runnable action) {
+    ActionItem(String text, ImageIcon icon, Color backgroundColor, boolean isActive, Runnable action) {
+        this.text = text;
+        this.icon = icon;
+        this.isActive = isActive;
+        this.backgroundColor = backgroundColor;
+        this.action = action;
+    }
+
+    public ActionItem(String text, ImageIcon icon, Color backgroundColor, Runnable action) {
         this.text = text;
         this.icon = icon;
         this.backgroundColor = backgroundColor;
+        this.isActive = true;
         this.action = action;
     }
 
@@ -38,6 +48,14 @@ public class ActionItem {
 
     public void setBackgroundColor(Color backgroundColor) {
         this.backgroundColor = backgroundColor;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     public Runnable getAction() {
