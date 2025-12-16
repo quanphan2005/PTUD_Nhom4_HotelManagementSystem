@@ -1399,7 +1399,7 @@ public class RoomUsageFormPanel extends JPanel {
                 selectedRoom.getRoomId(),
                 selectedRoom.getRoomName(),
                 selectedRoom.isActive(),
-                RoomStatus.ROOM_EMPTY_STATUS.getStatus(),
+                RoomStatus.ROOM_CLEANING_STATUS.status,
                 selectedRoom.getRoomType(),
                 selectedRoom.getNumberOfCustomers(),
                 selectedRoom.getDailyPrice(),

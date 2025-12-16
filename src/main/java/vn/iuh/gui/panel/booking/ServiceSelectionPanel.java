@@ -121,37 +121,39 @@ public class ServiceSelectionPanel extends JPanel {
     private void initializeComponents() {
         // Search components
         cmbServiceType = new JComboBox<>();
-        cmbServiceType.setFont(CustomUI.smallFont);
-        cmbServiceType.setPreferredSize(new Dimension(200, 30));
-        cmbServiceType.setMinimumSize(new Dimension(200, 30));
+        cmbServiceType.setFont(CustomUI.normalFont);
+        cmbServiceType.setPreferredSize(new Dimension(150, 28));
+        cmbServiceType.setMinimumSize(new Dimension(150, 28));
 
         txtSearchService = new JTextField();
         txtSearchService.setFont(CustomUI.normalFont);
-        txtSearchService.setPreferredSize(new Dimension(400, 35));
-        txtSearchService.setMinimumSize(new Dimension(400, 35)); // Add minimum size
+        txtSearchService.setPreferredSize(new Dimension(300, 28));
+        txtSearchService.setMinimumSize(new Dimension(300, 28));
         txtSearchService.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Tên dịch vụ");
 
         // Room selected & Info labels with fixed sizes
         cmbSelectedRoom = new JComboBox<>();
-        cmbSelectedRoom.setFont(CustomUI.smallFont);
-        cmbSelectedRoom.setPreferredSize(new Dimension(100, 30));
-        cmbSelectedRoom.setMinimumSize(new Dimension(100, 30));
+        cmbSelectedRoom.setFont(CustomUI.normalFont);
+        cmbSelectedRoom.setPreferredSize(new Dimension(100, 28));
+        cmbSelectedRoom.setMinimumSize(new Dimension(100, 28));
 
         lblTotalServices = new JLabel("Tổng dịch vụ: 0");
         lblTotalServices.setFont(CustomUI.normalFont);
         lblTotalServices.setOpaque(true);
         lblTotalServices.setForeground(CustomUI.black);
-        lblTotalServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        lblTotalServices.setPreferredSize(new Dimension(120, 40)); // Fixed size
-        lblTotalServices.setMinimumSize(new Dimension(120, 40)); // Fixed minimum
+        lblTotalServices.setBackground(CustomUI.lightGray);
+        lblTotalServices.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        lblTotalServices.setPreferredSize(new Dimension(300, 28));
+        lblTotalServices.setMinimumSize(new Dimension(300, 28));
 
         lblAvailableServices = new JLabel("Dịch vụ khả dụng: 0");
         lblAvailableServices.setFont(CustomUI.normalFont);
         lblAvailableServices.setOpaque(true);
         lblAvailableServices.setForeground(CustomUI.black);
-        lblAvailableServices.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        lblAvailableServices.setPreferredSize(new Dimension(120, 40)); // Fixed size
-        lblAvailableServices.setMinimumSize(new Dimension(120, 40)); // Fixed minimum
+        lblAvailableServices.setBackground(CustomUI.lightGray);
+        lblAvailableServices.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        lblAvailableServices.setPreferredSize(new Dimension(300, 28));
+        lblAvailableServices.setMinimumSize(new Dimension(300, 28));
 
         // Service table - Remove gift column
         String[] serviceColumns = {"Dịch vụ", "Loại", "Giá", "Tồn kho", "Đã chọn"};
@@ -237,7 +239,7 @@ public class ServiceSelectionPanel extends JPanel {
         selectedServicesTable.setIntercellSpacing(new Dimension(1, 1)); // Thin borders
 
         // Enhanced header styling for selected services table
-        selectedServicesTable.getTableHeader().setPreferredSize(new Dimension(selectedServicesTable.getWidth(), 30));
+        selectedServicesTable.getTableHeader().setPreferredSize(new Dimension(selectedServicesTable.getWidth(), 40));
         selectedServicesTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
         selectedServicesTable.getTableHeader().setBackground(CustomUI.TABLE_HEADER_BACKGROUND);
         selectedServicesTable.getTableHeader().setForeground(CustomUI.TABLE_HEADER_FOREGROUND);
@@ -263,30 +265,30 @@ public class ServiceSelectionPanel extends JPanel {
 
         // Action buttons with fixed sizes
         btnReset = new JButton("Hoàn Tác");
-        btnReset.setBackground(CustomUI.gray);
-        btnReset.setForeground(CustomUI.white);
+        btnReset.setBackground(CustomUI.lightGray);
+        btnReset.setForeground(CustomUI.black);
         btnReset.setFont(CustomUI.normalFont);
-        btnReset.setPreferredSize(new Dimension(280, 40));
-        btnReset.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
-        btnReset.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
+        btnReset.setPreferredSize(new Dimension(200, 35));
+        btnReset.setMinimumSize(new Dimension(200, 35));
+        btnReset.setMaximumSize(new Dimension(200, 35));
         btnReset.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         btnConfirm = new JButton("Xác Nhận");
         btnConfirm.setBackground(CustomUI.darkGreen);
         btnConfirm.setForeground(CustomUI.white);
         btnConfirm.setFont(CustomUI.normalFont);
-        btnConfirm.setPreferredSize(new Dimension(280, 40));
-        btnConfirm.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
-        btnConfirm.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
+        btnConfirm.setPreferredSize(new Dimension(200, 35));
+        btnConfirm.setMinimumSize(new Dimension(200, 35));
+        btnConfirm.setMaximumSize(new Dimension(200, 35));
         btnConfirm.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         btnOrderHistory = new JButton("Xem Lịch Sử");
         btnOrderHistory.setBackground(CustomUI.purple);
-        btnOrderHistory.setForeground(CustomUI.white);
+        btnOrderHistory.setForeground(CustomUI.black);
         btnOrderHistory.setFont(CustomUI.normalFont);
-        btnOrderHistory.setPreferredSize(new Dimension(280, 40));
-        btnOrderHistory.setMinimumSize(new Dimension(280, 40));
-        btnOrderHistory.setMaximumSize(new Dimension(280, 40));
+        btnOrderHistory.setPreferredSize(new Dimension(200, 35));
+        btnOrderHistory.setMinimumSize(new Dimension(200, 35));
+        btnOrderHistory.setMaximumSize(new Dimension(200, 35));
         btnOrderHistory.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 
         // Only show order history button for existing bookings
@@ -311,9 +313,9 @@ public class ServiceSelectionPanel extends JPanel {
         lblTotalCost.setOpaque(true);
         lblTotalCost.setBackground(CustomUI.lightOrange);
         lblTotalCost.setForeground(CustomUI.black);
-        lblTotalCost.setPreferredSize(new Dimension(280, 40)); // Fixed wider size
-        lblTotalCost.setMinimumSize(new Dimension(280, 40)); // Fixed minimum
-        lblTotalCost.setMaximumSize(new Dimension(280, 40)); // Fixed maximum
+        lblTotalCost.setPreferredSize(new Dimension(200, 35));
+        lblTotalCost.setMinimumSize(new Dimension(200, 35));
+        lblTotalCost.setMaximumSize(new Dimension(200, 35));
         lblTotalCost.setHorizontalAlignment(SwingConstants.CENTER);
         // radius
     }
@@ -332,95 +334,231 @@ public class ServiceSelectionPanel extends JPanel {
         headerPanel.add(titleLabel, BorderLayout.CENTER);
         headerPanel.add(btnClose, BorderLayout.EAST);
 
-        // Main content panel with GridBagLayout
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBackground(CustomUI.white);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // Create main content panel with GridBagLayout (similar to RoomUsageFormPanel)
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setBackground(CustomUI.white);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
 
-        // LEFT COLUMN
-        // Search area
+        // LEFT COLUMN - Row 0: Filter panel (NO VERTICAL EXPANSION)
+        JPanel filterPanel = createFilterPanel();
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.gridwidth = 3;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 0.6;
-        JPanel searchPanel = createSearchPanel();
-        mainPanel.add(searchPanel, gbc);
-
-        // Info labels
         gbc.gridwidth = 1;
-        gbc.weightx = 0.2;
-        gbc.gridy = 1;
-        mainPanel.add(cmbSelectedRoom, gbc);
-
-        gbc.gridx = 1;
-        mainPanel.add(lblTotalServices, gbc);
-
-        gbc.gridx = 2;
-//        gbc.weightx = 0.2;
-        mainPanel.add(lblAvailableServices, gbc);
-
-        // Service table
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 3;
-        gbc.gridheight = 3;
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 0.6;
-        gbc.weighty = 1.0;
-        JScrollPane serviceScrollPane = new JScrollPane(serviceTable);
-        serviceScrollPane.setBorder(BorderFactory.createTitledBorder("DANH SÁCH DỊCH VỤ"));
-        serviceScrollPane.setPreferredSize(new Dimension(500, 400));
-        serviceScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        mainPanel.add(serviceScrollPane, gbc);
-
-        // RIGHT COLUMN
-        // Action buttons
-        gbc.gridx = 3;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.gridheight = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 0.1;
-        gbc.weighty = 0;
-        mainPanel.add(btnReset, gbc);
-
-        gbc.gridy = 1;
-        mainPanel.add(btnConfirm, gbc);
-
-        gbc.gridy = 2;
-        mainPanel.add(btnOrderHistory, gbc);
-
-        // Total cost
-        gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.NORTH;
-        mainPanel.add(lblTotalCost, gbc);
+        gbc.weightx = 0.7;
+        gbc.weighty = 0.0;  // NO vertical weight - takes only what it needs
+        gbc.insets = new Insets(0, 0, 5, 5);
+        contentPanel.add(filterPanel, gbc);
 
-        // Selected services table
-        gbc.gridy = 4;
+        // RIGHT COLUMN - Row 0: Action panel (NO VERTICAL EXPANSION)
+        JPanel actionPanel = createActionPanel();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 0.4;
-        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.NORTH;
+        gbc.weightx = 0.3;
+        gbc.weighty = 0.0;  // NO vertical weight - takes only what it needs
+        gbc.insets = new Insets(0, 5, 5, 0);
+        contentPanel.add(actionPanel, gbc);
+
+        // LEFT COLUMN - Row 1: Services panel (TAKES ALL REMAINING SPACE)
+        JPanel servicesPanel = createServicesPanel();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.BOTH;
         gbc.anchor = GridBagConstraints.CENTER;
-        JScrollPane selectedScrollPane = new JScrollPane(selectedServicesTable);
-        selectedScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        selectedScrollPane.setBorder(BorderFactory.createTitledBorder("DANH SÁCH ĐÃ CHỌN"));
-        selectedScrollPane.setPreferredSize(new Dimension(350, 400));
-        mainPanel.add(selectedScrollPane, gbc);
+        gbc.weightx = 0.7;
+        gbc.weighty = 1.0;  // Takes all remaining vertical space
+        gbc.insets = new Insets(5, 0, 0, 5);
+        contentPanel.add(servicesPanel, gbc);
+
+        // RIGHT COLUMN - Row 1: Selected services panel (TAKES ALL REMAINING SPACE)
+        JPanel selectedServicesPanel = createSelectedServicesPanel();
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.weightx = 0.3;
+        gbc.weighty = 1.0;  // Takes all remaining vertical space
+        gbc.insets = new Insets(5, 5, 0, 0);
+        contentPanel.add(selectedServicesPanel, gbc);
 
         add(headerPanel, BorderLayout.NORTH);
-        add(mainPanel, BorderLayout.CENTER);
+        add(contentPanel, BorderLayout.CENTER);
     }
 
-    private JPanel createSearchPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panel.setBackground(CustomUI.white);
-        panel.add(cmbServiceType);
-        panel.add(txtSearchService);
-        return panel;
+    private JPanel createFilterPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(CustomUI.white);
+        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(CustomUI.gray, 2),
+                BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+
+        // Content panel - very compact
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setBackground(CustomUI.white);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Service type filter
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        JLabel lblServiceType = new JLabel("Loại dịch vụ:");
+        lblServiceType.setFont(CustomUI.normalFont);
+        contentPanel.add(lblServiceType, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        contentPanel.add(cmbServiceType, gbc);
+
+        // Search field
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.0;
+        JLabel lblSearch = new JLabel("Tìm kiếm:");
+        lblSearch.setFont(CustomUI.normalFont);
+        contentPanel.add(lblSearch, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        contentPanel.add(txtSearchService, gbc);
+
+        // Room selection
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0.0;
+        JLabel lblRoom = new JLabel("Phòng:");
+        lblRoom.setFont(CustomUI.normalFont);
+        contentPanel.add(lblRoom, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        contentPanel.add(cmbSelectedRoom, gbc);
+
+        // Info labels row - very compact
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
+        infoPanel.setBackground(CustomUI.white);
+        infoPanel.add(lblTotalServices);
+
+        // Spacer
+        infoPanel.add(Box.createHorizontalStrut(50));
+
+        infoPanel.add(lblAvailableServices);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        contentPanel.add(infoPanel, gbc);
+
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+
+        return mainPanel;
+    }
+
+    private JPanel createServicesPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(CustomUI.white);
+        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(CustomUI.gray, 2),
+                BorderFactory.createEmptyBorder(3, 5, 3, 5)
+        ));
+
+        // Header - compact
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        headerPanel.setBackground(CustomUI.white);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 3, 0));
+        JLabel headerLabel = new JLabel("DANH SÁCH DỊCH VỤ");
+        headerLabel.setFont(CustomUI.normalFont);
+        headerLabel.setForeground(CustomUI.darkBlue);
+        headerPanel.add(headerLabel);
+
+        // Table
+        JScrollPane serviceScrollPane = new JScrollPane(serviceTable);
+        serviceScrollPane.setBorder(null);
+        serviceScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(serviceScrollPane, BorderLayout.CENTER);
+
+        return mainPanel;
+    }
+
+    private JPanel createActionPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(CustomUI.white);
+        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(CustomUI.gray, 2),
+                BorderFactory.createEmptyBorder(3, 5, 3, 5)
+        ));
+
+        // Buttons panel - very compact
+        JPanel buttonsPanel = new JPanel(new GridBagLayout());
+        buttonsPanel.setBackground(CustomUI.white);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(2, 2, 2, 2);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        buttonsPanel.add(btnReset, gbc);
+
+        gbc.gridy = 1;
+        buttonsPanel.add(btnOrderHistory, gbc);
+
+        gbc.gridy = 2;
+        buttonsPanel.add(lblTotalCost, gbc);
+
+        gbc.gridy = 3;
+        buttonsPanel.add(btnConfirm, gbc);
+
+        // Add filler to push buttons to top
+        gbc.gridy = 4;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        buttonsPanel.add(Box.createVerticalGlue(), gbc);
+
+        mainPanel.add(buttonsPanel, BorderLayout.CENTER);
+
+        return mainPanel;
+    }
+
+    private JPanel createSelectedServicesPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(CustomUI.white);
+        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(CustomUI.gray, 2),
+                BorderFactory.createEmptyBorder(3, 5, 3, 5)
+        ));
+
+        // Header - compact
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        headerPanel.setBackground(CustomUI.white);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 3, 0));
+        JLabel headerLabel = new JLabel("DỊCH VỤ ĐÃ CHỌN");
+        headerLabel.setFont(CustomUI.normalFont);
+        headerLabel.setForeground(CustomUI.darkBlue);
+        headerPanel.add(headerLabel);
+
+        // Table
+        JScrollPane selectedScrollPane = new JScrollPane(selectedServicesTable);
+        selectedScrollPane.setBorder(null);
+        selectedScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(selectedScrollPane, BorderLayout.CENTER);
+
+        return mainPanel;
     }
 
     private void loadData() {
@@ -977,7 +1115,12 @@ public class ServiceSelectionPanel extends JPanel {
                     maxPossible
             );
 
-            JOptionPane.showMessageDialog(panel, message, "Thông báo", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(
+                    SwingUtilities.getWindowAncestor(ServiceSelectionPanel.this),
+                    message,
+                    "Thông báo",
+                    JOptionPane.WARNING_MESSAGE
+            );
         }
 
         private void validateAndUpdateFromTextField() {
@@ -1018,14 +1161,6 @@ public class ServiceSelectionPanel extends JPanel {
                 else {
                     // Check it can divide evenly for multiple rooms - if not, split equally first, the remain will put for last room
                     if (cmbSelectedRoom.getSelectedItem().toString().equalsIgnoreCase(ALL_ROOMS)) {
-//                            if (newQuantity % totalRoom != 0) {
-//                                quantityField.setText(String.valueOf(currentQuantity));
-//                                JOptionPane.showMessageDialog(panel,
-//                                                              "Số lượng dịch vụ đã chọn phải chia hết cho " + totalRoom + " phòng!",
-//                                                              "Thông báo",
-//                                                              JOptionPane.WARNING_MESSAGE);
-//                                return;
-//                            }
                         currentQuantity = newQuantity;
                         int quantity = newQuantity / totalRoom;
                         System.out.println("Quantity per room: " + quantity);
