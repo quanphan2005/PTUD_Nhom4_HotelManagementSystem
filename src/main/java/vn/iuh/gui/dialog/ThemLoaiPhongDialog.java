@@ -270,6 +270,12 @@ public class ThemLoaiPhongDialog extends JDialog {
             return;
         }
 
+        // validation: số người tối đa khi thêm là 6
+        if (soNguoi > 6) {
+            JOptionPane.showMessageDialog(this, "Số người tối đa khi thêm loại phòng là 6", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         // parse prices
         double giaNgay = 0.0;
         double giaGio = 0.0;
@@ -287,6 +293,18 @@ public class ThemLoaiPhongDialog extends JDialog {
             else giaGio = Double.parseDouble(String.valueOf(v2));
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Giá theo giờ không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // validation: giá không được âm hoặc bằng 0
+        if (giaNgay <= 0.0 || giaGio <= 0.0) {
+            JOptionPane.showMessageDialog(this, "Giá loại phòng phải lớn hơn 0 (không được âm hoặc bằng 0)", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // validation: danh sách nội thất không được rỗng
+        if (selectedTableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "Danh sách nội thất không được rỗng", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

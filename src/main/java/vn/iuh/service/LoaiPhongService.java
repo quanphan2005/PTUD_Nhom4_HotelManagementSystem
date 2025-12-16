@@ -33,5 +33,6 @@ public interface LoaiPhongService {
                                 Double giaGioVal,
                                 Double giaNgayVal);
     boolean updateRoomCategoryWithAudit(LoaiPhong loaiPhong, List<NoiThatAssignment> itemsWithQty);
+    List<LoaiPhong> layTatCaLoaiPhongHienCo();
 
 }

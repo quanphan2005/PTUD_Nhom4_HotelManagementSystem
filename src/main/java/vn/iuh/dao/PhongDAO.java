@@ -526,4 +526,19 @@ public class PhongDAO {
         }
         return null;
     }
+
+    public boolean existsRoomForLoaiPhong(String maLoaiPhong) {
+        if (maLoaiPhong == null || maLoaiPhong.isBlank()) return false;
+        String query = "SELECT 1 FROM Phong WHERE ma_loai_phong = ? AND ISNULL(da_xoa,0) = 0";
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, maLoaiPhong);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi khi kiểm tra phòng theo loại: " + e.getMessage(), e);
+        }
+    }
 }

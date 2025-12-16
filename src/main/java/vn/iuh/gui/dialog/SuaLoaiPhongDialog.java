@@ -20,9 +20,9 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.text.NumberFormat;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Pattern;
 
 public class SuaLoaiPhongDialog extends JDialog {
 
@@ -55,6 +55,19 @@ public class SuaLoaiPhongDialog extends JDialog {
     };
 
     private final JTable tableSelected = new JTable(selectedTableModel);
+
+    // --- initial snapshot for change detection ---
+    private String initialName = null;
+    private int initialSoNguoi = -1;
+    private String initialPhanLoai = null;
+    private Double initialGiaGio = null;   // null means unknown/not-set
+    private Double initialGiaNgay = null;
+    private Map<String,Integer> initialAssignments = new HashMap<>();
+
+    // name validation pattern: letters A-Z/a-z, digits, hyphen and space
+    // Cho phép mọi chữ (Unicode letters, bao gồm tiếng Việt có dấu), chữ số, dấu '-' và khoảng trắng
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}0-9\\-\\s]+$");
+
 
     public SuaLoaiPhongDialog(Frame owner,
                               LoaiPhongService loaiPhongService,
@@ -215,10 +228,25 @@ public class SuaLoaiPhongDialog extends JDialog {
                 double gGio = latest.getOrDefault("gia_gio", 0.0);
                 double gNgay = latest.getOrDefault("gia_ngay", 0.0);
                 NumberFormat nf = NumberFormat.getIntegerInstance();
-                txtGiaGio.setText(gGio > 0 ? nf.format(Math.round(gGio)) : "");
-                txtGiaNgay.setText(gNgay > 0 ? nf.format(Math.round(gNgay)) : "");
+                if (gGio > 0) {
+                    txtGiaGio.setText(nf.format(Math.round(gGio)));
+                    initialGiaGio = gGio;
+                } else {
+                    txtGiaGio.setText("");
+                    initialGiaGio = null;
+                }
+                if (gNgay > 0) {
+                    txtGiaNgay.setText(nf.format(Math.round(gNgay)));
+                    initialGiaNgay = gNgay;
+                } else {
+                    txtGiaNgay.setText("");
+                    initialGiaNgay = null;
+                }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            initialGiaGio = null;
+            initialGiaNgay = null;
+        }
 
         // load all furniture and mark selected
         List<NoiThat> all = new ArrayList<>();
@@ -239,6 +267,7 @@ public class SuaLoaiPhongDialog extends JDialog {
         availableModel.clear();
 
         // Add selected rows; quantity mặc định = 1 (nếu bạn có cách lấy số lượng mapping thực, thay ở đây)
+        initialAssignments.clear();
         for (NoiThat s : selected) {
             if (s == null) continue;
             selectedTableModel.addRow(new Object[] {
@@ -247,6 +276,7 @@ public class SuaLoaiPhongDialog extends JDialog {
                     s.getMoTa(),
                     Integer.valueOf(1)
             });
+            initialAssignments.put(s.getMaNoiThat(), 1);
         }
 
         for (NoiThat n : all) {
@@ -256,6 +286,11 @@ public class SuaLoaiPhongDialog extends JDialog {
             }
             if (!isSelected) availableModel.addElement(n);
         }
+
+        // snapshot for change detection on basic fields
+        initialName = current != null ? current.getTenLoaiPhong() : null;
+        initialSoNguoi = current != null ? current.getSoLuongKhach() : -1;
+        initialPhanLoai = current != null ? current.getPhanLoai() : null;
     }
 
     private void addSelectedFurniture() {
@@ -284,22 +319,105 @@ public class SuaLoaiPhongDialog extends JDialog {
         }
     }
 
+    private Double parsePriceField(String text) {
+        if (text == null) return null;
+        String cleaned = text.trim().replaceAll("[,\\s]", "");
+        if (cleaned.isEmpty()) return null;
+        try {
+            return Double.parseDouble(cleaned);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private boolean assignmentsEqual(Map<String,Integer> a, Map<String,Integer> b) {
+        if (a == null) a = Collections.emptyMap();
+        if (b == null) b = Collections.emptyMap();
+        if (a.size() != b.size()) return false;
+        for (Map.Entry<String,Integer> e : a.entrySet()) {
+            Integer v = b.get(e.getKey());
+            if (v == null || !v.equals(e.getValue())) return false;
+        }
+        return true;
+    }
+
     private void onSave() {
         if (current == null) return;
         String ten = txtTen.getText().trim();
         int soNguoi = (Integer) spnSoNguoi.getValue();
         String phanLoai = (String) cboPhanLoai.getSelectedItem();
 
+        // -- basic validation --
         if (ten.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Tên loại phòng không được để trống", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        // name pattern
+        if (!NAME_PATTERN.matcher(ten).matches()) {
+            JOptionPane.showMessageDialog(this, "Tên loại phòng chỉ chứa chữ cái, chữ số, dấu '-' và khoảng trắng.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        current.setTenLoaiPhong(ten);
-        current.setSoLuongKhach(soNguoi);
-        current.setPhanLoai(phanLoai);
+        // số người tối đa = 6
+        if (soNguoi > 6) {
+            JOptionPane.showMessageDialog(this, "Số người tối đa khi thêm loại phòng là 6", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        // kiểm tra booking hiện tại/tương lai bằng ChiTietDatPhongDAO (bạn đã thêm method)
+        // danh sách nội thất không được rỗng
+        if (selectedTableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "Danh sách nội thất không được rỗng", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // build new assignments map and list
+        Map<String,Integer> newAssignMap = new HashMap<>();
+        List<NoiThatAssignment> newAssignments = new ArrayList<>();
+        for (int r = 0; r < selectedTableModel.getRowCount(); r++) {
+            String ma = String.valueOf(selectedTableModel.getValueAt(r, 0));
+            Object qtyObj = selectedTableModel.getValueAt(r, 3);
+            int qty = 1;
+            if (qtyObj instanceof Integer) qty = (Integer) qtyObj;
+            else {
+                try { qty = Integer.parseInt(String.valueOf(qtyObj)); } catch (Exception ignored) { qty = 1; }
+            }
+            if (qty < 1) qty = 1;
+            newAssignMap.put(ma, qty);
+            newAssignments.add(new NoiThatAssignment(ma, qty));
+        }
+
+        // parse price inputs
+        String sGiaGio = txtGiaGio.getText().trim().replaceAll("[,\\s]", "");
+        String sGiaNgay = txtGiaNgay.getText().trim().replaceAll("[,\\s]", "");
+        boolean giaGioEmpty = sGiaGio.isEmpty();
+        boolean giaNgayEmpty = sGiaNgay.isEmpty();
+
+        Double giaGioVal = parsePriceField(txtGiaGio.getText());
+        Double giaNgayVal = parsePriceField(txtGiaNgay.getText());
+
+        // Price validation rules:
+        // - if user changed price then both must be provided and > 0
+        // - if user left both empty -> no price change
+        boolean userProvidedAnyPrice = !giaGioEmpty || !giaNgayEmpty;
+        if (userProvidedAnyPrice) {
+            // must provide both
+            if (giaGioEmpty || giaNgayEmpty) {
+                JOptionPane.showMessageDialog(this, "Nếu thay đổi giá, vui lòng nhập cả Giá giờ và Giá ngày.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // parse success?
+            if (giaGioVal == null || giaNgayVal == null) {
+                JOptionPane.showMessageDialog(this, "Giá nhập không hợp lệ. Vui lòng nhập số hợp lệ (ví dụ: 100000).", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // not negative or zero
+            if (giaGioVal <= 0.0 || giaNgayVal <= 0.0) {
+                JOptionPane.showMessageDialog(this, "Giá phải là số dương lớn hơn 0.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        // check booking current/future before allowing content changes (same as before)
         try {
             ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO();
             boolean hasBooking = ctDao.hasCurrentOrFutureBookingsForLoaiPhong(current.getMaLoaiPhong());
@@ -315,54 +433,49 @@ public class SuaLoaiPhongDialog extends JDialog {
             return;
         }
 
-        // build assignments with quantities (List<NoiThatAssignment>)
-        List<NoiThatAssignment> newAssignments = new ArrayList<>();
-        for (int r = 0; r < selectedTableModel.getRowCount(); r++) {
-            String ma = (String) selectedTableModel.getValueAt(r, 0);
-            Object qtyObj = selectedTableModel.getValueAt(r, 3);
-            int qty = 1;
-            if (qtyObj instanceof Integer) qty = (Integer) qtyObj;
-            else {
-                try { qty = Integer.parseInt(String.valueOf(qtyObj)); } catch (Exception ignored) {}
-            }
-            newAssignments.add(new NoiThatAssignment(ma, qty));
-        }
+        // Determine if anything changed compared to initial state
+        boolean basicChanged = false;
+        if (initialName == null) initialName = "";
+        if (!initialName.equals(ten)) basicChanged = true;
+        if (initialSoNguoi != soNguoi) basicChanged = true;
+        if (initialPhanLoai == null) initialPhanLoai = "";
+        if (!initialPhanLoai.equalsIgnoreCase(phanLoai == null ? "" : phanLoai)) basicChanged = true;
 
-        // PARSE giá: nếu user nhập cả 2 => truyền; nếu cả 2 rỗng => không thay đổi giá; nếu chỉ 1 => báo lỗi
-        String sGiaGio = txtGiaGio.getText().trim().replaceAll("[,\\s]", "");
-        String sGiaNgay = txtGiaNgay.getText().trim().replaceAll("[,\\s]", "");
+        boolean assignmentsChanged = !assignmentsEqual(initialAssignments, newAssignMap);
 
-        boolean giaGioEmpty = sGiaGio.isEmpty();
-        boolean giaNgayEmpty = sGiaNgay.isEmpty();
-
-        Double giaGioVal = null;
-        Double giaNgayVal = null;
-
-        if (!giaGioEmpty || !giaNgayEmpty) {
-            // nếu chỉ nhập 1 trong 2 -> lỗi
-            if (giaGioEmpty || giaNgayEmpty) {
-                JOptionPane.showMessageDialog(this, "Nếu thay đổi giá, vui lòng nhập cả Giá giờ và Giá ngày.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            try {
-                giaGioVal = Double.parseDouble(sGiaGio);
-                giaNgayVal = Double.parseDouble(sGiaNgay);
-                if (giaGioVal < 0 || giaNgayVal < 0) {
-                    JOptionPane.showMessageDialog(this, "Giá phải là số không âm.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
+        // price changed detection
+        boolean priceChanged = false;
+        if (userProvidedAnyPrice) {
+            // user wants to change price (we validated both present and >0)
+            double oldGio = initialGiaGio == null ? -1.0 : initialGiaGio;
+            double oldNgay = initialGiaNgay == null ? -1.0 : initialGiaNgay;
+            if (initialGiaGio == null || initialGiaNgay == null) {
+                // previously not set -> any provided >0 means change
+                priceChanged = true;
+            } else {
+                if (Double.compare(oldGio, giaGioVal) != 0 || Double.compare(oldNgay, giaNgayVal) != 0) {
+                    priceChanged = true;
                 }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Giá nhập không hợp lệ. Vui lòng nhập số hợp lệ (ví dụ: 100000)", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
             }
         }
+
+        // if nothing changed -> do nothing
+        if (!basicChanged && !assignmentsChanged && !priceChanged) {
+            JOptionPane.showMessageDialog(this, "Không có thay đổi nào để cập nhật.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+            return;
+        }
+
+        // Prepare LoaiPhong to update
+        current.setTenLoaiPhong(ten);
+        current.setSoLuongKhach(soNguoi);
+        current.setPhanLoai(phanLoai);
 
         try {
             if (loaiPhongService instanceof LoaiPhongServiceImpl) {
-                // gọi trực tiếp impl đã có method update với giá
                 LoaiPhongServiceImpl impl = (LoaiPhongServiceImpl) loaiPhongService;
                 boolean ok;
-                if (giaGioVal != null && giaNgayVal != null) {
+                if (priceChanged) {
                     ok = impl.updateRoomCategoryWithAudit(current, newAssignments, giaGioVal, giaNgayVal);
                 } else {
                     ok = impl.updateRoomCategoryWithAudit(current, newAssignments);
@@ -377,7 +490,7 @@ public class SuaLoaiPhongDialog extends JDialog {
                     return;
                 }
             } else {
-                // fallback: cập nhật loại phòng rồi gán nội thất bằng List<NoiThatAssignment>
+                // fallback: update via service generic methods
                 LoaiPhong updated = loaiPhongService.updateRoomCategory(current);
                 if (updated == null) {
                     JOptionPane.showMessageDialog(this, "Cập nhật loại phòng thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -386,28 +499,8 @@ public class SuaLoaiPhongDialog extends JDialog {
 
                 boolean assignOk = false;
                 try {
-                    // **SỬA**: truyền newAssignments thay vì List<NoiThat>
                     assignOk = noiThatService.assignNoiThatToLoaiPhong(updated.getMaLoaiPhong(), newAssignments);
                 } catch (Exception ignored) { assignOk = false; }
-
-                // Ghi lịch sử thao tác (fallback) bằng LichSuThaoTacDAO
-                try {
-                    String latestId = null;
-                    LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
-                    LichSuThaoTac wh = new LichSuThaoTac();
-
-                    var latest = lichSuDao.timLichSuThaoTacMoiNhat();
-
-                    if (latest != null) latestId = latest.getMaLichSuThaoTac();
-                    String newId = EntityUtil.increaseEntityID(latestId, "LT", 8);
-
-                    wh.setMaLichSuThaoTac(newId);
-                    wh.setTenThaoTac(ActionType.UPDATE_ROOM_CATEGORY.getActionName());
-                    wh.setMoTa(String.format("Cập nhật loại phòng %s; nội thất count=%d", updated.getMaLoaiPhong(), newAssignments.size()));
-                    wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
-
-                    lichSuDao.themLichSuThaoTac(wh);
-                } catch (Exception ignored) {}
 
                 if (!assignOk) {
                     JOptionPane.showMessageDialog(this, "Cập nhật loại phòng xong nhưng gán nội thất không thành công", "Cảnh báo", JOptionPane.WARNING_MESSAGE);

@@ -17,4 +17,7 @@ public interface ServiceService {
     boolean isServiceCurrentlyUsed(String maDichVu);
     boolean xoaDichVu(String maDichVu);
 
+    boolean capNhatTonKhoDichVu(String maDichVu, int tonKho) throws Exception;
+
+
 }

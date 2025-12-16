@@ -141,80 +141,117 @@ public class ServiceImpl implements ServiceService {
         try {
             DatabaseUtil.khoiTaoGiaoTac();
 
-            // dùng DAO với connection chung để transaction
+            // DAO dùng connection chung
             DichVuDAO dichVuDAO = new DichVuDAO();
             GiaDichVuDAO giaDao = new GiaDichVuDAO();
             LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
 
             // Lấy thông tin hiện tại của dịch vụ (để so sánh tên / giá hiện tại)
-            ServiceResponse existing = dichVuDAO.timDichVuV2(maDichVu); // nếu bạn chưa có hàm timDichVu(conn) -> timDichVu ở DichVuDAO hiện có dùng connection trường
+            ServiceResponse existing = dichVuDAO.timDichVuV2(maDichVu);
             if (existing == null) {
                 DatabaseUtil.hoanTacGiaoTac();
                 return null;
             }
 
             // 1) nếu tên đổi (khác với existing.getTenDichVu()), kiểm tra trùng tên (ngoại trừ chính bản thân)
-            if (!existing.getTenDichVu().equalsIgnoreCase(tenDichVu)) {
+            boolean nameChanged = !existing.getTenDichVu().equalsIgnoreCase(tenDichVu);
+            if (nameChanged) {
                 if (dichVuDAO.existsByTenDichVuExceptId(tenDichVu, maDichVu)) {
                     DatabaseUtil.hoanTacGiaoTac();
                     return null; // trùng tên
                 }
             }
 
-            // 2) cập nhật thông tin DichVu (không chỉnh co_the_tang theo yêu cầu - giữ nguyên từ existing)
-            boolean coTheTang = false;
-            boolean okUpd = dichVuDAO.capNhatDichVu(maDichVu, tenDichVu, tonKho, coTheTang, maLoaiDichVu);
-            if (!okUpd) {
-                DatabaseUtil.hoanTacGiaoTac();
-                return null;
-            }
+            boolean tonChanged = existing.getTonKho() != tonKho;
+            boolean loaiChanged = (existing.getMaLoaiDichVu() == null && maLoaiDichVu != null)
+                    || (existing.getMaLoaiDichVu() != null && !existing.getMaLoaiDichVu().equals(maLoaiDichVu));
 
-            // 3) nếu giá mới khác (hoặc luôn ghi 1 bản giá mới) -> thêm bản ghi GiaDichVu
-            // Lưu ý: để đơn giản và theo yêu cầu, luôn thêm 1 bản GiaDichVu mới (để lưu lịch sử)
-            String lastMaGia = giaDao.timMaGiaDichVuMoiNhatRaw();
-            String maGiaMoi = EntityUtil.increaseEntityID(lastMaGia, "GDV", 8);
+            boolean anyDichVuFieldChanged = nameChanged || tonChanged || loaiChanged;
+
             Double giaCu = existing.getGiaHienTai() != null ? existing.getGiaHienTai() : null;
-            boolean okGia = giaDao.insertGiaDichVu(maGiaMoi, giaCu, giaMoi, Main.getCurrentLoginSession(), maDichVu);
-            if (!okGia) {
+            boolean priceChanged;
+            if (giaCu == null) priceChanged = Double.compare(giaMoi, 0.0) != 0;
+            else priceChanged = Double.compare(giaCu, giaMoi) != 0;
+
+            // 2) nếu không có gì thay đổi -> không làm gì, trả về existing (hoặc bạn có thể trả null tùy UI)
+            if (!anyDichVuFieldChanged && !priceChanged) {
                 DatabaseUtil.hoanTacGiaoTac();
-                return null;
+                // không thay đổi gì -> trả về existing cho UI biết
+                return existing;
             }
 
-            // 4) ghi lịch sử thao tác
-            // tạo mã lịch sử mới
+            // 3) cập nhật DichVu chỉ khi có field thay đổi (tên, tồn, loại)
+            boolean okUpd = true;
+            if (anyDichVuFieldChanged) {
+                okUpd = dichVuDAO.capNhatDichVu(maDichVu, tenDichVu, tonKho, false, maLoaiDichVu);
+                if (!okUpd) {
+                    DatabaseUtil.hoanTacGiaoTac();
+                    return null;
+                }
+            }
+
+            // 4) thêm bản GiaDichVu mới chỉ khi giá thực sự thay đổi
+            boolean okGia = true;
+            if (priceChanged) {
+                String lastMaGia = giaDao.timMaGiaDichVuMoiNhatRaw();
+                String maGiaMoi = EntityUtil.increaseEntityID(lastMaGia, "GDV", 8);
+                okGia = giaDao.insertGiaDichVu(maGiaMoi, giaCu, giaMoi, Main.getCurrentLoginSession(), maDichVu);
+                if (!okGia) {
+                    DatabaseUtil.hoanTacGiaoTac();
+                    return null;
+                }
+            }
+
+            // 5) ghi lịch sử thao tác — chỉ khi có ít nhất 1 thay đổi (price hoặc fields)
             String lastMaLichSu = null;
             try {
-                // nếu có method timLichSuThaoTacMoiNhat() trả entity
                 var last = new LichSuThaoTacDAO().timLichSuThaoTacMoiNhat();
                 lastMaLichSu = last != null ? last.getMaLichSuThaoTac() : null;
             } catch (Exception ex) {
-                // fallback: lấy raw mã
                 LichSuThaoTac lichSuThaoTac = lichSuDao.timLichSuThaoTacMoiNhat();
-                lastMaLichSu = lichSuThaoTac.getMaLichSuThaoTac();
+                lastMaLichSu = lichSuThaoTac != null ? lichSuThaoTac.getMaLichSuThaoTac() : null;
             }
             String maLichSu = EntityUtil.increaseEntityID(lastMaLichSu, "LT", 8);
             LichSuThaoTac lichSu = new LichSuThaoTac();
             lichSu.setMaLichSuThaoTac(maLichSu);
             lichSu.setTenThaoTac(ActionType.UPDATE_SERVICE.getActionName());
-            String moTa = String.format("Cập nhật dịch vụ %s: tên từ '%s' -> '%s', giá: %s -> %s", maDichVu,
-                    existing.getTenDichVu(), tenDichVu,
-                    giaCu != null ? giaCu : "NULL", giaMoi);
-            lichSu.setMoTa(moTa);
+
+            StringBuilder moTa = new StringBuilder();
+            moTa.append("Cập nhật dịch vụ ").append(maDichVu).append(": ");
+            boolean first = true;
+            if (nameChanged) {
+                moTa.append(String.format("tên '%s' -> '%s'", existing.getTenDichVu(), tenDichVu));
+                first = false;
+            }
+            if (tonChanged) {
+                if (!first) moTa.append(", ");
+                moTa.append(String.format("tồn %s -> %s", existing.getTonKho(), tonKho));
+                first = false;
+            }
+            if (loaiChanged) {
+                if (!first) moTa.append(", ");
+                moTa.append(String.format("loại '%s' -> '%s'", existing.getMaLoaiDichVu(), maLoaiDichVu));
+                first = false;
+            }
+            if (priceChanged) {
+                if (!first) moTa.append(", ");
+                moTa.append(String.format("giá %s -> %s", giaCu != null ? giaCu : "NULL", giaMoi));
+            }
+            lichSu.setMoTa(moTa.toString());
             lichSu.setMaPhienDangNhap(Main.getCurrentLoginSession());
-            // dùng DAO để insert
             new LichSuThaoTacDAO().themLichSuThaoTac(lichSu);
 
             // commit
             DatabaseUtil.thucHienGiaoTac();
 
-            // trả về ServiceResponse mới (cập nhật)
+            // trả về ServiceResponse mới (cập nhật hoặc existing nếu chỉ price thay đổi)
             ServiceResponse updated = new ServiceResponse();
             updated.setMaDichVu(maDichVu);
             updated.setTenDichVu(tenDichVu);
             updated.setTonKho(tonKho);
             updated.setMaLoaiDichVu(maLoaiDichVu);
-            updated.setGiaHienTai(giaMoi);
-            updated.setCoTheTang(coTheTang);
+            updated.setGiaHienTai(priceChanged ? giaMoi : giaCu != null ? giaCu : giaMoi);
+            updated.setCoTheTang(false);
 
             return updated;
 
@@ -304,4 +341,16 @@ public class ServiceImpl implements ServiceService {
         String t = s.trim();
         return t.isEmpty() ? null : t;
     }
+
+    // trong ServiceImpl (có sẵn), thêm:
+    @Override
+    public boolean capNhatTonKhoDichVu(String maDichVu, int tonKho) throws Exception {
+        if (maDichVu == null || maDichVu.isBlank()) throw new IllegalArgumentException("maDichVu rỗng");
+        if (tonKho < 0) throw new IllegalArgumentException("tonKho < 0");
+
+        DichVuDAO dao = new DichVuDAO();
+        // bạn có thể thêm transaction / log ở đây nếu muốn
+        return dao.capNhatTonKho(maDichVu, tonKho);
+    }
+
 }

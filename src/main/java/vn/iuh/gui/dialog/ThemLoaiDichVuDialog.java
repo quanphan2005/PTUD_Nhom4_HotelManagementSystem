@@ -5,19 +5,17 @@ import vn.iuh.service.ServiceCategoryService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.regex.Pattern;
 
-/**
- * Dialog thêm loại dịch vụ.
- * - Người dùng chỉ nhập "Tên loại dịch vụ"
- * - Mã loại sẽ được sinh tự động tại tầng Service/DAO
- * - Khi lưu thành công gọi onSuccess.run()
- */
 public class ThemLoaiDichVuDialog extends JDialog {
 
     private final ServiceCategoryService categoryService;
     private final Runnable onSuccess;
 
     private final JTextField tfTen = new JTextField(30);
+
+    // chỉ cho phép chữ (unicode, gồm tiếng Việt có dấu), số, khoảng trắng và dấu '-'
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}0-9 \\-]+$");
 
     public ThemLoaiDichVuDialog(Window owner, ServiceCategoryService categoryService, Runnable onSuccess) {
         super(owner, "Thêm loại dịch vụ", ModalityType.APPLICATION_MODAL);
@@ -65,12 +63,23 @@ public class ThemLoaiDichVuDialog extends JDialog {
         String ten = tfTen.getText();
         if (ten == null || ten.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Tên loại dịch vụ không được để trống", "Lỗi", JOptionPane.WARNING_MESSAGE);
+            tfTen.requestFocusInWindow();
+            return;
+        }
+
+        ten = ten.trim();
+        if (!NAME_PATTERN.matcher(ten).matches()) {
+            JOptionPane.showMessageDialog(this,
+                    "Tên loại dịch vụ chỉ được chứa chữ (gồm tiếng Việt có dấu), chữ số, khoảng trắng và dấu '-'",
+                    "Lỗi",
+                    JOptionPane.WARNING_MESSAGE);
+            tfTen.requestFocusInWindow();
             return;
         }
 
         // build entity
         LoaiDichVu toCreate = new LoaiDichVu();
-        toCreate.setTenDichVu(ten.trim());
+        toCreate.setTenDichVu(ten);
 
         try {
             LoaiDichVu created = categoryService.createServiceCategoryV2(toCreate);

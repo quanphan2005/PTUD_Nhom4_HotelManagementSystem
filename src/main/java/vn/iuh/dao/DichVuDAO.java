@@ -381,4 +381,18 @@ public class DichVuDAO {
         }
     }
 
+    // trong DichVuDAO (add method)
+    public boolean capNhatTonKho(String maDichVu, int tonKho) {
+        String sql = "UPDATE DichVu SET ton_kho = ?, thoi_gian_tao = GETDATE() WHERE ma_dich_vu = ? AND ISNULL(da_xoa,0) = 0";
+        Connection connection = DatabaseUtil.getConnect();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, tonKho);
+            ps.setString(2, maDichVu);
+            int r = ps.executeUpdate();
+            return r > 0;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Lỗi khi cập nhật tồn kho: " + ex.getMessage(), ex);
+        }
+    }
+
 }

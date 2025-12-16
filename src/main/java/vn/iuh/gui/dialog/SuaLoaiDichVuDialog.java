@@ -2,22 +2,14 @@ package vn.iuh.gui.dialog;
 
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.service.ServiceCategoryService;
+import vn.iuh.util.AppEventBus;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.regex.Pattern;
 
-/**
- * Dialog sửa tên loại dịch vụ (không sửa mã).
- *
- * Thiết kế:
- * - Không thực hiện DB trên EDT: dùng SwingWorker để gọi service.
- * - Gọi categoryService.capNhatTenLoaiDichVu(maLoai, tenMoi) để cập nhật.
- * - Khi cập nhật thành công: gọi onSaved (chạy trên EDT) -> panel đứng bên ngoài sẽ reload cả 2 panel cần thiết.
- * - Hiển thị dialog lỗi/duplicate nếu cập nhật thất bại.
- */
 public class SuaLoaiDichVuDialog extends JDialog {
     private final String maLoai;
     private final ServiceCategoryService categoryService;
@@ -27,6 +19,12 @@ public class SuaLoaiDichVuDialog extends JDialog {
     private final JTextField tfTen = new JTextField();
     private final JButton btnSave = new JButton("Lưu");
     private final JButton btnCancel = new JButton("Hủy");
+
+    // lưu tên ban đầu để so sánh
+    private final String originalName;
+
+    // chỉ cho phép chữ (unicode, gồm tiếng Việt có dấu), số, khoảng trắng và dấu '-'
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}0-9 \\-]+$");
 
     public SuaLoaiDichVuDialog(Window owner,
                                String maLoai,
@@ -39,6 +37,7 @@ public class SuaLoaiDichVuDialog extends JDialog {
         this.categoryService = categoryService;
         this.onSaved = onSaved;
         this.maPhienDangNhap = maPhienDangNhap;
+        this.originalName = tenHienTai != null ? tenHienTai : "";
 
         initUI(tenHienTai);
         pack();
@@ -120,6 +119,22 @@ public class SuaLoaiDichVuDialog extends JDialog {
             return;
         }
 
+        if (!NAME_PATTERN.matcher(newName).matches()) {
+            JOptionPane.showMessageDialog(this,
+                    "Tên loại dịch vụ chỉ được chứa chữ (gồm tiếng Việt có dấu), chữ số, khoảng trắng và dấu '-'",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            tfTen.requestFocusInWindow();
+            return;
+        }
+
+        // nếu không có thay đổi so với tên gốc -> không cập nhật
+        if (originalName.equals(newName)) {
+            JOptionPane.showMessageDialog(this, "Không có thay đổi để lưu.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+            return;
+        }
+
         setUiBusy(true);
 
         SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
@@ -170,6 +185,8 @@ public class SuaLoaiDichVuDialog extends JDialog {
 
                     // thành công -> gọi callback để reload UI (panel quản lý loại + panel quản lý dịch vụ)
                     if (onSaved != null) SwingUtilities.invokeLater(onSaved);
+
+                    AppEventBus.publish("CATEGORY_UPDATED");
 
                     JOptionPane.showMessageDialog(SuaLoaiDichVuDialog.this,
                             "Cập nhật loại dịch vụ thành công.",

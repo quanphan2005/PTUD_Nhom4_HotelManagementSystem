@@ -5,10 +5,12 @@ import com.formdev.flatlaf.ui.FlatLineBorder;
 import vn.iuh.dto.response.ServiceResponse;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.dialog.ChiTietDichVuDialog;
+import vn.iuh.gui.dialog.ServiceStockEditDialog;
 import vn.iuh.gui.dialog.SuaDichVuDialog;
 import vn.iuh.gui.dialog.ThemDichVuDialog;
 import vn.iuh.service.ServiceService;
 import vn.iuh.service.impl.ServiceImpl;
+import vn.iuh.util.AppEventBus;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -24,13 +26,6 @@ import java.util.*;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * QuanLyDichVuPanel - sửa phần search giống QuanLyKhachHangPanel
- *
- * Thay đổi chính:
- * - Kích thước nút hành động giống QuanLyKhachHangPanel (290x50)
- * - Khi chọn "Loại dịch vụ" thì hiển thị combobox chứa các loại hiện có để tìm nhanh
- */
 public class QuanLyDichVuPanel extends JPanel {
 
     // Kích thước / font reuse (tương tự QuanLyPhongPanel / QuanLyKhachHangPanel)
@@ -56,6 +51,7 @@ public class QuanLyDichVuPanel extends JPanel {
     private JButton addButton;
     private JButton editButton;
     private JButton deleteButton;
+    private JButton adjustStockButton;
 
     // Table
     private JTable serviceTable;
@@ -86,6 +82,9 @@ public class QuanLyDichVuPanel extends JPanel {
 
         // initial populate
         populateServiceList(services);
+
+        AppEventBus.subscribe("CATEGORY_UPDATED", this::reloadAllData);
+
     }
 
     // ------------------- demo data models (simple POJOs) -------------------
@@ -188,6 +187,9 @@ public class QuanLyDichVuPanel extends JPanel {
         addButton = createActionButton("Thêm dịch vụ", ACTION_BUTTON_SIZE, "#16A34A", "#86EFAC");
         editButton = createActionButton("Sửa dịch vụ", ACTION_BUTTON_SIZE, "#2563EB", "#93C5FD");
         deleteButton = createActionButton("Xóa dịch vụ", ACTION_BUTTON_SIZE, "#DC2626", "#FCA5A5");
+        adjustStockButton = createActionButton("Chỉnh tồn kho", ACTION_BUTTON_SIZE, "#F59E0B", "#FCD34D");
+        adjustStockButton.addActionListener(e -> onAdjustStock());
+
 
         // actions (demo)
         addButton.addActionListener(e -> onAddService());
@@ -340,9 +342,12 @@ public class QuanLyDichVuPanel extends JPanel {
         addButton.setPreferredSize(ACTION_BUTTON_SIZE);
         editButton.setPreferredSize(ACTION_BUTTON_SIZE);
         deleteButton.setPreferredSize(ACTION_BUTTON_SIZE);
+        adjustStockButton.setPreferredSize(ACTION_BUTTON_SIZE);
         row2.add(addButton);
         row2.add(editButton);
         row2.add(deleteButton);
+        row2.add(adjustStockButton);
+
 
         searchPanel.add(row2);
         searchPanel.add(Box.createVerticalStrut(8));
@@ -552,11 +557,14 @@ public class QuanLyDichVuPanel extends JPanel {
         Window owner = SwingUtilities.getWindowAncestor(this);
         // truyền serviceService đã có sẵn, maPhienDangNhap hiện tại bạn cần truyền (nếu có) - tạm truyền null
         ThemDichVuDialog dialog = new ThemDichVuDialog(owner, serviceService, () -> {
-            // reload data khi thành công
+            // reload data trong panel dịch vụ
             initSampleData();
             rebuildCategorySearchCombo();
             populateServiceList(services);
+
+            AppEventBus.publish("SERVICE_CHANGED");
         });
+
         dialog.setVisible(true);
     }
 
@@ -604,7 +612,10 @@ public class QuanLyDichVuPanel extends JPanel {
             initSampleData();
             rebuildCategorySearchCombo();
             populateServiceList(services);
+
+            AppEventBus.publish("SERVICE_CHANGED");
         });
+
         dlg.setVisible(true);
     }
 
@@ -654,6 +665,7 @@ public class QuanLyDichVuPanel extends JPanel {
                 initSampleData();
                 rebuildCategorySearchCombo();
                 populateServiceList(services);
+                AppEventBus.publish("SERVICE_CHANGED");
             } else {
                 JOptionPane.showMessageDialog(this, "Xóa dịch vụ thất bại", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
@@ -743,4 +755,27 @@ public class QuanLyDichVuPanel extends JPanel {
             populateServiceList(services); // fill lại bảng
         });
     }
+
+    private void onAdjustStock() {
+        DichVu sel = getSelectedDichVu();
+        if (sel == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn 1 dịch vụ để chỉnh tồn kho", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        ServiceStockEditDialog dlg = new ServiceStockEditDialog(owner,
+                sel.getMa(),
+                sel.getTen(),
+                sel.getTonKho(),
+                serviceService,
+                () -> {
+                    // callback sau khi cập nhật thành công: reload dữ liệu
+                    initSampleData();
+                    rebuildCategorySearchCombo();
+                    populateServiceList(services);
+                });
+        dlg.setVisible(true);
+    }
+
 }

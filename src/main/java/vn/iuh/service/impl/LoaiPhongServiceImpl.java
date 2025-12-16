@@ -243,14 +243,21 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
         }
         if (maPhienDangNhap == null) maPhienDangNhap = "SYSTEM";
 
-        ChiTietDatPhongDAO ctDao = new ChiTietDatPhongDAO();
+        // Sử dụng DAO phù hợp
+        PhongDAO phongDao = new PhongDAO();
         NoiThatTrongLoaiPhongDAO ntlpDao = new NoiThatTrongLoaiPhongDAO();
         LichSuThaoTacDAO lichSuDao = new LichSuThaoTacDAO();
 
-        // 1) kiểm tra booking tương lai
-        boolean hasFuture = ctDao.hasFutureBookingsForLoaiPhong(maLoaiPhong);
-        if (hasFuture) {
-            throw new BusinessException("Loại phòng đang có đặt phòng trong tương lai, không thể xóa.");
+        // 1) kiểm tra: nếu còn PHÒNG thuộc loại này (chưa bị xóa) -> không cho xóa
+        boolean hasRooms = false;
+        try {
+            hasRooms = phongDao.existsRoomForLoaiPhong(maLoaiPhong);
+        } catch (Exception e) {
+            // nếu lỗi khi kiểm tra DB thì ném lên để caller biết
+            throw new RuntimeException("Lỗi khi kiểm tra phòng thuộc loại phòng: " + e.getMessage(), e);
+        }
+        if (hasRooms) {
+            throw new BusinessException("Loại phòng đang có phòng thuộc loại này, không thể xóa.");
         }
 
         // 2) xóa (soft-delete) mapping nội thất
@@ -267,16 +274,13 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
 
         // 4) ghi lịch sử thao tác vào LichSuThaoTac
         try {
-            // tạo id mới cho LichSuThaoTac (giả sử prefix "LS" + 8 chữ số)
             String latestId = null;
             try {
                 var latest = lichSuDao.timLichSuThaoTacMoiNhat();
                 if (latest != null) latestId = latest.getMaLichSuThaoTac();
             } catch (Exception ignore) {}
 
-
             String newId = EntityUtil.increaseEntityID(latestId, "LT", 8);
-
 
             LichSuThaoTac wh = new LichSuThaoTac();
             wh.setMaLichSuThaoTac(newId);
@@ -284,7 +288,7 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
             String detail = String.format("Xóa loại phòng %s. Xóa mapping nội thất: %d. Kết quả xóa loại phòng: %s",
                     maLoaiPhong, mappingsDeleted, deleted ? "OK" : "FAIL");
             wh.setMoTa(detail);
-            wh.setMaPhienDangNhap(Main.getCurrentLoginSession());
+            wh.setMaPhienDangNhap(maPhienDangNhap);
 
             lichSuDao.themLichSuThaoTac(wh);
         } catch (Exception e) {
@@ -498,6 +502,11 @@ public class LoaiPhongServiceImpl implements LoaiPhongService {
         } catch (Exception ex) {
             throw new RuntimeException("Lỗi khi kiểm tra booking cho loại phòng " + maLoaiPhong + ": " + ex.getMessage(), ex);
         }
+    }
+
+    @Override
+    public List<LoaiPhong> layTatCaLoaiPhongHienCo() {
+        return loaiPhongDao.layTatCaLoaiPhong();
     }
 
 }

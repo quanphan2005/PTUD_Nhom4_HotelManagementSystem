@@ -12,6 +12,7 @@ import vn.iuh.gui.dialog.ThemLoaiDichVuDialog;
 import vn.iuh.service.ServiceCategoryService;
 import vn.iuh.service.impl.ServiceCategoryServiceImpl;
 import vn.iuh.service.impl.ServiceImpl;
+import vn.iuh.util.AppEventBus;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -23,13 +24,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
-/**
- * QuanLyLoaiDichVuPanel - cập nhật UI theo yêu cầu:
- * - Thanh tìm kiếm tương tự QuanLyDichVuPanel (viền, chiều cao, nút/combobox đồng bộ)
- * - Bảng hiển thị: Mã loại | Tên loại | Số lượng dịch vụ
- *
- * NOTE: UI-only. serviceCountMap để map số lượng dịch vụ (set sau khi tích hợp DB).
- */
 public class QuanLyLoaiDichVuPanel extends JPanel {
 
     // dùng cùng kích thước với QuanLyDichVuPanel cho nhất quán
@@ -71,6 +65,15 @@ public class QuanLyLoaiDichVuPanel extends JPanel {
         setBackground(CustomUI.white);
         initSampleData();
         init();
+
+        AppEventBus.subscribe("SERVICE_CHANGED", () -> {
+            SwingUtilities.invokeLater(() -> {
+                initSampleData();
+                rebuildCategoryCombo();
+                populateTable(categories);
+            });
+        });
+
     }
 
     private void init() {
@@ -532,37 +535,42 @@ public class QuanLyLoaiDichVuPanel extends JPanel {
             return;
         }
 
-        int ans = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa loại " + sel.getTen() + " không?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+        int ans = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn xóa loại " + sel.getTen() + " không?",
+                "Xác nhận",
+                JOptionPane.YES_NO_OPTION);
         if (ans != JOptionPane.YES_OPTION) return;
 
-        // disable UI while checking/deleting (nếu bạn muốn UX tốt hơn, có thể dùng SwingWorker)
         try {
-            // 1) Lấy danh sách dịch vụ thuộc loại này qua ServiceImpl (hoặc gọi service phù hợp)
+            // 1) Lấy danh sách tất cả dịch vụ (cùng giá) từ ServiceImpl/ServiceService
             ServiceImpl service = new ServiceImpl();
             List<ServiceResponse> all = service.layTatCaDichVuCungGia();
-            List<ServiceResponse> inCategory = new ArrayList<>();
+
+            // 2) Kiểm tra xem có dịch vụ nào thuộc loại sel hay không
+            boolean hasAnyInCategory = false;
             if (all != null) {
                 for (ServiceResponse sr : all) {
-                    if (sel.getMa().equals(sr.getMaLoaiDichVu())) inCategory.add(sr);
+                    if (sr != null && sel.getMa().equals(sr.getMaLoaiDichVu())) {
+                        hasAnyInCategory = true;
+                        break;
+                    }
                 }
             }
 
-            // 2) kiểm tra từng dịch vụ xem có đang dùng không
-            for (ServiceResponse dv : inCategory) {
-                if (service.isServiceCurrentlyUsed(dv.getMaDichVu())) {
-                    JOptionPane.showMessageDialog(this,
-                            "Không thể xóa loại dịch vụ vì dịch vụ \"" + dv.getTenDichVu() + "\" đang được sử dụng.",
-                            "Không thể xóa",
-                            JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
+            if (hasAnyInCategory) {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể xóa loại dịch vụ vì vẫn còn dịch vụ thuộc loại này.",
+                        "Không thể xóa",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
             }
 
-            // 3) Nếu tất cả OK -> gọi delete service category V2
+            // 3) Nếu không có dịch vụ nào trong loại -> gọi service để xóa
             boolean ok = false;
             try {
                 ok = categoryService.deleteServiceCategoryV2(sel.getMa());
             } catch (IllegalStateException ise) {
+                // nếu service impl ném (ví dụ do ràng buộc khác), hiển thị thông báo
                 JOptionPane.showMessageDialog(this, ise.getMessage(), "Không thể xóa", JOptionPane.WARNING_MESSAGE);
                 return;
             } catch (Exception ex) {
@@ -599,11 +607,6 @@ public class QuanLyLoaiDichVuPanel extends JPanel {
         return null;
     }
 
-    /**
-     * Filter logic:
-     * - If user selects a type in the center combo (not "Chọn loại") => filter by that name
-     * - If "Chọn loại" selected => show all
-     */
     private void applyFilters() {
         String sel = (categorySearchComboBox != null) ? (String) categorySearchComboBox.getSelectedItem() : null;
         List<LoaiDichVu> out = new ArrayList<>();
