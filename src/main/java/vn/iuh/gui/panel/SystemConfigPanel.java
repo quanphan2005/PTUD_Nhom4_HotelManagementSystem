@@ -704,7 +704,7 @@ public class SystemConfigPanel extends JPanel {
                 txt.setText(selected.getAbsolutePath());
 
                 // Đẩy lên table
-                tableModel.addRow(getFileInfo(selected));
+                tableModel.insertRow(0, getFileInfo(selected));
             }
         });
 
@@ -813,16 +813,17 @@ public class SystemConfigPanel extends JPanel {
 
         String s0FileName = selectedFiles.getFirst().getName();
         String s1FileName = selectedFiles.get(1).getName();
-        if(!s0FileName.contains("FULL")|| !s1FileName.contains("DIF")){
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Vui lòng chọn "
-            );
 
+        File fullFile;
+        File diffFile;
+        if(s0FileName.contains("FULL") && s1FileName.contains("DIF")){
+            fullFile = selectedFiles.get(0);
+            diffFile = selectedFiles.get(1);
         }
-
-        File fullFile = selectedFiles.get(0);
-        File diffFile = selectedFiles.get(1);
+        else {
+            fullFile = selectedFiles.get(1);
+            diffFile = selectedFiles.get(0);
+        }
 
         // 2. Kiểm tra file tồn tại
         if (!fullFile.exists() || !diffFile.exists()) {
@@ -853,6 +854,7 @@ public class SystemConfigPanel extends JPanel {
         // 5. Chạy restore không block UI
         new Thread(() -> {
             JDialog loadingDialog = new JDialog();
+            loadingDialog.setTitle("Khôi phục dữ liệu");
             loadingDialog.add(new JLabel("Đang xử lý khôi phục dữ liệu"));
             loadingDialog.setSize(500, 100);
             loadingDialog.setLocationRelativeTo(null);
@@ -887,6 +889,7 @@ public class SystemConfigPanel extends JPanel {
             } finally {
                 SwingUtilities.invokeLater(() -> restoreBtn.setEnabled(true));
                 loadingDialog.dispose();
+                restoreDirField.setText("");
             }
 
         }).start();

@@ -371,15 +371,8 @@ public class Main extends JFrame {
         btnWorkingHistory.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnWorkingHistory.setBackground(this.pnlTop.getBackground());
         workingHistoryDialog = new WorkingHistoryDialog(this);
-        btnWorkingHistory.addActionListener( e -> {
-            if(!getCurrentLoginSession().equalsIgnoreCase(workingHistoryDialog.getMaPhienDangNhapHienTai()) &&
-            workingHistoryDialog.getMaPhienDangNhapHienTai() != null)
-            {
-                workingHistoryDialog.updateWorkingHistory();
-                System.out.println("Khác");
-            }
-            workingHistoryDialog.open();
-            workingHistoryDialog.setVisible(true);
+        btnWorkingHistory.addActionListener(e -> {
+            workingHistoryDialog.open(Main.getCurrentLoginSession());
         });
         return btnWorkingHistory;
     }

@@ -69,6 +69,15 @@ public class IconUtil {
         }
     }
 
+    public static ImageIcon createMenuWHIcon(String path) {
+        try {
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource(path)));
+            return new ImageIcon(icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH));
+        } catch (Exception e) {
+            return createColoredIcon(new Color(255, 193, 7), "📋"); // Amber for extend
+        }
+    }
+
     public static ImageIcon createExtendCheckoutIcon() {
         try {
             ImageIcon icon = new ImageIcon(Objects.requireNonNull(IconUtil.class.getResource("/icons/checkout_late.png")));

@@ -292,7 +292,6 @@ public class CheckOutServiceImpl implements CheckOutService {
             HoaDon hoaDonThanhToan = createInvoiceFromEntity(reservation);
 
             String maChiTietHoaDonMoiNhat = null;
-            boolean isCheckOutTre = false;
             double thoiGianCheckOutTre = 0;
 
             for (ThongTinSuDungPhong ct : chiTietSuDungList) {
@@ -344,7 +343,6 @@ public class CheckOutServiceImpl implements CheckOutService {
                     danhSachMaChiTietDatPhong.add(ct.getMaChiTietDatPhong());
                     Timestamp thoiDiemHienTai = new Timestamp(System.currentTimeMillis());
                     if (thoiDiemHienTai.after(ct.getTgTraPhong())) {
-                        isCheckOutTre = true;
                         thoiGianCheckOutTre = tinhKhoangCachGio(ct.getTgTraPhong(), thoiDiemHienTai);
                     }
                 }

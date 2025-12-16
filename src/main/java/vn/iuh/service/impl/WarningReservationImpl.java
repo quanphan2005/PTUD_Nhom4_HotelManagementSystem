@@ -30,7 +30,7 @@ public class WarningReservationImpl implements WarningReservationService {
 
     @Override
     public void excute(){
-        List<vn.iuh.dto.repository.WarningReservation> warningList = congViecDAO.getAllWarningReservations();
+        List<WarningReservation> warningList = congViecDAO.getAllWarningReservations();
         if(warningList == null || warningList.isEmpty()) return;
 
         Map<RoomStatus, List<vn.iuh.dto.repository.WarningReservation>> seperatedMap = new HashMap<>();
@@ -39,7 +39,7 @@ public class WarningReservationImpl implements WarningReservationService {
             seperatedMap.put(rs, new ArrayList<>());
         }
 
-        for (vn.iuh.dto.repository.WarningReservation wr : warningList) {
+        for (WarningReservation wr : warningList) {
             RoomStatus status = mapToRoomStatus(wr.getJobName());
             seperatedMap.get(status).add(wr);
         }

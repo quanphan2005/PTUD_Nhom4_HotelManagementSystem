@@ -24,6 +24,7 @@ public class CustomUI {
     public static final Color mine = new Color(240, 240, 240);
     public static final Color yellow = new Color(255, 223, 0);
     public static final Color be = new Color(241, 172, 135);
+    public static final Color blueBtn = new Color(20, 112,220);
 
     public static final Font italicSmallFont = new Font("Roboto", Font.ITALIC, 12);
 

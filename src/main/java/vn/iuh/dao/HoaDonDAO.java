@@ -1,6 +1,7 @@
 package vn.iuh.dao;
 
 import vn.iuh.constraint.InvoiceType;
+import vn.iuh.constraint.PaymentStatus;
 import vn.iuh.dto.repository.CustomerPayments;
 import vn.iuh.entity.HoaDon;
 import vn.iuh.exception.TableEntityMismatch;
@@ -288,5 +289,27 @@ public class HoaDonDAO {
             System.out.println(et.getMessage());
         }
         return danhSachHoaDon;
+    }
+
+    public BigDecimal getTotalReceiptPaidInvoiceByWorkingHistory(String workingHistoryId){
+        String sql = "select sum(tong_hoa_don) from HoaDon\n" +
+                        "where tinh_trang_thanh_toan = ?\n" +
+                        "and ma_phien_dang_nhap = ?\n";
+        try {
+            Connection connection = DatabaseUtil.getConnect();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, PaymentStatus.PAID.getStatus());
+            ps.setString(2, workingHistoryId);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (TableEntityMismatch et) {
+            System.out.println(et.getMessage());
+        }
+        return BigDecimal.ZERO;
     }
 }
