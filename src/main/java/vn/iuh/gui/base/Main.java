@@ -28,6 +28,7 @@ import vn.iuh.schedule.AutomaticallyBackupFull;
 import vn.iuh.service.WarningReservationService;
 import vn.iuh.service.impl.WarningReservationImpl;
 import vn.iuh.util.BackupDatabase;
+import vn.iuh.util.IconUtil;
 import vn.iuh.util.SchedulerUtil;
 
 import javax.swing.*;
@@ -266,13 +267,15 @@ public class Main extends JFrame {
         pnlTopRight.setBackground(pnlTop.getBackground());
         btnBell = new BellButton();
         btnLogOut  = new JButton("Đăng xuất");
-        btnLogOut.setBackground(CustomUI.red);
+        btnLogOut.setBackground(CustomUI.newRed);
         btnLogOut.setForeground(CustomUI.white);
         btnLogOut.setFont(CustomUI.smallFont);
         btnLogOut.addActionListener(e -> LogOutDialog.handleLogout(this));
         createWoringHistoryButton();
         pnlTopRight.add(btnWorkingHistory);
+        pnlTopRight.add(Box.createHorizontalStrut(40));
         pnlTopRight.add(btnBell);
+        pnlTopRight.add(Box.createHorizontalStrut(40));
 
         JPanel pnlRightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         pnlRightButtons.setOpaque(false);
@@ -361,7 +364,7 @@ public class Main extends JFrame {
     }
 
     private JButton createWoringHistoryButton(){
-        btnWorkingHistory = new JButton("\uD83D\uDDD3\uFE0F");
+        btnWorkingHistory = new JButton(IconUtil.createMenuIcon("/icons/calendar.png"));
         btnWorkingHistory.setSize(60,60);
         btnWorkingHistory.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
         btnWorkingHistory.setForeground(CustomUI.white);

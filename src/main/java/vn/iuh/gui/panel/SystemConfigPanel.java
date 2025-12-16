@@ -16,7 +16,9 @@ import vn.iuh.util.RestoreDataBase;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -131,7 +133,7 @@ public class SystemConfigPanel extends JPanel {
 
         // Label
         JLabel vatLabel = new JLabel("Thuế GTGT (%):");
-        vatLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        vatLabel.setFont(CustomUI.verySmallFont);
         vatLabel.setPreferredSize(new Dimension(120, 35));
 
         // Text field
@@ -139,7 +141,7 @@ public class SystemConfigPanel extends JPanel {
         vatRateField = new JTextField(fee.getGiaHienTai().toString());
         vatRateField.setEditable(false);
         vatRateField.setFocusable(false);
-        vatRateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        vatRateField.setFont(CustomUI.verySmallFont);
         vatRateField.setPreferredSize(new Dimension(100, 35));
         vatRateField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
@@ -149,15 +151,6 @@ public class SystemConfigPanel extends JPanel {
         // Buttons panel
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         buttonsPanel.setOpaque(false);
-
-//        ImageIcon editIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/pen.png")));
-//        JButton editBtn = createIconButton(editIcon);
-//        editBtn.setToolTipText("Chỉnh sửa thuế GTGT");
-//
-//        editBtn.addActionListener((e) ->{
-//            vatRateField.setEditable(true);
-//            vatRateField.setFocusable(true);
-//        });
 
         ImageIcon historyIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/clock.png")));
         JButton historyBtn = createIconButton(historyIcon);
@@ -219,11 +212,11 @@ public class SystemConfigPanel extends JPanel {
         dirPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         JLabel dirLabel = new JLabel("Thư mục sao lưu");
-        dirLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        dirLabel.setFont(CustomUI.TABLE_FONT);
         dirLabel.setPreferredSize(new Dimension(120, 35));
 
         backupDirField = new JTextField("D:\\");
-        backupDirField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        backupDirField.setFont(CustomUI.TABLE_FONT);
         backupDirField.setPreferredSize(new Dimension(0, 35));
         backupDirField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
@@ -249,7 +242,7 @@ public class SystemConfigPanel extends JPanel {
         ButtonGroup group = new ButtonGroup();
 
         autoBackupRadio = new JRadioButton("Tự động sao lưu, khi kết thúc chương trình");
-        autoBackupRadio.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        autoBackupRadio.setFont(CustomUI.TABLE_FONT);
         autoBackupRadio.setOpaque(false);
         autoBackupRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
         group.add(autoBackupRadio);
@@ -257,7 +250,7 @@ public class SystemConfigPanel extends JPanel {
         radioPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         warningBackupRadio = new JRadioButton("Cảnh báo sao lưu khi kết thúc chương trình");
-        warningBackupRadio.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        warningBackupRadio.setFont(CustomUI.TABLE_FONT);
         warningBackupRadio.setOpaque(false);
         warningBackupRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
         group.add(warningBackupRadio);
@@ -265,7 +258,7 @@ public class SystemConfigPanel extends JPanel {
         radioPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         noBackupRadio = new JRadioButton("Không sao lưu");
-        noBackupRadio.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        noBackupRadio.setFont(CustomUI.TABLE_FONT);
         noBackupRadio.setSelected(true);
         noBackupRadio.setOpaque(false);
         noBackupRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -318,11 +311,11 @@ public class SystemConfigPanel extends JPanel {
         typePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         JLabel typeLabel = new JLabel("Hình thức sao lưu");
-        typeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        typeLabel.setFont(CustomUI.TABLE_FONT);
         typeLabel.setPreferredSize(new Dimension(120, 35));
 
         backupTypeCombo = new JComboBox<>(new String[]{"Ngày hôm nay", "Toàn bộ"});
-        backupTypeCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        backupTypeCombo.setFont(CustomUI.TABLE_FONT);
         backupTypeCombo.setPreferredSize(new Dimension(0, 35));
         backupTypeCombo.addActionListener((e) -> {
             String selected = (String) backupTypeCombo.getSelectedItem();
@@ -342,11 +335,11 @@ public class SystemConfigPanel extends JPanel {
         namePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         JLabel nameLabel = new JLabel("Tên tệp dữ liệu");
-        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        nameLabel.setFont(CustomUI.TABLE_FONT);
         nameLabel.setPreferredSize(new Dimension(120, 35));
 
         backupNameField = new JTextField();
-        backupNameField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        backupNameField.setFont(CustomUI.TABLE_FONT);
         backupNameField.setPreferredSize(new Dimension(0, 35));
         backupNameField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
@@ -370,11 +363,11 @@ public class SystemConfigPanel extends JPanel {
         restorePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         JLabel restoreLabel = new JLabel("Thư mục sao lưu");
-        restoreLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        restoreLabel.setFont(CustomUI.TABLE_FONT);
         restoreLabel.setPreferredSize(new Dimension(120, 35));
 
         restoreDirField = new JTextField();
-        restoreDirField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        restoreDirField.setFont(CustomUI.TABLE_FONT);
         restoreDirField.setPreferredSize(new Dimension(0, 35));
         restoreDirField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
@@ -398,9 +391,9 @@ public class SystemConfigPanel extends JPanel {
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         JButton backupBtn = new JButton("Sao lưu");
-        backupBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        backupBtn.setFont(CustomUI.verySmallFont);
         backupBtn.setPreferredSize(new Dimension(120, 38));
-        backupBtn.setBackground(new Color(66, 139, 202));
+        backupBtn.setBackground(CustomUI.darkBlue);
         backupBtn.setForeground(Color.WHITE);
         backupBtn.setFocusPainted(false);
         backupBtn.setBorderPainted(false);
@@ -451,6 +444,8 @@ public class SystemConfigPanel extends JPanel {
         loadingDialog.add(new JLabel("Đang xử lý..."));
         loadingDialog.setSize(200, 100);
         loadingDialog.setLocationRelativeTo(null);
+        loadingDialog.setTitle("Sao lưu dữ liệu");
+        loadingDialog.setFont(CustomUI.TABLE_FONT);
 
         SwingUtilities.invokeLater(() -> loadingDialog.setVisible(true));
 
@@ -507,11 +502,11 @@ public class SystemConfigPanel extends JPanel {
         topSection.setOpaque(false);
 
         JLabel selectLabel = new JLabel("Chọn thư mục dữ liệu");
-        selectLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        selectLabel.setFont(CustomUI.TABLE_FONT);
         selectLabel.setPreferredSize(new Dimension(150, 35));
 
         JTextField selectDirField = new JTextField("D:\\Backup");
-        selectDirField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        selectDirField.setFont(CustomUI.TABLE_FONT);
         selectDirField.setPreferredSize(new Dimension(0, 35));
         selectDirField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
@@ -542,29 +537,63 @@ public class SystemConfigPanel extends JPanel {
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
+                // toàn bộ cell không editable (không có cột thao tác)
                 return false;
             }
         };
 
-        fileTable = new JTable(tableModel);
-        fileTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        fileTable.setRowHeight(28);
-        fileTable.setShowGrid(true);
-        fileTable.setGridColor(new Color(220, 220, 220));
-        fileTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        fileTable.getTableHeader().setBackground(new Color(92, 156, 204));
-        fileTable.getTableHeader().setForeground(Color.WHITE);
-        fileTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
-        fileTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        fileTable.setSelectionBackground(new Color(184, 207, 229));
-        fileTable.setSelectionForeground(Color.BLACK);
+        fileTable = new JTable(tableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                c.setFont(CustomUI.TABLE_FONT);
 
-        // Set column widths
-        fileTable.getColumnModel().getColumn(0).setPreferredWidth(200);
-        fileTable.getColumnModel().getColumn(1).setPreferredWidth(200);
+                if (isRowSelected(row)) {
+                    c.setBackground(CustomUI.ROW_SELECTED_COLOR);
+                    c.setForeground(CustomUI.black);
+                } else {
+                    if (row % 2 == 0) {
+                        c.setBackground(CustomUI.ROW_EVEN != null ? CustomUI.ROW_EVEN : Color.WHITE);
+                    } else {
+                        c.setBackground(CustomUI.ROW_ODD != null ? CustomUI.ROW_ODD : new Color(0xF7F9FB));
+                    }
+                    c.setForeground(CustomUI.black);
+                }
+
+                if (c instanceof JLabel) {
+                    ((JLabel) c).setHorizontalAlignment(JLabel.CENTER);
+                }
+                setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, CustomUI.tableBorder));
+                return c;
+            }
+        };
+
+        fileTable.setRowHeight(36);
+        fileTable.getTableHeader().setPreferredSize(new Dimension(fileTable.getWidth(), 36));
+        fileTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
+        fileTable.getTableHeader().setBackground(CustomUI.blue);
+        fileTable.getTableHeader().setForeground(CustomUI.white);
+        fileTable.getTableHeader().setOpaque(true);
+
+        fileTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(JLabel.CENTER);
+                setBorder(BorderFactory.createMatteBorder(0,0,1,1, CustomUI.tableBorder));
+                comp.setFont(CustomUI.TABLE_FONT);
+                return comp;
+            }
+        });
+        fileTable.getColumnModel().getColumn(0).setPreferredWidth(250);
+        fileTable.getColumnModel().getColumn(1).setPreferredWidth(250);
         fileTable.getColumnModel().getColumn(2).setPreferredWidth(80);
         fileTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-        fileTable.getColumnModel().getColumn(4).setPreferredWidth(250);
+        fileTable.getColumnModel().getColumn(4).setPreferredWidth(150);
+
+        JScrollPane scrollPane = new JScrollPane(fileTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setPreferredSize(new Dimension(0, 200));
         fileTable.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -587,10 +616,6 @@ public class SystemConfigPanel extends JPanel {
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(fileTable);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        scrollPane.setPreferredSize(new Dimension(0, 200));
-
         // Bottom section with file count and restore button
         JPanel bottomSection = new JPanel(new BorderLayout());
         bottomSection.setOpaque(false);
@@ -602,7 +627,7 @@ public class SystemConfigPanel extends JPanel {
 
         // Restore button
         restoreBtn = new JButton("Khôi phục");
-        restoreBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        restoreBtn.setFont(CustomUI.verySmallFont);
         restoreBtn.setPreferredSize(new Dimension(120, 38));
         restoreBtn.setBackground(new Color(66, 139, 202));
         restoreBtn.setForeground(Color.WHITE);
@@ -717,7 +742,7 @@ public class SystemConfigPanel extends JPanel {
         String fileName = file.getName();
 
         // Ngày tạo
-        String createdDate = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+        String createdDate = new java.text.SimpleDateFormat("HH:mm:ss dd/MM/yyyy ")
                 .format(new java.util.Date(file.lastModified()));
 
         // Loại file

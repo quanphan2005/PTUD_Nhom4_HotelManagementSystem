@@ -23,14 +23,10 @@ public class SendMessageLateCheckOut implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
             String roomId = context.getMergedJobDataMap().get("roomId").toString();
-//            var congViecHienTai = congViecDAO.layCongViecHienTaiCuaPhong(roomId);
-//            if(!RoomStatus.ROOM_CHECKOUT_LATE_STATUS.getStatus().equalsIgnoreCase(congViecHienTai.getTenTrangThai())){
-//                return;
-//            }
             ThongBao thongBaoMoi = createThongBao(roomId);
             thongBaoDAO.themThongBao(thongBaoMoi);
-            Main.getBtnBell().addNotification(thongBaoMoi.getNoiDung());
-            AudioPlayer.playDefaultNotification();
+            Main.getBtnBell().addNotification(thongBaoMoi);
+//            AudioPlayer.playDefaultNotification();
         } finally {
             // Xoá job sau khi hoàn thành
             try {

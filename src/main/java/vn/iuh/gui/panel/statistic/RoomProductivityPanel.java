@@ -10,22 +10,24 @@ import org.jfree.data.general.Dataset;
 import org.jfree.data.general.DefaultPieDataset;
 import vn.iuh.dao.LoaiPhongDAO;
 import vn.iuh.entity.LoaiPhong;
+import vn.iuh.entity.Phong;
 import vn.iuh.gui.base.CustomUI;
 import vn.iuh.gui.base.DateChooser;
 import vn.iuh.gui.base.RoleChecking;
+import vn.iuh.gui.dialog.PhongDialog;
+import vn.iuh.gui.panel.QuanLyPhongPanel;
 import vn.iuh.service.LoaiPhongService;
 import vn.iuh.service.impl.LoaiPhongServiceImpl;
 import vn.iuh.util.ExportWriter;
 import vn.iuh.util.PriceFormat;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -75,6 +77,8 @@ public class RoomProductivityPanel extends RoleChecking {
     private JTextField txtFolderPath;
     private JButton btnChooseFolder;
     private JCheckBox btnCheckBox;
+    private JPanel pnlFolderChooser;
+    private JLabel lblFolderChooser;
 
     private void init(){
         createTopPanel();
@@ -176,7 +180,7 @@ public class RoomProductivityPanel extends RoleChecking {
             }
         });
         pnlNam.setBorder(BorderFactory.createEmptyBorder(8,0,0,0));
-        cboNam = new JComboBox<>(new String[]{"2023", "2024", "2025", "2026"});
+        cboNam = new JComboBox<>(new String[]{"2025", "2026"});
         cboNam.setPreferredSize(new Dimension(100, 30));
         cboNam.addActionListener(e ->{
             handlePeriodTime();
@@ -228,21 +232,29 @@ public class RoomProductivityPanel extends RoleChecking {
         });
 
         txtFolderPath = new JTextField();
-        txtFolderPath.setPreferredSize(new Dimension(200, 30));
+        txtFolderPath.setFont(CustomUI.verySmallFont);
+        txtFolderPath.setPreferredSize(new Dimension(200, 35));
+        txtFolderPath.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
 
-        btnChooseFolder = new JButton("Chọn thư mục");
+        ImageIcon folderIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/folder.png")));
+        btnChooseFolder = createFolderIconButton(folderIcon, txtFolderPath);
         btnChooseFolder.setFont(CustomUI.smallFont);
         btnChooseFolder.setBackground(CustomUI.blue);
         btnChooseFolder.setForeground(CustomUI.white);
+        pnlFolderChooser = new JPanel();
 
-        btnChooseFolder.addActionListener(e -> {
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            int result = chooser.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                txtFolderPath.setText(chooser.getSelectedFile().getAbsolutePath());
-            }
-        });
+        lblFolderChooser = new JLabel("Chọn thư mục");
+        lblFolderChooser.setFont(CustomUI.smallFont);
+
+        pnlFolderChooser.add(lblFolderChooser);
+        pnlFolderChooser.add(btnChooseFolder);
+        pnlFolderChooser.add(txtFolderPath);
+        pnlFolderChooser.setOpaque(false);
+
+
         btnXuat = new JButton("Xuất Excel");
         btnXuat.setBackground(CustomUI.darkGreen);
         btnXuat.setFont(CustomUI.verySmallFont);
@@ -252,7 +264,6 @@ public class RoomProductivityPanel extends RoleChecking {
         pnlButton.setOpaque(false);
         pnlButton.add(btnTaiLai);
         pnlButton.add(btnXuat);
-        pnlButton.add(btnChooseFolder);
 
         btnXuat.addActionListener( e->{
             handleBtnExport();
@@ -265,6 +276,7 @@ public class RoomProductivityPanel extends RoleChecking {
 
         filterPanel.add(pnlPhong);
         filterPanel.add(pnlButton);
+        filterPanel.add(pnlFolderChooser);
 
         pnlMain.add(filterPanel);
     }
@@ -463,6 +475,35 @@ public class RoomProductivityPanel extends RoleChecking {
         pnlMain.add(chartPanel);
     }
 
+    private JButton createFolderIconButton(ImageIcon icon, JTextField txt) {
+        JButton btn = new JButton(icon);
+        btn.setPreferredSize(CustomUI.BUTTON_SIZE);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBackground(CustomUI.mine);
+        btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(new Color(230, 230, 230));
+            }
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(new Color(240, 240, 240));
+            }
+        });
+
+        btn.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int result = chooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                txt.setText(chooser.getSelectedFile().getAbsolutePath());
+            }
+        });
+
+        return btn;
+    }
+
     private void refreshCharts() {
         // Refresh plot để hiển thị lại label và legend
         PiePlot plotUsage = (PiePlot) chartUsage.getPlot();
@@ -522,55 +563,85 @@ public class RoomProductivityPanel extends RoleChecking {
 
 
     private void createTableResult(){
-        String[] cols = {"Mã loại phòng", "Tên loại phòng", "Mã phòng", "Tên phòng", "Số lượt đặt phòng", "Số giờ sử dụng", "Tổng doanh thu"};
-        model = new DefaultTableModel(null, cols) {
-            @Override public boolean isCellEditable(int row, int column) { return false; } // Không cho phép chỉnh sửa thông tin trong các ô của table
+        String[] columnNames = {"Mã loại phòng", "Tên loại phòng", "Mã phòng", "Tên phòng", "Số lượt đặt phòng", "Số giờ sử dụng", "Tổng doanh thu"};
+        model = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // toàn bộ cell không editable (không có cột thao tác)
+                return false;
+            }
         };
 
-        JTable table = new JTable(model) { // Tạo JTable mới dựa trên model
+        JTable roomTable = new JTable(model) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                // prepareRenderer được gọi mỗi khi JTable vẽ 1 cell.
                 Component c = super.prepareRenderer(renderer, row, column);
-
-                // reuse font constant (không new font mỗi cell)
                 c.setFont(CustomUI.TABLE_FONT);
 
-                if (!isRowSelected(row)) {
-                    // reuse color constant
-                    c.setBackground(row % 2 == 0 ? CustomUI.ROW_ODD : CustomUI.ROW_EVEN);
-                } else {
+                if (isRowSelected(row)) {
                     c.setBackground(CustomUI.ROW_SELECTED_COLOR);
+                    c.setForeground(CustomUI.black);
+                } else {
+                    if (row % 2 == 0) {
+                        c.setBackground(CustomUI.ROW_EVEN != null ? CustomUI.ROW_EVEN : Color.WHITE);
+                    } else {
+                        c.setBackground(CustomUI.ROW_ODD != null ? CustomUI.ROW_ODD : new Color(0xF7F9FB));
+                    }
+                    c.setForeground(CustomUI.black);
                 }
+
+                if (c instanceof JLabel) {
+                    ((JLabel) c).setHorizontalAlignment(JLabel.CENTER);
+                }
+                setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, CustomUI.tableBorder));
                 return c;
             }
         };
 
-        table.setRowHeight(48);
-        table.setFont(CustomUI.TABLE_FONT);
-        table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setFillsViewportHeight(true);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        roomTable.setRowHeight(48);
+        roomTable.getTableHeader().setPreferredSize(new Dimension(roomTable.getWidth(), 40));
+        roomTable.getTableHeader().setFont(CustomUI.HEADER_FONT);
+        roomTable.getTableHeader().setBackground(CustomUI.blue);
+        roomTable.getTableHeader().setForeground(CustomUI.white);
+        roomTable.getTableHeader().setOpaque(true);
 
-        JTableHeader header = table.getTableHeader();
-        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 42));
-        header.setBackground(CustomUI.TABLE_HEADER_BACKGROUND);
-        header.setForeground(CustomUI.TABLE_HEADER_FOREGROUND);
-        header.setFont(CustomUI.HEADER_FONT);
-        header.setReorderingAllowed(false);
+        roomTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(JLabel.CENTER);
+                setBorder(BorderFactory.createMatteBorder(0,0,1,1, CustomUI.tableBorder));
+                comp.setFont(CustomUI.TABLE_FONT);
+                return comp;
+            }
+        });
 
-        // Căn giữa cho thông tin trong các cột
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        for (int i = 0; i < table.getColumnCount(); i++) {
-            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-        }
+        // Kích thước cột
+        roomTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        roomTable.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int tableWidth = roomTable.getWidth();
+                TableColumnModel columnModel = roomTable.getColumnModel();
+                if (columnModel.getColumnCount() < 8) return;
+                columnModel.getColumn(0).setPreferredWidth((int) (tableWidth * 0.10)); // Mã
+                columnModel.getColumn(1).setPreferredWidth((int) (tableWidth * 0.18)); // Tên
+                columnModel.getColumn(2).setPreferredWidth((int) (tableWidth * 0.12)); // Loại
+                columnModel.getColumn(3).setPreferredWidth((int) (tableWidth * 0.12)); // Số người
+                columnModel.getColumn(4).setPreferredWidth((int) (tableWidth * 0.08)); // Giá giờ
+                columnModel.getColumn(5).setPreferredWidth((int) (tableWidth * 0.12)); // Giá ngày
+                columnModel.getColumn(6).setPreferredWidth((int) (tableWidth * 0.12)); // Trạng thái
+                // cột 7 là cột OBJ (ẩn) -> đặt width = 0 để ẩn
+                columnModel.getColumn(7).setMinWidth(0);
+                columnModel.getColumn(7).setMaxWidth(0);
+                columnModel.getColumn(7).setPreferredWidth(0);
+                columnModel.getColumn(7).setResizable(false);
+            }
+        });
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(null);
-        scrollPane.getViewport().setBackground(CustomUI.white);
-
+        JScrollPane scrollPane = new JScrollPane(roomTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setPreferredSize(new Dimension(0, 500));
         pnlMain.add(scrollPane);
     }
 

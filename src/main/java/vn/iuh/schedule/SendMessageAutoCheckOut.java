@@ -31,8 +31,8 @@ public class SendMessageAutoCheckOut implements Job {
                 thongBaoMoi = createThongBao(roomId);
             }
             thongBaoDAO.themThongBao(thongBaoMoi);
-            Main.getBtnBell().addNotification(thongBaoMoi.getNoiDung());
-            AudioPlayer.playDefaultNotification();
+            Main.getBtnBell().addNotification(thongBaoMoi);
+//            AudioPlayer.playDefaultNotification();
         } finally {
             try {
                 context.getScheduler().deleteJob(context.getJobDetail().getKey());
